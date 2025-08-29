@@ -49,4 +49,42 @@ class PrefUtils {
     final String? jsonString = _sharedPreferences!.getString('surah');
     return jsonString != null ? Surah.fromJson(jsonString) : null;
   }
+
+  // Locale persistence (ar/en)
+  Future<void> setLocaleCode(String code) async {
+    await _sharedPreferences!.setString('localeCode', code);
+  }
+
+  String getLocaleCode() {
+    try {
+      return _sharedPreferences!.getString('localeCode') ?? 'ar';
+    } catch (_) {
+      return 'ar';
+    }
+  }
+
+  // Per-surah scroll offset persistence (fallback when hydration isn't ready)
+  Future<void> setSurahOffset(int surahId, double offset) async {
+    await _sharedPreferences!.setDouble('offset_$surahId', offset);
+  }
+
+  double? getSurahOffset(int surahId) {
+    try {
+      return _sharedPreferences!.getDouble('offset_$surahId');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setSurahVerseIndex(int surahId, int index) async {
+    await _sharedPreferences!.setInt('verse_index_$surahId', index);
+  }
+
+  int? getSurahVerseIndex(int surahId) {
+    try {
+      return _sharedPreferences!.getInt('verse_index_$surahId');
+    } catch (_) {
+      return null;
+    }
+  }
 }
