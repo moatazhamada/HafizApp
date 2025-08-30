@@ -1,17 +1,13 @@
 package com.hafiz.kmp.android
 
 import android.os.Bundle
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import com.hafiz.kmp.shared.Greeting
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import com.hafiz.kmp.composeapp.App
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val textView: TextView = findViewById(R.id.textView)
-        textView.text = Greeting().greet()
+        setContent { App() }
     }
 }
-

@@ -4,7 +4,8 @@ This is an alternative app implementation scaffolded with Kotlin Multiplatform i
 
 It includes:
 - `shared`: Kotlin Multiplatform library (Android + iOS) exposing a simple `Greeting` API.
-- `androidApp`: Android app that consumes the `shared` module.
+- `composeApp`: Compose Multiplatform UI module (Android + iOS) with brand theme/colors.
+- `androidApp`: Android host app using the Compose UI from `composeApp`.
 
 ## Build / Run (Android)
 
@@ -12,20 +13,30 @@ It includes:
 2. Let Gradle sync complete.
 3. Select the `androidApp` run configuration and run on an emulator/device.
 
-## Using the shared module from iOS
+## iOS Entry Point
 
-The `shared` module is configured for iOS targets (`iosX64`, `iosArm64`, `iosSimulatorArm64`).
-To integrate with a native iOS app:
-- Create an Xcode project and add the `shared` module as a framework built via Gradle.
-- Typical commands:
-  - `./gradlew :shared:assemble` (builds all targets)
-  - Artifacts are generated under `kmp-app/shared/build`.
-
-You can then call `Greeting().greet()` from Swift/Objective‑C via the framework API.
+- `composeApp` provides `MainViewController()` in `kmp-app/composeApp/src/iosMain/...` to embed the Compose UI in iOS.
+- Build a framework and use it from Xcode:
+  - `./gradlew :composeApp:assemble` (builds iOS frameworks)
+  - Frameworks in `kmp-app/composeApp/build/` can be linked in a simple SwiftUI/UIKit app:
+    ```swift
+    import UIKit
+    import ComposeApp
+    @main
+    class AppDelegate: UIResponder, UIApplicationDelegate {
+      var window: UIWindow?
+      func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window?.rootViewController = MainViewController()
+        window?.makeKeyAndVisible()
+        return true
+      }
+    }
+    ```
 
 ## Notes
-- Kotlin plugin: 2.0.20, Android Gradle Plugin: 8.5.2, compileSdk: 34, minSdk: 24.
-- This is a minimal scaffold. We can expand the shared module to include actual domain/data logic from the Flutter app, and optionally add Compose Multiplatform UI shared across platforms if desired.
+- Kotlin plugin: 2.0.20, Android Gradle Plugin: 8.5.2, Compose Multiplatform: 1.7.0, compileSdk: 34, minSdk: 24.
+- The UI theme uses the Flutter brand colors (primary `#006754`, secondary `#87D1A4`) and gradient accents.
 
 ## Next Steps (proposed)
 - Port core features (models, localization strings, business logic) into `shared`.

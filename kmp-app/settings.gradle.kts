@@ -9,6 +9,7 @@ pluginManagement {
         id("org.jetbrains.kotlin.android") version "2.0.20"
         id("com.android.application") version "8.5.2"
         id("com.android.library") version "8.5.2"
+        id("org.jetbrains.compose") version "1.7.0"
     }
 }
 
@@ -23,3 +24,4 @@ dependencyResolutionManagement {
 rootProject.name = "hafiz-kmp"
 include(":shared")
 include(":androidApp")
+include(":composeApp")
