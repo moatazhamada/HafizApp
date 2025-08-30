@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -35,11 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
+// Expect/actual typography per platform
+internal expect fun getBrandTypography(): Typography
 
 @Immutable
 data class HafizColors(
@@ -76,10 +78,7 @@ fun HafizTheme(dark: Boolean, content: @Composable () -> Unit) {
     )
     MaterialTheme(
         colorScheme = if (dark) darkCs else light,
-        typography = MaterialTheme.typography.copy(
-            bodyLarge = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.SansSerif),
-            titleLarge = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.Serif),
-        ),
+        typography = getBrandTypography(),
         content = content
     )
 }

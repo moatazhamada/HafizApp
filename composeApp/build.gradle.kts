@@ -44,7 +44,6 @@ android {
     compileSdk = 34
     defaultConfig { minSdk = 24 }
     buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
