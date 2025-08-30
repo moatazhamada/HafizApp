@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -295,18 +297,20 @@ private fun SurahListScreen(onBack: () -> Unit, onOpen: (Int) -> Unit) {
                 Text("Back", color = hafizColors.deepGreen, modifier = Modifier.clickable { onBack() })
             }
             Spacer(Modifier.height(16.dp))
-            surahs.forEach { s ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(hafizColors.secondary.copy(alpha = 0.15f))
-                        .clickable { onOpen(s) }
-                        .padding(12.dp)
-                ) {
-                    Text("Surah ${'$'}s", color = hafizColors.deepGreen)
+            LazyColumn {
+                items(surahs) { s ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(hafizColors.secondary.copy(alpha = 0.15f))
+                            .clickable { onOpen(s) }
+                            .padding(12.dp)
+                    ) {
+                        Text("Surah ${'$'}s", color = hafizColors.deepGreen)
+                    }
+                    Spacer(Modifier.height(8.dp))
                 }
-                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -330,18 +334,19 @@ private fun SurahReaderScreen(surah: Int, onBack: () -> Unit) {
                 Text("Back", color = Color.White, modifier = Modifier.clickable { onBack() })
             }
             Spacer(Modifier.height(12.dp))
-            // Very simple reader; we will enhance spacing/typography next
-            ayat.forEach { a ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .padding(12.dp)
-                ) {
-                    Text(text = a.text, color = Color.White)
+            LazyColumn {
+                items(ayat) { a ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .padding(12.dp)
+                    ) {
+                        Text(text = a.text, color = Color.White)
+                    }
+                    Spacer(Modifier.height(8.dp))
                 }
-                Spacer(Modifier.height(8.dp))
             }
         }
     }
