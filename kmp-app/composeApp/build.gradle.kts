@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose")
     id("com.android.library")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -17,6 +18,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
             }
         }
         val commonTest by getting
@@ -49,4 +51,3 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
-

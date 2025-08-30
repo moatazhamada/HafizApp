@@ -25,6 +25,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Immutable
 data class HafizColors(
@@ -84,6 +87,8 @@ fun HafizTheme(dark: Boolean, content: @Composable () -> Unit) {
 sealed class Screen {
     data object Onboarding : Screen()
     data object Home : Screen()
+    data object SurahList : Screen()
+    data class SurahReader(val surah: Int) : Screen()
 }
 
 @Composable
@@ -100,7 +105,16 @@ fun App() {
                 )
                 Screen.Home -> HomeScreen(
                     dark = dark,
-                    onToggleDark = { dark = it }
+                    onToggleDark = { dark = it },
+                    onOpenSurahs = { current.value = Screen.SurahList }
+                )
+                Screen.SurahList -> SurahListScreen(
+                    onBack = { current.value = Screen.Home },
+                    onOpen = { s -> current.value = Screen.SurahReader(s) }
+                )
+                is Screen.SurahReader -> SurahReaderScreen(
+                    surah = (current.value as Screen.SurahReader).surah,
+                    onBack = { current.value = Screen.SurahList }
                 )
             }
         }
@@ -178,7 +192,7 @@ private fun OnboardingScreen(onContinue: () -> Unit, dark: Boolean, onToggleDark
 }
 
 @Composable
-private fun HomeScreen(dark: Boolean, onToggleDark: (Boolean) -> Unit) {
+private fun HomeScreen(dark: Boolean, onToggleDark: (Boolean) -> Unit, onOpenSurahs: () -> Unit) {
     val gradient = Brush.verticalGradient(listOf(hafizColors.primary, hafizColors.secondary))
     Box(
         modifier = Modifier
@@ -216,7 +230,7 @@ private fun HomeScreen(dark: Boolean, onToggleDark: (Boolean) -> Unit) {
                         .background(Color.White.copy(alpha = 0.15f))
                         .padding(16.dp)
                         .weight(1f)
-                        .clickable { /* TODO: navigate to Surah */ }
+                        .clickable { onOpenSurahs() }
                 ) { Text("Surahs", color = Color.White) }
                 Spacer(Modifier.padding(horizontal = 8.dp))
                 Box(
@@ -227,6 +241,108 @@ private fun HomeScreen(dark: Boolean, onToggleDark: (Boolean) -> Unit) {
                         .weight(1f)
                         .clickable { /* TODO: navigate to Bookmarks/Settings */ }
                 ) { Text("Bookmarks", color = Color.White) }
+            }
+        }
+    }
+}
+
+// Data models and repository
+@Serializable
+private data class SurahJson(val chapter: List<Ayah>)
+
+@Serializable
+data class Ayah(val chapter: Int, val verse: Int, val text: String)
+
+// Expect platform APIs
+internal expect fun platformListAssetFiles(path: String): List<String>
+internal expect suspend fun platformReadAsset(path: String): String
+
+object QuranRepository {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    suspend fun listSurahs(): List<Int> {
+        val files = platformListAssetFiles("quran/uthmani")
+        return files.mapNotNull {
+            // expect filenames like surah_1.json
+            val num = it.removePrefix("surah_").removeSuffix(".json")
+            num.toIntOrNull()
+        }.sorted()
+    }
+
+    suspend fun loadSurah(surah: Int): List<Ayah> {
+        val content = platformReadAsset("quran/uthmani/surah_${'$'}surah.json")
+        val parsed = json.decodeFromString<SurahJson>(content)
+        return parsed.chapter
+    }
+}
+
+@Composable
+private fun SurahListScreen(onBack: () -> Unit, onOpen: (Int) -> Unit) {
+    var surahs by remember { mutableStateOf<List<Int>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        surahs = QuranRepository.listSurahs()
+    }
+    val bg = Brush.verticalGradient(listOf(hafizColors.lightBg1, hafizColors.lightBg2))
+    Box(
+        modifier = Modifier.fillMaxSize().background(bg).padding(16.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Surahs", style = MaterialTheme.typography.titleLarge, color = hafizColors.deepGreen)
+                Text("Back", color = hafizColors.deepGreen, modifier = Modifier.clickable { onBack() })
+            }
+            Spacer(Modifier.height(16.dp))
+            surahs.forEach { s ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(hafizColors.secondary.copy(alpha = 0.15f))
+                        .clickable { onOpen(s) }
+                        .padding(12.dp)
+                ) {
+                    Text("Surah ${'$'}s", color = hafizColors.deepGreen)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SurahReaderScreen(surah: Int, onBack: () -> Unit) {
+    var ayat by remember { mutableStateOf<List<Ayah>>(emptyList()) }
+    LaunchedEffect(surah) {
+        ayat = QuranRepository.loadSurah(surah)
+    }
+    val gradient = Brush.verticalGradient(listOf(hafizColors.primary, hafizColors.secondary))
+    Box(modifier = Modifier.fillMaxSize().background(gradient).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Surah ${'$'}surah", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Text("Back", color = Color.White, modifier = Modifier.clickable { onBack() })
+            }
+            Spacer(Modifier.height(12.dp))
+            // Very simple reader; we will enhance spacing/typography next
+            ayat.forEach { a ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .padding(12.dp)
+                ) {
+                    Text(text = a.text, color = Color.White)
+                }
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
