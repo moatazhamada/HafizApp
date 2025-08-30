@@ -1,6 +1,6 @@
 # Hafiz KMP (Kotlin Multiplatform)
 
-This is an alternative app implementation scaffolded with Kotlin Multiplatform inside `kmp-app/`.
+This is the Kotlin Multiplatform app for this branch.
 
 It includes:
 - `shared`: Kotlin Multiplatform library (Android + iOS) exposing a simple `Greeting` API.
@@ -9,16 +9,16 @@ It includes:
 
 ## Build / Run (Android)
 
-1. Open the `kmp-app/` folder in Android Studio (Giraffe+ recommended).
+1. Open the repository root in Android Studio (Giraffe+ recommended).
 2. Let Gradle sync complete.
 3. Select the `androidApp` run configuration and run on an emulator/device.
 
 ## iOS Entry Point
 
-- `composeApp` provides `MainViewController()` in `kmp-app/composeApp/src/iosMain/...` to embed the Compose UI in iOS.
+- `composeApp` provides `MainViewController()` in `composeApp/src/iosMain/...` to embed the Compose UI in iOS.
 - Build a framework and use it from Xcode:
   - `./gradlew :composeApp:assemble` (builds iOS frameworks)
-  - Frameworks in `kmp-app/composeApp/build/` can be linked in a simple SwiftUI/UIKit app:
+  - Frameworks in `composeApp/build/` can be linked in a simple SwiftUI/UIKit app:
     ```swift
     import UIKit
     import ComposeApp
