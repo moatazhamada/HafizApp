@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.compose")
     id("com.android.library")
     kotlin("plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 kotlin {
@@ -19,12 +20,15 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+                implementation("com.russhwolf:multiplatform-settings:1.1.1")
             }
         }
         val commonTest by getting
         val androidMain by getting {
             dependencies {
                 implementation("androidx.activity:activity-compose:1.9.2")
+                implementation("io.coil-kt:coil-compose:2.6.0")
+                implementation("io.coil-kt:coil-svg:2.6.0")
             }
         }
         val iosMain by creating {
@@ -48,5 +52,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
 }

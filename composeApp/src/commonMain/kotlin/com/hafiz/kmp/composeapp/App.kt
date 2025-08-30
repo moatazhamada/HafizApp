@@ -1,6 +1,7 @@
 package com.hafiz.kmp.composeapp
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,11 +41,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 // Expect/actual typography per platform
 internal expect fun getBrandTypography(): Typography
+// Asset image helper (Android actual provided)
+@Composable
+internal expect fun AssetImage(path: String, modifier: Modifier = Modifier)
 
 @Immutable
 data class HafizColors(
@@ -90,24 +97,33 @@ sealed class Screen {
     data object Home : Screen()
     data object SurahList : Screen()
     data class SurahReader(val surah: Int) : Screen()
+    data object About : Screen()
 }
 
 @Composable
 fun App() {
-    var dark by remember { mutableStateOf(isSystemInDarkTheme()) }
+    val systemDark = isSystemInDarkTheme()
+    var dark by remember { mutableStateOf(SettingsManager.isDark() ?: systemDark) }
+    var lang by remember { mutableStateOf(SettingsManager.lang() ?: Lang.EN) }
     val current: MutableState<Screen> = remember { mutableStateOf(Screen.Onboarding) }
-    HafizTheme(dark = dark) {
+    CompositionLocalProvider(LocalStrings provides stringsFor(lang), LocalLayoutDirection provides (if (lang == Lang.AR) LayoutDirection.Rtl else LayoutDirection.Ltr)) {
+      HafizTheme(dark = dark) {
         Surface(modifier = Modifier.fillMaxSize()) {
             when (current.value) {
                 Screen.Onboarding -> OnboardingScreen(
                     onContinue = { current.value = Screen.Home },
                     dark = dark,
-                    onToggleDark = { dark = it }
+                    onToggleDark = { dark = it; SettingsManager.setDark(it) },
+                    lang = lang,
+                    onToggleLang = { l -> lang = l; SettingsManager.setLang(l) }
                 )
                 Screen.Home -> HomeScreen(
                     dark = dark,
-                    onToggleDark = { dark = it },
-                    onOpenSurahs = { current.value = Screen.SurahList }
+                    onToggleDark = { dark = it; SettingsManager.setDark(it) },
+                    onOpenSurahs = { current.value = Screen.SurahList },
+                    lang = lang,
+                    onToggleLang = { l -> lang = l; SettingsManager.setLang(l) },
+                    onOpenAbout = { current.value = Screen.About }
                 )
                 Screen.SurahList -> SurahListScreen(
                     onBack = { current.value = Screen.Home },
@@ -117,133 +133,179 @@ fun App() {
                     surah = (current.value as Screen.SurahReader).surah,
                     onBack = { current.value = Screen.SurahList }
                 )
+                Screen.About -> AboutScreen(onBack = { current.value = Screen.Home })
             }
         }
+      }
     }
 }
 
 @Composable
-private fun OnboardingScreen(onContinue: () -> Unit, dark: Boolean, onToggleDark: (Boolean) -> Unit) {
-    val bg = if (dark) Brush.verticalGradient(listOf(hafizColors.darkBg1, hafizColors.darkBg2))
-             else Brush.verticalGradient(listOf(hafizColors.lightBg1, hafizColors.lightBg2))
+private fun OnboardingScreen(onContinue: () -> Unit, dark: Boolean, onToggleDark: (Boolean) -> Unit, lang: Lang, onToggleLang: (Lang) -> Unit) {
     val badgeGradient = Brush.horizontalGradient(listOf(hafizColors.primary, hafizColors.secondary))
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bg)
+            .background(Color(0xFF004B40))
             .padding(24.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Hafiz",
-                    color = if (dark) Color.White else hafizColors.deepGreen,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = if (dark) "Dark" else "Light",
-                        color = if (dark) Color.White else hafizColors.deepGreen
-                    )
-                    Spacer(Modifier.padding(horizontal = 8.dp))
-                    Switch(checked = dark, onCheckedChange = onToggleDark)
-                }
+            Row(modifier = Modifier.fillMaxWidth()) {
+                AssetImage("assets/images/group_circles.svg", modifier = Modifier.height(40.dp))
+                Spacer(Modifier.weight(1f))
+                Text(text = if (dark) strings.dark else strings.light, color = Color.White)
+                Spacer(Modifier.padding(horizontal = 8.dp))
+                Switch(checked = dark, onCheckedChange = onToggleDark)
+                Spacer(Modifier.padding(horizontal = 12.dp))
+                Text(text = if (lang == Lang.AR) "AR" else "EN", color = Color.White, modifier = Modifier.clickable { onToggleLang(if (lang == Lang.AR) Lang.EN else Lang.AR) })
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(badgeGradient)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .background(Color(0xFF186351))
+                        .padding(16.dp)
                 ) {
-                    Text("Assalamu Alaikum", color = Color.White)
+                    AssetImage("assets/images/quran_onboarding.svg", modifier = Modifier.height(280.dp))
                 }
+                Spacer(Modifier.height(22.dp))
+                Text(text = strings.appName, color = Color(0xFF87D1A4), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "Welcome to Hafiz",
-                    color = if (dark) Color.White else hafizColors.deepGreen,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Learn and read the Quran with ease",
-                    color = if (dark) Color(0xFFD9D8D8) else Color(0xFF004B40)
-                )
+                Text(text = strings.learnQuranTitle, color = Color.White)
             }
 
             Button(
                 onClick = onContinue,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = hafizColors.primary)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAF6EB))
             ) {
-                Text("Get Started", color = Color.White)
+                Text(strings.getStarted, color = Color.Black)
             }
         }
     }
 }
 
 @Composable
-private fun HomeScreen(dark: Boolean, onToggleDark: (Boolean) -> Unit, onOpenSurahs: () -> Unit) {
-    val gradient = Brush.verticalGradient(listOf(hafizColors.primary, hafizColors.secondary))
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradient)
-            .padding(24.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
+private fun HomeScreen(
+    dark: Boolean,
+    onToggleDark: (Boolean) -> Unit,
+    onOpenSurahs: () -> Unit,
+    lang: Lang,
+    onToggleLang: (Lang) -> Unit,
+    onOpenAbout: () -> Unit
+) {
+    val bg = Color(if (dark) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+    Column(modifier = Modifier.fillMaxSize().background(bg)) {
+        // App bar mimicking master
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Hafiz", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = if (dark) "Dark" else "Light", color = Color.White)
-                    Spacer(Modifier.padding(horizontal = 8.dp))
-                    Switch(checked = dark, onCheckedChange = onToggleDark)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "☀", color = if (dark) Color.Gray else Color(0xFFFFC107))
+                Switch(checked = dark, onCheckedChange = onToggleDark)
+                Text(text = "🌙", color = if (dark) Color(0xFF2196F3) else Color.Gray)
             }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Home", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Text("Surah list and reader coming next", color = Color.White)
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .padding(16.dp)
-                        .weight(1f)
-                        .clickable { onOpenSurahs() }
-                ) { Text("Surahs", color = Color.White) }
+            Text(
+                strings.appName,
+                color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF004B40.toInt()),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "🌐", color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF004B40.toInt()), modifier = Modifier.clickable {
+                    onToggleLang(if (lang == Lang.AR) Lang.EN else Lang.AR)
+                })
                 Spacer(Modifier.padding(horizontal = 8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .padding(16.dp)
-                        .weight(1f)
-                        .clickable { /* TODO: navigate to Bookmarks/Settings */ }
-                ) { Text("Bookmarks", color = Color.White) }
+                Text(text = "ℹ", color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF004B40.toInt()), modifier = Modifier.clickable { onOpenAbout() })
             }
         }
+
+        // Body
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item { LastReadCard(lang = lang, onContinue = onOpenSurahs) }
+            items(QuranIndex.index) { s ->
+                SurahListItem(
+                    dark = dark,
+                    surahId = s.id,
+                    nameEnglish = s.nameEnglish,
+                    nameArabic = s.nameArabic,
+                    onClick = {
+                        SettingsManager.setLastRead(s.id, 1)
+                        onOpenSurahs()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LastReadCard(lang: Lang, onContinue: () -> Unit) {
+    val last = SettingsManager.lastRead() ?: return
+    val gradient = Brush.horizontalGradient(colors = listOf(Color(0xFF006754), Color(0xFF87D1A4)))
+    Box(modifier = Modifier.padding(16.dp)) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(gradient)
+                .padding(12.dp)
+                .fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(strings.lastRead, color = Color(0xFFFAF6EB))
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(last.surahName(lang), color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                    Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFAF6EB)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+                        Text("${strings.ayah} ${last.verse}", color = Color(0xFF004B40))
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = onContinue, shape = RoundedCornerShape(200.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAF6EB))) {
+                    Text(strings.continueLbl, color = Color.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SurahListItem(
+    dark: Boolean,
+    surahId: Int,
+    nameEnglish: String,
+    nameArabic: String,
+    onClick: () -> Unit
+) {
+    Column(modifier = Modifier.clickable { onClick() }.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF87D1A4))) {
+                Text("$surahId", color = Color.White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+            Spacer(Modifier.padding(horizontal = 8.dp))
+            Text(nameEnglish, color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()), modifier = Modifier.weight(1f))
+            Spacer(Modifier.padding(horizontal = 8.dp))
+            Text(nameArabic, color = Color(if (dark) 0xFFD9D8D8.toInt() else 0xFF076C58.toInt()), maxLines = 1)
+        }
+        Spacer(Modifier.height(16.dp))
+        if (surahId < 114) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFD9D8D8)))
+    }
+}
+
+@Composable
+private fun AboutScreen(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
+        Text(strings.back, color = Color(0xFF004B40), modifier = Modifier.clickable { onBack() })
+        Spacer(Modifier.height(12.dp))
+        Text(strings.appName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = Color(0xFF004B40))
+        Spacer(Modifier.height(8.dp))
+        Text("About content will match master in the next step.")
     }
 }
 
@@ -293,8 +355,8 @@ private fun SurahListScreen(onBack: () -> Unit, onOpen: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Surahs", style = MaterialTheme.typography.titleLarge, color = hafizColors.deepGreen)
-                Text("Back", color = hafizColors.deepGreen, modifier = Modifier.clickable { onBack() })
+                Text(strings.surahs, style = MaterialTheme.typography.titleLarge, color = hafizColors.deepGreen)
+                Text(strings.back, color = hafizColors.deepGreen, modifier = Modifier.clickable { onBack() })
             }
             Spacer(Modifier.height(16.dp))
             LazyColumn {
@@ -307,7 +369,8 @@ private fun SurahListScreen(onBack: () -> Unit, onOpen: (Int) -> Unit) {
                             .clickable { onOpen(s) }
                             .padding(12.dp)
                     ) {
-                        Text("Surah ${'$'}s", color = hafizColors.deepGreen)
+                        val idx = QuranIndex.index.first { it.id == s }
+                        Text("${'$'}{strings.surah} ${'$'}{if (strings.lang == Lang.AR) idx.nameArabic else idx.nameEnglish}", color = hafizColors.deepGreen)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
@@ -321,6 +384,8 @@ private fun SurahReaderScreen(surah: Int, onBack: () -> Unit) {
     var ayat by remember { mutableStateOf<List<Ayah>>(emptyList()) }
     LaunchedEffect(surah) {
         ayat = QuranRepository.loadSurah(surah)
+        // store last read on open (verse 1 as entry point)
+        SettingsManager.setLastRead(surah, 1)
     }
     val gradient = Brush.verticalGradient(listOf(hafizColors.primary, hafizColors.secondary))
     Box(modifier = Modifier.fillMaxSize().background(gradient).padding(16.dp)) {
@@ -330,8 +395,9 @@ private fun SurahReaderScreen(surah: Int, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Surah ${'$'}surah", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Text("Back", color = Color.White, modifier = Modifier.clickable { onBack() })
+                val idx = QuranIndex.index.firstOrNull { it.id == surah }
+                Text("${'$'}{strings.surah} ${'$'}{idx?.name(lang = strings.lang) ?: surah}", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Text(strings.back, color = Color.White, modifier = Modifier.clickable { onBack() })
             }
             Spacer(Modifier.height(12.dp))
             LazyColumn {
