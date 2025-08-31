@@ -270,19 +270,21 @@ private fun HomeScreen(
 private fun LastReadCard(lang: Lang, onContinue: () -> Unit) {
     val last = SettingsManager.lastRead() ?: return
     val gradient = Brush.horizontalGradient(colors = listOf(Color(0xFF006754), Color(0xFF87D1A4)))
-    Box(modifier = Modifier.padding(16.dp)) {
-        Box(
+    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(gradient)
-                .padding(12.dp)
-                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(strings.lastRead, color = Color(0xFFFAF6EB))
                 Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(last.surahName(lang), color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.padding(horizontal = 6.dp))
                     Box(modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFFFAF6EB)).padding(horizontal = 10.dp, vertical = 6.dp)) {
                         Text("${strings.ayah} ${last.verse}", color = Color(0xFF004B40))
                     }
@@ -290,10 +292,12 @@ private fun LastReadCard(lang: Lang, onContinue: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = onContinue, shape = RoundedCornerShape(200.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAF6EB))) {
                     Text(strings.continueLbl, color = Color.Black)
-                    Spacer(Modifier.padding(horizontal = 4.dp))
+                    Spacer(Modifier.padding(horizontal = 6.dp))
                     Icon(Icons.Outlined.ArrowForward, contentDescription = null, tint = Color(0xFF004B40))
                 }
             }
+            Spacer(Modifier.padding(horizontal = 8.dp))
+            AssetImage(path = "assets/images/quran_onboarding.svg", modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -306,15 +310,17 @@ private fun SurahListItem(
     nameArabic: String,
     onClick: () -> Unit
 ) {
-    Column(modifier = Modifier.clickable { onClick() }.padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(modifier = Modifier.clickable { onClick() }.padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF87D1A4))) {
-                Text("$surahId", color = Color.White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFF87D1A4))) {
+                Text("$surahId", color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
             }
             Spacer(Modifier.padding(horizontal = 8.dp))
-            Text(nameEnglish, color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()), modifier = Modifier.weight(1f))
+            Text(nameEnglish, color = Color(if (dark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()), modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.padding(horizontal = 8.dp))
-            Text(nameArabic, color = Color(if (dark) 0xFFD9D8D8.toInt() else 0xFF076C58.toInt()), maxLines = 1)
+            Text(nameArabic, color = Color(if (dark) 0xFFD9D8D8.toInt() else 0xFF076C58.toInt()), maxLines = 1,
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.W700)
         }
         Spacer(Modifier.height(16.dp))
         if (surahId < 114) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFD9D8D8)))
