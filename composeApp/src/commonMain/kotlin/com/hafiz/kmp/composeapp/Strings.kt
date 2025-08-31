@@ -24,6 +24,18 @@ data class Strings(
     val back: String,
     val dark: String,
     val light: String,
+    // About strings
+    val aboutTitle: String = "",
+    val aboutIntro: String = "",
+    val aboutAckHeading: String = "",
+    val aboutAckIdeaBy: String = "",
+    val aboutRepoPrefix: String = "",
+    val aboutMaintainerNote: String = "",
+    val aboutIntegrityHeading: String = "",
+    val aboutIntegrityBody: String = "",
+    val aboutSourcesTitle: String = "",
+    val aboutSourceQuranApi: String = "",
+    val aboutSourceTanzil: String = "",
 )
 
 val LocalStrings = staticCompositionLocalOf {

@@ -21,23 +21,20 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
+# Gradle/KMP related
+.gradle/
+.kotlin/
+**/build/
+local.properties
 
-# Symbolication related
-app.*.symbols
+# Android Studio/IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
 
-# Obfuscation related
-app.*.map.json
+# VS Code (optional)
+.vscode/
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Mac
+.DS_Store
