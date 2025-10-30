@@ -87,4 +87,34 @@ class PrefUtils {
       return null;
     }
   }
+
+  // Bookmarks
+  Future<void> addBookmark(Bookmark bookmark) async {
+    final bookmarks = getBookmarks();
+    bookmarks.add(bookmark);
+    await _sharedPreferences!.setString(
+        'bookmarks', json.encode(bookmarks.map((b) => b.toJson()).toList()));
+  }
+
+  Future<void> removeBookmark(Bookmark bookmark) async {
+    final bookmarks = getBookmarks();
+    bookmarks
+        .removeWhere((b) => b.surahId == bookmark.surahId && b.verse == bookmark.verse);
+    await _sharedPreferences!.setString(
+        'bookmarks', json.encode(bookmarks.map((b) => b.toJson()).toList()));
+  }
+
+  List<Bookmark> getBookmarks() {
+    final String? jsonString = _sharedPreferences!.getString('bookmarks');
+    if (jsonString != null) {
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.map((json) => Bookmark.fromJson(json)).toList();
+    }
+    return [];
+  }
+
+  bool isBookmarked(int surahId, int verse) {
+    final bookmarks = getBookmarks();
+    return bookmarks.any((b) => b.surahId == surahId && b.verse == verse);
+  }
 }

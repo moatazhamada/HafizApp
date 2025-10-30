@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 import "package:hafiz_app/core/quran_index/quran_surah.dart";
+import "package:hafiz_app/presentation/bookmark_screen/bookmark_screen.dart";
+import "package:hafiz_app/presentation/quran_screen/quran_screen.dart";
 
 import "../../core/analytics/analytics_service.dart";
 import "../../core/analytics/analytics_route_observer.dart";
@@ -33,6 +35,12 @@ class _HomeScreenState extends State<HomeScreen>
   final scrollCubit = sl<ScrollPositionCubit>();
   final ScrollController _scrollController = ScrollController();
   bool isDarkMode = PrefUtils().getIsDarkMode();
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    const QuranScreen(),
+    const BookmarkScreen(),
+  ];
 
   @override
   bool get wantKeepAlive => true;
@@ -158,9 +166,8 @@ class _HomeScreenState extends State<HomeScreen>
             )),
         body: BlocProvider<HomeBloc>(
             create: (context) => homeBloc,
-            child: BlocBuilder<HomeBloc, HomeState>(
-              builder: (context, state) {
-                return SizedBox(
+            child: BlocBuilder<HomeBloc, HomeState>(builder: (context, state) {
+              return SizedBox(
                   width: double.maxFinite,
                   child: Scaffold(
                     body: SizedBox(
@@ -172,34 +179,28 @@ class _HomeScreenState extends State<HomeScreen>
                               (state as UpdateLastReadSurah).surah != null
                                   ? _buildCardLastRead((state).surah)
                                   : const SizedBox.shrink(),
-                              ListView.builder(
-                                key: const PageStorageKey('home-list'),
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: QuranIndex.quranSurahs.length,
-                                itemBuilder: (context, index) {
-                                  final surah = QuranIndex.quranSurahs[index];
-                                  return InkWell(
-                                    onTap: () {
-                                      PrefUtils().saveLastReadSurah(surah);
-                                      homeBloc.add(HomeShowLastSurahEvent());
-                                      NavigatorService.pushNamed(
-                                          AppRoutes.surahPage,
-                                          arguments: surah);
-                                    },
-                                    child: SurahListItem(
-                                      surahId: surah.id,
-                                      nameEnglish: surah.nameEnglish,
-                                      nameArabic: surah.nameArabic,
-                                    ),
-                                  );
-                                },
-                              ),
+                              _screens[_selectedIndex],
                             ]))),
-                  ),
-                );
-              },
-            )),
+                    bottomNavigationBar: BottomNavigationBar(
+                      currentIndex: _selectedIndex,
+                      onTap: (index) {
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                      items: const [
+                        BottomNavigationBarItem(
+                          icon: Icon(Icons.book),
+                          label: 'Quran',
+                        ),
+                        BottomNavigationBarItem(
+                          icon: Icon(Icons.bookmark),
+                          label: 'Bookmarks',
+                        ),
+                      ],
+                    ),
+                  ));
+            })),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:hafiz_app/data/model/bookmark.dart";
 
 import "../../core/app_export.dart";
 import "../../core/quran_index/quran_surah.dart";
@@ -161,7 +162,8 @@ class _SurahScreenState extends State<SurahScreen>
                           );
                         }
                         final aya = chapters[index - 1];
-                        return AyaListItem(aya: aya);
+                        return AyaListItem(
+                            aya: aya, surah: surah ?? QuranIndex.quranSurahs[0]);
                       },
                     ),
                     // One-time auto scroll overlay to ensure list is laid out
@@ -206,10 +208,44 @@ class _SurahScreenState extends State<SurahScreen>
   }
 }
 
-class AyaListItem extends StatelessWidget {
+class AyaListItem extends StatefulWidget {
   final Chapter aya;
+  final Surah surah;
 
-  const AyaListItem({super.key, required this.aya});
+  const AyaListItem({super.key, required this.aya, required this.surah});
+
+  @override
+  State<AyaListItem> createState() => _AyaListItemState();
+}
+
+class _AyaListItemState extends State<AyaListItem> {
+  late bool _isBookmarked;
+
+  @override
+  void initState() {
+    super.initState();
+    _isBookmarked =
+        PrefUtils().isBookmarked(widget.surah.id, widget.aya.verse ?? 0);
+  }
+
+  void _toggleBookmark() {
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+    });
+
+    final bookmark = Bookmark(
+      surahId: widget.surah.id,
+      verse: widget.aya.verse ?? 0,
+      text: widget.aya.text ?? '',
+      surahName: widget.surah.nameArabic,
+    );
+
+    if (_isBookmarked) {
+      PrefUtils().addBookmark(bookmark);
+    } else {
+      PrefUtils().removeBookmark(bookmark);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,13 +268,16 @@ class AyaListItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(
           left: 16.0, right: 16.0, top: 16.0, bottom: 16.0),
-      child: RichText(
-        textDirection: TextDirection.rtl,
-        text: TextSpan(
-          children: [
-            TextSpan(
-              text: aya.text,
-              style: TextStyle(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RichText(
+            textDirection: TextDirection.rtl,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: widget.aya.text,
+                  style: TextStyle(
                 fontSize: ayahFontSize,
                 fontWeight: FontWeight.w700,
                 color: textColor,
@@ -272,7 +311,7 @@ class AyaListItem extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  '${aya.verse}',
+                  '${widget.aya.verse}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: ayahFontSize * 0.7,
@@ -284,6 +323,15 @@ class AyaListItem extends StatelessWidget {
             ),
           ],
         ),
+          ),
+          IconButton(
+            onPressed: _toggleBookmark,
+            icon: Icon(
+              _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              color: _isBookmarked ? Colors.amber : Colors.grey,
+            ),
+          ),
+        ],
       ),
     );
   }
