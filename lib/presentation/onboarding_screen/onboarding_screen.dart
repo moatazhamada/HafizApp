@@ -26,12 +26,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   void initState() {
+    super.initState();
     networkInfo.onConnectivityChanged.listen((List<ConnectivityResult> results) {
       setState(() {
         isConnected = results.any((r) => r != ConnectivityResult.none);
       });
     });
-    super.initState();
   }
 
   @override

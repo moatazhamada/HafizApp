@@ -225,7 +225,7 @@ class _AyaListItemState extends State<AyaListItem> {
   void initState() {
     super.initState();
     _isBookmarked =
-        PrefUtils().isBookmarked(widget.surah.id, widget.aya.verse ?? 0);
+        PrefUtils().isBookmarked(widget.surah.id, widget.aya.verse);
   }
 
   void _toggleBookmark() {
@@ -235,8 +235,8 @@ class _AyaListItemState extends State<AyaListItem> {
 
     final bookmark = Bookmark(
       surahId: widget.surah.id,
-      verse: widget.aya.verse ?? 0,
-      text: widget.aya.text ?? '',
+      verse: widget.aya.verse,
+      text: widget.aya.text,
       surahName: widget.surah.nameArabic,
     );
 

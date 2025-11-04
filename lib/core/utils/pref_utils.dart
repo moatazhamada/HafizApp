@@ -1,8 +1,9 @@
-//ignore: unused_import
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../data/model/bookmark.dart';
 
 class PrefUtils {
   static SharedPreferences? _sharedPreferences;
