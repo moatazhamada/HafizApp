@@ -54,14 +54,17 @@ class SurahRepositoryImpl implements SurahRepository {
       // Write-through cache (surahs are static)
       box?.put(surahId, _chapterResponseToJson(response));
       return Right(response);
-    } on DioException catch (error) {
+    } catch (error) {
       // If network fails but cache exists, serve stale cache
       if (cached is Map<String, dynamic>) {
         try {
           return Right(ChapterResponse.fromJson(cached));
         } catch (_) {}
       }
-      return Left(ServerFailure(error.message ?? "Unknown Error"));
+      if (error is DioException) {
+        return Left(ServerFailure(error.message ?? "Unknown Error"));
+      }
+      return Left(ServerFailure(error.toString()));
     }
   }
 
