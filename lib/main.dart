@@ -82,7 +82,7 @@ class MyApp extends StatelessWidget {
         builder: (context, state) {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
-            builder: (_, locale, __) => MaterialApp(
+            builder: (_, locale, _) => MaterialApp(
               theme: _getTheme(context),
               locale: locale,
               title: 'Hafiz',

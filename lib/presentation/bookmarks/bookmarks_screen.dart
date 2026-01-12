@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
 import 'bloc/bookmark_bloc.dart';
@@ -69,7 +68,7 @@ class BookmarksScreen extends StatelessWidget {
                           color: Color(0xFF006754),
                         ),
                         title: Text(
-                          "${bookmark.surahName}",
+                          bookmark.surahName,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         subtitle: Text(
