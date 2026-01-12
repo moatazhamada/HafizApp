@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/failures.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -59,7 +60,9 @@ class SurahRepositoryImpl implements SurahRepository {
       if (cached is Map<String, dynamic>) {
         try {
           return Right(ChapterResponse.fromJson(cached));
-        } catch (_) {}
+        } catch (e) {
+          debugPrint("Cache parsing error: $e");
+        }
       }
       if (error is DioException) {
         return Left(ServerFailure(error.message ?? "Unknown Error"));
