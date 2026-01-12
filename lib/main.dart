@@ -62,9 +62,7 @@ Future<void> main() async {
 }
 
 Future<void> initFirebase() async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 class MyApp extends StatelessWidget {
@@ -98,10 +96,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale("en", "US"),
-                Locale("ar", "EG"),
-              ],
+              supportedLocales: const [Locale("en", "US"), Locale("ar", "EG")],
               initialRoute: AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
             ),
@@ -129,17 +124,17 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 
   Future<void> _init() async {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     // Enable edge-to-edge so Flutter draws behind system bars.
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // Use transparent system bars; icon brightness will adapt with theme.
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
     // Fire and forget prefs; default values are handled defensively
     unawaited(PrefUtils().init());
     await di.init();
@@ -168,6 +163,8 @@ class _BootstrapAppState extends State<BootstrapApp> {
       // Initialize Hive cache
       await Hive.initFlutter();
       await Hive.openBox('surah_cache');
+      await Hive.openBox('bookmarks');
+      await Hive.openBox('recitation_errors');
       // Crashlytics wiring
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -188,9 +185,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
-      child: _ready
-          ? const _ReadyApp()
-          : const _SplashScaffold(),
+      child: _ready ? const _ReadyApp() : const _SplashScaffold(),
     );
   }
 }
@@ -208,8 +203,9 @@ class _SplashScaffold extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor:
-            PrefUtils().getIsDarkMode() ? Colors.black : Colors.white,
+        backgroundColor: PrefUtils().getIsDarkMode()
+            ? Colors.black
+            : Colors.white,
         body: const Center(child: CircularProgressIndicator()),
       ),
     );
