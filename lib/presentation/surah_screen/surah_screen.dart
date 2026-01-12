@@ -59,8 +59,12 @@ class _SurahScreenState extends State<SurahScreen>
           // Index 0 is header; verses start at index 1
           final versePositions = positions.where((p) => p.index >= 1).toList();
           if (versePositions.isEmpty) return;
-          final min = versePositions
-              .reduce((a, b) => a.index < b.index ? a : b)
+
+          var minIndex = versePositions.first.index;
+          for (var i = 1; i < versePositions.length; i++) {
+            final idx = versePositions[i].index;
+            if (idx < minIndex) minIndex = idx;
+          }
               .index;
           final verseIndex = (min - 1).clamp(0, 10000);
           PrefUtils().setSurahVerseIndex(surah!.id, verseIndex);
