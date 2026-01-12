@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
+import 'dart:async';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
@@ -25,9 +26,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
 
+  late final StreamSubscription<List<ConnectivityResult>>
+  _connectivitySubscription;
+
   @override
   void initState() {
-    networkInfo.onConnectivityChanged.listen((
+    super.initState();
+    _connectivitySubscription = networkInfo.onConnectivityChanged.listen((
       List<ConnectivityResult> results,
     ) {
       if (mounted) {
@@ -36,7 +41,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         });
       }
     });
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
   }
 
   @override
