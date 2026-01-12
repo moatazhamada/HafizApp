@@ -1,4 +1,3 @@
-import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 
 import "../../core/app_export.dart";
@@ -182,8 +181,7 @@ class _SurahScreenState extends State<SurahScreen>
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    const double fontSize = 22; // Slightly larger for reading flow
-
+    const double fontSize = 22;
     // Theme colors
     final Color textColor = isDark
         ? const Color(0xFFFFFFFF)
@@ -199,6 +197,8 @@ class _SurahScreenState extends State<SurahScreen>
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
 
     List<InlineSpan> spans = [];
+    final List<_VerseRange> verseRanges = [];
+    int currentOffset = 0;
 
     for (var aya in chapters) {
       // Determine state
@@ -234,18 +234,31 @@ class _SurahScreenState extends State<SurahScreen>
       final List<Shadow>? shadows = isBlurred
           ? [
               Shadow(
-                color:
-                    textColor, // Full opacity shadow for better "ink" simulation
+                color: textColor, // Full opacity shadow
                 blurRadius: 20.0,
                 offset: Offset.zero,
               ),
             ]
           : null;
 
-      // Verse Text Span
+      final String verseText = "${aya.text} ";
+
+      // Record Range (Text)
+      // TextSpan adds `verseText.length` characters
+      verseRanges.add(
+        _VerseRange(
+          start: currentOffset,
+          end: currentOffset + verseText.length,
+          verse: aya,
+          isBadge: false,
+          isBookmarked: isBookmarked,
+          isError: isRecitationError,
+        ),
+      );
+
       spans.add(
         TextSpan(
-          text: "${aya.text} ", // content + space
+          text: verseText,
           style: TextStyle(
             fontFamily: "Amiri",
             fontSize: fontSize,
@@ -254,71 +267,156 @@ class _SurahScreenState extends State<SurahScreen>
             backgroundColor: backgroundColor,
             shadows: shadows,
           ),
-          recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              if (_isHifzMode) {
-                setState(() {
-                  if (_revealedVerses.contains(aya.verse)) {
-                    _revealedVerses.remove(aya.verse);
-                  } else {
-                    _revealedVerses.add(aya.verse);
-                  }
-                });
-              }
-            },
+        ),
+      );
+      currentOffset += verseText.length;
+
+      // Verse End Badge Span
+      // WidgetSpan counts as 1 character (placeholder 0xFFFC)
+      verseRanges.add(
+        _VerseRange(
+          start: currentOffset,
+          end: currentOffset + 1,
+          verse: aya,
+          isBadge: true,
+          isBookmarked: isBookmarked,
+          isError: isRecitationError,
         ),
       );
 
-      // Verse End Badge Span
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: GestureDetector(
-            onLongPress: () {
-              _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-            },
-            onTap: () {
-              // Also allow simple tap on badge to open menu, as it's a small target
-              _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: Container(
-                width: 30, // fixed size badge
-                height: 30,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: badgeGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: badgeBorder, width: 1.2),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Container(
+              width: 30, // fixed size badge
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: badgeGradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  '${aya.verse}',
-                  style: TextStyle(
-                    fontFamily: "Amiri", // Consistent font
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: badgeText,
-                  ),
+                border: Border.all(color: badgeBorder, width: 1.2),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${aya.verse}',
+                style: TextStyle(
+                  fontFamily: "Amiri",
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: badgeText,
                 ),
               ),
             ),
           ),
         ),
       );
-
-      // Add a helper invisible span for spacing if needed, but the space in text above is enough.
+      currentOffset += 1;
     }
 
-    return RichText(
+    final textSpan = TextSpan(children: spans);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          onTapUp: (details) {
+            _handleTap(
+              context,
+              details.localPosition,
+              constraints.maxWidth,
+              textSpan,
+              verseRanges,
+            );
+          },
+          onLongPressStart: (details) {
+            _handleLongPress(
+              context,
+              details.localPosition,
+              constraints.maxWidth,
+              textSpan,
+              verseRanges,
+            );
+          },
+          child: RichText(
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.justify,
+            text: textSpan,
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleTap(
+    BuildContext context,
+    Offset localPosition,
+    double maxWidth,
+    TextSpan textSpan,
+    List<_VerseRange> ranges,
+  ) {
+    final range = _findRange(localPosition, maxWidth, textSpan, ranges);
+    if (range != null) {
+      if (range.isBadge) {
+        // Tap on Badge -> Menu
+        _showVerseMenu(context, range.verse, range.isBookmarked, range.isError);
+      } else {
+        // Tap on Text -> Toggle Blur (Hifz)
+        if (_isHifzMode) {
+          setState(() {
+            if (_revealedVerses.contains(range.verse.verse)) {
+              _revealedVerses.remove(range.verse.verse);
+            } else {
+              _revealedVerses.add(range.verse.verse);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  void _handleLongPress(
+    BuildContext context,
+    Offset localPosition,
+    double maxWidth,
+    TextSpan textSpan,
+    List<_VerseRange> ranges,
+  ) {
+    final range = _findRange(localPosition, maxWidth, textSpan, ranges);
+    if (range != null) {
+      // Long Press anywhere -> Menu
+      _showVerseMenu(context, range.verse, range.isBookmarked, range.isError);
+    }
+  }
+
+  _VerseRange? _findRange(
+    Offset localPosition,
+    double maxWidth,
+    TextSpan textSpan,
+    List<_VerseRange> ranges,
+  ) {
+    final textPainter = TextPainter(
+      text: textSpan,
       textDirection: TextDirection.rtl,
       textAlign: TextAlign.justify,
-      text: TextSpan(children: spans),
+      textScaler: MediaQuery.of(context).textScaler,
     );
+    textPainter.layout(maxWidth: maxWidth);
+
+    // Get text position from tap
+    final position = textPainter.getPositionForOffset(localPosition);
+    final offset = position.offset;
+
+    // Find corresponding range
+    for (final range in ranges) {
+      if (offset >= range.start && offset < range.end) {
+        return range;
+      }
+    }
+    return null;
   }
 
   void _showVerseMenu(
@@ -539,4 +637,22 @@ class _SurahScreenState extends State<SurahScreen>
       ],
     );
   }
+}
+
+class _VerseRange {
+  final int start;
+  final int end;
+  final Chapter verse;
+  final bool isBadge;
+  final bool isBookmarked;
+  final bool isError;
+
+  _VerseRange({
+    required this.start,
+    required this.end,
+    required this.verse,
+    required this.isBadge,
+    required this.isBookmarked,
+    required this.isError,
+  });
 }
