@@ -1,3 +1,4 @@
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 
 import "../../core/app_export.dart";
@@ -178,17 +179,7 @@ class _SurahScreenState extends State<SurahScreen>
         icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
         onPressed: () => NavigatorService.goBack(),
       ),
-      title: surah != null
-          ? Text(
-              surah!.nameArabic,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                fontFamily: "Amiri",
-              ),
-            )
-          : null,
+      // No title - title only shows in expanded FlexibleSpace
       actions: [
         IconButton(
           icon: const Icon(Icons.help_outline, color: Colors.white),
@@ -276,38 +267,6 @@ class _SurahScreenState extends State<SurahScreen>
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildBismillah(isDark),
-          Wrap(
-            direction: Axis.horizontal,
-            textDirection: TextDirection.rtl,
-            alignment: WrapAlignment.start,
-            runAlignment: WrapAlignment.start,
-            children: chapters.map((aya) {
-              return _buildVerseWidget(
-                context,
-                aya,
-                bookmarkState,
-                errorState,
-                isDark,
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVerseWidget(
-    BuildContext context,
-    Chapter aya,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
-    bool isDark,
-  ) {
     const double fontSize = 22;
     final Color textColor = isDark
         ? const Color(0xFFFFFFFF)
@@ -322,134 +281,158 @@ class _SurahScreenState extends State<SurahScreen>
         ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
 
-    // Determine state
-    bool isBookmarked = false;
-    if (bookmarkState is BookmarkLoaded) {
-      isBookmarked = bookmarkState.bookmarks.any(
-        (b) => b.surahId == (surah?.id ?? -1) && b.verseId == aya.verse,
-      );
-    }
-    bool isRecitationError = false;
-    if (errorState is RecitationErrorLoaded) {
-      isRecitationError = errorState.errors.any(
-        (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verse,
-      );
-    }
+    // Build continuous text with inline verse badges
+    List<InlineSpan> spans = [];
 
-    // Hifz Logic
-    bool isBlurred = _isHifzMode && !_revealedVerses.contains(aya.verse);
-    bool isSelected = _selectedVerse == aya.verse;
+    for (var aya in chapters) {
+      // Determine state
+      bool isBookmarked = false;
+      if (bookmarkState is BookmarkLoaded) {
+        isBookmarked = bookmarkState.bookmarks.any(
+          (b) => b.surahId == (surah?.id ?? -1) && b.verseId == aya.verse,
+        );
+      }
+      bool isRecitationError = false;
+      if (errorState is RecitationErrorLoaded) {
+        isRecitationError = errorState.errors.any(
+          (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verse,
+        );
+      }
 
-    // Styling
-    Color? backgroundColor;
-    if (isSelected) {
-      backgroundColor = isDark
-          ? const Color(0xFF2A4A42)
-          : const Color(0xFFB2DFDB); // Selection highlight
-    } else if (isRecitationError) {
-      backgroundColor = isDark
-          ? const Color(0xFF5C1B1B)
-          : const Color(0xFFFFEBEE);
-    } else if (isBookmarked) {
-      backgroundColor = isDark
-          ? const Color(0xFF1E3A35)
-          : const Color(0xFFE8F5E9);
-    }
+      // Hifz Logic
+      bool isBlurred = _isHifzMode && !_revealedVerses.contains(aya.verse);
+      bool isSelected = _selectedVerse == aya.verse;
 
-    final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
-    final List<Shadow>? shadows = isBlurred
-        ? [Shadow(color: textColor, blurRadius: 20.0, offset: Offset.zero)]
-        : null;
+      // Styling
+      Color? backgroundColor;
+      if (isSelected) {
+        backgroundColor = isDark
+            ? const Color(0xFF2A4A42)
+            : const Color(0xFFB2DFDB);
+      } else if (isRecitationError) {
+        backgroundColor = isDark
+            ? const Color(0xFF5C1B1B)
+            : const Color(0xFFFFEBEE);
+      } else if (isBookmarked) {
+        backgroundColor = isDark
+            ? const Color(0xFF1E3A35)
+            : const Color(0xFFE8F5E9);
+      }
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedVerse = aya.verse;
-        });
-        if (_isHifzMode) {
+      final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
+      final List<Shadow>? shadows = isBlurred
+          ? [Shadow(color: textColor, blurRadius: 20.0, offset: Offset.zero)]
+          : null;
+
+      // Add verse text with tap gesture
+      final tapRecognizer = TapGestureRecognizer()
+        ..onTap = () {
           setState(() {
-            if (_revealedVerses.contains(aya.verse)) {
-              _revealedVerses.remove(aya.verse);
-            } else {
-              _revealedVerses.add(aya.verse);
+            _selectedVerse = aya.verse;
+          });
+          if (_isHifzMode) {
+            setState(() {
+              if (_revealedVerses.contains(aya.verse)) {
+                _revealedVerses.remove(aya.verse);
+              } else {
+                _revealedVerses.add(aya.verse);
+              }
+            });
+          }
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              setState(() {
+                _selectedVerse = null;
+              });
             }
           });
-        }
-        // Clear selection after 300ms
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            setState(() {
-              _selectedVerse = null;
-            });
-          }
-        });
-      },
-      onLongPress: () {
-        setState(() {
-          _selectedVerse = aya.verse;
-        });
-        _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-        // Clear selection when menu closes
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            setState(() {
-              _selectedVerse = null;
-            });
-          }
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(4),
+        };
+
+      final longPressRecognizer = LongPressGestureRecognizer()
+        ..onLongPress = () {
+          setState(() {
+            _selectedVerse = aya.verse;
+          });
+          _showVerseMenu(context, aya, isBookmarked, isRecitationError);
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              setState(() {
+                _selectedVerse = null;
+              });
+            }
+          });
+        };
+
+      spans.add(
+        TextSpan(
+          text: "${aya.text} ",
+          style: TextStyle(
+            fontFamily: "Amiri",
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            color: effectiveColor,
+            backgroundColor: backgroundColor,
+            shadows: shadows,
+            height: 1.8,
+          ),
+          recognizer: tapRecognizer,
         ),
-        child: RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: "${aya.text} ",
+      );
+
+      // Also add long press recognizer
+      spans.add(TextSpan(text: "", recognizer: longPressRecognizer));
+
+      // Add verse number badge
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: GestureDetector(
+            onTap: () {
+              _showVerseMenu(context, aya, isBookmarked, isRecitationError);
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: badgeGradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: badgeBorder, width: 1.2),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${aya.verse}',
                 style: TextStyle(
                   fontFamily: "Amiri",
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: effectiveColor,
-                  shadows: shadows,
-                  height: 1.8,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: badgeText,
                 ),
               ),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: badgeGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(color: badgeBorder, width: 1.2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${aya.verse}',
-                    style: TextStyle(
-                      fontFamily: "Amiri",
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: badgeText,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+      );
+    }
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildBismillah(isDark),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: RichText(
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.justify,
+              text: TextSpan(children: spans),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -553,118 +536,35 @@ class _SurahScreenState extends State<SurahScreen>
               end: Alignment.centerRight,
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                InkWell(
-                  onTap: () {
-                    NavigatorService.goBack();
-                  },
-                  child: const Icon(
-                    Icons.arrow_back_outlined,
-                    color: Colors.white,
-                    size: 30,
+                Hero(
+                  tag: 'surah-title-${surah?.id ?? 'unknown'}',
+                  child: Text(
+                    surah?.nameArabic ?? "",
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontFamily: "Amiri",
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Hero(
-                        tag: 'surah-title-${surah?.id ?? 'unknown'}',
-                        child: Text(
-                          surah?.nameArabic ?? "",
-                          textDirection: TextDirection.rtl,
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: "Amiri",
-                          ),
-                        ),
-                      ),
-                      surah?.id == 9
-                          ? const SizedBox.shrink()
-                          : Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                height: 1.adaptSize,
-                                width: 144.h,
-                                color: const Color(0xFFD9D8D8),
-                              ),
-                            ),
-                      surah?.id == 9
-                          ? const SizedBox.shrink()
-                          : CustomImageView(
-                              imagePath: ImageConstant.imgBismillah,
-                            ),
-                    ],
+                // Show divider and Bismillah image for all except Surah 1 and 9
+                if (surah?.id != 1 && surah?.id != 9) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      height: 1.adaptSize,
+                      width: 144.h,
+                      color: const Color(0xFFD9D8D8),
+                    ),
                   ),
-                ),
-                InkWell(
-                  onTap: () {
-                    NavigatorService.pushNamed(AppRoutes.helpScreen);
-                  },
-                  child: const Icon(
-                    Icons.help_outline,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                SizedBox(width: 8.h),
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isHifzMode = !_isHifzMode;
-                      _revealedVerses.clear();
-                    });
-                  },
-                  child: Icon(
-                    _isHifzMode ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                SizedBox(width: 16.h),
-                BlocBuilder<BookmarkBloc, BookmarkState>(
-                  builder: (context, state) {
-                    bool isBookmarked = false;
-                    if (state is BookmarkLoaded) {
-                      isBookmarked = state.bookmarks.any(
-                        (element) => element.surahId == (surah?.id ?? -1),
-                      );
-                    }
-                    return InkWell(
-                      onTap: () {
-                        if (surah == null) return;
-                        if (isBookmarked) {
-                          context.read<BookmarkBloc>().add(
-                            RemoveBookmarkEvent(surah!.id, 1),
-                          );
-                        } else {
-                          context.read<BookmarkBloc>().add(
-                            AddBookmarkEvent(
-                              BookmarkModel(
-                                surahId: surah!.id,
-                                surahName: surah!.nameEnglish,
-                                verseId: 1,
-                                createdAt: DateTime.now(),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Icon(
-                        isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    );
-                  },
-                ),
+                  CustomImageView(imagePath: ImageConstant.imgBismillah),
+                ],
               ],
             ),
           ),
