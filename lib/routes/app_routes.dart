@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/presentation/surah_screen/surah_screen.dart';
+import '../presentation/bookmarks/bookmarks_screen.dart';
+import '../presentation/search/search_screen.dart';
 
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
@@ -9,12 +11,16 @@ class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
   static const String homePage = '/home_screen';
   static const String surahPage = '/surah_screen';
+  static const String bookmarksPage = '/bookmarks_screen';
+  static const String searchPage = '/search_screen';
   static const String aboutPage = '/about_screen';
 
   static Map<String, WidgetBuilder> get routes => {
-        onboardingScreen: OnboardingScreen.builder,
-        homePage: (context) => const HomeScreen(),
-        surahPage: (context) => const SurahScreen(),
-        aboutPage: (context) => const AboutScreen(),
-      };
+    onboardingScreen: OnboardingScreen.builder,
+    homePage: (context) => const HomeScreen(),
+    surahPage: (context) => const SurahScreen(),
+    bookmarksPage: (context) => const BookmarksScreen(),
+    searchPage: (context) => const SearchScreen(),
+    aboutPage: (context) => const AboutScreen(),
+  };
 }
