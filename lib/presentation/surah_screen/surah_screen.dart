@@ -30,6 +30,7 @@ class _SurahScreenState extends State<SurahScreen>
   // Hifz Mode State
   bool _isHifzMode = false;
   final Set<int> _revealedVerses = {};
+  int? _selectedVerse; // For visual selection feedback
 
   @override
   bool get wantKeepAlive => true;
@@ -135,29 +136,22 @@ class _SurahScreenState extends State<SurahScreen>
                         RecitationErrorState
                       >(
                         builder: (context, errorState) {
-                          return Stack(
-                            children: [
-                              SingleChildScrollView(
-                                controller: _scrollController,
-                                padding: EdgeInsets.only(
-                                  top: 180.v,
-                                  bottom: 20.v,
-                                  left: 16.0,
-                                  right: 16.0,
+                          return CustomScrollView(
+                            controller: _scrollController,
+                            slivers: [
+                              _buildSliverAppBar(isDark),
+                              SliverPadding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 20.v,
                                 ),
-                                child: _buildSurahText(
+                                sliver: _buildSurahList(
                                   context,
                                   chapters,
                                   bookmarkState,
                                   errorState,
                                   isDark,
                                 ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                child: _buildAppBar(),
                               ),
                             ],
                           );
@@ -174,15 +168,45 @@ class _SurahScreenState extends State<SurahScreen>
     );
   }
 
-  Widget _buildSurahText(
+  Widget _buildSliverAppBar(bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 180.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF006754),
+      flexibleSpace: FlexibleSpaceBar(background: _buildAppBar()),
+    );
+  }
+
+  Widget _buildSurahList(
     BuildContext context,
     List<Chapter> chapters,
     BookmarkState bookmarkState,
     RecitationErrorState errorState,
     bool isDark,
   ) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final aya = chapters[index];
+        return _buildVerseWidget(
+          context,
+          aya,
+          bookmarkState,
+          errorState,
+          isDark,
+        );
+      }, childCount: chapters.length),
+    );
+  }
+
+  Widget _buildVerseWidget(
+    BuildContext context,
+    Chapter aya,
+    BookmarkState bookmarkState,
+    RecitationErrorState errorState,
+    bool isDark,
+  ) {
     const double fontSize = 22;
-    // Theme colors
     final Color textColor = isDark
         ? const Color(0xFFFFFFFF)
         : const Color(0xFF004B40);
@@ -196,227 +220,139 @@ class _SurahScreenState extends State<SurahScreen>
         ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
 
-    List<InlineSpan> spans = [];
-    final List<_VerseRange> verseRanges = [];
-    int currentOffset = 0;
-
-    for (var aya in chapters) {
-      // Determine state
-      bool isBookmarked = false;
-      if (bookmarkState is BookmarkLoaded) {
-        isBookmarked = bookmarkState.bookmarks.any(
-          (b) => b.surahId == (surah?.id ?? -1) && b.verseId == aya.verse,
-        );
-      }
-      bool isRecitationError = false;
-      if (errorState is RecitationErrorLoaded) {
-        isRecitationError = errorState.errors.any(
-          (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verse,
-        );
-      }
-
-      // Hifz Logic
-      bool isBlurred = _isHifzMode && !_revealedVerses.contains(aya.verse);
-
-      // Styling
-      Color? backgroundColor;
-      if (isRecitationError) {
-        backgroundColor = isDark
-            ? const Color(0xFF5C1B1B)
-            : const Color(0xFFFFEBEE);
-      } else if (isBookmarked) {
-        backgroundColor = isDark
-            ? const Color(0xFF1E3A35)
-            : const Color(0xFFE8F5E9);
-      }
-
-      final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
-      final List<Shadow>? shadows = isBlurred
-          ? [
-              Shadow(
-                color: textColor, // Full opacity shadow
-                blurRadius: 20.0,
-                offset: Offset.zero,
-              ),
-            ]
-          : null;
-
-      final String verseText = "${aya.text} ";
-
-      // Record Range (Text)
-      // TextSpan adds `verseText.length` characters
-      verseRanges.add(
-        _VerseRange(
-          start: currentOffset,
-          end: currentOffset + verseText.length,
-          verse: aya,
-          isBadge: false,
-          isBookmarked: isBookmarked,
-          isError: isRecitationError,
-        ),
+    // Determine state
+    bool isBookmarked = false;
+    if (bookmarkState is BookmarkLoaded) {
+      isBookmarked = bookmarkState.bookmarks.any(
+        (b) => b.surahId == (surah?.id ?? -1) && b.verseId == aya.verse,
       );
-
-      spans.add(
-        TextSpan(
-          text: verseText,
-          style: TextStyle(
-            fontFamily: "Amiri",
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            color: effectiveColor,
-            backgroundColor: backgroundColor,
-            shadows: shadows,
-          ),
-        ),
+    }
+    bool isRecitationError = false;
+    if (errorState is RecitationErrorLoaded) {
+      isRecitationError = errorState.errors.any(
+        (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verse,
       );
-      currentOffset += verseText.length;
-
-      // Verse End Badge Span
-      // WidgetSpan counts as 1 character (placeholder 0xFFFC)
-      verseRanges.add(
-        _VerseRange(
-          start: currentOffset,
-          end: currentOffset + 1,
-          verse: aya,
-          isBadge: true,
-          isBookmarked: isBookmarked,
-          isError: isRecitationError,
-        ),
-      );
-
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Container(
-              width: 30, // fixed size badge
-              height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: badgeGradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: badgeBorder, width: 1.2),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '${aya.verse}',
-                style: TextStyle(
-                  fontFamily: "Amiri",
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: badgeText,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      currentOffset += 1;
     }
 
-    final textSpan = TextSpan(children: spans);
+    // Hifz Logic
+    bool isBlurred = _isHifzMode && !_revealedVerses.contains(aya.verse);
+    bool isSelected = _selectedVerse == aya.verse;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GestureDetector(
-          onTapUp: (details) {
-            _handleTap(
-              context,
-              details.localPosition,
-              constraints.maxWidth,
-              textSpan,
-              verseRanges,
-            );
-          },
-          onLongPressStart: (details) {
-            _handleLongPress(
-              context,
-              details.localPosition,
-              constraints.maxWidth,
-              textSpan,
-              verseRanges,
-            );
-          },
-          child: RichText(
-            textDirection: TextDirection.rtl,
-            textAlign: TextAlign.justify,
-            text: textSpan,
-          ),
-        );
-      },
-    );
-  }
+    // Styling
+    Color? backgroundColor;
+    if (isSelected) {
+      backgroundColor = isDark
+          ? const Color(0xFF2A4A42)
+          : const Color(0xFFB2DFDB); // Selection highlight
+    } else if (isRecitationError) {
+      backgroundColor = isDark
+          ? const Color(0xFF5C1B1B)
+          : const Color(0xFFFFEBEE);
+    } else if (isBookmarked) {
+      backgroundColor = isDark
+          ? const Color(0xFF1E3A35)
+          : const Color(0xFFE8F5E9);
+    }
 
-  void _handleTap(
-    BuildContext context,
-    Offset localPosition,
-    double maxWidth,
-    TextSpan textSpan,
-    List<_VerseRange> ranges,
-  ) {
-    final range = _findRange(localPosition, maxWidth, textSpan, ranges);
-    if (range != null) {
-      if (range.isBadge) {
-        // Tap on Badge -> Menu
-        _showVerseMenu(context, range.verse, range.isBookmarked, range.isError);
-      } else {
-        // Tap on Text -> Toggle Blur (Hifz)
+    final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
+    final List<Shadow>? shadows = isBlurred
+        ? [Shadow(color: textColor, blurRadius: 20.0, offset: Offset.zero)]
+        : null;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedVerse = aya.verse;
+        });
         if (_isHifzMode) {
           setState(() {
-            if (_revealedVerses.contains(range.verse.verse)) {
-              _revealedVerses.remove(range.verse.verse);
+            if (_revealedVerses.contains(aya.verse)) {
+              _revealedVerses.remove(aya.verse);
             } else {
-              _revealedVerses.add(range.verse.verse);
+              _revealedVerses.add(aya.verse);
             }
           });
         }
-      }
-    }
-  }
-
-  void _handleLongPress(
-    BuildContext context,
-    Offset localPosition,
-    double maxWidth,
-    TextSpan textSpan,
-    List<_VerseRange> ranges,
-  ) {
-    final range = _findRange(localPosition, maxWidth, textSpan, ranges);
-    if (range != null) {
-      // Long Press anywhere -> Menu
-      _showVerseMenu(context, range.verse, range.isBookmarked, range.isError);
-    }
-  }
-
-  _VerseRange? _findRange(
-    Offset localPosition,
-    double maxWidth,
-    TextSpan textSpan,
-    List<_VerseRange> ranges,
-  ) {
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.rtl,
-      textAlign: TextAlign.justify,
-      textScaler: MediaQuery.of(context).textScaler,
+        // Clear selection after 300ms
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _selectedVerse = null;
+            });
+          }
+        });
+      },
+      onLongPress: () {
+        setState(() {
+          _selectedVerse = aya.verse;
+        });
+        _showVerseMenu(context, aya, isBookmarked, isRecitationError);
+        // Clear selection when menu closes
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _selectedVerse = null;
+            });
+          }
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: RichText(
+          textDirection: TextDirection.rtl,
+          textAlign: TextAlign.justify,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: "${aya.text} ",
+                style: TextStyle(
+                  fontFamily: "Amiri",
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: effectiveColor,
+                  shadows: shadows,
+                ),
+              ),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: badgeGradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(color: badgeBorder, width: 1.2),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${aya.verse}',
+                      style: TextStyle(
+                        fontFamily: "Amiri",
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: badgeText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
-    textPainter.layout(maxWidth: maxWidth);
-
-    // Get text position from tap
-    final position = textPainter.getPositionForOffset(localPosition);
-    final offset = position.offset;
-
-    // Find corresponding range
-    for (final range in ranges) {
-      if (offset >= range.start && offset < range.end) {
-        return range;
-      }
-    }
-    return null;
   }
 
   void _showVerseMenu(
@@ -637,22 +573,4 @@ class _SurahScreenState extends State<SurahScreen>
       ],
     );
   }
-}
-
-class _VerseRange {
-  final int start;
-  final int end;
-  final Chapter verse;
-  final bool isBadge;
-  final bool isBookmarked;
-  final bool isError;
-
-  _VerseRange({
-    required this.start,
-    required this.end,
-    required this.verse,
-    required this.isBadge,
-    required this.isBookmarked,
-    required this.isError,
-  });
 }
