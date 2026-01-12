@@ -20,8 +20,7 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
-    onboardingScreen: (context) =>
-        const OnboardingScreen(), // Changed builder to direct constructor
+    onboardingScreen: OnboardingScreen.builder,
     homeScreen: (context) =>
         HomeScreen(), // Changed from homePage and removed const
     surahPage: (context) => const SurahScreen(),

@@ -15,74 +15,81 @@ class SurahListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         children: [
-          Row(
-            textDirection: TextDirection.ltr,
-            // Force LTR order regardless of app locale
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Card(
-                color: const Color(0xFF87D1A4),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16.0,
-                    top: 8.0,
-                    bottom: 8.0,
-                    right: 16.0,
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? colorScheme.surfaceContainer : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        spreadRadius: 1,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              textDirection: TextDirection.ltr,
+              children: [
+                // Number Badge
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
+                  alignment: Alignment.center,
                   child: Text(
                     '$surahId',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  nameEnglish,
-                  style: const TextStyle(fontSize: 18),
-                  textAlign: TextAlign.left,
+                const SizedBox(width: 16),
+
+                // English Name
+                Expanded(
+                  child: Text(
+                    nameEnglish,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Hero(
+                const SizedBox(width: 16),
+
+                // Arabic Name
+                Hero(
                   tag: 'surah-title-$surahId',
                   child: Text(
                     nameArabic,
                     textDirection: TextDirection.rtl,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(
-                        PrefUtils().getIsDarkMode() == true
-                            ? 0xFFD9D8D8
-                            : 0xFF076C58,
-                      ),
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontFamily: "Amiri",
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          surahId < 114
-              ? Container(
-                  height: 1.adaptSize,
-                  width: double.infinity,
-                  color: const Color(0xFFD9D8D8),
-                )
-              : const SizedBox.shrink(),
         ],
       ),
     );
