@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/presentation/surah_screen/surah_screen.dart';
 import '../presentation/bookmarks/bookmarks_screen.dart';
+import '../presentation/help_screen/help_screen.dart';
 import '../presentation/search/search_screen.dart';
 
 import '../presentation/home_screen/home_screen.dart';
@@ -9,18 +10,25 @@ import '../presentation/about_screen/about_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
-  static const String homePage = '/home_screen';
+  static const String homeScreen = '/home_screen'; // Changed from homePage
   static const String surahPage = '/surah_screen';
-  static const String bookmarksPage = '/bookmarks_screen';
+  static const String bookmarksPage =
+      '/bookmarks'; // Changed path for bookmarksPage
   static const String searchPage = '/search_screen';
   static const String aboutPage = '/about_screen';
+  static const String helpScreen = '/help'; // Added helpScreen constant
 
-  static Map<String, WidgetBuilder> get routes => {
-    onboardingScreen: OnboardingScreen.builder,
-    homePage: (context) => const HomeScreen(),
+  static Map<String, WidgetBuilder> routes = {
+    // Changed from get routes =>
+    onboardingScreen: (context) =>
+        const OnboardingScreen(), // Changed builder to direct constructor
+    homeScreen: (context) =>
+        HomeScreen(), // Changed from homePage and removed const
     surahPage: (context) => const SurahScreen(),
-    bookmarksPage: (context) => const BookmarksScreen(),
     searchPage: (context) => const SearchScreen(),
-    aboutPage: (context) => const AboutScreen(),
+    bookmarksPage: (context) => const BookmarksScreen(),
+    aboutPage: (context) =>
+        const AboutScreen(), // Kept existing aboutPage route
+    helpScreen: (context) => const HelpScreen(), // Added helpScreen route
   };
 }
