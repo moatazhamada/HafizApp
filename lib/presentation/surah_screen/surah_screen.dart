@@ -174,7 +174,98 @@ class _SurahScreenState extends State<SurahScreen>
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF006754),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+        onPressed: () => NavigatorService.goBack(),
+      ),
+      title: surah != null
+          ? Text(
+              surah!.nameArabic,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: "Amiri",
+              ),
+            )
+          : null,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.help_outline, color: Colors.white),
+          onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
+        ),
+        IconButton(
+          icon: Icon(
+            _isHifzMode ? Icons.visibility_off : Icons.visibility,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            setState(() {
+              _isHifzMode = !_isHifzMode;
+              _revealedVerses.clear();
+            });
+          },
+        ),
+        BlocBuilder<BookmarkBloc, BookmarkState>(
+          builder: (context, state) {
+            bool isBookmarked = false;
+            if (state is BookmarkLoaded) {
+              isBookmarked = state.bookmarks.any(
+                (element) => element.surahId == (surah?.id ?? -1),
+              );
+            }
+            return IconButton(
+              icon: Icon(
+                isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (surah == null) return;
+                if (isBookmarked) {
+                  context.read<BookmarkBloc>().add(
+                    RemoveBookmarkEvent(surah!.id, 1),
+                  );
+                } else {
+                  context.read<BookmarkBloc>().add(
+                    AddBookmarkEvent(
+                      BookmarkModel(
+                        surahId: surah!.id,
+                        surahName: surah!.nameEnglish,
+                        verseId: 1,
+                        createdAt: DateTime.now(),
+                      ),
+                    ),
+                  );
+                }
+              },
+            );
+          },
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(background: _buildAppBar()),
+    );
+  }
+
+  Widget _buildBismillah(bool isDark) {
+    // Surah 1 (Al-Fatiha): Bismillah is the first Ayah, not pre-text
+    // Surah 9 (At-Tawbah): No Bismillah at all
+    if (surah?.id == 1 || surah?.id == 9) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      alignment: Alignment.center,
+      child: Text(
+        "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          fontFamily: "Amiri",
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40),
+        ),
+      ),
     );
   }
 
@@ -185,17 +276,28 @@ class _SurahScreenState extends State<SurahScreen>
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final aya = chapters[index];
-        return _buildVerseWidget(
-          context,
-          aya,
-          bookmarkState,
-          errorState,
-          isDark,
-        );
-      }, childCount: chapters.length),
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildBismillah(isDark),
+          Wrap(
+            direction: Axis.horizontal,
+            textDirection: TextDirection.rtl,
+            alignment: WrapAlignment.start,
+            runAlignment: WrapAlignment.start,
+            children: chapters.map((aya) {
+              return _buildVerseWidget(
+                context,
+                aya,
+                bookmarkState,
+                errorState,
+                isDark,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -298,15 +400,13 @@ class _SurahScreenState extends State<SurahScreen>
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
         ),
         child: RichText(
           textDirection: TextDirection.rtl,
-          textAlign: TextAlign.justify,
           text: TextSpan(
             children: [
               TextSpan(
@@ -317,33 +417,32 @@ class _SurahScreenState extends State<SurahScreen>
                   fontWeight: FontWeight.w700,
                   color: effectiveColor,
                   shadows: shadows,
+                  height: 1.8,
                 ),
               ),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: badgeGradient,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      border: Border.all(color: badgeBorder, width: 1.2),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: badgeGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '${aya.verse}',
-                      style: TextStyle(
-                        fontFamily: "Amiri",
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: badgeText,
-                      ),
+                    border: Border.all(color: badgeBorder, width: 1.2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${aya.verse}',
+                    style: TextStyle(
+                      fontFamily: "Amiri",
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: badgeText,
                     ),
                   ),
                 ),
