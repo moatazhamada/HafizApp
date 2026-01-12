@@ -40,7 +40,7 @@ class RecitationErrorLocalDataSourceImpl
   @override
   Future<void> removeRecitationError(int surahId, int verseId) async {
     try {
-      final key = '${surahId}_${verseId}';
+      final key = '${surahId}_$verseId';
       await box.delete(key);
     } catch (e) {
       throw CacheException();

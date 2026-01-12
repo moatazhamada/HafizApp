@@ -30,14 +30,14 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
 
   @override
   Future<bool> removeBookmark(int surahId, int verseId) async {
-    final key = '${surahId}_${verseId}';
+    final key = '${surahId}_$verseId';
     await box.delete(key);
     return true;
   }
 
   @override
   Future<bool> isBookmarked(int surahId, int verseId) async {
-    final key = '${surahId}_${verseId}';
+    final key = '${surahId}_$verseId';
     return box.containsKey(key);
   }
 }

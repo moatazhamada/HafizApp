@@ -1,4 +1,3 @@
-import "dart:ui";
 import "package:flutter/material.dart";
 
 import "../../core/app_export.dart";
@@ -173,8 +172,9 @@ class _SurahScreenState extends State<SurahScreen>
                     final chapters = (state as SuccessSurahState).chapters;
                     // Scroll to saved verse index once (after list is attached)
                     WidgetsBinding.instance.addPostFrameCallback((_) async {
-                      if (_scrolledOnce || surah == null || !resumeRequested)
+                      if (_scrolledOnce || surah == null || !resumeRequested) {
                         return;
+                      }
                       if (chapters.isEmpty) return;
 
                       // Ensure list has attached at least one position
@@ -405,8 +405,9 @@ class _SurahScreenState extends State<SurahScreen>
                                             .addPostFrameCallback((_) async {
                                               if (_scrolledOnce ||
                                                   surah == null ||
-                                                  !resumeRequested)
+                                                  !resumeRequested) {
                                                 return;
+                                              }
                                               if (chapters.isEmpty) return;
                                               final attached =
                                                   _itemPositionsListener
@@ -646,7 +647,7 @@ class AyaListItem extends StatelessWidget {
     final List<Shadow>? textShadows = isBlurred
         ? [
             Shadow(
-              color: textColor.withOpacity(0.5),
+              color: textColor.withValues(alpha: 0.5),
               blurRadius: 8.0,
               offset: Offset.zero,
             ),
