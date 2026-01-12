@@ -57,10 +57,14 @@ class _SurahScreenState extends State<SurahScreen>
           final positions = _itemPositionsListener.itemPositions.value;
           if (positions.isEmpty) return;
           // Index 0 is header; verses start at index 1
-          final versePositions = positions.where((p) => p.index >= 1);
+          final versePositions = positions.where((p) => p.index >= 1).toList();
           if (versePositions.isEmpty) return;
-          final min = versePositions
-              .reduce((a, b) => a.index < b.index ? a : b)
+
+          var minIndex = versePositions.first.index;
+          for (var i = 1; i < versePositions.length; i++) {
+            final idx = versePositions[i].index;
+            if (idx < minIndex) minIndex = idx;
+          }
               .index;
           final verseIndex = (min - 1).clamp(0, 10000);
           PrefUtils().setSurahVerseIndex(surah!.id, verseIndex);
@@ -70,8 +74,8 @@ class _SurahScreenState extends State<SurahScreen>
           }
         });
         // Check saved resume index to display FAB
-        final savedIndex = initialVerseIndex ??
-            PrefUtils().getSurahVerseIndex(surah!.id);
+        final savedIndex =
+            initialVerseIndex ?? PrefUtils().getSurahVerseIndex(surah!.id);
         if (savedIndex != null && savedIndex > 0) {
           setState(() => _hasSavedResume = true);
         }
@@ -97,11 +101,12 @@ class _SurahScreenState extends State<SurahScreen>
         },
         child: Scaffold(
           backgroundColor: Color(
-              PrefUtils().getIsDarkMode() == true ? 0xFF000000 : 0xFFFFFFFF),
+            PrefUtils().getIsDarkMode() == true ? 0xFF000000 : 0xFFFFFFFF,
+          ),
           body: BlocProvider<SurahBloc>(
-              create: (context) => surahBloc,
-              child:
-                  BlocBuilder<SurahBloc, SurahState>(builder: (context, state) {
+            create: (context) => surahBloc,
+            child: BlocBuilder<SurahBloc, SurahState>(
+              builder: (context, state) {
                 if (state is LoadingSurahState) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is FailureSurahState) {
@@ -110,7 +115,8 @@ class _SurahScreenState extends State<SurahScreen>
                   final chapters = (state as SuccessSurahState).chapters;
                   // Scroll to saved verse index once (after list is attached)
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
-                    if (_scrolledOnce || surah == null || !resumeRequested) return;
+                    if (_scrolledOnce || surah == null || !resumeRequested)
+                      return;
                     if (chapters.isEmpty) return;
 
                     // Ensure list has attached at least one position
@@ -118,12 +124,12 @@ class _SurahScreenState extends State<SurahScreen>
                         _itemPositionsListener.itemPositions.value.isNotEmpty;
                     if (!hasAttachment) {
                       // Retry next frame
-                      WidgetsBinding.instance
-                          .addPostFrameCallback((_) {});
+                      WidgetsBinding.instance.addPostFrameCallback((_) {});
                       return;
                     }
 
-                    final savedIndex = initialVerseIndex ??
+                    final savedIndex =
+                        initialVerseIndex ??
                         PrefUtils().getSurahVerseIndex(surah!.id);
                     if (savedIndex == null || savedIndex < 0) return;
 
@@ -142,65 +148,83 @@ class _SurahScreenState extends State<SurahScreen>
                       _scrolledOnce = true;
                     } catch (_) {
                       // Retry on next frame if the list wasn't ready yet
-                      WidgetsBinding.instance
-                          .addPostFrameCallback((_) {});
+                      WidgetsBinding.instance.addPostFrameCallback((_) {});
                     }
                   });
-                  return Stack(children: [
-                    ScrollablePositionedList.builder(
-                      itemScrollController: _itemScrollController,
-                      itemPositionsListener: _itemPositionsListener,
-                      itemCount: chapters.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Column(
-                            children: [
-                              _buildAppBar(surah),
-                              SizedBox(height: 20.v),
-                            ],
-                          );
-                        }
-                        final aya = chapters[index - 1];
-                        return AyaListItem(aya: aya);
-                      },
-                    ),
-                    // One-time auto scroll overlay to ensure list is laid out
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: Builder(builder: (context) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) async {
-                            if (_scrolledOnce || surah == null || !resumeRequested) return;
-                            if (chapters.isEmpty) return; // nothing to scroll
-                            // Ensure the list has attached and produced positions
-                            final attached = _itemPositionsListener.itemPositions.value.isNotEmpty;
-                            if (!attached) return; // keep at top (header)
-                            final savedIndex = initialVerseIndex ??
-                                PrefUtils().getSurahVerseIndex(surah!.id);
-                            if (savedIndex == null || savedIndex <= 0) {
-                              // 0 or null -> keep at beginning
-                              _scrolledOnce = true;
-                              return;
-                            }
-                            final maxVerse = chapters.length - 1;
-                            final clampedVerse = savedIndex > maxVerse ? maxVerse : savedIndex;
-                            final target = clampedVerse + 1; // +1 header
-                            try {
-                              await _itemScrollController.scrollTo(
-                                index: target,
-                                duration: const Duration(milliseconds: 350),
-                                curve: Curves.easeOutCubic,
-                                alignment: 0.0,
-                              );
-                            } catch (_) {}
-                            _scrolledOnce = true;
-                          });
-                          return const SizedBox.shrink();
-                        }),
+                  return Stack(
+                    children: [
+                      ScrollablePositionedList.builder(
+                        itemScrollController: _itemScrollController,
+                        itemPositionsListener: _itemPositionsListener,
+                        itemCount: chapters.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return Column(
+                              children: [
+                                _buildAppBar(surah),
+                                SizedBox(height: 20.v),
+                              ],
+                            );
+                          }
+                          final aya = chapters[index - 1];
+                          return AyaListItem(aya: aya);
+                        },
                       ),
-                    ),
-                  ]);
+                      // One-time auto scroll overlay to ensure list is laid out
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Builder(
+                            builder: (context) {
+                              WidgetsBinding.instance.addPostFrameCallback((
+                                _,
+                              ) async {
+                                if (_scrolledOnce ||
+                                    surah == null ||
+                                    !resumeRequested)
+                                  return;
+                                if (chapters.isEmpty)
+                                  return; // nothing to scroll
+                                // Ensure the list has attached and produced positions
+                                final attached = _itemPositionsListener
+                                    .itemPositions
+                                    .value
+                                    .isNotEmpty;
+                                if (!attached) return; // keep at top (header)
+                                final savedIndex =
+                                    initialVerseIndex ??
+                                    PrefUtils().getSurahVerseIndex(surah!.id);
+                                if (savedIndex == null || savedIndex <= 0) {
+                                  // 0 or null -> keep at beginning
+                                  _scrolledOnce = true;
+                                  return;
+                                }
+                                final maxVerse = chapters.length - 1;
+                                final clampedVerse = savedIndex > maxVerse
+                                    ? maxVerse
+                                    : savedIndex;
+                                final target = clampedVerse + 1; // +1 header
+                                try {
+                                  await _itemScrollController.scrollTo(
+                                    index: target,
+                                    duration: const Duration(milliseconds: 350),
+                                    curve: Curves.easeOutCubic,
+                                    alignment: 0.0,
+                                  );
+                                } catch (_) {}
+                                _scrolledOnce = true;
+                              });
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
                 }
-              }))),
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -219,19 +243,26 @@ class AyaListItem extends StatelessWidget {
     const double badgeGap = 12; // visual space between last char and badge
     final double badgeDiameter = ayahFontSize * 1.25; // scale badge with text
 
-    final Color textColor =
-        isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40);
+    final Color textColor = isDark
+        ? const Color(0xFFFFFFFF)
+        : const Color(0xFF004B40);
     final List<Color> badgeGradient = isDark
         ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
-    final Color badgeBorder =
-        isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754);
-    final Color badgeText =
-        isDark ? const Color(0xFFFAF6EB) : const Color(0xFF004B40);
+    final Color badgeBorder = isDark
+        ? const Color(0xFF87D1A4)
+        : const Color(0xFF006754);
+    final Color badgeText = isDark
+        ? const Color(0xFFFAF6EB)
+        : const Color(0xFF004B40);
 
     return Padding(
       padding: const EdgeInsets.only(
-          left: 16.0, right: 16.0, top: 16.0, bottom: 16.0),
+        left: 16.0,
+        right: 16.0,
+        top: 16.0,
+        bottom: 16.0,
+      ),
       child: RichText(
         textDirection: TextDirection.rtl,
         text: TextSpan(
@@ -296,74 +327,74 @@ Widget _buildAppBar(Surah? surah) {
         right: -55,
         bottom: -10,
         child: CustomImageView(
-            fit: BoxFit.cover,
-            imagePath: ImageConstant.imgQuranOnboarding,
-            height: 150.v,
-            width: 150.h),
+          fit: BoxFit.cover,
+          imagePath: ImageConstant.imgQuranOnboarding,
+          height: 150.v,
+          width: 150.h,
+        ),
       ),
       Container(
-          height: 180.v,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF006754),
-                Color(0xDB87D1A4)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+        height: 180.v,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF006754), Color(0xDB87D1A4)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                InkWell(
-                  onTap: () {
-                    NavigatorService.goBack();
-                  },
-                  child: const Icon(
-                    Icons.arrow_back_outlined,
-                    color: Colors.white,
-                    size: 30,
-                  ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              InkWell(
+                onTap: () {
+                  NavigatorService.goBack();
+                },
+                child: const Icon(
+                  Icons.arrow_back_outlined,
+                  color: Colors.white,
+                  size: 30,
                 ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Hero(
-                      tag: 'surah-title-${surah?.id ?? 'unknown'}',
-                      child: Text(
-                        surah?.nameArabic ?? "",
-                        textDirection: TextDirection.rtl,
-                        style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: "Amiri"),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Hero(
+                    tag: 'surah-title-${surah?.id ?? 'unknown'}',
+                    child: Text(
+                      surah?.nameArabic ?? "",
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontFamily: "Amiri",
                       ),
                     ),
-                    surah?.id == 9
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              height: 1.adaptSize,
-                              width: 144.h,
-                              color: const Color(0xFFD9D8D8),
-                            ),
+                  ),
+                  surah?.id == 9
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            height: 1.adaptSize,
+                            width: 144.h,
+                            color: const Color(0xFFD9D8D8),
                           ),
-                    surah?.id == 9
-                        ? const SizedBox.shrink()
-                        : CustomImageView(
-                            imagePath: ImageConstant.imgBismillah,
-                          )
-                  ],
-                ),
-                const SizedBox.shrink()
-              ],
-            ),
-          )),
+                        ),
+                  surah?.id == 9
+                      ? const SizedBox.shrink()
+                      : CustomImageView(imagePath: ImageConstant.imgBismillah),
+                ],
+              ),
+              const SizedBox.shrink(),
+            ],
+          ),
+        ),
+      ),
     ],
   );
 }

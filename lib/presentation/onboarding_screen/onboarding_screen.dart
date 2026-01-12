@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
+import 'dart:async';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
@@ -11,9 +12,10 @@ class OnboardingScreen extends StatefulWidget {
 
   static Widget builder(BuildContext context) {
     return BlocProvider<OnboardingBloc>(
-        create: (context) =>
-            OnboardingBloc(OnboardingState(onboardingModel: OnboardingModel())),
-        child: const OnboardingScreen());
+      create: (context) =>
+          OnboardingBloc(OnboardingState(onboardingModel: OnboardingModel())),
+      child: const OnboardingScreen(),
+    );
   }
 
   @override
@@ -24,23 +26,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
 
+  late final StreamSubscription<List<ConnectivityResult>>
+  _connectivitySubscription;
+
   @override
   void initState() {
-    networkInfo.onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      setState(() {
-        isConnected = results.any((r) => r != ConnectivityResult.none);
-      });
-    });
     super.initState();
+    _connectivitySubscription = networkInfo.onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
+      if (mounted) {
+        setState(() {
+          isConnected = results.any((r) => r != ConnectivityResult.none);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     mediaQueryData = MediaQuery.of(context);
     return BlocBuilder<OnboardingBloc, OnboardingState>(
-        builder: (context, state) {
-      return SafeArea(
-        child: Scaffold(
+      builder: (context, state) {
+        return SafeArea(
+          child: Scaffold(
             backgroundColor: const Color(0xFF004B40),
             body: Stack(
               children: [
@@ -60,105 +75,117 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       )
                     : const SizedBox.shrink(),
                 SizedBox(
-                    width: double.maxFinite,
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 0,
-                          top: 0,
-                          child: CustomImageView(
-                              fit: BoxFit.cover,
-                              imagePath: ImageConstant.imgGroupCircles,
-                              height: 72.adaptSize,
-                              width: 72.adaptSize),
+                  width: double.maxFinite,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        child: CustomImageView(
+                          fit: BoxFit.cover,
+                          imagePath: ImageConstant.imgGroupCircles,
+                          height: 72.adaptSize,
+                          width: 72.adaptSize,
                         ),
-                        Center(
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Card(
-                                  color: const Color(0xFF186351),
-                                  child: CustomImageView(
-                                      imagePath:
-                                          ImageConstant.imgQuranOnboarding,
-                                      height: 391.adaptSize,
-                                      width: 341.adaptSize),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Card(
+                              color: const Color(0xFF186351),
+                              child: CustomImageView(
+                                imagePath: ImageConstant.imgQuranOnboarding,
+                                height: 391.adaptSize,
+                                width: 341.adaptSize,
+                              ),
+                            ),
+                            SizedBox(height: 22.adaptSize),
+                            Text(
+                              "app_name".tr,
+                              style: const TextStyle(
+                                color: Color(0xFF87D1A4),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 35,
+                              ),
+                            ),
+                            SizedBox(height: 16.adaptSize),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 60,
+                                right: 60,
+                              ),
+                              child: Text(
+                                "lbl_learn_quran".tr,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
+                                  fontFamily: "Poppins",
+                                  fontSize: 20,
                                 ),
-                                SizedBox(
-                                  height: 22.adaptSize,
+                              ),
+                            ),
+                            SizedBox(height: 22.adaptSize),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 100.0,
+                                right: 100.0,
+                              ),
+                              child: CustomElevatedButton(
+                                key: const ValueKey("get_started_key"),
+                                onPressed: () {
+                                  NavigatorService.popAndPushNamed(
+                                    AppRoutes.homePage,
+                                  );
+                                },
+                                decoration: const BoxDecoration(
+                                  color: Colors.black,
+                                  shape: BoxShape.circle,
                                 ),
-                                Text(
-                                  "app_name".tr,
-                                  style: const TextStyle(
-                                      color: Color(0xFF87D1A4),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 35),
-                                ),
-                                SizedBox(
-                                  height: 16.adaptSize,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 60, right: 60),
-                                  child: Text(
-                                    "lbl_learn_quran".tr,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w400,
-                                        fontFamily: "Poppins",
-                                        fontSize: 20),
+                                rightIcon: const Padding(
+                                  padding: EdgeInsets.only(left: 8.0),
+                                  child: Icon(
+                                    Icons.arrow_forward,
+                                    color: Color(0xff004B40),
                                   ),
                                 ),
-                                SizedBox(
-                                  height: 22.adaptSize,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 100.0, right: 100.0),
-                                  child: CustomElevatedButton(
-                                      key: const ValueKey("get_started_key"),
-                                      onPressed: () {
-                                        NavigatorService.popAndPushNamed(
-                                          AppRoutes.homePage,
-                                        );
-                                      },
-                                      decoration: const BoxDecoration(
-                                          color: Colors.black,
-                                          shape: BoxShape.circle),
-                                      rightIcon: const Padding(
-                                        padding: EdgeInsets.only(left: 8.0),
-                                        child: Icon(
-                                          Icons.arrow_forward,
-                                          color: Color(0xff004B40),
-                                        ),
+                                text: "lbl_get_started".tr,
+                                buttonStyle: ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStateProperty.all<Color>(
+                                        const Color(0xFFFAF6EB),
                                       ),
-                                      text: "lbl_get_started".tr,
-                                      buttonStyle: ButtonStyle(
-                                        backgroundColor:
-                                            WidgetStateProperty.all<Color>(
-                                                const Color(0xFFFAF6EB)),
-                                        shape: WidgetStateProperty.all<
-                                            RoundedRectangleBorder>(
-                                          RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(200.0),
-                                            // You can also customize other properties like border, elevation, etc.
+                                  shape:
+                                      WidgetStateProperty.all<
+                                        RoundedRectangleBorder
+                                      >(
+                                        RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            200.0,
                                           ),
+                                          // You can also customize other properties like border, elevation, etc.
                                         ),
                                       ),
-                                      buttonTextStyle: const TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14)),
                                 ),
-                              ]),
-                        )
-                      ],
-                    )),
+                                buttonTextStyle: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
-            )),
-      );
-    });
+            ),
+          ),
+        );
+      },
+    );
   }
 }
