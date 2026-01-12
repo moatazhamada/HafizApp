@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
