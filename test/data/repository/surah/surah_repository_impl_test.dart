@@ -27,37 +27,42 @@ void main() {
     mockNetworkInfo = MockNetworkInfo();
 
     surahRepositoryImpl = SurahRepositoryImpl(
-        surahRemoteDataSource: mockSurahDataSource,
-        networkInfo: mockNetworkInfo);
+      surahRemoteDataSource: mockSurahDataSource,
+      networkInfo: mockNetworkInfo,
+    );
   });
 
-  test("make sure calling getSurah - isConnected - return success", () async {
+  test('make sure calling getSurah - isConnected - return success', () async {
     when(() => mockNetworkInfo.isConnected()).thenAnswer((_) async => true);
     final responsePayload = json.decode(fixture('surah_response.json'));
     var chapterResponse = ChapterResponse.fromJson(responsePayload);
 
-    when(() => mockSurahDataSource.getSurah("114"))
-        .thenAnswer((_) => Future(() => chapterResponse));
-    var result = await surahRepositoryImpl.getSurah("114");
-    expect(result, Right(chapterResponse));
+    when(
+      () => mockSurahDataSource.getSurah('114'),
+    ).thenAnswer((_) => Future(() => chapterResponse));
+    var result = await surahRepositoryImpl.getSurah('114');
+    expect(result, Right(chapterResponse.chapters));
   });
 
-  test("make sure calling getSurah - isConnected - return failure", () async {
+  test('make sure calling getSurah - isConnected - return failure', () async {
     when(() => mockNetworkInfo.isConnected()).thenAnswer((_) async => true);
 
-    when(() => mockSurahDataSource.getSurah("114")).thenThrow(
-        DioException(requestOptions: RequestOptions(), error: "Unknown Error"));
+    when(() => mockSurahDataSource.getSurah('114')).thenThrow(
+      DioException(requestOptions: RequestOptions(), error: 'Unknown Error'),
+    );
 
-    var result = await surahRepositoryImpl.getSurah("114");
-    verify(() => mockSurahDataSource.getSurah("114"));
-    expect(result, Left(ServerFailure("Unknown Error")));
+    var result = await surahRepositoryImpl.getSurah('114');
+    verify(() => mockSurahDataSource.getSurah('114'));
+    expect(result, Left(ServerFailure('Unknown Error')));
   });
 
-  test("make sure calling getSurah - isNotConnected - return ConnectionFailure",
-      () async {
-    when(() => mockNetworkInfo.isConnected()).thenAnswer((_) async => false);
+  test(
+    'make sure calling getSurah - isNotConnected - return ConnectionFailure',
+    () async {
+      when(() => mockNetworkInfo.isConnected()).thenAnswer((_) async => false);
 
-    var result = await surahRepositoryImpl.getSurah("114");
-    expect(result, Left(ConnectionFailure()));
-  });
+      var result = await surahRepositoryImpl.getSurah('114');
+      expect(result, Left(ConnectionFailure()));
+    },
+  );
 }

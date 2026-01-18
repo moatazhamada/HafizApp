@@ -1,21 +1,18 @@
-class BookmarkModel {
-  final int surahId;
-  final String surahName;
-  final int verseId;
-  final DateTime createdAt;
+import '../../domain/entities/bookmark.dart';
 
-  BookmarkModel({
-    required this.surahId,
-    required this.surahName,
-    required this.verseId,
-    required this.createdAt,
+class BookmarkModel extends Bookmark {
+  const BookmarkModel({
+    required super.surahId,
+    required super.surahName,
+    required super.verseNumber,
+    required super.createdAt,
   });
 
   factory BookmarkModel.fromJson(Map<String, dynamic> json) {
     return BookmarkModel(
       surahId: json['surahId'] as int,
       surahName: json['surahName'] as String,
-      verseId: json['verseId'] as int,
+      verseNumber: json['verseId'] as int,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -24,8 +21,17 @@ class BookmarkModel {
     return {
       'surahId': surahId,
       'surahName': surahName,
-      'verseId': verseId,
+      'verseId': verseNumber,
       'createdAt': createdAt.toIso8601String(),
     };
+  }
+
+  factory BookmarkModel.fromEntity(Bookmark bookmark) {
+    return BookmarkModel(
+      surahId: bookmark.surahId,
+      surahName: bookmark.surahName,
+      verseNumber: bookmark.verseNumber,
+      createdAt: bookmark.createdAt,
+    );
   }
 }

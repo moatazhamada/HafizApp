@@ -12,7 +12,7 @@ class BookmarkInitial extends BookmarkState {}
 class BookmarkLoading extends BookmarkState {}
 
 class BookmarkLoaded extends BookmarkState {
-  final List<BookmarkModel> bookmarks;
+  final List<Bookmark> bookmarks;
   final String? feedbackMessage;
 
   const BookmarkLoaded(this.bookmarks, {this.feedbackMessage});

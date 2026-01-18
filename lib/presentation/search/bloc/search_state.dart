@@ -13,11 +13,12 @@ class SearchLoading extends SearchState {}
 
 class SearchLoaded extends SearchState {
   final List<Surah> results;
+  final List<Verse> verseResults;
 
-  const SearchLoaded(this.results);
+  const SearchLoaded(this.results, {this.verseResults = const []});
 
   @override
-  List<Object> get props => [results];
+  List<Object> get props => [results, verseResults];
 }
 
 class SearchEmpty extends SearchState {

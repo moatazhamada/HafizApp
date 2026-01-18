@@ -4,6 +4,8 @@ import '../../../../core/errors/failures.dart';
 import '../../../../data/model/bookmark_model.dart';
 import '../../../../domain/repository/bookmark_repository.dart';
 
+import '../../../../domain/entities/bookmark.dart';
+
 part 'bookmark_event.dart';
 part 'bookmark_state.dart';
 
@@ -37,7 +39,8 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     final result = await repository.addBookmark(event.bookmark);
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
-      (_) => add(LoadBookmarksEvent(feedbackMessage: "Added to bookmarks")),
+      (_) =>
+          add(const LoadBookmarksEvent(feedbackMessage: 'Added to bookmarks')),
     );
   }
 
@@ -51,7 +54,9 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     );
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
-      (_) => add(LoadBookmarksEvent(feedbackMessage: "Removed from bookmarks")),
+      (_) => add(
+        const LoadBookmarksEvent(feedbackMessage: 'Removed from bookmarks'),
+      ),
     );
   }
 
@@ -63,6 +68,6 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     } else if (failure is ConnectionFailure) {
       return failure.errorMessage;
     }
-    return "Unexpected Error";
+    return 'Unexpected Error';
   }
 }
