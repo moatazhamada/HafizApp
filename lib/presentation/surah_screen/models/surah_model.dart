@@ -6,7 +6,7 @@ class SurahModel extends Equatable {
   const SurahModel();
 
   SurahModel copyWith() {
-    return SurahModel();
+    return const SurahModel();
   }
 
   @override

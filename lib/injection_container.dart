@@ -35,10 +35,10 @@ Future<void> init() async {
    */
   // Bloc
   sl.registerFactory(() => SurahBloc(getSurah: sl()));
-  sl.registerFactory(() => BookmarkBloc(repository: sl()));
-  sl.registerFactory(() => SearchBloc());
+  sl.registerLazySingleton(() => BookmarkBloc(repository: sl()));
+  sl.registerFactory(() => SearchBloc(repository: sl()));
   sl.registerFactory(() => HomeBloc());
-  sl.registerFactory(() => RecitationErrorBloc(repository: sl()));
+  sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
   sl.registerLazySingleton(() => ThemeBloc());
   sl.registerLazySingleton(() => ScrollPositionCubit());
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
@@ -93,7 +93,7 @@ Future<void> init() async {
     if (ApiConfig.useQfContent) {
       dio.options.baseUrl = ApiConfig.qfContentBase;
     } else {
-      dio.options.baseUrl = "https://api.quran.com/api/v4";
+      dio.options.baseUrl = 'https://api.quran.com/api/v4';
     }
     dio.options.connectTimeout = const Duration(seconds: 7);
     dio.options.receiveTimeout = const Duration(seconds: 10);

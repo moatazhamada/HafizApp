@@ -1,15 +1,17 @@
-import "package:flutter/material.dart";
-import "package:hafiz_app/core/quran_index/quran_surah.dart";
+import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
-import "../../core/analytics/analytics_service.dart";
-import "../../core/analytics/analytics_route_observer.dart";
-import "../../core/app_export.dart";
-import "../../core/i18n/locale_controller.dart";
-import "../../core/scroll/scroll_position_cubit.dart";
-import "../../injection_container.dart";
-import "../../widgets/custom_app_bar.dart";
+import '../../core/analytics/analytics_service.dart';
+import '../../core/analytics/analytics_route_observer.dart';
+import 'package:hafiz_app/localization/app_localization.dart';
+import '../../core/app_export.dart';
+
+import '../../core/scroll/scroll_position_cubit.dart';
+import '../../injection_container.dart';
+import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
-import "bloc/home_bloc.dart";
+import 'bloc/home_bloc.dart';
+import '../../core/utils/number_converter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,14 +29,11 @@ Locale getCurrentLocale() {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin, RouteAware {
+    with WidgetsBindingObserver, RouteAware {
   final homeBloc = sl<HomeBloc>();
   final themeBloc = sl<ThemeBloc>();
   final scrollCubit = sl<ScrollPositionCubit>();
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -82,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     mediaQueryData = MediaQuery.of(context);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
@@ -91,74 +89,95 @@ class _HomeScreenState extends State<HomeScreen>
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: CustomAppBar(
-          leadingWidth: 160,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.wb_sunny_rounded,
-                  color: isDarkMode ? Colors.grey : Colors.amber,
-                  size: 20,
-                ),
-                Switch(
-                  value: isDarkMode,
-                  onChanged: (value) {
-                    themeBloc.add(ToggleThemeEvent());
-                    sl<AnalyticsService>().logThemeChange(value);
-                  },
-                  activeTrackColor: theme.colorScheme.primaryContainer,
-                  activeThumbColor: theme.colorScheme.primary,
-                ),
-                Icon(
-                  Icons.nightlight_round,
-                  color: isDarkMode ? theme.colorScheme.primary : Colors.grey,
-                  size: 20,
-                ),
-              ],
+          // leading: Removed to allow title to center properly
+          // leadingWidth: Removed
+          title: Text(
+            'app_name'.tr,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
             ),
           ),
+          leading: IconButton(
+            icon: Icon(
+              isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+            ),
+            onPressed: () {
+              themeBloc.add(ToggleThemeEvent());
+              sl<AnalyticsService>().logThemeChange(!isDarkMode);
+            },
+            tooltip: 'lbl_toggle_theme'.tr,
+          ),
+          centerTitle: true,
           actions: [
             IconButton(
               icon: const Icon(Icons.search_rounded),
               onPressed: () => NavigatorService.pushNamed(AppRoutes.searchPage),
-              tooltip: 'Search',
+              tooltip: 'lbl_search'.tr,
             ),
             IconButton(
               icon: const Icon(Icons.bookmark_border_rounded),
               onPressed: () =>
                   NavigatorService.pushNamed(AppRoutes.bookmarksPage),
-              tooltip: 'Bookmarks',
+              tooltip: 'lbl_bookmarks'.tr,
             ),
-            IconButton(
-              icon: const Icon(Icons.language),
-              onPressed: () {
-                final current = getCurrentLocale();
-                final next = current.languageCode == 'ar'
-                    ? const Locale('en', 'US')
-                    : const Locale('ar', 'EG');
-                changeLocale(context, next);
-                LocaleController.setLocale(next);
-                setState(() {});
-                sl<AnalyticsService>().logLanguageChange(next.languageCode);
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'mistakes':
+                    NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+                    break;
+                  case 'settings':
+                    NavigatorService.pushNamed(AppRoutes.settingsScreen);
+                    break;
+                  case 'about':
+                    NavigatorService.pushNamed(AppRoutes.aboutPage);
+                    break;
+                }
               },
-              tooltip: 'Language',
-            ),
-            IconButton(
-              icon: const Icon(Icons.info_outline_rounded),
-              onPressed: () => NavigatorService.pushNamed(AppRoutes.aboutPage),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'mistakes',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.playlist_add_check,
+                        color: theme.iconTheme.color,
+                      ),
+                      const SizedBox(width: 12),
+                      Text('lbl_practice_list'.tr),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, color: theme.iconTheme.color),
+                      const SizedBox(width: 12),
+                      Text('lbl_settings'.tr),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'about',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: theme.iconTheme.color,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'about_title'.tr,
+                      ), // Assuming 'about_title' key exists or use 'About'
+                    ],
+                  ),
+                ),
+              ],
+              icon: const Icon(Icons.more_vert),
             ),
           ],
-          title: Center(
-            child: Text(
-              "app_name".tr,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ),
         ),
         body: BlocProvider<HomeBloc>(
           create: (context) => homeBloc,
@@ -265,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen>
         child: Stack(
           children: [
             // Decorative circle
-            Positioned(
+            const Positioned(
               right: -30,
               bottom: -30,
               child: Opacity(
@@ -292,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "lbl_last_read".tr,
+                        'lbl_last_read'.tr,
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: Colors.white70,
                           fontWeight: FontWeight.bold,
@@ -308,17 +327,19 @@ class _HomeScreenState extends State<HomeScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            lastReadSurah.nameEnglish,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          if (Localizations.localeOf(context).languageCode !=
+                              'ar')
+                            Text(
+                              lastReadSurah.nameEnglish,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                           Text(
                             lastReadSurah.nameArabic,
                             style: theme.textTheme.headlineMedium?.copyWith(
-                              fontFamily: "Amiri",
+                              fontFamily: 'Amiri',
                               color: Colors.white.withValues(alpha: 0.9),
                               height: 1.2,
                             ),
@@ -339,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                           child: Text(
-                            '${"lbl_ayah".tr} ${lastVerseIndex + 1}',
+                            '${"lbl_ayah".tr} ${(lastVerseIndex + 1).toLocalizedNumber(context)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -390,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "lbl_continue".tr,
+                            'lbl_continue'.tr,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,

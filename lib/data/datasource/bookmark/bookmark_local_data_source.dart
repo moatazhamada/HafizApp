@@ -4,8 +4,8 @@ import '../../model/bookmark_model.dart';
 abstract class BookmarkLocalDataSource {
   Future<List<BookmarkModel>> getBookmarks();
   Future<bool> addBookmark(BookmarkModel bookmark);
-  Future<bool> removeBookmark(int surahId, int verseId);
-  Future<bool> isBookmarked(int surahId, int verseId);
+  Future<bool> removeBookmark(int surahId, int verseNumber);
+  Future<bool> isBookmarked(int surahId, int verseNumber);
 }
 
 class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
@@ -23,21 +23,21 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
 
   @override
   Future<bool> addBookmark(BookmarkModel bookmark) async {
-    final key = '${bookmark.surahId}_${bookmark.verseId}';
+    final key = '${bookmark.surahId}_${bookmark.verseNumber}';
     await box.put(key, bookmark.toJson());
     return true;
   }
 
   @override
-  Future<bool> removeBookmark(int surahId, int verseId) async {
-    final key = '${surahId}_$verseId';
+  Future<bool> removeBookmark(int surahId, int verseNumber) async {
+    final key = '${surahId}_$verseNumber';
     await box.delete(key);
     return true;
   }
 
   @override
-  Future<bool> isBookmarked(int surahId, int verseId) async {
-    final key = '${surahId}_$verseId';
+  Future<bool> isBookmarked(int surahId, int verseNumber) async {
+    final key = '${surahId}_$verseNumber';
     return box.containsKey(key);
   }
 }

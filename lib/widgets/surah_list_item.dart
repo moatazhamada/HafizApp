@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/utils/number_converter.dart';
 
 class SurahListItem extends StatelessWidget {
   final int surahId;
@@ -51,7 +52,8 @@ class SurahListItem extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '$surahId',
+                    surahId.toLocalizedNumber(context),
+                    // Also localize Surah ID here!
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -60,18 +62,20 @@ class SurahListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
 
-                // English Name
-                Expanded(
-                  child: Text(
-                    nameEnglish,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                // English Name (Hide if Arabic)
+                if (Localizations.localeOf(context).languageCode != 'ar') ...[
+                  Expanded(
+                    child: Text(
+                      nameEnglish,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.left,
                     ),
-                    textAlign: TextAlign.left,
                   ),
-                ),
-                const SizedBox(width: 16),
-
+                  const SizedBox(width: 16),
+                ] else
+                  const Spacer(), // Push Arabic to right if English is hidden
                 // Arabic Name
                 Hero(
                   tag: 'surah-title-$surahId',
@@ -79,7 +83,7 @@ class SurahListItem extends StatelessWidget {
                     nameArabic,
                     textDirection: TextDirection.rtl,
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      fontFamily: "Amiri",
+                      fontFamily: 'Amiri',
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
                       height: 1.2,
