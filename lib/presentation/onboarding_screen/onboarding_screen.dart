@@ -12,7 +12,7 @@ class OnboardingScreen extends StatefulWidget {
   static Widget builder(BuildContext context) {
     return BlocProvider<OnboardingBloc>(
       create: (context) =>
-          OnboardingBloc(OnboardingState(onboardingModel: OnboardingModel())),
+          OnboardingBloc(OnboardingState(onboardingModel: const OnboardingModel())),
       child: const OnboardingScreen(),
     );
   }
@@ -109,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         color: Colors.redAccent.withValues(alpha: 0.9),
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          "No Internet Connection",
+                          'No Internet Connection',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white,
@@ -176,7 +176,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                             // Title
                             Text(
-                              "app_name".tr,
+                              'app_name'.tr,
                               style: theme.textTheme.displayMedium?.copyWith(
                                 color: const Color(0xFFE0F2F1), // Light Mint
                                 fontWeight: FontWeight.bold,
@@ -187,11 +187,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                             // Subtitle
                             Text(
-                              "lbl_learn_quran".tr,
+                              'lbl_learn_quran'.tr,
                               textAlign: TextAlign.center,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.9),
-                                fontFamily: "Poppins",
+                                fontFamily: 'Poppins',
                                 height: 1.5,
                               ),
                             ),
@@ -206,13 +206,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   horizontal: 32.0,
                                 ),
                                 child: CustomElevatedButton(
-                                  key: const ValueKey("get_started_key"),
+                                  key: const ValueKey('get_started_key'),
                                   onPressed: () {
                                     NavigatorService.pushNamedAndRemoveUntil(
                                       AppRoutes.homeScreen,
                                     );
                                   },
-                                  text: "lbl_get_started".tr,
+                                  text: 'lbl_get_started'.tr,
                                   buttonStyle: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFFFAF6EB),
                                     foregroundColor: const Color(0xFF004B40),

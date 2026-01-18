@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/app_export.dart';
+import 'package:hafiz_app/localization/app_localization.dart';
 import '../../injection_container.dart';
-import 'bloc/bookmark_bloc.dart';
+import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 
-class BookmarksScreen extends StatelessWidget {
-  const BookmarksScreen({super.key});
+class RecitationErrorScreen extends StatelessWidget {
+  const RecitationErrorScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class BookmarksScreen extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          'lbl_bookmarks'.tr,
+          'lbl_practice_list'.tr,
           style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Poppins',
@@ -35,24 +37,29 @@ class BookmarksScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: BlocBuilder<BookmarkBloc, BookmarkState>(
+      body: BlocConsumer<RecitationErrorBloc, RecitationErrorState>(
+        listener: (context, state) {
+          if (state is RecitationErrorLoaded) {
+            // Optional: Show snackbar on error removal if needed, or handle in UI
+          }
+        },
         builder: (context, state) {
-          if (state is BookmarkLoading) {
+          if (state is RecitationErrorLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (state is BookmarkLoaded) {
-            if (state.bookmarks.isEmpty) {
+          } else if (state is RecitationErrorLoaded) {
+            if (state.errors.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.bookmark_outline,
+                    const Icon(
+                      Icons.check_circle_outline,
                       size: 64,
-                      color: Colors.grey.withOpacity(0.5),
+                      color: Colors.green,
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'msg_no_bookmarks'.tr,
+                      'msg_no_practice_items'.tr,
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.grey[600],
@@ -65,28 +72,28 @@ class BookmarksScreen extends StatelessWidget {
             }
             return ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              itemCount: state.bookmarks.length,
+              itemCount: state.errors.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final bookmark = state.bookmarks[index];
+                final error = state.errors[index];
                 return Dismissible(
-                  key: Key('${bookmark.surahId}_${bookmark.verseNumber}'),
+                  key: Key('${error.surahId}_${error.verseId}'),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent,
+                      color: Colors.green,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.check, color: Colors.white),
                   ),
                   onDismissed: (direction) {
-                    context.read<BookmarkBloc>().add(
-                      RemoveBookmarkEvent(
-                        bookmark.surahId,
-                        bookmark.verseNumber,
-                      ),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('msg_removed_practice'.tr)),
+                    );
+                    context.read<RecitationErrorBloc>().add(
+                      RemoveRecitationErrorEvent(error.surahId, error.verseId),
                     );
                   },
                   child: Container(
@@ -114,15 +121,14 @@ class BookmarksScreen extends StatelessWidget {
                             AppRoutes.surahPage,
                             arguments: {
                               'surah': QuranIndex.quranSurahs.firstWhere(
-                                (e) => e.id == bookmark.surahId,
+                                (e) => e.id == error.surahId,
                               ),
-                              'verseIndex': bookmark.verseNumber - 1,
+                              'verseIndex': error.verseId - 1,
                               'resume': true,
                             },
                           ).then((_) {
-                            // Refresh list when returning from Surah page
-                            context.read<BookmarkBloc>().add(
-                              const LoadBookmarksEvent(),
+                            context.read<RecitationErrorBloc>().add(
+                              const LoadRecitationErrorsEvent(),
                             );
                           });
                         },
@@ -133,14 +139,12 @@ class BookmarksScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF006754,
-                                  ).withOpacity(0.1),
+                                  color: Colors.redAccent.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
-                                  Icons.bookmark,
-                                  color: Color(0xFF006754),
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.redAccent,
                                   size: 24,
                                 ),
                               ),
@@ -152,7 +156,7 @@ class BookmarksScreen extends StatelessWidget {
                                     Text(
                                       QuranIndex.quranSurahs
                                           .firstWhere(
-                                            (e) => e.id == bookmark.surahId,
+                                            (e) => e.id == error.surahId,
                                             orElse: () =>
                                                 QuranIndex.quranSurahs[0],
                                           )
@@ -168,7 +172,7 @@ class BookmarksScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${'lbl_verse_num'.tr} ${bookmark.verseNumber.toLocalizedNumber(context)}',
+                                      '${'lbl_verse_num'.tr} ${error.verseId.toLocalizedNumber(context)}',
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontSize: 13,
@@ -182,14 +186,14 @@ class BookmarksScreen extends StatelessWidget {
                               ),
                               IconButton(
                                 icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.redAccent,
+                                  Icons.check_circle_outline,
+                                  color: Colors.green,
                                 ),
                                 onPressed: () {
-                                  context.read<BookmarkBloc>().add(
-                                    RemoveBookmarkEvent(
-                                      bookmark.surahId,
-                                      bookmark.verseNumber,
+                                  context.read<RecitationErrorBloc>().add(
+                                    RemoveRecitationErrorEvent(
+                                      error.surahId,
+                                      error.verseId,
                                     ),
                                   );
                                 },
@@ -203,7 +207,7 @@ class BookmarksScreen extends StatelessWidget {
                 );
               },
             );
-          } else if (state is BookmarkError) {
+          } else if (state is RecitationErrorError) {
             return Center(child: Text('Error: ${state.message}'));
           }
           return const SizedBox();

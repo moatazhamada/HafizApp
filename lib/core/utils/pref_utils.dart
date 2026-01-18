@@ -24,16 +24,35 @@ class PrefUtils {
     _sharedPreferences!.clear();
   }
 
-  Future<void> setIsDarkMode(bool value) {
-    return _sharedPreferences!.setBool('isDarkTheme', value);
+  // Theme Mode: 'system', 'light', 'dark'
+  Future<void> setThemeMode(String mode) async {
+    await _sharedPreferences!.setString('themeMode', mode);
   }
 
-  bool getIsDarkMode() {
+  String getThemeMode() {
     try {
-      return _sharedPreferences!.getBool('isDarkTheme')!;
+      return _sharedPreferences!.getString('themeMode') ?? 'system';
     } catch (e) {
-      return false;
+      return 'system';
     }
+  }
+
+  // Deprecated: getIsDarkMode - compatibility shim
+  bool getIsDarkMode() {
+    final mode = getThemeMode();
+    if (mode == 'dark') return true;
+    if (mode == 'light') return false;
+    // System default fallback handled in UI or by platform query
+    // For simple boolean query (like legacy calls), we might default to system brightness
+    // But direct calls to PlatformDispatcher are better done in the UI.
+    // Here we just return false (light) as default if system is chosen but boolean required.
+    // OR: We can migrate caller to check getThemeMode.
+    return false;
+  }
+
+  // Deprecated: setIsDarkMode - compatibility shim
+  Future<void> setIsDarkMode(bool value) {
+    return setThemeMode(value ? 'dark' : 'light');
   }
 
   // Convert Surah object to JSON string
@@ -50,16 +69,16 @@ class PrefUtils {
     return jsonString != null ? Surah.fromJson(jsonString) : null;
   }
 
-  // Locale persistence (ar/en)
+  // Locale persistence (ar/en/system)
   Future<void> setLocaleCode(String code) async {
     await _sharedPreferences!.setString('localeCode', code);
   }
 
   String getLocaleCode() {
     try {
-      return _sharedPreferences!.getString('localeCode') ?? 'ar';
+      return _sharedPreferences!.getString('localeCode') ?? 'system';
     } catch (_) {
-      return 'ar';
+      return 'system';
     }
   }
 
@@ -85,6 +104,20 @@ class PrefUtils {
       return _sharedPreferences!.getInt('verse_index_$surahId');
     } catch (_) {
       return null;
+    }
+  }
+
+  // Verse View Mode (false = Continuous/Mushaf, true = Single Line)
+  Future<void> setVerseViewMode(bool isSingleLine) async {
+    await _sharedPreferences!.setBool('isSingleLine', isSingleLine);
+  }
+
+  bool getVerseViewMode() {
+    try {
+      return _sharedPreferences!.getBool('isSingleLine') ??
+          false; // Default Continuous
+    } catch (_) {
+      return false;
     }
   }
 }

@@ -6,6 +6,12 @@ import 'package:hafiz_app/injection_container.dart' as di;
 import 'core/app_export.dart';
 import 'injection_container.dart';
 
+import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart'; // Just in case, though safe
+import 'package:hafiz_app/presentation/home_screen/bloc/home_bloc.dart'; // Just in case
+import 'package:hafiz_app/theme/bloc/theme_bloc.dart'; // Just in case
+
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -68,22 +74,38 @@ Future<void> initFirebase() async {
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  ThemeData _getTheme(BuildContext context) {
-    return PrefUtils().getIsDarkMode() == true ? darkTheme : lightTheme;
+  ThemeMode _getThemeMode() {
+    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
+    if (mode == 'dark') return ThemeMode.dark;
+    if (mode == 'light') return ThemeMode.light;
+    return ThemeMode.system;
   }
 
   final themeBloc = sl<ThemeBloc>();
+  final bookmarkBloc = sl<BookmarkBloc>();
+  final recitationErrorBloc = sl<RecitationErrorBloc>();
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => themeBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => themeBloc),
+        BlocProvider(
+          create: (context) => bookmarkBloc..add(const LoadBookmarksEvent()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
+        ),
+      ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
             builder: (_, locale, _) => MaterialApp(
-              theme: _getTheme(context),
+              themeMode: _getThemeMode(),
+              theme: lightTheme,
+              darkTheme: darkTheme, // Important for automatic switching
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
@@ -96,7 +118,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [Locale("en", "US"), Locale("ar", "EG")],
+              supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
               initialRoute: AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
             ),
@@ -150,7 +172,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
     storageFuture.then((s) => HydratedBloc.storage = s);
 
     // Defer heavier services to avoid long splash times
-    unawaited(_postInitHeavyTasks());
+    await _postInitHeavyTasks();
 
     if (mounted) {
       setState(() => _ready = true);

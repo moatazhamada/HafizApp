@@ -40,7 +40,7 @@ class RecitationErrorBloc
     result.fold(
       (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),
       (_) => add(
-        const LoadRecitationErrorsEvent(feedbackMessage: "Marked as error"),
+        const LoadRecitationErrorsEvent(feedbackMessage: 'msg_marked_error'),
       ),
     );
   }
@@ -56,7 +56,7 @@ class RecitationErrorBloc
     result.fold(
       (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),
       (_) => add(
-        const LoadRecitationErrorsEvent(feedbackMessage: "Error removed"),
+        const LoadRecitationErrorsEvent(feedbackMessage: 'msg_error_removed'),
       ),
     );
   }
@@ -65,6 +65,6 @@ class RecitationErrorBloc
     if (failure is CacheFailure) {
       return failure.errorMessage;
     }
-    return "Unexpected Error";
+    return 'Unexpected Error';
   }
 }

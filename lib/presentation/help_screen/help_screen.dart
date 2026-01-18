@@ -11,7 +11,7 @@ class HelpScreen extends StatelessWidget {
           ? Colors.black
           : Colors.white,
       appBar: AppBar(
-        title: const Text("App Guide"),
+        title: Text('lbl_app_guide'.tr),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -25,35 +25,24 @@ class HelpScreen extends StatelessWidget {
           _buildHelpItem(
             context,
             icon: Icons.bookmark_add,
-            title: "Bookmarking Logic",
-            description:
-                "• Tap the Bookmark icon in the top right to bookmark the *first verse* of the Surah (Page Bookmark).\n"
-                "• Long-press on any specific Verse number to add a bookmark to that exact Ayah (Verse Bookmark).\n"
-                "• This helps you save your exact reading position.",
+            title: 'help_bookmark_title'.tr,
+            description: 'help_bookmark_desc'.tr,
             color: Colors.teal,
           ),
           const SizedBox(height: 20),
           _buildHelpItem(
             context,
             icon: Icons.visibility_off,
-            title: "Hifz Mode (Blur)",
-            description:
-                "• Tap the Eye icon in the top bar to toggle Hifz Mode.\n"
-                "• Verses will be blurred to help you test your memorization.\n"
-                "• Tap on any blurred verse text to reveal it momentarily.\n"
-                "• Use this to practice reciting from memory and checking yourself.",
+            title: 'help_hifz_title'.tr,
+            description: 'help_hifz_desc'.tr,
             color: Colors.amber[800]!,
           ),
           const SizedBox(height: 20),
           _buildHelpItem(
             context,
             icon: Icons.error_outline,
-            title: "Recitation Mistakes",
-            description:
-                "• If you make a mistake while reciting, Long-press the Verse number.\n"
-                "• Select 'Mark as Recitation Mistake'.\n"
-                "• The verse will be highlighted in red.\n"
-                "• Use this to track 'weak verses' that need more review.",
+            title: 'help_mistakes_title'.tr,
+            description: 'help_mistakes_desc'.tr,
             color: Colors.redAccent,
           ),
         ],

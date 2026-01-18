@@ -17,7 +17,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
       final errors = await localDataSource.getRecitationErrors();
       return Right(errors);
     } on CacheException {
-      return Left(CacheFailure("Failed to load recitation errors"));
+      return Left(CacheFailure('Failed to load recitation errors'));
     }
   }
 
@@ -29,7 +29,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
       await localDataSource.addRecitationError(error);
       return const Right(null);
     } on CacheException {
-      return Left(CacheFailure("Failed to save recitation error"));
+      return Left(CacheFailure('Failed to save recitation error'));
     }
   }
 
@@ -42,7 +42,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
       await localDataSource.removeRecitationError(surahId, verseId);
       return const Right(null);
     } on CacheException {
-      return Left(CacheFailure("Failed to remove recitation error"));
+      return Left(CacheFailure('Failed to remove recitation error'));
     }
   }
 }

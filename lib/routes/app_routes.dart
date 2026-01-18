@@ -7,6 +7,8 @@ import '../presentation/search/search_screen.dart';
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
 import '../presentation/about_screen/about_screen.dart';
+import '../presentation/recitation_error/recitation_error_screen.dart';
+import '../presentation/settings_screen/settings_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -16,18 +18,22 @@ class AppRoutes {
       '/bookmarks'; // Changed path for bookmarksPage
   static const String searchPage = '/search_screen';
   static const String aboutPage = '/about_screen';
-  static const String helpScreen = '/help'; // Added helpScreen constant
+  static const String helpScreen = '/help';
+  static const String recitationErrorsPage = '/recitation_errors';
+  static const String settingsScreen = '/settings';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
     onboardingScreen: OnboardingScreen.builder,
     homeScreen: (context) =>
-        HomeScreen(), // Changed from homePage and removed const
+        const HomeScreen(), // Changed from homePage and removed const
     surahPage: (context) => const SurahScreen(),
     searchPage: (context) => const SearchScreen(),
     bookmarksPage: (context) => const BookmarksScreen(),
     aboutPage: (context) =>
         const AboutScreen(), // Kept existing aboutPage route
-    helpScreen: (context) => const HelpScreen(), // Added helpScreen route
+    helpScreen: (context) => const HelpScreen(),
+    recitationErrorsPage: (context) => const RecitationErrorScreen(),
+    settingsScreen: (context) => const SettingsScreen(),
   };
 }
