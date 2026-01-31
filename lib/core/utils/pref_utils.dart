@@ -1,7 +1,9 @@
 //ignore: unused_import
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PrefUtils {
@@ -33,6 +35,7 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getString('themeMode') ?? 'system';
     } catch (e) {
+      Logger.warning('Failed to get theme mode: $e', feature: 'Preferences');
       return 'system';
     }
   }
@@ -42,11 +45,17 @@ class PrefUtils {
     final mode = getThemeMode();
     if (mode == 'dark') return true;
     if (mode == 'light') return false;
-    // System default fallback handled in UI or by platform query
-    // For simple boolean query (like legacy calls), we might default to system brightness
-    // But direct calls to PlatformDispatcher are better done in the UI.
-    // Here we just return false (light) as default if system is chosen but boolean required.
-    // OR: We can migrate caller to check getThemeMode.
+    // System default fallback: Check platform brightness
+    if (mode == 'system') {
+      try {
+        final brightness =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness;
+        return brightness == Brightness.dark;
+      } catch (e) {
+        Logger.warning('Failed to get platform brightness: $e', feature: 'Preferences');
+        return false;
+      }
+    }
     return false;
   }
 
@@ -65,8 +74,13 @@ class PrefUtils {
 
   // Retrieve Surah object from SharedPreferences
   Surah? getLastReadSurah() {
-    final String? jsonString = _sharedPreferences!.getString('surah');
-    return jsonString != null ? Surah.fromJson(jsonString) : null;
+    try {
+      final String? jsonString = _sharedPreferences!.getString('surah');
+      return jsonString != null ? Surah.fromJson(jsonString) : null;
+    } catch (e) {
+      Logger.warning('Failed to get last read surah: $e', feature: 'Preferences');
+      return null;
+    }
   }
 
   // Locale persistence (ar/en/system)
@@ -77,7 +91,8 @@ class PrefUtils {
   String getLocaleCode() {
     try {
       return _sharedPreferences!.getString('localeCode') ?? 'system';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to get locale code: $e', feature: 'Preferences');
       return 'system';
     }
   }
@@ -90,7 +105,8 @@ class PrefUtils {
   double? getSurahOffset(int surahId) {
     try {
       return _sharedPreferences!.getDouble('offset_$surahId');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to get surah offset for surah $surahId: $e', feature: 'Preferences');
       return null;
     }
   }
@@ -102,7 +118,8 @@ class PrefUtils {
   int? getSurahVerseIndex(int surahId) {
     try {
       return _sharedPreferences!.getInt('verse_index_$surahId');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to get verse index for surah $surahId: $e', feature: 'Preferences');
       return null;
     }
   }
@@ -116,7 +133,8 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getBool('isSingleLine') ??
           false; // Default Continuous
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to get verse view mode: $e', feature: 'Preferences');
       return false;
     }
   }

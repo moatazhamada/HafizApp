@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 
 import 'core/app_export.dart';
+import 'core/utils/logger.dart';
 import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -23,6 +24,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'package:flutter/foundation.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -146,10 +148,9 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 
   Future<void> _init() async {
+    // 1. Critical functional initialization (fast)
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    // Enable edge-to-edge so Flutter draws behind system bars.
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // Use transparent system bars; icon brightness will adapt with theme.
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -157,22 +158,31 @@ class _BootstrapAppState extends State<BootstrapApp> {
         systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
-    // Fire and forget prefs; default values are handled defensively
-    unawaited(PrefUtils().init());
-    await di.init();
 
-    // Build Hydrated storage using a fast temp directory with a short soft-timeout
-    final storageFuture = HydratedStorage.build(
-      storageDirectory: HydratedStorageDirectory(
-        (await getTemporaryDirectory()).path,
-      ),
-    );
-    final softTimeout = Future.delayed(const Duration(milliseconds: 700));
-    await Future.any([storageFuture, softTimeout]);
-    storageFuture.then((s) => HydratedBloc.storage = s);
+    try {
+      await PrefUtils().init();
+      await di.init();
 
-    // Defer heavier services to avoid long splash times
-    await _postInitHeavyTasks();
+      final storage = await HydratedStorage.build(
+        storageDirectory: HydratedStorageDirectory(
+          (await getTemporaryDirectory()).path,
+        ),
+      );
+      HydratedBloc.storage = storage;
+    } catch (e) {
+      debugPrint('Critical init failed: $e');
+      // If critical init fails, we might still want to try showing the app
+      // or at least not stuck on splash forever, though likely it will crash later.
+    }
+
+    // 2. Heavy/External services (can be slow, prone to network issues)
+    // We don't want to block the UI forever if Firebase/Hive hangs.
+    try {
+      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('Heavy init failed or timed out: $e');
+      // Continue anyway so the user sees the app
+    }
 
     if (mounted) {
       setState(() => _ready = true);
@@ -182,22 +192,50 @@ class _BootstrapAppState extends State<BootstrapApp> {
   Future<void> _postInitHeavyTasks() async {
     try {
       await initFirebase();
-      // Initialize Hive cache
+
+      final crashlytics = FirebaseCrashlytics.instance;
+      Logger.init(
+        kDebugMode ? LogMode.debug : LogMode.live,
+        crashlytics: crashlytics,
+      );
+
       await Hive.initFlutter();
       await Hive.openBox('surah_cache');
       await Hive.openBox('bookmarks');
       await Hive.openBox('recitation_errors');
-      // Crashlytics wiring
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+      FlutterError.onError = (errorDetails) {
+        Logger.error(
+          'Flutter error: ${errorDetails.exception}',
+          feature: 'Flutter',
+          error: errorDetails.exception,
+          stackTrace: errorDetails.stack,
+          fatal: true,
+        );
+        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+      };
+
       ui.PlatformDispatcher.instance.onError = (error, stack) {
+        Logger.error(
+          'Platform error: $error',
+          feature: 'Platform',
+          error: error,
+          stackTrace: stack,
+          fatal: true,
+        );
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
-      // Analytics
+
       unawaited(FirebaseAnalytics.instance.logAppOpen());
-    } catch (_) {
-      // Best-effort; app should remain usable regardless
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Firebase initialization failed: $e',
+        feature: 'Firebase',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow; // Re-throw to trigger the timeout catch in _init if needed
     }
   }
 
@@ -222,13 +260,36 @@ class _SplashScaffold extends StatelessWidget {
   const _SplashScaffold();
   @override
   Widget build(BuildContext context) {
+    // Use the current theme mode to determine splash background
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final isDark = brightness == Brightness.dark;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: PrefUtils().getIsDarkMode()
-            ? Colors.black
-            : Colors.white,
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: isDark
+                    ? const Color(0xFF87D1A4)
+                    : const Color(0xFF006754),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading Hafiz...',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

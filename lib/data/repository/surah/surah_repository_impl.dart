@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 
 import '../../../core/errors/failures.dart';
+import '../../../core/utils/logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/network/network_info.dart';
 import '../../../domain/entities/verse.dart';
@@ -28,8 +29,11 @@ class SurahRepositoryImpl implements SurahRepository {
       try {
         final local = await surahLocalDataSource!.getSurah(surahId);
         return Right(local.chapters);
-      } catch (_) {
-        // If not found locally, proceed to cache/network
+      } catch (e) {
+        Logger.debug(
+          'Local surah $surahId not found, trying cache/network',
+          feature: 'Surah',
+        );
       }
     }
 
@@ -39,14 +43,21 @@ class SurahRepositoryImpl implements SurahRepository {
     if (cached is Map<String, dynamic>) {
       try {
         return Right(ChapterResponse.fromJson(cached).chapters);
-      } catch (_) {
-        // If decoding fails, fall through to network
+      } catch (e, stackTrace) {
+        Logger.warning(
+          'Failed to decode cached surah $surahId: $e',
+          feature: 'Surah',
+          stackTrace: stackTrace,
+        );
       }
     }
 
     bool isConnected = await networkInfo.isConnected();
     if (!isConnected) {
-      // If offline and no cache, return connection failure
+      Logger.info(
+        'No network connection, returning ConnectionFailure for surah $surahId',
+        feature: 'Surah',
+      );
       return Left(ConnectionFailure());
     }
 
@@ -55,16 +66,40 @@ class SurahRepositoryImpl implements SurahRepository {
       // Write-through cache (surahs are static)
       await box?.put(surahId, _chapterResponseToJson(response));
       return Right(response.chapters);
-    } catch (error) {
+    } catch (error, stackTrace) {
       // If network fails but cache exists, serve stale cache
       if (cached is Map<String, dynamic>) {
         try {
+          Logger.warning(
+            'Network failed, serving stale cache for surah $surahId',
+            feature: 'Surah',
+          );
           return Right(ChapterResponse.fromJson(cached).chapters);
-        } catch (_) {}
+        } catch (cacheError) {
+          Logger.error(
+            'Failed to decode stale cache for surah $surahId',
+            feature: 'Surah',
+            error: cacheError,
+          );
+        }
       }
+
       if (error is DioException) {
+        Logger.error(
+          'DioException loading surah $surahId: ${error.message}',
+          feature: 'Surah',
+          error: error,
+          stackTrace: stackTrace,
+        );
         return Left(ServerFailure(error.message ?? 'Unknown Error'));
       }
+
+      Logger.error(
+        'Error loading surah $surahId: $error',
+        feature: 'Surah',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return Left(ServerFailure(error.toString()));
     }
   }
@@ -88,11 +123,50 @@ class SurahRepositoryImpl implements SurahRepository {
     if (surahLocalDataSource != null) {
       try {
         final matches = await surahLocalDataSource!.searchVerses(query);
-        return Right(matches);
+        if (matches.isNotEmpty) return Right(matches);
       } catch (e) {
-        return Left(CacheFailure(e.toString()));
+        Logger.error(
+          'Local search failed for query "$query", trying cache: $e',
+          feature: 'Search',
+          error: e,
+        );
       }
     }
+
+    // Fallback: Search in Cache (Hive)
+    try {
+      if (Hive.isBoxOpen('surah_cache')) {
+        final box = Hive.box('surah_cache');
+        final allMatches = <Verse>[];
+        // Heuristic: iterating all keys is expensive, but necessary for offline fallback if assets fail
+        // Since we only have 114 Surahs, this is acceptable.
+        for (var key in box.keys) {
+          final data = box.get(key);
+          if (data is Map<String, dynamic>) {
+            try {
+              final response = ChapterResponse.fromJson(data);
+              for (final verse in response.chapters) {
+                if (verse.text.contains(query)) {
+                  allMatches.add(verse);
+                }
+              }
+            } catch (_) {
+              // Ignore malformed cache entries
+            }
+          }
+        }
+        return Right(allMatches);
+      }
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Cache search failed for query "$query": $e',
+        feature: 'Search',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return Left(CacheFailure(e.toString()));
+    }
+
     return const Right([]);
   }
 }
