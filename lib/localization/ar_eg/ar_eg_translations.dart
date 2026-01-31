@@ -71,6 +71,8 @@ final Map<String, String> arEg = {
       '• سيتم تمييز الآية.\n'
       "• استخدم هذه القائمة لمراجعة وتثبيت حفظك.",
   // Bookmarks
+  'msg_bookmark_added': 'تم حفظ العلامة',
+  'msg_bookmark_removed': 'تم حذف العلامة',
   'msg_no_bookmarks': 'لا توجد علامات محفوظة',
   'lbl_verse_num': 'آية',
   'lbl_remove_bookmark': 'إزالة العلامة',
@@ -88,4 +90,34 @@ final Map<String, String> arEg = {
   'lbl_try_again': 'حاول مرة أخرى',
   'lbl_save_practice': 'تحديد لتثبيت الحفظ والتالي',
   'msg_incorrect_recitation': 'التلاوة تحتاج لتحسين.',
+  'lbl_tap_to_speak': 'اضغط للتحدث',
+  'msg_tap_to_stop': 'اضغط للإيقاف',
+  'lbl_search_tooltip': 'بحث في القرآن',
+  // Offline
+  'msg_offline': 'أنت غير متصل بالإنترنت',
+  'msg_offline_data': 'عرض البيانات المحفوظة',
+  // Voice Dialog
+  'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
+  'msg_tap_to_resume': 'اضغط للمتابعة',
+  'lbl_incorrect': 'تحتاج لتحسين',
+  // Accessibility
+  'lbl_back': 'رجوع',
+  'lbl_help': 'مساعدة',
+  'lbl_hifz_mode': 'تفعيل وضع الحفظ',
+  'lbl_exit_hifz_mode': 'إلغاء وضع الحفظ',
+  'lbl_hifz_mode_on': 'تم تفعيل وضع الحفظ',
+  'lbl_hifz_mode_off': 'تم إلغاء وضع الحفظ',
+  'lbl_quran_text': 'نص القرآن',
+  'lbl_more_options': 'خيارات إضافية',
+  'lbl_surah_list': 'قائمة السور',
+  'lbl_bismillah': 'بسم الله الرحمن الرحيم',
+  // Search Screen
+  'lbl_surahs': 'السور',
+  'lbl_verses': 'الآيات',
+  'msg_no_results': 'لا توجد نتائج',
+  'msg_search_hint': 'ابحث عن سورة أو آية',
+  'lbl_error': 'خطأ',
+  'msg_error_prefix': 'حدث خطأ: ',
+  'msg_could_not_open': 'تعذر فتح الرابط: ',
+  'lbl_search_surah': 'البحث عن سورة...',
 };
