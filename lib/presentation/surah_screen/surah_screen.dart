@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // Required for RenderParagraph
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 import 'package:hafiz_app/localization/app_localization.dart';
@@ -29,26 +30,25 @@ class _SurahScreenState extends State<SurahScreen> {
   Surah? surah;
 
   // Scroll management
-  final ScrollController _scrollController = ScrollController();
+  ScrollController? _scrollControllerForInit;
+  ScrollController get _scrollController => _scrollControllerForInit!;
   double? initialOffset;
 
   // Hifz Mode State
   bool _isHifzMode = false;
   final Set<int> _revealedVerses = {};
   int? _selectedVerse; // For visual selection feedback
+  int? _highlightedVerse; // Verse to highlight and scroll to
+
+  // Scroll Keys
+  final Map<int, GlobalKey> _verseKeys = {};
+  List<_VerseRange> _currentVerseRanges = [];
 
   // Voice Verification
-  // Voice Verification
-  // final VoiceVerificationService _voiceService = VoiceVerificationService(); // Already defined above? No, checking previous lines.
-  // Actually, I introduced a duplicate in previous turn.
-  // Let's just keep the necessary ones.
-
   final VoiceVerificationService _voiceService = VoiceVerificationService();
   bool _isListening = false;
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
-
-  // Voice Verification
 
   // Key for accurate hit testing on RichText with WidgetSpans
   final GlobalKey _richTextKey = GlobalKey();
@@ -56,41 +56,134 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void initState() {
     super.initState();
-    super.initState();
-    // _voiceService.initialize(); // Lazy init on button click logic
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)!.settings.arguments;
+    // Logic moved to didChangeDependencies to safely access ModalRoute
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_scrollControllerForInit == null) {
+      final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Surah) {
         surah = args;
       } else if (args is Map) {
         surah = args['surah'] as Surah?;
-        final off = args['offset'];
-        if (off is num) initialOffset = off.toDouble();
 
         final vIndex = args['verseIndex'];
         if (vIndex is int) {
-          // verseIndex is 0-based index? Verse numbers are 1-based.
-          // Bookmark likely passes 0-based index (verseNumber - 1).
-          // Internal usage depends. Let's assume 1-based for _selectedVerse?
-          // In _buildRichTextContent: `isSelected = _selectedVerse == aya.verseNumber`.
-          // So _selectedVerse should be 1-based.
-          // BookmarksScreen passes `bookmark.verseNumber - 1`.
-          // So we add 1 back.
+          // Prefer verseIndex for precise scrolling - don't use offset
           _selectedVerse = vIndex + 1;
+          _highlightedVerse = vIndex + 1;
+        } else {
+          // Use offset only when verseIndex is not provided
+          final off = args['offset'];
+          if (off is num) initialOffset = off.toDouble();
         }
       }
 
       if (surah != null) {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
-        if (mounted) setState(() {});
+      }
+
+      _scrollControllerForInit = ScrollController(
+        initialScrollOffset: initialOffset ?? 0,
+      );
+      _scrollControllerForInit!.addListener(() {
+        if (surah != null) {
+          PrefUtils().setSurahOffset(
+            surah!.id,
+            _scrollControllerForInit!.offset,
+          );
+        }
+      });
+    }
+  }
+
+  void _scrollToVerse(int verseNumber, List<Verse> chapters) {
+    // Clear highlight after a delay
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _highlightedVerse = null;
+        });
       }
     });
-    super.initState();
+
+    if (PrefUtils().getVerseViewMode()) {
+      // Single Line Mode - use GlobalKey
+      final key = _verseKeys[verseNumber];
+      if (key != null && key.currentContext != null) {
+        Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.3, // Center-ish
+        );
+      }
+    } else {
+      // Mushaf/RichText Mode - use RenderParagraph to get exact position
+      final RenderObject? renderObject = _richTextKey.currentContext
+          ?.findRenderObject();
+      bool scrolled = false;
+
+      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
+        // Find the verse range for the target verse
+        final verseRange = _currentVerseRanges.firstWhere(
+          (r) => r.verse.verseNumber == verseNumber && !r.isBadge,
+          orElse: () => _currentVerseRanges.first,
+        );
+
+        // Get the boxes for this text range
+        final boxes = renderObject.getBoxesForSelection(
+          TextSelection(
+            baseOffset: verseRange.start,
+            extentOffset: verseRange.start + 1,
+          ),
+        );
+
+        if (boxes.isNotEmpty) {
+          // Get RichText's position in the scroll view
+          final richTextBox = renderObject.localToGlobal(Offset.zero);
+          final scrollOffset = _scrollController.offset;
+
+          // Calculate absolute position: current scroll + relative position + box top
+          // Subtract some offset to show verse near top (not at very top)
+          final targetScroll =
+              scrollOffset + richTextBox.dy + boxes.first.top - 150;
+
+          _scrollController.animateTo(
+            targetScroll.clamp(0.0, _scrollController.position.maxScrollExtent),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+          scrolled = true;
+        }
+      }
+
+      if (!scrolled) {
+        // Fallback: estimate based on verse index
+        final verseIndex = chapters.indexWhere(
+          (v) => v.verseNumber == verseNumber,
+        );
+        if (verseIndex >= 0) {
+          final double contentHeight =
+              _scrollController.position.maxScrollExtent;
+          // Improved heuristic: assume uniformity if totally blind, but better than nothing
+          final double estimatedPosition =
+              (verseIndex / chapters.length) * contentHeight;
+          _scrollController.animateTo(
+            estimatedPosition.clamp(0.0, contentHeight),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollControllerForInit?.dispose();
     super.dispose();
   }
 
@@ -111,7 +204,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       state.feedbackMessage != null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(state.feedbackMessage!),
+                        content: Text(state.feedbackMessage!.tr),
                         duration: const Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -140,9 +233,30 @@ class _SurahScreenState extends State<SurahScreen> {
                 if (state is LoadingSurahState) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is FailureSurahState) {
-                  return Center(child: Text(state.errorMessage));
+                  return Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(state.errorMessage),
+                    ),
+                  );
                 } else {
                   final chapters = (state as SuccessSurahState).chapters;
+                  // Trigger scroll if selectedVerse is set and not scrolled yet
+                  if (_selectedVerse != null && chapters.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && _selectedVerse != null) {
+                        // Small delay to ensure layout is final and offsets are ready
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted && _selectedVerse != null) {
+                            _scrollToVerse(_selectedVerse!, chapters);
+                            _selectedVerse =
+                                null; // Clear to avoid re-scrolling
+                          }
+                        });
+                      }
+                    });
+                  }
+
                   return BlocBuilder<BookmarkBloc, BookmarkState>(
                     builder: (context, bookmarkState) {
                       return BlocBuilder<
@@ -188,26 +302,43 @@ class _SurahScreenState extends State<SurahScreen> {
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF006754),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
-        onPressed: () => NavigatorService.goBack(),
+      leading: Semantics(
+        button: true,
+        label: 'lbl_back'.tr,
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          onPressed: () => NavigatorService.goBack(),
+        ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.help_outline, color: Colors.white),
-          onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
-        ),
-        IconButton(
-          icon: Icon(
-            _isHifzMode ? Icons.visibility_off : Icons.visibility,
-            color: Colors.white,
+        Semantics(
+          button: true,
+          label: 'lbl_help'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
           ),
-          onPressed: () {
-            setState(() {
-              _isHifzMode = !_isHifzMode;
-              _revealedVerses.clear();
-            });
-          },
+        ),
+        Semantics(
+          button: true,
+          label: _isHifzMode ? 'lbl_exit_hifz_mode'.tr : 'lbl_hifz_mode'.tr,
+          child: IconButton(
+            icon: Icon(
+              _isHifzMode ? Icons.visibility_off : Icons.visibility,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _isHifzMode = !_isHifzMode;
+                _revealedVerses.clear();
+              });
+              // Announce mode change for accessibility
+              SemanticsService.announce(
+                _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
+                TextDirection.ltr,
+              );
+            },
+          ),
         ),
         BlocBuilder<BookmarkBloc, BookmarkState>(
           builder: (context, state) {
@@ -217,43 +348,61 @@ class _SurahScreenState extends State<SurahScreen> {
                 (element) => element.surahId == (surah?.id ?? -1),
               );
             }
-            return IconButton(
-              icon: Icon(
-                isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                if (surah == null) return;
-                if (isBookmarked) {
-                  context.read<BookmarkBloc>().add(
-                    RemoveBookmarkEvent(surah!.id, 1),
-                  );
-                } else {
-                  context.read<BookmarkBloc>().add(
-                    AddBookmarkEvent(
-                      BookmarkModel(
-                        surahId: surah!.id,
-                        surahName: surah!.nameEnglish,
-                        verseNumber: 1,
-                        createdAt: DateTime.now(),
+            return Semantics(
+              button: true,
+              label: isBookmarked
+                  ? 'lbl_remove_bookmark'.tr
+                  : 'lbl_add_bookmark'.tr,
+              child: IconButton(
+                icon: Icon(
+                  isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  if (surah == null) return;
+                  if (isBookmarked) {
+                    context.read<BookmarkBloc>().add(
+                      RemoveBookmarkEvent(surah!.id, 1),
+                    );
+                  } else {
+                    context.read<BookmarkBloc>().add(
+                      AddBookmarkEvent(
+                        BookmarkModel(
+                          surahId: surah!.id,
+                          surahName: surah!.nameEnglish,
+                          verseNumber: 1,
+                          createdAt: DateTime.now(),
+                        ),
                       ),
-                    ),
-                  );
-                }
-              },
+                    );
+                  }
+                },
+              ),
             );
           },
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        title: Text(
-          surah?.localizedName(context) ?? '',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            fontFamily: 'Amiri',
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Padding(
+            // Increased padding to prevent overlap with action icons (3 icons * 48 = 144 + margin)
+            padding: const EdgeInsets.symmetric(horizontal: 146.0),
+            child: Semantics(
+              header: true,
+              child: Text(
+                surah?.localizedName(context) ?? '',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  fontFamily: 'Amiri',
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           ),
         ),
         background: Stack(
@@ -261,11 +410,13 @@ class _SurahScreenState extends State<SurahScreen> {
             Positioned(
               right: -55,
               bottom: -10,
-              child: CustomImageView(
-                fit: BoxFit.cover,
-                imagePath: ImageConstant.imgQuranOnboarding,
-                height: 150.v,
-                width: 150.h,
+              child: ExcludeSemantics(
+                child: CustomImageView(
+                  fit: BoxFit.cover,
+                  imagePath: ImageConstant.imgQuranOnboarding,
+                  height: 150.v,
+                  width: 150.h,
+                ),
               ),
             ),
             Container(
@@ -288,17 +439,20 @@ class _SurahScreenState extends State<SurahScreen> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      alignment: Alignment.center,
-      child: Text(
-        'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-        textDirection: TextDirection.rtl,
-        style: TextStyle(
-          fontFamily: 'Amiri',
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          color: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40),
+    return Semantics(
+      label: 'lbl_bismillah'.tr,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        alignment: Alignment.center,
+        child: Text(
+          'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+          textDirection: TextDirection.rtl,
+          style: TextStyle(
+            fontFamily: 'Amiri',
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40),
+          ),
         ),
       ),
     );
@@ -319,70 +473,88 @@ class _SurahScreenState extends State<SurahScreen> {
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
-            ListTile(
-              leading: Icon(
-                isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
-                color: Colors.teal,
-              ),
-              title: Text(
-                isBookmarked ? 'lbl_remove_bookmark'.tr : 'lbl_add_bookmark'.tr,
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                if (isBookmarked) {
-                  context.read<BookmarkBloc>().add(
-                    RemoveBookmarkEvent(surah!.id, aya.verseNumber),
-                  );
-                } else {
-                  context.read<BookmarkBloc>().add(
-                    AddBookmarkEvent(
-                      BookmarkModel(
-                        surahId: surah!.id,
-                        surahName: surah!.nameEnglish,
-                        verseNumber: aya.verseNumber,
-                        createdAt: DateTime.now(),
+            Semantics(
+              button: true,
+              label: isBookmarked
+                  ? 'lbl_remove_bookmark'.tr
+                  : 'lbl_add_bookmark'.tr,
+              child: ListTile(
+                leading: Icon(
+                  isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
+                  color: Colors.teal,
+                ),
+                title: Text(
+                  isBookmarked
+                      ? 'lbl_remove_bookmark'.tr
+                      : 'lbl_add_bookmark'.tr,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (isBookmarked) {
+                    context.read<BookmarkBloc>().add(
+                      RemoveBookmarkEvent(surah!.id, aya.verseNumber),
+                    );
+                  } else {
+                    context.read<BookmarkBloc>().add(
+                      AddBookmarkEvent(
+                        BookmarkModel(
+                          surahId: surah!.id,
+                          surahName: surah!.nameEnglish,
+                          verseNumber: aya.verseNumber,
+                          createdAt: DateTime.now(),
+                        ),
                       ),
-                    ),
-                  );
-                }
-              },
+                    );
+                  }
+                },
+              ),
             ),
-            ListTile(
-              leading: Icon(
-                isError ? Icons.playlist_remove : Icons.error_outline,
-                color: Colors.redAccent,
-              ),
-              title: Text(
-                isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                if (isError) {
-                  context.read<RecitationErrorBloc>().add(
-                    RemoveRecitationErrorEvent(surah!.id, aya.verseNumber),
-                  );
-                } else {
-                  context.read<RecitationErrorBloc>().add(
-                    AddRecitationErrorEvent(
-                      RecitationErrorModel(
-                        surahId: surah!.id,
-                        surahName: surah!.nameEnglish,
-                        verseId: aya.verseNumber,
-                        createdAt: DateTime.now(),
+            Semantics(
+              button: true,
+              label: isError
+                  ? 'msg_unmark_practice'.tr
+                  : 'msg_mark_practice'.tr,
+              child: ListTile(
+                leading: Icon(
+                  isError ? Icons.playlist_remove : Icons.error_outline,
+                  color: Colors.redAccent,
+                ),
+                title: Text(
+                  isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (isError) {
+                    context.read<RecitationErrorBloc>().add(
+                      RemoveRecitationErrorEvent(surah!.id, aya.verseNumber),
+                    );
+                  } else {
+                    context.read<RecitationErrorBloc>().add(
+                      AddRecitationErrorEvent(
+                        RecitationErrorModel(
+                          surahId: surah!.id,
+                          surahName: surah!.nameEnglish,
+                          verseId: aya.verseNumber,
+                          createdAt: DateTime.now(),
+                        ),
                       ),
-                    ),
-                  );
-                }
-              },
+                    );
+                  }
+                },
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.mic, color: Colors.blueAccent),
-              title: Text('lbl_verify_recitation'.tr),
-              onTap: () {
-                Navigator.pop(context);
-                _showVoiceDialog(context, aya);
-              },
+            Semantics(
+              button: true,
+              label: 'lbl_verify_recitation'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.mic, color: Colors.blueAccent),
+                title: Text('lbl_verify_recitation'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showVoiceDialog(context, aya);
+                },
+              ),
             ),
           ],
         ),
@@ -395,8 +567,28 @@ class _SurahScreenState extends State<SurahScreen> {
     bool available = await _voiceService.requestPermission();
     if (!available) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone permission required.')),
+        // Show Dialog to guide user to settings
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('msg_mic_permission'.tr),
+            content: Text(
+              'msg_mic_permission_desc'.tr,
+            ), // We might need to add this key or just use generic text
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('lbl_cancel'.tr),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  openAppSettings();
+                },
+                child: Text('lbl_settings'.tr),
+              ),
+            ],
+          ),
         );
       }
       return;
@@ -405,8 +597,8 @@ class _SurahScreenState extends State<SurahScreen> {
     // 2. Prepare Expectation (Strip Bismillah)
     String expectedText = aya.text;
     if (aya.verseNumber == 1 && surah?.id != 1) {
-      const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
-      const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+      const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+      const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
       if (expectedText.startsWith(bismillahPrefix)) {
         expectedText = expectedText.substring(bismillahPrefix.length).trim();
       } else if (expectedText.startsWith(bismillahSimple)) {
@@ -414,8 +606,9 @@ class _SurahScreenState extends State<SurahScreen> {
       }
     }
 
-    String spokenText = "lbl_listening_active".tr;
-    Color statusColor = Colors.grey;
+    String spokenText = 'lbl_listening'.tr;
+    Color statusColor = Colors.blueAccent;
+    bool hasStartedListening = false;
 
     if (!mounted) return;
 
@@ -433,9 +626,10 @@ class _SurahScreenState extends State<SurahScreen> {
             void startListening() {
               if (!_isListening) {
                 _isListening = true;
+                hasStartedListening = true;
                 setDialogState(() {
                   statusColor = Colors.blueAccent;
-                  spokenText = "lbl_listening".tr;
+                  spokenText = 'lbl_listening'.tr;
                 });
                 _voiceService.listen(
                   onResult: (text) {
@@ -488,78 +682,79 @@ class _SurahScreenState extends State<SurahScreen> {
                 _isListening = false;
                 setDialogState(() {
                   statusColor = Colors.grey;
-                  spokenText = "Tap mic to resume"; // Could localize if needed
+                  spokenText = 'msg_tap_to_resume'.tr;
                 });
               }
             }
 
-            // Auto-start on first load of this dialog
-            // We use a post-frame callback or just call it if we haven't started yet and it's the first build
-            // using a local flag to prevent re-triggering during rebuilds
-            // But simplified: just check _isListening? No, broken if we toggled it.
-            // Better: run startListening once.
-            // However, StatefulBuilder runs builder on every setState.
-            // We can check if spokenText is still the initial value to trigger auto-start?
-            if (spokenText == "lbl_listening_active".tr && !_isListening) {
-              // Defer slightly to allow build to finish
+            // Auto-start on first build
+            if (!hasStartedListening && !_isListening) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 startListening();
               });
             }
 
             return AlertDialog(
-              title: Text('lbl_recite_verify'.tr),
+              title: Semantics(
+                header: true,
+                child: Text('lbl_recite_verify'.tr),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (_isListening) {
-                        stopListening();
-                      } else {
-                        startListening();
-                      }
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _isListening
-                            ? Colors.redAccent.withValues(alpha: 0.1)
-                            : Colors.blueAccent.withValues(alpha: 0.1),
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: Icon(
-                        _isListening ? Icons.mic : Icons.mic_off,
-                        size: 48,
-                        color: _isListening
-                            ? Colors.redAccent
-                            : Colors.blueAccent,
+                  Semantics(
+                    button: true,
+                    label: _isListening
+                        ? 'msg_tap_to_stop'.tr
+                        : 'lbl_tap_to_speak'.tr,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_isListening) {
+                          stopListening();
+                        } else {
+                          startListening();
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _isListening
+                              ? Colors.redAccent.withValues(alpha: 0.1)
+                              : Colors.blueAccent.withValues(alpha: 0.1),
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Icon(
+                          _isListening ? Icons.mic : Icons.mic_off,
+                          size: 48,
+                          color: _isListening
+                              ? Colors.redAccent
+                              : Colors.blueAccent,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    spokenText == "lbl_listening_active".tr
-                        ? 'lbl_listening'.tr
-                        : spokenText,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontFamily: 'Amiri',
-                      color: statusColor,
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      spokenText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontFamily: 'Amiri',
+                        color: statusColor,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _isListening
-                        ? "Tap to Stop"
-                        : "Tap to Speak", // Simple instructions
+                    _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
                   const Divider(),
                   Text(
-                    "lbl_original".tr,
+                    'lbl_original'.tr,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
@@ -605,8 +800,6 @@ class _SurahScreenState extends State<SurahScreen> {
       if (currentIndex != -1 && currentIndex < chapters.length - 1) {
         // Next verse exists
         final nextVerse = chapters[currentIndex + 1];
-        // Scroll to it
-        // _scrollToVerse(nextVerse.verseNumber); // Use scrollController if precise, or just open dialog
         _showVoiceDialog(context, nextVerse);
       } else {
         // End of Surah
@@ -615,15 +808,17 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
-  void _showWrongDialog(BuildContext context, Verse aya) {
+  void _showWrongDialog(BuildContext parentContext, Verse aya) {
     _sessionTotalCount++;
+
+    // Capture the bloc reference from parent context before showing dialog
+    final recitationErrorBloc = parentContext.read<RecitationErrorBloc>();
+
     showDialog(
-      context: context,
+      context: parentContext,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'lbl_practice_list'.tr,
-        ), // Using Review List as title context
+        title: Text('lbl_incorrect'.tr),
         content: Text('msg_incorrect_recitation'.tr),
         actions: [
           TextButton(
@@ -631,11 +826,9 @@ class _SurahScreenState extends State<SurahScreen> {
               Navigator.pop(dialogContext);
               // Wait for pop to finish before opening new dialog
               Future.delayed(const Duration(milliseconds: 300), () {
-                if (context.mounted)
-                  _showVoiceDialog(
-                    context,
-                    aya,
-                  ); // Try Again with original context
+                if (parentContext.mounted) {
+                  _showVoiceDialog(parentContext, aya);
+                }
               });
             },
             child: Text('lbl_try_again'.tr),
@@ -646,9 +839,8 @@ class _SurahScreenState extends State<SurahScreen> {
               foregroundColor: Colors.white,
             ),
             onPressed: () {
-              // Mark for Practice Logic
-              // Use the original 'context' which is from SurahScreen (passed in) to access the Bloc
-              context.read<RecitationErrorBloc>().add(
+              // Mark for Practice Logic - use captured bloc reference
+              recitationErrorBloc.add(
                 AddRecitationErrorEvent(
                   RecitationErrorModel(
                     surahId: surah!.id,
@@ -669,13 +861,16 @@ class _SurahScreenState extends State<SurahScreen> {
                 );
                 if (currentIndex != -1 && currentIndex < chapters.length - 1) {
                   Future.delayed(const Duration(milliseconds: 300), () {
-                    if (context.mounted) {
-                      _showVoiceDialog(context, chapters[currentIndex + 1]);
+                    if (parentContext.mounted) {
+                      _showVoiceDialog(
+                        parentContext,
+                        chapters[currentIndex + 1],
+                      );
                     }
                   });
                 } else {
                   Future.delayed(const Duration(milliseconds: 300), () {
-                    if (context.mounted) _showCompletionDialog();
+                    if (parentContext.mounted) _showCompletionDialog();
                   });
                 }
               }
@@ -701,7 +896,13 @@ class _SurahScreenState extends State<SurahScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.celebration, color: Colors.green, size: 50),
+              ExcludeSemantics(
+                child: const Icon(
+                  Icons.celebration,
+                  color: Colors.green,
+                  size: 50,
+                ),
+              ),
               const SizedBox(height: 16),
               Text(
                 'msg_session_score'.tr.replaceAll(
@@ -791,6 +992,12 @@ class _SurahScreenState extends State<SurahScreen> {
     final List<_VerseRange> verseRanges = [];
     int currentOffset = 0;
 
+    // Reset current ranges for scroll logic
+    _currentVerseRanges =
+        verseRanges; // Will be populated by reference or re-assigned?
+    // Actually we should assign at end, or use the local list and assign to member.
+    // Let's rely on local list then assign.
+
     for (var aya in chapters) {
       bool isBookmarked = false;
       if (bookmarkState is BookmarkLoaded) {
@@ -809,10 +1016,10 @@ class _SurahScreenState extends State<SurahScreen> {
 
       bool isBlurred =
           _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
-      bool isSelected = _selectedVerse == aya.verseNumber;
+      bool isHighlighted = _highlightedVerse == aya.verseNumber;
 
       Color? backgroundColor;
-      if (isSelected) {
+      if (isHighlighted) {
         backgroundColor = isDark
             ? const Color(0xFF2A4A42)
             : const Color(0xFFB2DFDB);
@@ -837,7 +1044,7 @@ class _SurahScreenState extends State<SurahScreen> {
       if (aya.verseNumber == 1 && surah?.id != 1) {
         // EXACT string from the JSON assets (surah_3.json)
         // characters: Ba, Kasra, Sin, Sukun, Mim, Space, Allah...
-        const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+        const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
 
         // Remove Bismillah and any leading whitespace
         if (verseText.startsWith(bismillahPrefix)) {
@@ -845,7 +1052,7 @@ class _SurahScreenState extends State<SurahScreen> {
         } else {
           // Fallback: Check for standard Bismillah without the specific diacritics of the local file
           // just in case some files differ (though unlikely if they are from same source).
-          const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+          const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
           if (verseText.startsWith(bismillahSimple)) {
             verseText = verseText.substring(bismillahSimple.length).trim();
           }
@@ -927,38 +1134,37 @@ class _SurahScreenState extends State<SurahScreen> {
     }
 
     final textSpan = TextSpan(children: spans);
+    _currentVerseRanges = verseRanges; // Update member for scrolling
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onTapUp: (details) {
-            final range = _findRange(details.localPosition, verseRanges);
-            if (range == null) return;
-
-            if (_isHifzMode) {
-              // Unblur (toggle reveal) only
-              setState(() {
-                if (_revealedVerses.contains(range.verse.verseNumber)) {
-                  _revealedVerses.remove(range.verse.verseNumber);
-                } else {
-                  _revealedVerses.add(range.verse.verseNumber);
-                }
-              });
-            } else {
-              // Standard mode: Open menu
-              _showVerseMenu(
-                context,
-                range.verse,
-                range.isBookmarked,
-                range.isError,
-              );
-            }
-          },
-          onLongPressStart: (details) {
-            if (_isHifzMode) {
-              // Hifz mode: Open menu on long press
+        return Semantics(
+          label: 'lbl_quran_text'.tr,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (details) {
               final range = _findRange(details.localPosition, verseRanges);
-              if (range != null) {
+              if (range == null) return;
+
+              if (_isHifzMode) {
+                // Unblur (toggle reveal) only
+                setState(() {
+                  if (_revealedVerses.contains(range.verse.verseNumber)) {
+                    _revealedVerses.remove(range.verse.verseNumber);
+                  } else {
+                    _revealedVerses.add(range.verse.verseNumber);
+                  }
+                });
+              } else {
+                // Standard mode: Open menu
+                // Save interaction
+                if (surah != null) {
+                  PrefUtils().setSurahVerseIndex(
+                    surah!.id,
+                    range.verse.verseNumber - 1,
+                  );
+                  PrefUtils().saveLastReadSurah(surah!);
+                }
                 _showVerseMenu(
                   context,
                   range.verse,
@@ -966,13 +1172,27 @@ class _SurahScreenState extends State<SurahScreen> {
                   range.isError,
                 );
               }
-            }
-          },
-          child: RichText(
-            key: _richTextKey,
-            textDirection: TextDirection.rtl,
-            textAlign: TextAlign.justify,
-            text: textSpan,
+            },
+            onLongPressStart: (details) {
+              if (_isHifzMode) {
+                // Hifz mode: Open menu on long press
+                final range = _findRange(details.localPosition, verseRanges);
+                if (range != null) {
+                  _showVerseMenu(
+                    context,
+                    range.verse,
+                    range.isBookmarked,
+                    range.isError,
+                  );
+                }
+              }
+            },
+            child: RichText(
+              key: _richTextKey,
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.justify,
+              text: textSpan,
+            ),
           ),
         );
       },
@@ -1039,9 +1259,14 @@ class _SurahScreenState extends State<SurahScreen> {
 
         bool isBlurred =
             _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
+        bool isHighlighted = _highlightedVerse == aya.verseNumber;
 
         Color? backgroundColor;
-        if (isRecitationError) {
+        if (isHighlighted) {
+          backgroundColor = isDark
+              ? const Color(0xFF2A4A42)
+              : const Color(0xFFB2DFDB);
+        } else if (isRecitationError) {
           backgroundColor = isDark
               ? const Color(0xFF5C1B1B)
               : const Color(0xFFFFEBEE);
@@ -1053,103 +1278,124 @@ class _SurahScreenState extends State<SurahScreen> {
 
         String verseText = aya.text;
         if (aya.verseNumber == 1 && surah?.id != 1) {
-          const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+          const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
           if (verseText.startsWith(bismillahPrefix)) {
             verseText = verseText.substring(bismillahPrefix.length).trim();
           } else {
-            const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+            const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
             if (verseText.startsWith(bismillahSimple)) {
               verseText = verseText.substring(bismillahSimple.length).trim();
             }
           }
         }
 
-        return GestureDetector(
-          onTap: () {
-            if (_isHifzMode) {
-              setState(() {
-                if (_revealedVerses.contains(aya.verseNumber)) {
-                  _revealedVerses.remove(aya.verseNumber);
-                } else {
-                  _revealedVerses.add(aya.verseNumber);
+        return Semantics(
+          button: true,
+          label: '${'lbl_ayah'.tr} ${aya.verseNumber}',
+          child: GestureDetector(
+            onTap: () {
+              if (_isHifzMode) {
+                setState(() {
+                  if (_revealedVerses.contains(aya.verseNumber)) {
+                    _revealedVerses.remove(aya.verseNumber);
+                  } else {
+                    _revealedVerses.add(aya.verseNumber);
+                  }
+                });
+              } else {
+                // Save interaction
+                if (surah != null) {
+                  PrefUtils().setSurahVerseIndex(
+                    surah!.id,
+                    aya.verseNumber - 1,
+                  );
+                  PrefUtils().saveLastReadSurah(surah!);
                 }
-              });
-            } else {
-              _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-            }
-          },
-          onLongPress: () {
-            if (_isHifzMode) {
-              _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-            }
-          },
+                _showVerseMenu(context, aya, isBookmarked, isRecitationError);
+              }
+            },
+            onLongPress: () {
+              if (_isHifzMode) {
+                _showVerseMenu(context, aya, isBookmarked, isRecitationError);
+              }
+            },
 
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-              border: (isBookmarked || isRecitationError)
-                  ? Border.all(
-                      color: isRecitationError
-                          ? Colors.red.withOpacity(0.3)
-                          : Colors.teal.withOpacity(0.3),
-                    )
-                  : null,
-            ),
-            child: Wrap(
-              alignment: WrapAlignment.start,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              textDirection: TextDirection.rtl,
-              children: [
-                Text(
-                  verseText,
-                  textAlign: TextAlign.justify,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontFamily: 'Amiri',
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w700,
-                    color: isBlurred ? Colors.transparent : textColor,
-                    height: 1.8,
-                    shadows: isBlurred
-                        ? [
-                            Shadow(
-                              color: textColor,
-                              blurRadius: 20.0,
-                              offset: Offset.zero,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 32,
-                  height: 32,
-                  margin: const EdgeInsets.only(top: 4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: badgeGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(color: badgeBorder, width: 1.2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    aya.verseNumber.toLocalizedNumber(context),
+            child: Container(
+              key: _verseKeys.putIfAbsent(
+                aya.verseNumber,
+                () => GlobalKey(debugLabel: 'verse_${aya.verseNumber}'),
+              ),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+                border: (isBookmarked || isRecitationError || isHighlighted)
+                    ? Border.all(
+                        color: isHighlighted
+                            ? Colors.teal.withOpacity(0.5)
+                            : isRecitationError
+                            ? Colors.red.withOpacity(0.3)
+                            : Colors.teal.withOpacity(0.3),
+                        width: isHighlighted ? 2 : 1,
+                      )
+                    : null,
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.start,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                textDirection: TextDirection.rtl,
+                children: [
+                  Text(
+                    verseText,
+                    textAlign: TextAlign.justify,
+                    textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: badgeText,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w700,
+                      color: isBlurred ? Colors.transparent : textColor,
+                      height: 1.8,
+                      shadows: isBlurred
+                          ? [
+                              Shadow(
+                                color: textColor,
+                                blurRadius: 20.0,
+                                offset: Offset.zero,
+                              ),
+                            ]
+                          : null,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      margin: const EdgeInsets.only(top: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: badgeGradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        border: Border.all(color: badgeBorder, width: 1.2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        aya.verseNumber.toLocalizedNumber(context),
+                        style: TextStyle(
+                          fontFamily: 'Amiri',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: badgeText,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

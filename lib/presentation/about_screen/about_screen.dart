@@ -8,10 +8,34 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io' show Platform;
 
-class AboutScreen extends StatelessWidget {
+import 'package:package_info_plus/package_info_plus.dart';
+
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
   static Widget builder(BuildContext context) => const AboutScreen();
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _version = info.version);
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +65,7 @@ class AboutScreen extends StatelessWidget {
         }
         if (!ok) {
           globalMessengerKey.currentState?.showSnackBar(
-            SnackBar(content: Text('Could not open: $url')),
+            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
           );
         }
         if (ok) {
@@ -49,7 +73,7 @@ class AboutScreen extends StatelessWidget {
         }
       } catch (e) {
         globalMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text('Could not open: $url')),
+          SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
         );
       }
     }
@@ -92,8 +116,9 @@ class AboutScreen extends StatelessWidget {
                                 'message': msg,
                                 'timestamp': FieldValue.serverTimestamp(),
                                 'platform': Platform.operatingSystem,
-                                'version':
-                                    '1.1.0', // Hardcoded for now based on pubspec
+                                'version': _version.isNotEmpty
+                                    ? _version
+                                    : 'Unknown',
                               });
 
                           if (context.mounted) {
@@ -109,7 +134,9 @@ class AboutScreen extends StatelessWidget {
                           setState(() => isSending = false);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
+                              SnackBar(
+                                content: Text('${"msg_error_prefix".tr}$e'),
+                              ),
                             );
                           }
                         }
@@ -141,6 +168,14 @@ class AboutScreen extends StatelessWidget {
             style: theme.textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),
+          if (_version.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'v$_version',
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
           const SizedBox(height: 12),
           Text('about_intro'.tr, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -157,9 +192,13 @@ class AboutScreen extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text('about_ack_idea_by'.tr),
-                  subtitle: Text(
-                    'https://github.com/abualgait',
-                    style: linkStyle,
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Mohamed Sayed'),
+                      const SizedBox(height: 4),
+                      Text('https://github.com/abualgait', style: linkStyle),
+                    ],
                   ),
                   onTap: () => openExternal('https://github.com/abualgait'),
                   onLongPress: () => copy('https://github.com/abualgait'),
@@ -210,7 +249,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.email_outlined),
-                  title: Text('lbl_contact_email'.tr), // Localized now
+                  title: Text('lbl_contact_email'.tr),
                   subtitle: const Text('support@hafizapp.com'),
                   onTap: () => openExternal(
                     'mailto:support@hafizapp.com?subject=Hafiz App Feedback',

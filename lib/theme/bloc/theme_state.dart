@@ -12,6 +12,11 @@ class DarkThemeState extends ThemeState {
   List<Object?> get props => ['dark'];
 }
 
+class SystemThemeState extends ThemeState {
+  @override
+  List<Object?> get props => ['system'];
+}
+
 class OfflineState extends ThemeState {
   @override
   List<Object?> get props => [];

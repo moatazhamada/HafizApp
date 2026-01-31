@@ -40,7 +40,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) =>
-          add(const LoadBookmarksEvent(feedbackMessage: 'Added to bookmarks')),
+          add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added')),
     );
   }
 
@@ -55,7 +55,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) => add(
-        const LoadBookmarksEvent(feedbackMessage: 'Removed from bookmarks'),
+        const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'),
       ),
     );
   }
