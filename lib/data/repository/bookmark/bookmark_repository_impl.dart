@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../core/errors/failures.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/bookmark_model.dart';
 import '../../datasource/bookmark/bookmark_local_data_source.dart';
 import '../../../domain/repository/bookmark_repository.dart';
@@ -16,7 +17,13 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
     try {
       final result = await localDataSource.getBookmarks();
       return Right(result);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load bookmarks: $e',
+        feature: 'Bookmarks',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return Left(CacheFailure('Failed to load bookmarks'));
     }
   }
@@ -27,7 +34,13 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
       final model = BookmarkModel.fromEntity(bookmark);
       final result = await localDataSource.addBookmark(model);
       return Right(result);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to add bookmark: $e',
+        feature: 'Bookmarks',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return Left(CacheFailure('Failed to add bookmark'));
     }
   }
@@ -40,7 +53,13 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
     try {
       final result = await localDataSource.removeBookmark(surahId, verseNumber);
       return Right(result);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to remove bookmark: $e',
+        feature: 'Bookmarks',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return Left(CacheFailure('Failed to remove bookmark'));
     }
   }
@@ -53,7 +72,13 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
     try {
       final result = await localDataSource.isBookmarked(surahId, verseNumber);
       return Right(result);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to check bookmark status: $e',
+        feature: 'Bookmarks',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return Left(CacheFailure('Failed to check bookmark status'));
     }
   }

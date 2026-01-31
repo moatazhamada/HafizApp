@@ -26,28 +26,38 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BlocProvider(
       create: (context) => _searchBloc,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).primaryColor,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => NavigatorService.goBack(),
-          ),
-          title: TextField(
-            controller: _searchController,
-            style: const TextStyle(color: Colors.white),
-            cursorColor: Colors.white,
-            decoration: const InputDecoration(
-              hintText: 'Search Surah...',
-              hintStyle: TextStyle(color: Colors.white70),
-              border: InputBorder.none,
+          leading: Semantics(
+            button: true,
+            label: 'lbl_back'.tr,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => NavigatorService.goBack(),
             ),
-            onChanged: (value) {
-              _searchBloc.add(SearchQueryChanged(value));
-            },
+          ),
+          title: Semantics(
+            textField: true,
+            label: 'lbl_search_surah'.tr,
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              cursorColor: Colors.white,
+              decoration: InputDecoration(
+                hintText: 'lbl_search_surah'.tr,
+                hintStyle: const TextStyle(color: Colors.white70),
+                border: InputBorder.none,
+              ),
+              onChanged: (value) {
+                _searchBloc.add(SearchQueryChanged(value));
+              },
+            ),
           ),
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
@@ -64,12 +74,17 @@ class _SearchScreenState extends State<SearchScreen> {
                           horizontal: 16.0,
                           vertical: 8.0,
                         ),
-                        child: Text(
-                          'Surahs',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            'lbl_surahs'.tr,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : Theme.of(context).primaryColor,
+                            ),
                           ),
                         ),
                       ),
@@ -77,17 +92,21 @@ class _SearchScreenState extends State<SearchScreen> {
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final surah = state.results[index];
-                        return InkWell(
-                          onTap: () {
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: surah,
-                            );
-                          },
-                          child: SurahListItem(
-                            surahId: surah.id,
-                            nameEnglish: surah.nameEnglish,
-                            nameArabic: surah.nameArabic,
+                        return Semantics(
+                          button: true,
+                          label: '${surah.nameEnglish}, ${surah.nameArabic}',
+                          child: InkWell(
+                            onTap: () {
+                              NavigatorService.pushNamed(
+                                AppRoutes.surahPage,
+                                arguments: surah,
+                              );
+                            },
+                            child: SurahListItem(
+                              surahId: surah.id,
+                              nameEnglish: surah.nameEnglish,
+                              nameArabic: surah.nameArabic,
+                            ),
                           ),
                         );
                       }, childCount: state.results.length),
@@ -102,12 +121,17 @@ class _SearchScreenState extends State<SearchScreen> {
                           16.0,
                           8.0,
                         ),
-                        child: Text(
-                          'Verses',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            'lbl_verses'.tr,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : Theme.of(context).primaryColor,
+                            ),
                           ),
                         ),
                       ),
@@ -121,44 +145,52 @@ class _SearchScreenState extends State<SearchScreen> {
                           orElse: () => QuranIndex.quranSurahs[0], // fallback
                         );
 
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          onTap: () {
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: {
-                                'surah': surah,
-                                'verseIndex': verse.verseNumber - 1,
-                                'resume': true,
-                              },
-                            );
-                          },
-                          title: _buildHighlightedText(
-                            context,
-                            verse.text, // Full Uthmani Text
-                            _searchActionTextForHighlighting(
-                              _searchController.text,
+                        return Semantics(
+                          button: true,
+                          label:
+                              '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish}, ${'lbl_ayah'.tr} ${verse.verseNumber}',
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
                             ),
-                          ),
-                          subtitle: Text(
-                            '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
+                            onTap: () {
+                              NavigatorService.pushNamed(
+                                AppRoutes.surahPage,
+                                arguments: {
+                                  'surah': surah,
+                                  'verseIndex': verse.verseNumber - 1,
+                                  'resume': true,
+                                },
+                              );
+                            },
+                            title: _buildHighlightedText(
+                              context,
+                              verse.text, // Full Uthmani Text
+                              _searchActionTextForHighlighting(
+                                _searchController.text,
+                              ),
                             ),
-                            child: Text(
-                              '${verse.verseNumber}',
+                            subtitle: Text(
+                              '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
                               style: TextStyle(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.grey[400] : null,
+                              ),
+                            ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).primaryColor.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '${verse.verseNumber}',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -169,12 +201,39 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               );
             } else if (state is SearchEmpty) {
-              return const Center(child: Text('No results found.'));
+              return Center(
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    'msg_no_results'.tr,
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              );
             } else if (state is SearchError) {
-              return Center(child: Text('Error: ${state.message}'));
+              return Center(
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    '${'lbl_error'.tr}: ${state.message}',
+                    style: TextStyle(
+                      color: isDark ? Colors.redAccent : Colors.red,
+                    ),
+                  ),
+                ),
+              );
             }
             // Initial state
-            return const Center(child: Text('Type to search for a Surah.'));
+            return Center(
+              child: Text(
+                'msg_search_hint'.tr,
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            );
           },
         ),
       ),
@@ -198,17 +257,17 @@ class _SearchScreenState extends State<SearchScreen> {
     String fullText,
     String query,
   ) {
-    if (query.isEmpty) return _plainText(fullText);
+    if (query.isEmpty) return _plainText(context, fullText);
 
     // Heuristic for simple substring match, respecting Diacritics
     final normalizedFull = _removeTashkeel(fullText);
     final normalizedQuery = _removeTashkeel(query);
 
-    if (normalizedQuery.isEmpty) return _plainText(fullText);
+    if (normalizedQuery.isEmpty) return _plainText(context, fullText);
 
     final startIndexNorm = normalizedFull.indexOf(normalizedQuery);
     if (startIndexNorm == -1) {
-      return _plainText(fullText);
+      return _plainText(context, fullText);
     } // Should match if logic is correct
 
     // Now map normalized indices back to original indices.
@@ -258,41 +317,43 @@ class _SearchScreenState extends State<SearchScreen> {
       originalEnd++;
     }
 
-    if (originalStart == -1 || originalEnd == -1) return _plainText(fullText);
+    if (originalStart == -1 || originalEnd == -1)
+      return _plainText(context, fullText);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? Colors.white
+        : Theme.of(context).textTheme.bodyLarge?.color;
+    final subtleColor = isDark
+        ? Colors.grey[400]
+        : Theme.of(context).textTheme.bodyMedium?.color;
 
     return RichText(
       textDirection: TextDirection.rtl,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
-        style: const TextStyle(
-          fontFamily: 'Amiri',
-          fontSize: 18,
-          color:
-              Colors.black, // Default color, will use Theme in real app ideally
-        ),
+        style: TextStyle(fontFamily: 'Amiri', fontSize: 18, color: textColor),
         children: [
           TextSpan(
             text: fullText.substring(0, originalStart),
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
+            style: TextStyle(color: subtleColor),
           ),
           TextSpan(
             text: fullText.substring(originalStart, originalEnd),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.amber.withValues(alpha: 0.4)
+              color: isDark
+                  ? const Color(0xFF004B40)
+                  : Theme.of(context).primaryColor,
+              backgroundColor: isDark
+                  ? Colors.amberAccent
                   : Theme.of(context).primaryColor.withValues(alpha: 0.1),
             ),
           ),
           TextSpan(
             text: fullText.substring(originalEnd),
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
+            style: TextStyle(color: subtleColor),
           ),
         ],
       ),
@@ -305,13 +366,18 @@ class _SearchScreenState extends State<SearchScreen> {
     ).hasMatch(char);
   }
 
-  Widget _plainText(String text) {
+  Widget _plainText(BuildContext context, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       text,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       textDirection: TextDirection.rtl,
-      style: const TextStyle(fontFamily: 'Amiri', fontSize: 18),
+      style: TextStyle(
+        fontFamily: 'Amiri',
+        fontSize: 18,
+        color: isDark ? Colors.white : null,
+      ),
     );
   }
 }

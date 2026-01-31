@@ -41,8 +41,8 @@ class HelpScreen extends StatelessWidget {
           _buildHelpItem(
             context,
             icon: Icons.error_outline,
-            title: 'help_mistakes_title'.tr,
-            description: 'help_mistakes_desc'.tr,
+            title: 'help_practice_title'.tr,
+            description: 'help_practice_desc'.tr,
             color: Colors.redAccent,
           ),
         ],

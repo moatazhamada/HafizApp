@@ -21,8 +21,21 @@ class VoiceVerificationService {
   }
 
   Future<bool> requestPermission() async {
-    return await initialize();
+    // First initialization attempt - this triggers the permission dialog if needed
+    bool result = await initialize();
+
+    if (!result) {
+      // If failed, wait a moment for permission dialog to complete
+      // Then retry once - handles case where user just granted permission
+      await Future.delayed(const Duration(milliseconds: 500));
+      result = await initialize();
+    }
+
+    return result;
   }
+
+  /// Check if speech recognition is currently available without re-initializing
+  bool get isAvailable => _isAvailable;
 
   Future<void> listen({
     required Function(String) onResult,
@@ -60,11 +73,31 @@ class VoiceVerificationService {
     final normVerse = _normalizeArabic(verseText);
 
     final dmp = DiffMatchPatch();
-    // dmp.Diff_Timeout = 1.0;
-    final diffs = dmp.diff(normVerse, normSpoken);
 
-    // Cleanup semantics usually makes diffs more human-readable
+    // First try standard diff
+    var diffs = dmp.diff(normVerse, normSpoken);
     dmp.diffCleanupSemantic(diffs);
+
+    // Calculate error ratio
+    int errorChars = diffs
+        .where((d) => d.operation != DIFF_EQUAL)
+        .fold(0, (sum, d) => sum + d.text.length);
+
+    // If there are errors, check if disregarding spaces solves it
+    // This handles "أ ل م" (spoken) matching "الم" (written)
+    if (errorChars > 0) {
+      final nSpokenNoSpace = normSpoken.replaceAll(' ', '');
+      final nVerseNoSpace = normVerse.replaceAll(' ', '');
+
+      if (nSpokenNoSpace == nVerseNoSpace) {
+        // Perfect match ignoring spaces! Return equal
+        return [Diff(DIFF_EQUAL, normVerse)];
+      }
+
+      // Also try to re-diff the no-space versions if they are close?
+      // For now, if exact match fails, we stick to original diff
+      // to allow user to see where they might have added words.
+    }
 
     return diffs;
   }
