@@ -20,6 +20,7 @@ void main() {
     mockDio.options = BaseOptions(
       baseUrl: 'https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1',
     );
+    when(() => mockDio.interceptors).thenReturn(Interceptors());
     networkManagerImpl = NetworkManagerImpl(mockDio);
     surahRemoteDataSource = SurahRemoteDataSourceImpl(
       networkManager: networkManagerImpl,
@@ -35,21 +36,28 @@ void main() {
         requestOptions: RequestOptions(baseUrl: ''),
       );
       when(
-        () =>
-            mockDio.get(any(), queryParameters: any(named: 'queryParameters')),
+        () => mockDio.get(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
       ).thenAnswer((_) async => response);
     }
 
     void setUpMockDioFailed() {
-      final response = Response(
-        data: '{}',
-        statusCode: 400,
-        requestOptions: RequestOptions(baseUrl: ''),
-      );
       when(
-        () =>
-            mockDio.get(any(), queryParameters: any(named: 'queryParameters')),
-      ).thenAnswer((_) async => response);
+        () => mockDio.get(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: ''),
+          error: 'Unknown Error',
+          type: DioExceptionType.unknown,
+        ),
+      );
     }
 
     test('make sure get surah return success', () async {
@@ -61,6 +69,7 @@ void main() {
         () => mockDio.get(
           '/verses/by_chapter/114',
           queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
         ),
       );
     });
