@@ -11,6 +11,8 @@ import 'package:hafiz_app/data/repository/surah/surah_repository_impl.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../fixture/fixture_reader.dart';
+import 'dart:io';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class MockSurahDataSource extends Mock implements SurahRemoteDataSource {}
 
@@ -21,6 +23,10 @@ void main() {
   late SurahRepositoryImpl surahRepositoryImpl;
   late MockSurahDataSource mockSurahDataSource;
   late MockNetworkInfo mockNetworkInfo;
+
+  setUpAll(() {
+    Hive.init(Directory.systemTemp.path);
+  });
 
   setUp(() {
     mockSurahDataSource = MockSurahDataSource();
