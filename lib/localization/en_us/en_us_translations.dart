@@ -71,6 +71,8 @@ final Map<String, String> enUs = {
       '• The verse will be highlighted.\n'
       "• Use this to track verses that need 'Tathbeet' (Strengthening).",
   // Bookmarks
+  'msg_bookmark_added': 'Bookmark added',
+  'msg_bookmark_removed': 'Bookmark removed',
   'msg_no_bookmarks': 'No bookmarks yet',
   'lbl_verse_num': 'Verse', // Generic "Verse X"
   'lbl_remove_bookmark': 'Remove Bookmark',
@@ -88,4 +90,34 @@ final Map<String, String> enUs = {
   'lbl_try_again': 'Try Again',
   'lbl_save_practice': 'Mark for Practice & Next',
   'msg_incorrect_recitation': 'Recitation needs improvement.',
+  'lbl_tap_to_speak': 'Tap to Speak',
+  'msg_tap_to_stop': 'Tap to Stop',
+  'lbl_search_tooltip': 'Search Quran',
+  // Offline
+  'msg_offline': 'You are offline',
+  'msg_offline_data': 'Showing offline data',
+  // Voice Dialog
+  'msg_mic_permission': 'Microphone permission required',
+  'msg_tap_to_resume': 'Tap to resume',
+  'lbl_incorrect': 'Needs Improvement',
+  // Accessibility
+  'lbl_back': 'Go back',
+  'lbl_help': 'Help',
+  'lbl_hifz_mode': 'Enable memorization mode',
+  'lbl_exit_hifz_mode': 'Disable memorization mode',
+  'lbl_hifz_mode_on': 'Memorization mode enabled',
+  'lbl_hifz_mode_off': 'Memorization mode disabled',
+  'lbl_quran_text': 'Quran text',
+  'lbl_more_options': 'More options',
+  'lbl_surah_list': 'List of Surahs',
+  'lbl_bismillah': 'In the name of Allah, the Most Gracious, the Most Merciful',
+  // Search Screen
+  'lbl_surahs': 'Surahs',
+  'lbl_verses': 'Verses',
+  'msg_no_results': 'No results found',
+  'msg_search_hint': 'Search for a Surah or verse',
+  'lbl_error': 'Error',
+  'msg_error_prefix': 'Error: ',
+  'msg_could_not_open': 'Could not open: ',
+  'lbl_search_surah': 'Search Surah...',
 };
