@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
 
 import '../../model/surah_response.dart';
 
@@ -25,15 +25,15 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
   @override
   Future<List<VerseModel>> searchVerses(String query) async {
     try {
-      // 1. Load all assets in parallel (IO bound, fast on main)
-      final loadFutures = List.generate(114, (index) {
-        final surahId = index + 1;
-        return rootBundle.loadString('$basePath/surah_$surahId.json');
-      });
-      final allJsonStrings = await Future.wait(loadFutures);
+      final token = RootIsolateToken.instance;
+      if (token == null) {
+        debugPrint(
+          'RootIsolateToken is null, cannot spawn isolate with channels',
+        );
+        return [];
+      }
 
-      // 2. Offload parsing and searching to a SINGLE isolate
-      return compute(_searchWorker, _SearchRequest(allJsonStrings, query));
+      return compute(_searchWorker, _SearchRequest(token, basePath, query));
     } catch (e) {
       debugPrint('Search error: $e');
       return [];
@@ -42,9 +42,10 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 }
 
 class _SearchRequest {
-  final List<String> jsonStrings;
+  final RootIsolateToken rootIsolateToken;
+  final String basePath;
   final String query;
-  _SearchRequest(this.jsonStrings, this.query);
+  _SearchRequest(this.rootIsolateToken, this.basePath, this.query);
 }
 
 // Static regex for performance (compile once)
@@ -54,43 +55,52 @@ final _tashkeelRegex = RegExp(
 
 String _removeTashkeel(String text) => text.replaceAll(_tashkeelRegex, '');
 
-List<VerseModel> _searchWorker(_SearchRequest request) {
+Future<List<VerseModel>> _searchWorker(_SearchRequest request) async {
+  BackgroundIsolateBinaryMessenger.ensureInitialized(request.rootIsolateToken);
+
   final List<VerseModel> allMatches = [];
   final normalizedQuery = _removeTashkeel(request.query);
 
-  for (final jsonStr in request.jsonStrings) {
-    // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
-    // This is a heuristic—if the normalized query is NOT in the normalized JSON, we skip.
-    final normalizedJson = _removeTashkeel(jsonStr);
-    if (!normalizedJson.contains(normalizedQuery)) continue;
+  for (int i = 1; i <= 114; i++) {
+    try {
+      final jsonStr = await rootBundle.loadString(
+        '${request.basePath}/surah_$i.json',
+      );
 
-    // Parse only if we have a potential match
-    final Map<String, dynamic> data = json.decode(jsonStr);
-    final response = ChapterResponse.fromJson(data);
+      // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
+      final normalizedJson = _removeTashkeel(jsonStr);
+      if (!normalizedJson.contains(normalizedQuery)) continue;
 
-    for (final verse in response.chapters) {
-      String textToCheck = verse.text;
+      // Parse only if we have a potential match
+      final Map<String, dynamic> data = json.decode(jsonStr);
+      final response = ChapterResponse.fromJson(data);
 
-      // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
-      if (verse.chapterId != 1 && verse.verseNumber == 1) {
-        const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
-        if (textToCheck.startsWith(bismillahPrefix)) {
-          textToCheck = textToCheck.substring(bismillahPrefix.length).trim();
-        } else {
-          // Fallback for simple encoding
-          const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
-          if (textToCheck.startsWith(bismillahSimple)) {
-            textToCheck = textToCheck.substring(bismillahSimple.length).trim();
+      for (final verse in response.chapters) {
+        String textToCheck = verse.text;
+
+        // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
+        if (verse.chapterId != 1 && verse.verseNumber == 1) {
+          const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+          if (textToCheck.startsWith(bismillahPrefix)) {
+            textToCheck = textToCheck.substring(bismillahPrefix.length).trim();
+          } else {
+            // Fallback for simple encoding
+            const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+            if (textToCheck.startsWith(bismillahSimple)) {
+              textToCheck = textToCheck
+                  .substring(bismillahSimple.length)
+                  .trim();
+            }
           }
         }
-      }
 
-      final normalizedVerse = _removeTashkeel(textToCheck);
-      if (normalizedVerse.contains(normalizedQuery)) {
-        allMatches.add(verse);
-        // User requested NO early exit.
-        // if (allMatches.length >= 50) return allMatches;
+        final normalizedVerse = _removeTashkeel(textToCheck);
+        if (normalizedVerse.contains(normalizedQuery)) {
+          allMatches.add(verse);
+        }
       }
+    } catch (e) {
+      debugPrint('Error searching surah $i: $e');
     }
   }
   return allMatches;
