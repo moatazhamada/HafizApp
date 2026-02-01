@@ -209,6 +209,90 @@ class _SurahScreenState extends State<SurahScreen> {
       // for now let's rely on finding the text.
       return false;
     }
+  void _saveReadingProgress() {
+    if (surah == null) return;
+
+    // 1. Always ensure this Surah is marked as the last read one
+    PrefUtils().saveLastReadSurah(surah!);
+
+    // 2. Find the top visible verse to save specific position
+    int? visibleVerseNumber;
+
+    if (PrefUtils().getVerseViewMode()) {
+      // Single Line Mode: Check GlobalKeys
+      // Heuristic: iterate keys, find first one with positive offset relative to viewport
+      // or closest to 0.
+      for (var entry in _verseKeys.entries) {
+        final key = entry.value;
+        if (key.currentContext != null) {
+          final RenderBox? box = key.currentContext!.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final position = box.localToGlobal(Offset.zero);
+            // 70 is rough app bar height+padding offset
+            if (position.dy >= 0 && position.dy < MediaQuery.of(context).size.height / 2) {
+              visibleVerseNumber = entry.key;
+              break; 
+            }
+          }
+        }
+      }
+    } else {
+      // Mushaf/RichText Mode
+      final RenderObject? renderObject = _richTextKey.currentContext?.findRenderObject();
+      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
+        // We need to find which range is at the current scroll offset.
+        // It's hard to inverse-map generic text spans easily without coordinates.
+        // But we can check our known ranges.
+        
+        // Strategy: Check middle of the screen text offset?
+        // Or check dynamic boxes of ranges? Checking 200+ ranges might be acceptable.
+        
+        // Optimization: Binary search or check only ranges likely to be visible?
+        // Let's simplified check: Find first range whose box bottom > 0 (relative to viewport)
+        // We really need viewport relative coordinates.
+        
+        try {
+           final double topOffset = 180; // aprox appbar height
+           // We can't easily get viewport relative rects for ALL ranges efficiently.
+           // Fallback: Use the scroll offset + heuristic
+           // If we have scroll offset, we know we are at N pixels down.
+           // But text height is variable.
+           
+           // Better approach for Mushaf: _currentVerseRanges contains all verses.
+           // We can sample a few points on screen (e.g. top-left content area) and hit-test.
+           
+           // Hit testing via renderObject.getPositionForOffset
+           // Offset(0, 0) in the renderParagraph is the very top.
+           // The renderParagraph is inside the ScrollView.
+           // We know the scroll offset.
+           // So, the top visible text is at local offset = (0, _scrollController.offset).
+           // Add a small buffer (e.g. 50px) to skip empty space.
+           
+           if (_scrollController.hasClients) {
+             // In slivers, the RenderParagraph might be very tall.
+             // local offset Y = scrollController.offset.
+             
+             final targetLcOffset = Offset(20, _scrollController.offset + 20);
+             final textPosition = renderObject.getPositionForOffset(targetLcOffset);
+             final textOffset = textPosition.offset;
+             
+             // Find range containing this text offset
+             final range = _currentVerseRanges.firstWhere(
+               (r) => textOffset >= r.start && textOffset < r.end,
+               orElse: () => _currentVerseRanges.first,
+             );
+             
+             visibleVerseNumber = range.verse.verseNumber;
+           }
+        } catch (_) {
+          // ignore
+        }
+      }
+    }
+
+    if (visibleVerseNumber != null) {
+      PrefUtils().setSurahVerseIndex(surah!.id, visibleVerseNumber - 1);
+    }
   }
 
   @override
@@ -224,9 +308,15 @@ class _SurahScreenState extends State<SurahScreen> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Color(isDark == true ? 0xFF000000 : 0xFFFFFFFF),
-        body: MultiBlocProvider(
-          providers: [BlocProvider<SurahBloc>(create: (context) => surahBloc)],
-          child: MultiBlocListener(
+        body: PopScope(
+          canPop: true,
+          onPopInvokedWithResult: (didPop, result) {
+            _saveReadingProgress();
+            // Allow pop to proceed
+          },
+          child: MultiBlocProvider(
+            providers: [BlocProvider<SurahBloc>(create: (context) => surahBloc)],
+            child: MultiBlocListener(
             listeners: [
               BlocListener<BookmarkBloc, BookmarkState>(
                 listener: (context, state) {
