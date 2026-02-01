@@ -99,16 +99,35 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
-  void _scrollToVerse(int verseNumber, List<Verse> chapters) {
-    // Clear highlight after a delay
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _highlightedVerse = null;
-        });
-      }
-    });
+  void _scrollToVerseWithRetry(
+    int verseNumber,
+    List<Verse> chapters, {
+    int attempt = 0,
+  }) {
+    // Max 10 attempts (~2 seconds total)
+    if (attempt > 10) return;
 
+    bool success = _scrollToVerse(verseNumber, chapters);
+    if (!success) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
+        }
+      });
+    } else {
+      // Clear highlight after success + delay
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _highlightedVerse = null;
+          });
+        }
+      });
+    }
+  }
+
+  /// Returns true if scroll was initiated successfully
+  bool _scrollToVerse(int verseNumber, List<Verse> chapters) {
     if (PrefUtils().getVerseViewMode()) {
       // Single Line Mode - use GlobalKey
       final key = _verseKeys[verseNumber];
@@ -119,65 +138,76 @@ class _SurahScreenState extends State<SurahScreen> {
           curve: Curves.easeInOut,
           alignment: 0.3, // Center-ish
         );
+        return true;
       }
+      return false; // Key not ready
     } else {
       // Mushaf/RichText Mode - use RenderParagraph to get exact position
       final RenderObject? renderObject = _richTextKey.currentContext
           ?.findRenderObject();
-      bool scrolled = false;
 
       if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
-        // Find the verse range for the target verse
+        // Find the verse range
         final verseRange = _currentVerseRanges.firstWhere(
           (r) => r.verse.verseNumber == verseNumber && !r.isBadge,
           orElse: () => _currentVerseRanges.first,
         );
 
-        // Get the boxes for this text range
-        final boxes = renderObject.getBoxesForSelection(
-          TextSelection(
-            baseOffset: verseRange.start,
-            extentOffset: verseRange.start + 1,
-          ),
-        );
-
-        if (boxes.isNotEmpty) {
-          // Get RichText's position in the scroll view
-          final richTextBox = renderObject.localToGlobal(Offset.zero);
-          final scrollOffset = _scrollController.offset;
-
-          // Calculate absolute position: current scroll + relative position + box top
-          // Subtract some offset to show verse near top (not at very top)
-          final targetScroll =
-              scrollOffset + richTextBox.dy + boxes.first.top - 150;
-
-          _scrollController.animateTo(
-            targetScroll.clamp(0.0, _scrollController.position.maxScrollExtent),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
+        // Check if layout is ready by attempting to get boxes
+        try {
+          final boxes = renderObject.getBoxesForSelection(
+            TextSelection(
+              baseOffset: verseRange.start,
+              extentOffset: verseRange.start + 1,
+            ),
           );
-          scrolled = true;
+
+          if (boxes.isNotEmpty) {
+            final richTextBox = renderObject.localToGlobal(Offset.zero);
+            // If RichText hasn't been laid out globally yet, this might offer strange values
+            // but usually RenderParagraph existence implies layout locally.
+            // We need scroll offset context.
+
+            if (!_scrollController.hasClients) return false;
+
+            final scrollOffset = _scrollController.offset;
+            // richTextBox.dy is relative to screen (viewport).
+            // We want relative to scroll view content start.
+            // Actually: getBoxesForSelection returns rects relative to the RenderParagraph's origin.
+            // So we need: RenderParagraph's offset in the scroll view.
+
+            // Previous logic: target = scrollOffset + richTextBox.dy + box.top - 150
+            // richTextBox.dy is screen Y. scrollOffset is how much we scrolled.
+            // This assumes renderObject.localToGlobal gives screen coordinates.
+
+            // Allow a fallback if calculation seems off, but mainly return true if we FOUND boxes.
+            final targetScroll =
+                scrollOffset + richTextBox.dy + boxes.first.top - 150;
+
+            _scrollController.animateTo(
+              targetScroll.clamp(
+                0.0,
+                _scrollController.position.maxScrollExtent,
+              ),
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+            return true;
+          }
+        } catch (_) {
+          // Layout info might be incomplete
+          return false;
         }
+      } else {
+        // RenderObject not ready yet
+        return false;
       }
 
-      if (!scrolled) {
-        // Fallback: estimate based on verse index
-        final verseIndex = chapters.indexWhere(
-          (v) => v.verseNumber == verseNumber,
-        );
-        if (verseIndex >= 0) {
-          final double contentHeight =
-              _scrollController.position.maxScrollExtent;
-          // Improved heuristic: assume uniformity if totally blind, but better than nothing
-          final double estimatedPosition =
-              (verseIndex / chapters.length) * contentHeight;
-          _scrollController.animateTo(
-            estimatedPosition.clamp(0.0, contentHeight),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
-      }
+      // Fallback: estimate based on verse index if RichText never yields (failsafe after retries?)
+      // We only fallback if we are out of retries in the wrapper, but here we return false to trigger retry.
+      // If we want to force a scroll on the last attempt, we could pass a flag, but
+      // for now let's rely on finding the text.
+      return false;
     }
   }
 
@@ -245,14 +275,8 @@ class _SurahScreenState extends State<SurahScreen> {
                   if (_selectedVerse != null && chapters.isNotEmpty) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted && _selectedVerse != null) {
-                        // Small delay to ensure layout is final and offsets are ready
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (mounted && _selectedVerse != null) {
-                            _scrollToVerse(_selectedVerse!, chapters);
-                            _selectedVerse =
-                                null; // Clear to avoid re-scrolling
-                          }
-                        });
+                        _scrollToVerseWithRetry(_selectedVerse!, chapters);
+                        _selectedVerse = null; // Clear to avoid re-scrolling
                       }
                     });
                   }
