@@ -142,7 +142,7 @@ class _SurahScreenState extends State<SurahScreen> {
       }
       return false; // Key not ready
     } else {
-      // Mushaf/RichText Mode - use RenderParagraph to get exact position
+      // Mushaf/RichText Mode
       final RenderObject? renderObject = _richTextKey.currentContext
           ?.findRenderObject();
 
@@ -153,8 +153,8 @@ class _SurahScreenState extends State<SurahScreen> {
           orElse: () => _currentVerseRanges.first,
         );
 
-        // Check if layout is ready by attempting to get boxes
         try {
+          // Get boxes for the text range
           final boxes = renderObject.getBoxesForSelection(
             TextSelection(
               baseOffset: verseRange.start,
@@ -162,27 +162,27 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           );
 
-          if (boxes.isNotEmpty) {
-            final richTextBox = renderObject.localToGlobal(Offset.zero);
-            // If RichText hasn't been laid out globally yet, this might offer strange values
-            // but usually RenderParagraph existence implies layout locally.
-            // We need scroll offset context.
+          if (boxes.isNotEmpty && _scrollController.hasClients) {
+            // Calculate target scroll position
+            final richTextGlobalOffset = renderObject.localToGlobal(
+              Offset.zero,
+            );
+            // We need the scroll layout top global offset to normalize
+            // but assuming the scroll view fills the screen (minus potential app bars),
+            // using scrollOffset + screen_y works IF the scroll view is at the screen top.
 
-            if (!_scrollController.hasClients) return false;
+            // A more robust generic way:
+            // target = currentScrollOffset + (boxBottom_Global - scrollViewTop_Global)
+            // But we don't easily have scrollViewTop_Global.
 
+            // Let's stick to the previous working heuristic but clamp strictly
             final scrollOffset = _scrollController.offset;
-            // richTextBox.dy is relative to screen (viewport).
-            // We want relative to scroll view content start.
-            // Actually: getBoxesForSelection returns rects relative to the RenderParagraph's origin.
-            // So we need: RenderParagraph's offset in the scroll view.
 
-            // Previous logic: target = scrollOffset + richTextBox.dy + box.top - 150
-            // richTextBox.dy is screen Y. scrollOffset is how much we scrolled.
-            // This assumes renderObject.localToGlobal gives screen coordinates.
+            // richTextGlobalOffset.dy is the screen Y position of the TOP of the text.
+            // If we rely on this, it must be accurate.
 
-            // Allow a fallback if calculation seems off, but mainly return true if we FOUND boxes.
             final targetScroll =
-                scrollOffset + richTextBox.dy + boxes.first.top - 150;
+                scrollOffset + richTextGlobalOffset.dy + boxes.first.top - 150;
 
             _scrollController.animateTo(
               targetScroll.clamp(
@@ -194,21 +194,15 @@ class _SurahScreenState extends State<SurahScreen> {
             );
             return true;
           }
-        } catch (_) {
-          // Layout info might be incomplete
+        } catch (e) {
+          debugPrint('Scroll error: $e');
           return false;
         }
-      } else {
-        // RenderObject not ready yet
-        return false;
       }
-
-      // Fallback: estimate based on verse index if RichText never yields (failsafe after retries?)
-      // We only fallback if we are out of retries in the wrapper, but here we return false to trigger retry.
-      // If we want to force a scroll on the last attempt, we could pass a flag, but
-      // for now let's rely on finding the text.
       return false;
     }
+  }
+
   void _saveReadingProgress() {
     if (surah == null) return;
 
@@ -225,65 +219,70 @@ class _SurahScreenState extends State<SurahScreen> {
       for (var entry in _verseKeys.entries) {
         final key = entry.value;
         if (key.currentContext != null) {
-          final RenderBox? box = key.currentContext!.findRenderObject() as RenderBox?;
+          final RenderBox? box =
+              key.currentContext!.findRenderObject() as RenderBox?;
           if (box != null) {
             final position = box.localToGlobal(Offset.zero);
             // 70 is rough app bar height+padding offset
-            if (position.dy >= 0 && position.dy < MediaQuery.of(context).size.height / 2) {
+            if (position.dy >= 0 &&
+                position.dy < MediaQuery.of(context).size.height / 2) {
               visibleVerseNumber = entry.key;
-              break; 
+              break;
             }
           }
         }
       }
     } else {
       // Mushaf/RichText Mode
-      final RenderObject? renderObject = _richTextKey.currentContext?.findRenderObject();
+      final RenderObject? renderObject = _richTextKey.currentContext
+          ?.findRenderObject();
       if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
         // We need to find which range is at the current scroll offset.
         // It's hard to inverse-map generic text spans easily without coordinates.
         // But we can check our known ranges.
-        
+
         // Strategy: Check middle of the screen text offset?
         // Or check dynamic boxes of ranges? Checking 200+ ranges might be acceptable.
-        
+
         // Optimization: Binary search or check only ranges likely to be visible?
         // Let's simplified check: Find first range whose box bottom > 0 (relative to viewport)
         // We really need viewport relative coordinates.
-        
+
         try {
-           final double topOffset = 180; // aprox appbar height
-           // We can't easily get viewport relative rects for ALL ranges efficiently.
-           // Fallback: Use the scroll offset + heuristic
-           // If we have scroll offset, we know we are at N pixels down.
-           // But text height is variable.
-           
-           // Better approach for Mushaf: _currentVerseRanges contains all verses.
-           // We can sample a few points on screen (e.g. top-left content area) and hit-test.
-           
-           // Hit testing via renderObject.getPositionForOffset
-           // Offset(0, 0) in the renderParagraph is the very top.
-           // The renderParagraph is inside the ScrollView.
-           // We know the scroll offset.
-           // So, the top visible text is at local offset = (0, _scrollController.offset).
-           // Add a small buffer (e.g. 50px) to skip empty space.
-           
-           if (_scrollController.hasClients) {
-             // In slivers, the RenderParagraph might be very tall.
-             // local offset Y = scrollController.offset.
-             
-             final targetLcOffset = Offset(20, _scrollController.offset + 20);
-             final textPosition = renderObject.getPositionForOffset(targetLcOffset);
-             final textOffset = textPosition.offset;
-             
-             // Find range containing this text offset
-             final range = _currentVerseRanges.firstWhere(
-               (r) => textOffset >= r.start && textOffset < r.end,
-               orElse: () => _currentVerseRanges.first,
-             );
-             
-             visibleVerseNumber = range.verse.verseNumber;
-           }
+          final double topOffset = 180; // aprox appbar height
+          // We can't easily get viewport relative rects for ALL ranges efficiently.
+          // Fallback: Use the scroll offset + heuristic
+          // If we have scroll offset, we know we are at N pixels down.
+          // But text height is variable.
+
+          // Better approach for Mushaf: _currentVerseRanges contains all verses.
+          // We can sample a few points on screen (e.g. top-left content area) and hit-test.
+
+          // Hit testing via renderObject.getPositionForOffset
+          // Offset(0, 0) in the renderParagraph is the very top.
+          // The renderParagraph is inside the ScrollView.
+          // We know the scroll offset.
+          // So, the top visible text is at local offset = (0, _scrollController.offset).
+          // Add a small buffer (e.g. 50px) to skip empty space.
+
+          if (_scrollController.hasClients) {
+            // In slivers, the RenderParagraph might be very tall.
+            // local offset Y = scrollController.offset.
+
+            final targetLcOffset = Offset(20, _scrollController.offset + 20);
+            final textPosition = renderObject.getPositionForOffset(
+              targetLcOffset,
+            );
+            final textOffset = textPosition.offset;
+
+            // Find range containing this text offset
+            final range = _currentVerseRanges.firstWhere(
+              (r) => textOffset >= r.start && textOffset < r.end,
+              orElse: () => _currentVerseRanges.first,
+            );
+
+            visibleVerseNumber = range.verse.verseNumber;
+          }
         } catch (_) {
           // ignore
         }
@@ -315,94 +314,97 @@ class _SurahScreenState extends State<SurahScreen> {
             // Allow pop to proceed
           },
           child: MultiBlocProvider(
-            providers: [BlocProvider<SurahBloc>(create: (context) => surahBloc)],
-            child: MultiBlocListener(
-            listeners: [
-              BlocListener<BookmarkBloc, BookmarkState>(
-                listener: (context, state) {
-                  if (state is BookmarkLoaded &&
-                      state.feedbackMessage != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.feedbackMessage!.tr),
-                        duration: const Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-              ),
-              BlocListener<RecitationErrorBloc, RecitationErrorState>(
-                listener: (context, state) {
-                  if (state is RecitationErrorLoaded &&
-                      state.feedbackMessage != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.feedbackMessage!.tr),
-                        backgroundColor: Colors.red[700],
-                        duration: const Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-              ),
+            providers: [
+              BlocProvider<SurahBloc>(create: (context) => surahBloc),
             ],
-            child: BlocBuilder<SurahBloc, SurahState>(
-              builder: (context, state) {
-                if (state is LoadingSurahState) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is FailureSurahState) {
-                  return Center(
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Text(state.errorMessage),
-                    ),
-                  );
-                } else {
-                  final chapters = (state as SuccessSurahState).chapters;
-                  // Trigger scroll if selectedVerse is set and not scrolled yet
-                  if (_selectedVerse != null && chapters.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted && _selectedVerse != null) {
-                        _scrollToVerseWithRetry(_selectedVerse!, chapters);
-                        _selectedVerse = null; // Clear to avoid re-scrolling
-                      }
-                    });
-                  }
-
-                  return BlocBuilder<BookmarkBloc, BookmarkState>(
-                    builder: (context, bookmarkState) {
-                      return BlocBuilder<
-                        RecitationErrorBloc,
-                        RecitationErrorState
-                      >(
-                        builder: (context, errorState) {
-                          return CustomScrollView(
-                            controller: _scrollController,
-                            slivers: [
-                              _buildSliverAppBar(isDark),
-                              SliverPadding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 20.v,
-                                ),
-                                sliver: _buildSurahList(
-                                  context,
-                                  chapters,
-                                  bookmarkState,
-                                  errorState,
-                                  isDark,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+            child: MultiBlocListener(
+              listeners: [
+                BlocListener<BookmarkBloc, BookmarkState>(
+                  listener: (context, state) {
+                    if (state is BookmarkLoaded &&
+                        state.feedbackMessage != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.feedbackMessage!.tr),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
-                    },
-                  );
-                }
-              },
+                    }
+                  },
+                ),
+                BlocListener<RecitationErrorBloc, RecitationErrorState>(
+                  listener: (context, state) {
+                    if (state is RecitationErrorLoaded &&
+                        state.feedbackMessage != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.feedbackMessage!.tr),
+                          backgroundColor: Colors.red[700],
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+              child: BlocBuilder<SurahBloc, SurahState>(
+                builder: (context, state) {
+                  if (state is LoadingSurahState) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is FailureSurahState) {
+                    return Center(
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Text(state.errorMessage),
+                      ),
+                    );
+                  } else {
+                    final chapters = (state as SuccessSurahState).chapters;
+                    // Trigger scroll if selectedVerse is set and not scrolled yet
+                    if (_selectedVerse != null && chapters.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && _selectedVerse != null) {
+                          _scrollToVerseWithRetry(_selectedVerse!, chapters);
+                          _selectedVerse = null; // Clear to avoid re-scrolling
+                        }
+                      });
+                    }
+
+                    return BlocBuilder<BookmarkBloc, BookmarkState>(
+                      builder: (context, bookmarkState) {
+                        return BlocBuilder<
+                          RecitationErrorBloc,
+                          RecitationErrorState
+                        >(
+                          builder: (context, errorState) {
+                            return CustomScrollView(
+                              controller: _scrollController,
+                              slivers: [
+                                _buildSliverAppBar(isDark),
+                                SliverPadding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 20.v,
+                                  ),
+                                  sliver: _buildSurahList(
+                                    context,
+                                    chapters,
+                                    bookmarkState,
+                                    errorState,
+                                    isDark,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
             ),
           ),
         ),
