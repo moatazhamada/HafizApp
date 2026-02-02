@@ -22,8 +22,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _recitationProvider;
   late String _qiraatEdition;
   late int _reciterId;
-  late int _qrcHafzLevel;
-  late int _qrcTajweedLevel;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
   bool _loadingEditions = true;
@@ -40,8 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _recitationProvider = PrefUtils().getRecitationProvider();
     _qiraatEdition = PrefUtils().getQiraatEdition();
     _reciterId = PrefUtils().getReciterId();
-    _qrcHafzLevel = PrefUtils().getQrcHafzLevel();
-    _qrcTajweedLevel = PrefUtils().getQrcTajweedLevel();
     _loadRecitationResources();
   }
 
@@ -146,32 +142,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: _loadingReciters ? null : _selectReciter,
           ),
-          if (_recitationProvider == 'custom') ...[
+          if (_recitationProvider == 'local_whisper')
             ListTile(
-              title: Text('lbl_custom_asr'.tr),
-              subtitle: Text(
-                PrefUtils().getCustomAsrEndpoint().isEmpty
-                    ? 'msg_custom_asr_empty'.tr
-                    : PrefUtils().getCustomAsrEndpoint(),
-              ),
-              trailing: const Icon(Icons.edit),
-              onTap: _editCustomEndpoint,
+              title: Text('msg_local_whisper_tip'.tr),
+              subtitle: Text('msg_local_whisper_desc'.tr),
             ),
-          ],
-          if (_recitationProvider == 'qrc') ...[
-            ListTile(
-              title: Text('lbl_hafz_level'.tr),
-              subtitle: Text(_qrcHafzLevel.toString()),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _selectHafzLevel,
-            ),
-            ListTile(
-              title: Text('lbl_tajweed_level'.tr),
-              subtitle: Text(_qrcTajweedLevel.toString()),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _selectTajweedLevel,
-            ),
-          ],
         ],
       ),
     );
@@ -237,10 +212,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _recitationProviderLabel(String provider) {
     switch (provider) {
-      case 'qrc':
-        return 'lbl_provider_qrc'.tr;
-      case 'custom':
-        return 'lbl_provider_custom'.tr;
+      case 'local_whisper':
+        return 'lbl_provider_whisper'.tr;
       default:
         return 'lbl_provider_local'.tr;
     }
@@ -273,8 +246,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: 'lbl_recitation_provider'.tr,
       options: const [
         _Option('local', 'lbl_provider_local'),
-        _Option('qrc', 'lbl_provider_qrc'),
-        _Option('custom', 'lbl_provider_custom'),
+        _Option('local_whisper', 'lbl_provider_whisper'),
       ],
       selected: _recitationProvider,
     );
@@ -315,68 +287,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _selectHafzLevel() async {
-    final value = await _showSelectionSheet<String>(
-      title: 'lbl_hafz_level'.tr,
-      options: const [
-        _Option('1', '1', isKey: false),
-        _Option('2', '2', isKey: false),
-        _Option('3', '3', isKey: false),
-      ],
-      selected: _qrcHafzLevel.toString(),
-    );
-    if (value != null) {
-      final level = int.tryParse(value) ?? _qrcHafzLevel;
-      await PrefUtils().setQrcHafzLevel(level);
-      setState(() => _qrcHafzLevel = level);
-    }
-  }
-
-  Future<void> _selectTajweedLevel() async {
-    final value = await _showSelectionSheet<String>(
-      title: 'lbl_tajweed_level'.tr,
-      options: const [
-        _Option('1', '1', isKey: false),
-        _Option('2', '2', isKey: false),
-        _Option('3', '3', isKey: false),
-      ],
-      selected: _qrcTajweedLevel.toString(),
-    );
-    if (value != null) {
-      final level = int.tryParse(value) ?? _qrcTajweedLevel;
-      await PrefUtils().setQrcTajweedLevel(level);
-      setState(() => _qrcTajweedLevel = level);
-    }
-  }
-
-  Future<void> _editCustomEndpoint() async {
-    final controller =
-        TextEditingController(text: PrefUtils().getCustomAsrEndpoint());
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('lbl_custom_asr'.tr),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(hintText: 'msg_custom_asr_hint'.tr),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('lbl_cancel'.tr),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text('lbl_save'.tr),
-          ),
-        ],
-      ),
-    );
-    if (value != null) {
-      await PrefUtils().setCustomAsrEndpoint(value);
-      setState(() {});
-    }
-  }
 
   Future<T?> _showSelectionSheet<T>({
     required String title,

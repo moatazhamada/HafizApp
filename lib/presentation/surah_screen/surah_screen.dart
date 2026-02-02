@@ -10,6 +10,7 @@ import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.d
 import 'package:hafiz_app/presentation/surah_screen/qrc_recitation_service.dart';
 import 'package:hafiz_app/presentation/surah_screen/sheikh_audio_coach_sheet.dart';
 import 'package:hafiz_app/presentation/surah_screen/custom_asr_service.dart';
+import 'package:hafiz_app/presentation/surah_screen/local_whisper_service.dart';
 
 import '../../core/app_export.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -777,6 +778,7 @@ class _SurahScreenState extends State<SurahScreen> {
     final provider = PrefUtils().getRecitationProvider();
     final bool useQrc = provider == 'qrc';
     final bool useCustom = provider == 'custom';
+    final bool useWhisper = provider == 'local_whisper';
     final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
     String spokenText = 'lbl_listening'.tr;
     Color statusColor = Colors.blueAccent;
@@ -799,6 +801,8 @@ class _SurahScreenState extends State<SurahScreen> {
     final customAsrService = CustomAsrService();
     final customRecorder = FlutterSoundRecorder();
     String? customFilePath;
+    final whisperService = LocalWhisperService();
+    bool whisperTranscribing = false;
 
     if (!mounted) return;
 
@@ -923,6 +927,20 @@ class _SurahScreenState extends State<SurahScreen> {
                     tajweedLevel: PrefUtils().getQrcTajweedLevel(),
                   );
                   await qrcService.startRecording();
+                } else if (useWhisper) {
+                  await customRecorder.openRecorder();
+                  final dir = await getTemporaryDirectory();
+                  customFilePath =
+                      '${dir.path}/whisper_${surah!.id}_${aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
+                  await customRecorder.startRecorder(
+                    toFile: customFilePath,
+                    codec: Codec.pcm16WAV,
+                    numChannels: 1,
+                    sampleRate: 16000,
+                  );
+                  setDialogState(() {
+                    spokenText = 'lbl_listening'.tr;
+                  });
                 } else {
                   if (useCustom) {
                     if (customEndpoint.isEmpty) {
@@ -1051,12 +1069,12 @@ class _SurahScreenState extends State<SurahScreen> {
                             _showWrongDialog(parentContext, aya);
                             }
                           }));
-                        }
-                      });
-                    },
-                  );
-                }
+                      }
+                    });
+                  },
+                );
               }
+            }
             }
 
             // Function to stop listening
@@ -1065,6 +1083,104 @@ class _SurahScreenState extends State<SurahScreen> {
                 if (useQrc) {
                   await qrcService.stopRecording();
                   await qrcSub?.cancel();
+                } else if (useWhisper) {
+                  try {
+                    await customRecorder.stopRecorder();
+                  } catch (_) {}
+                  if (customFilePath != null) {
+                    setDialogState(() {
+                      whisperTranscribing = true;
+                      spokenText = 'msg_transcribing'.tr;
+                    });
+                    final transcribed = await whisperService.transcribe(
+                      audioPath: customFilePath!,
+                      language: 'ar',
+                    );
+                    setDialogState(() {
+                      whisperTranscribing = false;
+                    });
+                    if (transcribed != null && transcribed.isNotEmpty) {
+                      final analysis = _voiceService.analyzeRecitation(
+                        transcribed,
+                        expectedText,
+                        allowPartial: true,
+                      );
+                      setDialogState(() {
+                        spokenText = transcribed;
+                        final scorePercent = (analysis.score * 100).round();
+                        scoreText =
+                            '${'lbl_recitation_score'.tr}: $scorePercent%';
+                        issueLines = [];
+                        if (analysis.missingCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_missing'.tr}: ${analysis.missingCount}',
+                          );
+                        }
+                        if (analysis.extraCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_extra'.tr}: ${analysis.extraCount}',
+                          );
+                        }
+                        if (analysis.substituteCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_substitute'.tr}: ${analysis.substituteCount}',
+                          );
+                        }
+
+                        hintLabel = '';
+                        hintWord = '';
+                        repeatLabel = '';
+                        repeatWord = '';
+                        final expectedTokens = expectedText
+                            .split(RegExp(r'\s+'))
+                            .where((t) => t.isNotEmpty)
+                            .toList();
+                        if (analysis.expectedRange.isValid &&
+                            analysis.expectedRange.start <
+                                expectedTokens.length &&
+                            !analysis.passed) {
+                          hintLabel = 'msg_recitation_hint_start'.tr;
+                          hintWord = expectedTokens[analysis.expectedRange.start];
+                          repeatLabel = 'msg_repeat_word'.tr;
+                          repeatWord = hintWord;
+                        }
+
+                        showFeedback = true;
+
+                        if (analysis.isTooShort) {
+                          statusColor = Colors.orangeAccent;
+                          feedbackTitle = 'msg_recitation_too_short'.tr;
+                          return;
+                        }
+
+                        if (analysis.passed) {
+                          statusColor = Colors.green;
+                          feedbackTitle = 'lbl_congrats'.tr;
+                          unawaited(Future.delayed(
+                              const Duration(milliseconds: 1000), () {
+                            if (mounted &&
+                                dialogContext.mounted &&
+                                Navigator.canPop(dialogContext)) {
+                              Navigator.pop(dialogContext);
+                              _onRecitationCorrect(aya);
+                            }
+                          }));
+                        } else {
+                          statusColor = Colors.redAccent;
+                          feedbackTitle = 'msg_incorrect_recitation'.tr;
+                          unawaited(Future.delayed(
+                              const Duration(milliseconds: 1000), () {
+                            if (context.mounted &&
+                                dialogContext.mounted &&
+                                Navigator.canPop(dialogContext)) {
+                              Navigator.pop(dialogContext);
+                              _showWrongDialog(context, aya);
+                            }
+                          }));
+                        }
+                      });
+                    }
+                  }
                 } else if (useCustom) {
                   try {
                     await customRecorder.stopRecorder();
@@ -1200,6 +1316,10 @@ class _SurahScreenState extends State<SurahScreen> {
                               const TextStyle(fontSize: 12, color: Colors.red),
                         ),
                     ],
+                  ],
+                  if (useWhisper && whisperTranscribing) ...[
+                    const SizedBox(height: 12),
+                    const CircularProgressIndicator(strokeWidth: 2),
                   ],
                   if (showFeedback) ...[
                     const SizedBox(height: 12),
