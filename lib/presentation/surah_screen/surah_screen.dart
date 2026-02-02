@@ -103,11 +103,33 @@ class _SurahScreenState extends State<SurahScreen> {
     List<Verse> chapters, {
     int attempt = 0,
   }) {
-    // Max 20 attempts (~4 seconds total) to allow for transitions/images
+    // Attempt 0: Check if transition is happening
+    if (attempt == 0) {
+      final route = ModalRoute.of(context);
+      if (route is TransitionRoute &&
+          route.animation != null &&
+          route.animation!.status != AnimationStatus.completed) {
+        // Wait for transition to finish
+        void handler(AnimationStatus status) {
+          if (status == AnimationStatus.completed) {
+            route.animation?.removeStatusListener(handler);
+            if (mounted) {
+              _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
+            }
+          }
+        }
+
+        route.animation?.addStatusListener(handler);
+        return;
+      }
+    }
+
+    // Max 20 attempts (~4 seconds total) for layout/rendering
     if (attempt > 20) return;
 
-    // Small delay on first attempt to let page transition start/settle
-    int delay = attempt == 0 ? 500 : 200;
+    // Standard short delay for layout retry (200ms)
+    // No initial long delay needed since we waited for transition
+    int delay = 200;
 
     Future.delayed(Duration(milliseconds: delay), () {
       if (!mounted) return;
