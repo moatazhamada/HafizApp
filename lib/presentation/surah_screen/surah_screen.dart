@@ -1090,7 +1090,6 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    const double fontSize = 22;
     final Color textColor = isDark
         ? const Color(0xFFFFFFFF)
         : const Color(0xFF004B40);
@@ -1192,12 +1191,14 @@ class _SurahScreenState extends State<SurahScreen> {
           text: verseText,
           style: TextStyle(
             fontFamily: 'Amiri',
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
+            fontSize: 24, // Increased for better readability
+            fontWeight: FontWeight
+                .normal, // Regular weight preserves tashkil/ligatures better
             color: effectiveColor,
             backgroundColor: backgroundColor,
             shadows: shadows,
-            height: 1.8,
+            height:
+                2.2, // Increased line height to prevents clipping of high waqf marks
           ),
         ),
       );
@@ -1340,7 +1341,6 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    const double fontSize = 22;
     final Color textColor = isDark
         ? const Color(0xFFFFFFFF)
         : const Color(0xFF004B40);
@@ -1468,10 +1468,10 @@ class _SurahScreenState extends State<SurahScreen> {
                     textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 24, // Increased
+                      fontWeight: FontWeight.normal, // Regular weight
                       color: isBlurred ? Colors.transparent : textColor,
-                      height: 1.8,
+                      height: 2.2, // Taller line height
                       shadows: isBlurred
                           ? [
                               Shadow(
