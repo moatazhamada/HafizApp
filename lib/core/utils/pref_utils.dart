@@ -1,6 +1,5 @@
 //ignore: unused_import
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
@@ -22,8 +21,8 @@ class PrefUtils {
   }
 
   ///will clear all the data stored in preference
-  void clearPreferencesData() async {
-    _sharedPreferences!.clear();
+  Future<void> clearPreferencesData() async {
+    await _sharedPreferences!.clear();
   }
 
   // Theme Mode: 'system', 'light', 'dark'
@@ -52,7 +51,10 @@ class PrefUtils {
             WidgetsBinding.instance.platformDispatcher.platformBrightness;
         return brightness == Brightness.dark;
       } catch (e) {
-        Logger.warning('Failed to get platform brightness: $e', feature: 'Preferences');
+        Logger.warning(
+          'Failed to get platform brightness: $e',
+          feature: 'Preferences',
+        );
         return false;
       }
     }
@@ -78,7 +80,10 @@ class PrefUtils {
       final String? jsonString = _sharedPreferences!.getString('surah');
       return jsonString != null ? Surah.fromJson(jsonString) : null;
     } catch (e) {
-      Logger.warning('Failed to get last read surah: $e', feature: 'Preferences');
+      Logger.warning(
+        'Failed to get last read surah: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }
@@ -106,7 +111,10 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getDouble('offset_$surahId');
     } catch (e) {
-      Logger.warning('Failed to get surah offset for surah $surahId: $e', feature: 'Preferences');
+      Logger.warning(
+        'Failed to get surah offset for surah $surahId: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }
@@ -119,7 +127,10 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getInt('verse_index_$surahId');
     } catch (e) {
-      Logger.warning('Failed to get verse index for surah $surahId: $e', feature: 'Preferences');
+      Logger.warning(
+        'Failed to get verse index for surah $surahId: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }
@@ -134,7 +145,10 @@ class PrefUtils {
       return _sharedPreferences!.getBool('isSingleLine') ??
           false; // Default Continuous
     } catch (e) {
-      Logger.warning('Failed to get verse view mode: $e', feature: 'Preferences');
+      Logger.warning(
+        'Failed to get verse view mode: $e',
+        feature: 'Preferences',
+      );
       return false;
     }
   }

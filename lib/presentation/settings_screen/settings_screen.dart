@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/localization/app_localization.dart';
+
 import '../../core/i18n/locale_controller.dart';
 import '../../injection_container.dart' as di;
-import '../../theme/bloc/theme_bloc.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -71,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 PrefUtils().setVerseViewMode(val);
               });
             },
-            activeColor: Colors.teal,
+            activeThumbColor: Colors.teal,
           ),
           const Divider(),
           _buildSectionHeader('lbl_theme'.tr),
@@ -88,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
           color: Colors.grey,
@@ -132,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () async {
         if (!isSelected) {
           di.sl<ThemeBloc>().add(ChangeThemeModeEvent(mode));
-          
+
           setState(() {
             _themeMode = mode;
           });

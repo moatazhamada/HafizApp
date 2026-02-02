@@ -80,12 +80,12 @@ Future<List<VerseModel>> _searchWorker(_SearchRequest request) async {
 
         // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
         if (verse.chapterId != 1 && verse.verseNumber == 1) {
-          const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+          const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
           if (textToCheck.startsWith(bismillahPrefix)) {
             textToCheck = textToCheck.substring(bismillahPrefix.length).trim();
           } else {
             // Fallback for simple encoding
-            const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+            const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
             if (textToCheck.startsWith(bismillahSimple)) {
               textToCheck = textToCheck
                   .substring(bismillahSimple.length)

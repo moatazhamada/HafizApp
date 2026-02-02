@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../injection_container.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
@@ -71,7 +70,7 @@ class BookmarksScreen extends StatelessWidget {
                         child: Icon(
                           Icons.bookmark_outline,
                           size: 64,
-                          color: Colors.grey.withOpacity(0.5),
+                          color: Colors.grey.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -129,7 +128,7 @@ class BookmarksScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -153,9 +152,11 @@ class BookmarksScreen extends StatelessWidget {
                               },
                             ).then((_) {
                               // Refresh list when returning from Surah page
-                              context.read<BookmarkBloc>().add(
-                                const LoadBookmarksEvent(),
-                              );
+                              if (context.mounted) {
+                                context.read<BookmarkBloc>().add(
+                                  const LoadBookmarksEvent(),
+                                );
+                              }
                             });
                           },
                           child: Padding(
@@ -168,7 +169,7 @@ class BookmarksScreen extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       color: const Color(
                                         0xFF006754,
-                                      ).withOpacity(0.1),
+                                      ).withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
