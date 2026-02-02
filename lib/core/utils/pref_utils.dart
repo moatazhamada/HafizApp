@@ -152,4 +152,98 @@ class PrefUtils {
       return false;
     }
   }
+
+  // Recitation settings
+  Future<void> setRecitationProvider(String provider) async {
+    await _sharedPreferences!.setString('recitation_provider', provider);
+  }
+
+  String getRecitationProvider() {
+    try {
+      return _sharedPreferences!.getString('recitation_provider') ?? 'local';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get recitation provider: $e',
+        feature: 'Preferences',
+      );
+      return 'local';
+    }
+  }
+
+  Future<void> setQiraatEdition(String edition) async {
+    await _sharedPreferences!.setString('qiraat_edition', edition);
+  }
+
+  String getQiraatEdition() {
+    try {
+      return _sharedPreferences!.getString('qiraat_edition') ??
+          'quran-uthmani';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get qiraat edition: $e',
+        feature: 'Preferences',
+      );
+      return 'quran-uthmani';
+    }
+  }
+
+  Future<void> setReciterId(int id) async {
+    await _sharedPreferences!.setInt('reciter_id', id);
+  }
+
+  int getReciterId() {
+    try {
+      return _sharedPreferences!.getInt('reciter_id') ?? 7;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reciter id: $e',
+        feature: 'Preferences',
+      );
+      return 7;
+    }
+  }
+
+  Future<void> setCustomAsrEndpoint(String url) async {
+    await _sharedPreferences!.setString('custom_asr_endpoint', url);
+  }
+
+  String getCustomAsrEndpoint() {
+    try {
+      return _sharedPreferences!.getString('custom_asr_endpoint') ?? '';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get custom ASR endpoint: $e',
+        feature: 'Preferences',
+      );
+      return '';
+    }
+  }
+
+  Future<void> setQrcHafzLevel(int level) async {
+    await _sharedPreferences!.setInt('qrc_hafz_level', level);
+  }
+
+  int getQrcHafzLevel() {
+    try {
+      return _sharedPreferences!.getInt('qrc_hafz_level') ?? 1;
+    } catch (e) {
+      Logger.warning('Failed to get qrc hafz level: $e',
+          feature: 'Preferences');
+      return 1;
+    }
+  }
+
+  Future<void> setQrcTajweedLevel(int level) async {
+    await _sharedPreferences!.setInt('qrc_tajweed_level', level);
+  }
+
+  int getQrcTajweedLevel() {
+    try {
+      return _sharedPreferences!.getInt('qrc_tajweed_level') ?? 3;
+    } catch (e) {
+      Logger.warning('Failed to get qrc tajweed level: $e',
+          feature: 'Preferences');
+      return 3;
+    }
+  }
 }
