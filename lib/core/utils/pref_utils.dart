@@ -160,13 +160,14 @@ class PrefUtils {
 
   String getRecitationProvider() {
     try {
-      return _sharedPreferences!.getString('recitation_provider') ?? 'local';
+      return _sharedPreferences!.getString('recitation_provider') ??
+          'local_whisper';
     } catch (e) {
       Logger.warning(
         'Failed to get recitation provider: $e',
         feature: 'Preferences',
       );
-      return 'local';
+      return 'local_whisper';
     }
   }
 
