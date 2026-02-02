@@ -33,7 +33,9 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   int _currentWordIndex = 0;
   bool _isLoading = true;
   bool _isPlaying = false;
+  bool _isBuffering = false;
   StreamSubscription<Duration>? _posSub;
+  StreamSubscription<PlayerState>? _playerSub;
 
   List<String> get _words => widget.expectedText
       .split(RegExp(r'\s+'))
@@ -90,6 +92,13 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
         await _stop();
       }
     });
+    await _playerSub?.cancel();
+    _playerSub = _player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      final buffering = state.processingState == ProcessingState.loading ||
+          state.processingState == ProcessingState.buffering;
+      setState(() => _isBuffering = buffering);
+    });
     setState(() => _isPlaying = true);
   }
 
@@ -126,6 +135,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   @override
   void dispose() {
     _posSub?.cancel();
+    _playerSub?.cancel();
     _player.dispose();
     super.dispose();
   }
@@ -147,30 +157,35 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: List.generate(_words.length, (index) {
-                    final word = _words[index];
-                    final highlight = _currentWordIndex >= index + 1;
-                    return Text(
-                      word,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Amiri',
-                        color: highlight ? Colors.green : Colors.black87,
-                        fontWeight:
-                            highlight ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    );
-                  }),
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: List.generate(_words.length, (index) {
+                      final word = _words[index];
+                      final highlight = _currentWordIndex >= index + 1;
+                      return Text(
+                        word,
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: 'Amiri',
+                          color: highlight ? Colors.green : Colors.black87,
+                          fontWeight:
+                              highlight ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      );
+                    }),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: _isPlaying ? _stop : _play,
+                      onPressed:
+                          _isLoading || _isBuffering ? null : _isPlaying ? _stop : _play,
                       icon:
                           Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
                       label: Text(
@@ -184,6 +199,10 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                     ),
                   ],
                 ),
+                if (_isBuffering) ...[
+                  const SizedBox(height: 12),
+                  const CircularProgressIndicator(strokeWidth: 2),
+                ],
               ],
             ),
     );

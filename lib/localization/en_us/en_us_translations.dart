@@ -116,6 +116,7 @@ final Map<String, String> enUs = {
   'lbl_pause': 'Pause',
   'lbl_sheikh_listen': 'Listen & Follow',
   'lbl_repeat_word': 'Repeat word',
+  'lbl_connecting': 'Connecting...',
   'msg_session_complete': 'Session Complete',
   'msg_session_score': 'Recitation Accuracy: {score}%',
   'lbl_try_again': 'Try Again',
