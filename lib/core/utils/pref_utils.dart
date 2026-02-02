@@ -220,6 +220,20 @@ class PrefUtils {
     }
   }
 
+  Future<void> setWhisperModel(String model) async {
+    await _sharedPreferences!.setString('whisper_model', model);
+  }
+
+  String getWhisperModel() {
+    try {
+      return _sharedPreferences!.getString('whisper_model') ?? 'base';
+    } catch (e) {
+      Logger.warning('Failed to get whisper model: $e',
+          feature: 'Preferences');
+      return 'base';
+    }
+  }
+
   Future<void> setQrcHafzLevel(int level) async {
     await _sharedPreferences!.setInt('qrc_hafz_level', level);
   }
