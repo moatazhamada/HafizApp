@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:hive/hive.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_remote_data_source.dart';
 import 'package:hafiz_app/data/repository/surah/surah_repository_impl.dart';
@@ -7,7 +8,16 @@ import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 import 'package:hafiz_app/domain/usecase/getsurah/get_surah.dart';
 import 'package:hafiz_app/presentation/home_screen/bloc/home_bloc.dart';
 import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart';
+import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/presentation/search/bloc/search_bloc.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
+import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
+import 'package:hafiz_app/data/datasource/recitation_error/recitation_error_local_data_source.dart';
+import 'package:hafiz_app/data/repository/bookmark/bookmark_repository_impl.dart';
+import 'package:hafiz_app/data/repository/recitation_error/recitation_error_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/bookmark_repository.dart';
+import 'package:hafiz_app/domain/repository/recitation_error_repository.dart';
 
 import 'core/network/network_manager.dart';
 import 'core/network/qf_auth.dart';
@@ -25,7 +35,10 @@ Future<void> init() async {
    */
   // Bloc
   sl.registerFactory(() => SurahBloc(getSurah: sl()));
+  sl.registerLazySingleton(() => BookmarkBloc(repository: sl()));
+  sl.registerFactory(() => SearchBloc(repository: sl()));
   sl.registerFactory(() => HomeBloc());
+  sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
   sl.registerLazySingleton(() => ThemeBloc());
   sl.registerLazySingleton(() => ScrollPositionCubit());
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
@@ -36,17 +49,38 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
 
   // Repository
-  sl.registerLazySingleton<SurahRepository>(() =>
-      SurahRepositoryImpl(
-          surahRemoteDataSource: sl(),
-          surahLocalDataSource: sl(),
-          networkInfo: sl()));
+  sl.registerLazySingleton<SurahRepository>(
+    () => SurahRepositoryImpl(
+      surahRemoteDataSource: sl(),
+      surahLocalDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<BookmarkRepository>(
+    () => BookmarkRepositoryImpl(localDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<RecitationErrorRepository>(
+    () => RecitationErrorRepositoryImpl(localDataSource: sl()),
+  );
 
   // Data Source
-  sl.registerLazySingleton<SurahRemoteDataSource>(() =>
-      SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())));
+  sl.registerLazySingleton<SurahRemoteDataSource>(
+    () => SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())),
+  );
   sl.registerLazySingleton<SurahLocalDataSource>(
-      () => SurahLocalDataSourceImpl());
+    () => SurahLocalDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<BookmarkLocalDataSource>(
+    () => BookmarkLocalDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<RecitationErrorLocalDataSource>(
+    () =>
+        RecitationErrorLocalDataSourceImpl(box: Hive.box('recitation_errors')),
+  );
 
   sl.registerLazySingleton(() => NetworkInfo(Connectivity()));
 
@@ -59,7 +93,7 @@ Future<void> init() async {
     if (ApiConfig.useQfContent) {
       dio.options.baseUrl = ApiConfig.qfContentBase;
     } else {
-      dio.options.baseUrl = "https://api.quran.com/api/v4";
+      dio.options.baseUrl = 'https://api.quran.com/api/v4';
     }
     dio.options.connectTimeout = const Duration(seconds: 7);
     dio.options.receiveTimeout = const Duration(seconds: 10);

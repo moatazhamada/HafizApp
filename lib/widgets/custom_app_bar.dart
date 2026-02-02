@@ -30,27 +30,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      AppBar(
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        toolbarHeight: height ?? 60.v,
-        automaticallyImplyLeading: false,
-        backgroundColor: backgroundColor ?? Colors.transparent,
-        leadingWidth: leadingWidth ?? 0,
-        leading: leading,
-        title: const SizedBox.shrink(),
-        titleSpacing: 0,
-        centerTitle: centerTitle ?? false,
-        actions: actions,
-      ),
-      title ?? const SizedBox.shrink()
-    ]);
+    return AppBar(
+      scrolledUnderElevation: 0,
+      elevation: 0,
+      toolbarHeight: height ?? 60.v,
+      automaticallyImplyLeading: false,
+      backgroundColor: backgroundColor ?? Colors.transparent,
+      leadingWidth: leadingWidth,
+      leading: leading,
+      title: title,
+      titleSpacing: 0,
+      centerTitle: centerTitle ?? false,
+      actions: actions,
+    );
   }
 
   @override
-  Size get preferredSize => Size(
-        mediaQueryData.size.width,
-        height ?? 56.v,
-      );
+  Size get preferredSize => Size(mediaQueryData.size.width, height ?? 56.v);
 }
