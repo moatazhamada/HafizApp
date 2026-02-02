@@ -26,12 +26,16 @@ class RecitationErrorModel extends Equatable {
   }
 
   factory RecitationErrorModel.fromJson(Map<dynamic, dynamic> json) {
+    final surahIdRaw = json['surahId'];
+    final verseIdRaw = json['verseId'];
+    final countRaw = json['count'];
+
     return RecitationErrorModel(
-      surahId: json['surahId'] as int,
+      surahId: (surahIdRaw as num?)?.toInt() ?? int.parse('$surahIdRaw'),
       surahName: json['surahName'] as String,
-      verseId: json['verseId'] as int,
+      verseId: (verseIdRaw as num?)?.toInt() ?? int.parse('$verseIdRaw'),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      count: json['count'] as int? ?? 1,
+      count: (countRaw as num?)?.toInt() ?? 1,
     );
   }
 

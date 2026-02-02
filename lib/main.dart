@@ -90,13 +90,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => themeBloc),
-        BlocProvider(
-          create: (context) => bookmarkBloc..add(const LoadBookmarksEvent()),
+        BlocProvider.value(value: themeBloc),
+        BlocProvider.value(
+          value: bookmarkBloc..add(const LoadBookmarksEvent()),
         ),
-        BlocProvider(
-          create: (context) =>
-              recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
+        BlocProvider.value(
+          value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
@@ -160,6 +159,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
     try {
       await PrefUtils().init();
+
+      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
+      await Hive.initFlutter();
+      await Hive.openBox('surah_cache');
+      await Hive.openBox('bookmarks');
+      await Hive.openBox('recitation_errors');
+
       await di.init();
 
       final storage = await HydratedStorage.build(
@@ -197,11 +203,6 @@ class _BootstrapAppState extends State<BootstrapApp> {
         kDebugMode ? LogMode.debug : LogMode.live,
         crashlytics: crashlytics,
       );
-
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
 
       FlutterError.onError = (errorDetails) {
         Logger.error(

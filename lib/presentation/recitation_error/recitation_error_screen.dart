@@ -119,6 +119,7 @@ class RecitationErrorScreen extends StatelessWidget {
                             arguments: {
                               'surah': QuranIndex.quranSurahs.firstWhere(
                                 (e) => e.id == error.surahId,
+                                orElse: () => QuranIndex.quranSurahs[0],
                               ),
                               'verseIndex': error.verseId - 1,
                               'resume': true,

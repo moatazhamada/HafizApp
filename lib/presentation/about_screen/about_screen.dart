@@ -6,7 +6,7 @@ import '../../core/analytics/analytics_service.dart';
 import 'package:hafiz_app/main.dart' show globalMessengerKey;
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io' show Platform;
+import '../../core/utils/platform_info.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -115,7 +115,7 @@ class _AboutScreenState extends State<AboutScreen> {
                               .add({
                                 'message': msg,
                                 'timestamp': FieldValue.serverTimestamp(),
-                                'platform': Platform.operatingSystem,
+                                'platform': getPlatformLabel(),
                                 'version': _version.isNotEmpty
                                     ? _version
                                     : 'Unknown',

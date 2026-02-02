@@ -97,6 +97,7 @@ class BookmarksScreen extends StatelessWidget {
                   (e) => e.id == bookmark.surahId,
                   orElse: () => QuranIndex.quranSurahs[0],
                 );
+                final bookmarkBloc = context.read<BookmarkBloc>();
 
                 return Semantics(
                   button: true,
@@ -115,7 +116,7 @@ class BookmarksScreen extends StatelessWidget {
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     onDismissed: (direction) {
-                      context.read<BookmarkBloc>().add(
+                      bookmarkBloc.add(
                         RemoveBookmarkEvent(
                           bookmark.surahId,
                           bookmark.verseNumber,
@@ -219,7 +220,7 @@ class BookmarksScreen extends StatelessWidget {
                                       color: Colors.redAccent,
                                     ),
                                     onPressed: () {
-                                      context.read<BookmarkBloc>().add(
+                                      bookmarkBloc.add(
                                         RemoveBookmarkEvent(
                                           bookmark.surahId,
                                           bookmark.verseNumber,

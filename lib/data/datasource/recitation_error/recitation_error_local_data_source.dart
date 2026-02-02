@@ -17,11 +17,21 @@ class RecitationErrorLocalDataSourceImpl
   @override
   Future<List<RecitationErrorModel>> getRecitationErrors() async {
     try {
-      return box.values
-          .map(
-            (e) => RecitationErrorModel.fromJson(Map<String, dynamic>.from(e)),
-          )
-          .toList();
+      final List<RecitationErrorModel> errors = [];
+
+      for (final e in box.values) {
+        if (e is! Map) continue;
+        try {
+          errors.add(
+            RecitationErrorModel.fromJson(Map<String, dynamic>.from(e)),
+          );
+        } catch (_) {
+          // Skip malformed entries instead of failing the entire read.
+          continue;
+        }
+      }
+
+      return errors;
     } catch (e) {
       throw CacheException();
     }
@@ -31,6 +41,24 @@ class RecitationErrorLocalDataSourceImpl
   Future<void> addRecitationError(RecitationErrorModel error) async {
     try {
       final key = '${error.surahId}_${error.verseId}';
+      final existingRaw = box.get(key);
+      if (existingRaw is Map) {
+        final existing = RecitationErrorModel.fromJson(
+          Map<String, dynamic>.from(existingRaw),
+        );
+
+        final updated = RecitationErrorModel(
+          surahId: existing.surahId,
+          surahName: existing.surahName,
+          verseId: existing.verseId,
+          createdAt: existing.createdAt,
+          count: existing.count + 1,
+        );
+
+        await box.put(key, updated.toJson());
+        return;
+      }
+
       await box.put(key, error.toJson());
     } catch (e) {
       throw CacheException();

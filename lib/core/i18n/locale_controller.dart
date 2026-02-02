@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../utils/pref_utils.dart';
 
 class LocaleController {
@@ -16,7 +17,7 @@ class LocaleController {
       case 'system':
       default:
         // Resolve system locale
-        final systemLoc = WidgetsBinding.instance.platformDispatcher.locale;
+        final systemLoc = ui.PlatformDispatcher.instance.locale;
         if (systemLoc.languageCode == 'en') {
           return const Locale('en', 'US');
         }

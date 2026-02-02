@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // Required for RenderParagraph
 import 'package:permission_handler/permission_handler.dart';
@@ -32,6 +33,7 @@ class _SurahScreenState extends State<SurahScreen> {
   ScrollController? _scrollControllerForInit;
   ScrollController get _scrollController => _scrollControllerForInit!;
   double? initialOffset;
+  Timer? _offsetSaveDebounce;
 
   // Hifz Mode State
   bool _isHifzMode = false;
@@ -89,12 +91,16 @@ class _SurahScreenState extends State<SurahScreen> {
         initialScrollOffset: initialOffset ?? 0,
       );
       _scrollControllerForInit!.addListener(() {
-        if (surah != null) {
+        if (surah == null) return;
+
+        _offsetSaveDebounce?.cancel();
+        _offsetSaveDebounce = Timer(const Duration(milliseconds: 350), () {
+          if (!mounted || surah == null) return;
           PrefUtils().setSurahOffset(
             surah!.id,
             _scrollControllerForInit!.offset,
           );
-        }
+        });
       });
     }
   }
@@ -297,10 +303,12 @@ class _SurahScreenState extends State<SurahScreen> {
           // Add a small buffer (e.g. 50px) to skip empty space.
 
           if (_scrollController.hasClients) {
-            // In slivers, the RenderParagraph might be very tall.
-            // local offset Y = scrollController.offset.
-
-            final targetLcOffset = Offset(20, _scrollController.offset + 20);
+            // getPositionForOffset expects local coordinates within RenderParagraph.
+            final Size size = renderObject.size;
+            final Offset targetLcOffset = Offset(
+              20,
+              (20.0).clamp(0.0, (size.height - 1).clamp(0.0, double.infinity)),
+            );
             final textPosition = renderObject.getPositionForOffset(
               targetLcOffset,
             );
@@ -327,6 +335,9 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   void dispose() {
+    _offsetSaveDebounce?.cancel();
+    _voiceService.stop();
+    _isListening = false;
     _scrollControllerForInit?.dispose();
     super.dispose();
   }
@@ -711,6 +722,7 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   void _showVoiceDialog(BuildContext context, Verse aya) async {
+    final parentContext = context;
     // 1. Request Permission Lazy
     bool available = await _voiceService.requestPermission();
     if (!available) {
@@ -764,9 +776,11 @@ class _SurahScreenState extends State<SurahScreen> {
     await _voiceService.stop();
     _isListening = false;
 
-    if (!context.mounted) return;
+    bool autoAdvanced = false;
+
+    if (!parentContext.mounted) return;
     await showDialog(
-      context: context,
+      context: parentContext,
       barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -782,12 +796,14 @@ class _SurahScreenState extends State<SurahScreen> {
                 });
                 _voiceService.listen(
                   onResult: (text) {
+                    if (!dialogContext.mounted) return;
                     setDialogState(() {
                       spokenText = text;
                     });
                   },
                   onDone: (finalText) {
                     _isListening = false;
+                    if (!dialogContext.mounted) return;
                     final diffs = _voiceService.verifyRecitation(
                       finalText,
                       expectedText,
@@ -804,6 +820,7 @@ class _SurahScreenState extends State<SurahScreen> {
                           if (mounted &&
                               dialogContext.mounted &&
                               Navigator.canPop(dialogContext)) {
+                            autoAdvanced = true;
                             Navigator.pop(dialogContext);
                             _onRecitationCorrect(aya);
                           }
@@ -812,11 +829,12 @@ class _SurahScreenState extends State<SurahScreen> {
                         statusColor = Colors.redAccent;
                         // Show Wrong Dialog
                         Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (context.mounted &&
+                          if (mounted &&
                               dialogContext.mounted &&
                               Navigator.canPop(dialogContext)) {
+                            autoAdvanced = true;
                             Navigator.pop(dialogContext);
-                            _showWrongDialog(context, aya);
+                            _showWrongDialog(parentContext, aya);
                           }
                         });
                       }
@@ -932,8 +950,10 @@ class _SurahScreenState extends State<SurahScreen> {
     );
 
     // Cleanup when dialog closes
-    await _voiceService.stop();
-    _isListening = false;
+    if (!autoAdvanced) {
+      await _voiceService.stop();
+      _isListening = false;
+    }
   }
 
   void _onRecitationCorrect(Verse currentVerse) {

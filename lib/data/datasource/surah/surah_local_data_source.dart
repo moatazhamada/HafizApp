@@ -19,7 +19,8 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
   Future<ChapterResponse> getSurah(String surahId) async {
     final path = '$basePath/surah_$surahId.json';
     final jsonStr = await rootBundle.loadString(path);
-    return compute(_parseSurahJson, jsonStr);
+    final data = await compute(_decodeJsonToMap, jsonStr);
+    return ChapterResponse.fromJson(data);
   }
 
   @override
@@ -33,19 +34,21 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
         return [];
       }
 
-      return compute(_searchWorker, _SearchRequest(token, basePath, query));
+      final rawMatches = await compute(
+        _searchWorker,
+        <String, Object?>{
+          'token': token,
+          'basePath': basePath,
+          'query': query,
+        },
+      );
+
+      return rawMatches.map(VerseModel.fromJson).toList();
     } catch (e) {
       debugPrint('Search error: $e');
       return [];
     }
   }
-}
-
-class _SearchRequest {
-  final RootIsolateToken rootIsolateToken;
-  final String basePath;
-  final String query;
-  _SearchRequest(this.rootIsolateToken, this.basePath, this.query);
 }
 
 // Static regex for performance (compile once)
@@ -55,16 +58,22 @@ final _tashkeelRegex = RegExp(
 
 String _removeTashkeel(String text) => text.replaceAll(_tashkeelRegex, '');
 
-Future<List<VerseModel>> _searchWorker(_SearchRequest request) async {
-  BackgroundIsolateBinaryMessenger.ensureInitialized(request.rootIsolateToken);
+Future<List<Map<String, dynamic>>> _searchWorker(
+  Map<String, Object?> args,
+) async {
+  final token = args['token'] as RootIsolateToken;
+  final basePath = args['basePath'] as String;
+  final query = args['query'] as String;
 
-  final List<VerseModel> allMatches = [];
-  final normalizedQuery = _removeTashkeel(request.query);
+  BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+
+  final List<Map<String, dynamic>> allMatches = [];
+  final normalizedQuery = _removeTashkeel(query);
 
   for (int i = 1; i <= 114; i++) {
     try {
       final jsonStr = await rootBundle.loadString(
-        '${request.basePath}/surah_$i.json',
+        '$basePath/surah_$i.json',
       );
 
       // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
@@ -96,7 +105,11 @@ Future<List<VerseModel>> _searchWorker(_SearchRequest request) async {
 
         final normalizedVerse = _removeTashkeel(textToCheck);
         if (normalizedVerse.contains(normalizedQuery)) {
-          allMatches.add(verse);
+          allMatches.add({
+            'chapter': verse.chapterId,
+            'verse': verse.verseNumber,
+            'text': verse.text,
+          });
         }
       }
     } catch (e) {
@@ -106,7 +119,6 @@ Future<List<VerseModel>> _searchWorker(_SearchRequest request) async {
   return allMatches;
 }
 
-ChapterResponse _parseSurahJson(String jsonStr) {
-  final Map<String, dynamic> data = json.decode(jsonStr);
-  return ChapterResponse.fromJson(data);
+Map<String, dynamic> _decodeJsonToMap(String jsonStr) {
+  return json.decode(jsonStr) as Map<String, dynamic>;
 }

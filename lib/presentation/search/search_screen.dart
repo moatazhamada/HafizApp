@@ -15,12 +15,10 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final SearchBloc _searchBloc = sl<SearchBloc>();
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchBloc.close();
     super.dispose();
   }
 
@@ -29,7 +27,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocProvider(
-      create: (context) => _searchBloc,
+      create: (context) => sl<SearchBloc>(),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).primaryColor,
@@ -55,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 border: InputBorder.none,
               ),
               onChanged: (value) {
-                _searchBloc.add(SearchQueryChanged(value));
+                context.read<SearchBloc>().add(SearchQueryChanged(value));
               },
             ),
           ),
