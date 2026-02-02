@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
@@ -36,12 +37,13 @@ class _HomeScreenState extends State<HomeScreen>
   final ScrollController _scrollController = ScrollController();
   final NetworkInfo _networkInfo = sl<NetworkInfo>();
   bool _isOffline = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
     _checkConnectivity();
-    _networkInfo.onConnectivityChanged.listen((results) {
+    _connectivitySub = _networkInfo.onConnectivityChanged.listen((results) {
       final connected = results.any((r) => r != ConnectivityResult.none);
       if (mounted && _isOffline != !connected) {
         setState(() => _isOffline = !connected);
@@ -88,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _connectivitySub?.cancel();
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
     } catch (_) {}
@@ -217,8 +220,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        body: BlocProvider<HomeBloc>(
-          create: (context) => homeBloc,
+        body: BlocProvider<HomeBloc>.value(
+          value: homeBloc,
           child: BlocBuilder<HomeBloc, HomeState>(
             builder: (context, state) {
               return SizedBox(
@@ -261,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
 
-                      if ((state as UpdateLastReadSurah).surah != null)
-                        _buildCardLastRead((state).surah, theme),
+                      if (state is UpdateLastReadSurah && state.surah != null)
+                        _buildCardLastRead(state.surah, theme),
 
                       Semantics(
                         label: 'lbl_surah_list'.tr,

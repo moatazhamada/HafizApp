@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 import 'dart:async';
@@ -26,6 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -41,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _setupConnectivity() {
-    networkInfo.onConnectivityChanged.listen((
+    _connectivitySubscription = networkInfo.onConnectivityChanged.listen((
       List<ConnectivityResult> results,
     ) {
       if (mounted) {
@@ -73,6 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _animationController.dispose();
     super.dispose();
   }

@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 import 'package:rxdart/rxdart.dart';
@@ -44,18 +45,23 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       }).toList();
 
       List<Verse> verseResults = [];
+      Failure? verseSearchFailure;
 
       // 2. Search Verses (Async, heavier) - only if query is meaningful (>2 chars) or explicit
       if (query.length > 2) {
         final result = await repository.searchVerses(query);
         result.fold(
-          (failure) => null, // Ignore failure for now, just show empty
+          (failure) => verseSearchFailure = failure,
           (verses) => verseResults = verses,
         );
       }
 
       if (surahResults.isEmpty && verseResults.isEmpty) {
-        emit(const SearchEmpty());
+        if (verseSearchFailure != null) {
+          emit(SearchError(verseSearchFailure.toString()));
+        } else {
+          emit(const SearchEmpty());
+        }
       } else {
         emit(SearchLoaded(surahResults, verseResults: verseResults));
       }

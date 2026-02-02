@@ -11,8 +11,9 @@ import 'package:hafiz_app/injection_container.dart' as di;
 import 'package:hafiz_app/main.dart';
 
 void main() {
-  testWidgets('Get started clicked open Home Screen',
-      (WidgetTester tester) async {
+  testWidgets('Get started clicked open Home Screen', (
+    WidgetTester tester,
+  ) async {
     await PrefUtils().init();
     await di.init();
     // Build our app and trigger a frame.
@@ -23,6 +24,7 @@ void main() {
     await tester.tap(find.text('Get Started'));
     await tester.pump();
 
+    // Check for Home Screen elements
     expect(find.text('Hafiz'), findsOneWidget);
     expect(find.text('Learn Quran and\nRecite everyday'), findsOneWidget);
   });
