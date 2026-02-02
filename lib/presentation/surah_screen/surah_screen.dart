@@ -103,26 +103,28 @@ class _SurahScreenState extends State<SurahScreen> {
     List<Verse> chapters, {
     int attempt = 0,
   }) {
-    // Max 10 attempts (~2 seconds total)
-    if (attempt > 10) return;
+    // Max 20 attempts (~4 seconds total) to allow for transitions/images
+    if (attempt > 20) return;
 
-    bool success = _scrollToVerse(verseNumber, chapters);
-    if (!success) {
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
-        }
-      });
-    } else {
-      // Clear highlight after success + delay
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() {
-            _highlightedVerse = null;
-          });
-        }
-      });
-    }
+    // Small delay on first attempt to let page transition start/settle
+    int delay = attempt == 0 ? 500 : 200;
+
+    Future.delayed(Duration(milliseconds: delay), () {
+      if (!mounted) return;
+      bool success = _scrollToVerse(verseNumber, chapters);
+      if (!success) {
+        _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
+      } else {
+        // Clear highlight after success + delay
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            setState(() {
+              _highlightedVerse = null;
+            });
+          }
+        });
+      }
+    });
   }
 
   /// Returns true if scroll was initiated successfully
@@ -163,10 +165,6 @@ class _SurahScreenState extends State<SurahScreen> {
 
           if (boxes.isNotEmpty && _scrollController.hasClients) {
             // Calculate target scroll position
-            final richTextGlobalOffset = renderObject.localToGlobal(
-              Offset.zero,
-            );
-            // We need the scroll layout top global offset to normalize
             // but assuming the scroll view fills the screen (minus potential app bars),
             // using scrollOffset + screen_y works IF the scroll view is at the screen top.
 
@@ -174,14 +172,22 @@ class _SurahScreenState extends State<SurahScreen> {
             // target = currentScrollOffset + (boxBottom_Global - scrollViewTop_Global)
             // But we don't easily have scrollViewTop_Global.
 
-            // Let's stick to the previous working heuristic but clamp strictly
-            final scrollOffset = _scrollController.offset;
-
             // richTextGlobalOffset.dy is the screen Y position of the TOP of the text.
             // If we rely on this, it must be accurate.
 
+            // Fix: Use the scroll position to determine relative offset more reliably.
+            // Target = CurrentScroll + (GlobalBoxY - GlobalScrollTopY) - Padding
+            // Since we don't know GlobalScrollTopY (which is roughly AppBar height),
+            // let's assume standard AppBar displacement or calculate relative to RenderObject.
+
+            // Simplified: The box.top is relative to the RenderParagraph start.
+            // The RenderParagraph represents the whole text.
+            // So we just need to scroll to (box.top + topPaddingOfTheWidget).
+            // But the widget is inside a SliverToBoxAdapter inside CustomScrollView.
+            // So: box.top is essentially the scroll offset we want (plus the top padding of the screen).
+
             final targetScroll =
-                scrollOffset + richTextGlobalOffset.dy + boxes.first.top - 150;
+                boxes.first.top + 20; // 20 is padding at top of list
 
             _scrollController.animateTo(
               targetScroll.clamp(
