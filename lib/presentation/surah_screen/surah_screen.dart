@@ -1,11 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // Required for RenderParagraph
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
+import 'package:hafiz_app/presentation/surah_screen/qrc_recitation_service.dart';
+import 'package:hafiz_app/presentation/surah_screen/sheikh_audio_coach_sheet.dart';
+import 'package:hafiz_app/presentation/surah_screen/custom_asr_service.dart';
 
 import '../../core/app_export.dart';
+import '../../core/qiraat/qiraat_service.dart';
 import '../../core/quran_index/quran_surah.dart';
 
 import '../../domain/entities/verse.dart';
@@ -48,6 +55,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   // Voice Verification
   final VoiceVerificationService _voiceService = VoiceVerificationService();
+  final QiraatService _qiraatService = QiraatService();
   bool _isListening = false;
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
@@ -755,7 +763,7 @@ class _SurahScreenState extends State<SurahScreen> {
     }
 
     // 2. Prepare Expectation (Strip Bismillah)
-    String expectedText = aya.text;
+    String expectedText = await _resolveExpectedText(aya);
     if (aya.verseNumber == 1 && surah?.id != 1) {
       const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
       const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
@@ -766,9 +774,30 @@ class _SurahScreenState extends State<SurahScreen> {
       }
     }
 
+    final provider = PrefUtils().getRecitationProvider();
+    final bool useQrc = provider == 'qrc';
+    final bool useCustom = provider == 'custom';
+    final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
     String spokenText = 'lbl_listening'.tr;
     Color statusColor = Colors.blueAccent;
     bool hasStartedListening = false;
+    String feedbackTitle = '';
+    String scoreText = '';
+    String hintLabel = '';
+    String hintWord = '';
+    List<String> issueLines = [];
+    bool showFeedback = false;
+    String qrcStatus = '';
+    int qrcWordIndex = 0;
+    List<QrcTajweedMistake> qrcMistakes = [];
+    List<String> qrcMistakeLines = [];
+    String repeatLabel = '';
+    String repeatWord = '';
+    StreamSubscription? qrcSub;
+    final qrcService = QrcRecitationService();
+    final customAsrService = CustomAsrService();
+    final customRecorder = FlutterSoundRecorder();
+    String? customFilePath;
 
     if (!mounted) return;
 
@@ -786,7 +815,7 @@ class _SurahScreenState extends State<SurahScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             // Function to start listening
-            void startListening() {
+            void startListening() async {
               if (!_isListening) {
                 _isListening = true;
                 hasStartedListening = true;
@@ -794,60 +823,242 @@ class _SurahScreenState extends State<SurahScreen> {
                   statusColor = Colors.blueAccent;
                   spokenText = 'lbl_listening'.tr;
                 });
-                _voiceService.listen(
-                  onResult: (text) {
-                    if (!dialogContext.mounted) return;
+                if (useQrc) {
+                  final connected = await qrcService.connect();
+                  if (!connected) {
                     setDialogState(() {
-                      spokenText = text;
+                      statusColor = Colors.redAccent;
+                      feedbackTitle = 'msg_qrc_missing_key'.tr;
+                      showFeedback = true;
+                      _isListening = false;
                     });
-                  },
-                  onDone: (finalText) {
-                    _isListening = false;
-                    if (!dialogContext.mounted) return;
-                    final diffs = _voiceService.verifyRecitation(
-                      finalText,
-                      expectedText,
-                    );
-                    setDialogState(() {
-                      spokenText = finalText;
-                      // Allow some tolerance (length <= 2 to be slightly more forgiving or logic based on word count)
-                      bool isCorrect = diffs.length <= 1;
+                    return;
+                  }
 
-                      if (isCorrect) {
-                        statusColor = Colors.green;
-                        // Auto Advance Delay
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted &&
-                              dialogContext.mounted &&
-                              Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                            Navigator.pop(dialogContext);
-                            _onRecitationCorrect(aya);
+                  qrcSub = qrcService.events.listen((event) {
+                    if (!mounted) return;
+                    if (event is QrcStatusEvent) {
+                      setDialogState(() => qrcStatus = event.status);
+                    } else if (event is QrcCheckEvent) {
+                      final data = event.data;
+                      setDialogState(() {
+                        qrcWordIndex = data.wordIndex ?? qrcWordIndex;
+                        qrcMistakes = data.tajweedMistakes;
+                        qrcMistakeLines = qrcMistakes
+                            .map((m) =>
+                                '${m.name ?? 'Tajweed'} (${m.wordIndex ?? '-'})')
+                            .toList();
+                        showFeedback = true;
+                        final expectedTokens = expectedText
+                            .split(RegExp(r'\s+'))
+                            .where((t) => t.isNotEmpty)
+                            .toList();
+                        final expectedCount = expectedTokens.length;
+                        final progress = expectedCount == 0
+                            ? 0
+                            : ((qrcWordIndex / expectedCount) * 100).round();
+                        scoreText =
+                            '${'lbl_recitation_score'.tr}: $progress%';
+                        issueLines = [];
+                        if (qrcMistakes.isNotEmpty) {
+                          issueLines.add(
+                            '${'msg_tajweed_notes'.tr}: ${qrcMistakes.length}',
+                          );
+                        }
+                        repeatLabel = '';
+                        repeatWord = '';
+                        if (qrcMistakes.isNotEmpty &&
+                            (qrcMistakes.first.wordIndex ?? 0) > 0) {
+                          final idx = (qrcMistakes.first.wordIndex ?? 1) - 1;
+                          if (idx >= 0 && idx < expectedTokens.length) {
+                            repeatLabel = 'msg_repeat_word'.tr;
+                            repeatWord = expectedTokens[idx];
                           }
-                        });
-                      } else {
+                        } else if (qrcWordIndex < expectedCount) {
+                          repeatLabel = 'msg_repeat_word'.tr;
+                          repeatWord = expectedTokens[qrcWordIndex];
+                        }
+                        if (qrcWordIndex >= expectedCount &&
+                            expectedCount > 0 &&
+                            qrcMistakes.isEmpty) {
+                          statusColor = Colors.green;
+                          feedbackTitle = 'lbl_congrats'.tr;
+                          unawaited(Future.delayed(
+                              const Duration(milliseconds: 1000), () {
+                            if (mounted &&
+                                dialogContext.mounted &&
+                                Navigator.canPop(dialogContext)) {
+                              Navigator.pop(dialogContext);
+                              _onRecitationCorrect(aya);
+                            }
+                          }));
+                        }
+                      });
+                    } else if (event is QrcErrorEvent) {
+                      setDialogState(() {
                         statusColor = Colors.redAccent;
-                        // Show Wrong Dialog
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted &&
-                              dialogContext.mounted &&
-                              Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                            Navigator.pop(dialogContext);
-                            _showWrongDialog(parentContext, aya);
-                          }
-                        });
+                        feedbackTitle = event.message;
+                        showFeedback = true;
+                      });
+                    }
+                  });
+
+                  await qrcService.startTilawaSession(
+                    surahIndex: surah!.id,
+                    verseIndex: aya.verseNumber,
+                    hafzLevel: PrefUtils().getQrcHafzLevel(),
+                    tajweedLevel: PrefUtils().getQrcTajweedLevel(),
+                  );
+                  await qrcService.startRecording();
+                } else {
+                  if (useCustom) {
+                    if (customEndpoint.isEmpty) {
+                      setDialogState(() {
+                        statusColor = Colors.orangeAccent;
+                        feedbackTitle = 'msg_custom_asr_empty'.tr;
+                        showFeedback = true;
+                      });
+                    } else {
+                      await customRecorder.openRecorder();
+                      final dir = await getTemporaryDirectory();
+                      customFilePath =
+                          '${dir.path}/recite_${surah!.id}_${aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
+                      await customRecorder.startRecorder(
+                        toFile: customFilePath,
+                        codec: Codec.pcm16WAV,
+                        numChannels: 1,
+                        sampleRate: 16000,
+                      );
+                    }
+                  }
+
+                  await _voiceService.listen(
+                    onResult: (text) {
+                    if (!dialogContext.mounted) return;
+                      setDialogState(() {
+                        spokenText = text;
+                      });
+                    },
+                    onDone: (finalText) async {
+                      _isListening = false;
+                      if (!dialogContext.mounted) return;
+                      String effectiveText = finalText;
+                      if (useCustom &&
+                          customEndpoint.isNotEmpty &&
+                          customFilePath != null) {
+                        try {
+                          await customRecorder.stopRecorder();
+                        } catch (_) {}
+                        final remoteText = await customAsrService.transcribe(
+                          endpoint: customEndpoint,
+                          filePath: customFilePath!,
+                        );
+                        if (remoteText != null && remoteText.isNotEmpty) {
+                          effectiveText = remoteText;
+                        }
                       }
-                    });
-                  },
-                );
+                      final analysis = _voiceService.analyzeRecitation(
+                        effectiveText,
+                        expectedText,
+                        allowPartial: true,
+                      );
+                      setDialogState(() {
+                        spokenText = effectiveText;
+                        final scorePercent = (analysis.score * 100).round();
+                        scoreText =
+                            '${'lbl_recitation_score'.tr}: $scorePercent%';
+                        issueLines = [];
+                        if (analysis.missingCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_missing'.tr}: ${analysis.missingCount}',
+                          );
+                        }
+                        if (analysis.extraCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_extra'.tr}: ${analysis.extraCount}',
+                          );
+                        }
+                        if (analysis.substituteCount > 0) {
+                          issueLines.add(
+                            '${'msg_recitation_substitute'.tr}: ${analysis.substituteCount}',
+                          );
+                        }
+
+                        hintLabel = '';
+                        hintWord = '';
+                        repeatLabel = '';
+                        repeatWord = '';
+                        final expectedTokens = expectedText
+                            .split(RegExp(r'\s+'))
+                            .where((t) => t.isNotEmpty)
+                            .toList();
+                        if (analysis.expectedRange.isValid &&
+                            analysis.expectedRange.start <
+                                expectedTokens.length &&
+                            !analysis.passed) {
+                          hintLabel = 'msg_recitation_hint_start'.tr;
+                          hintWord = expectedTokens[analysis.expectedRange.start];
+                          repeatLabel = 'msg_repeat_word'.tr;
+                          repeatWord = hintWord;
+                        }
+
+                        showFeedback = true;
+
+                        if (analysis.isTooShort) {
+                          statusColor = Colors.orangeAccent;
+                          feedbackTitle = 'msg_recitation_too_short'.tr;
+                          return;
+                        }
+
+                        if (analysis.passed) {
+                          statusColor = Colors.green;
+                          feedbackTitle = 'lbl_congrats'.tr;
+                          // Auto Advance Delay
+                          unawaited(Future.delayed(
+                              const Duration(milliseconds: 1000), () {
+                            if (mounted &&
+                                dialogContext.mounted &&
+                                Navigator.canPop(dialogContext)) {
+                            autoAdvanced = true;
+                              Navigator.pop(dialogContext);
+                              _onRecitationCorrect(aya);
+                            }
+                          }));
+                        } else {
+                          statusColor = Colors.redAccent;
+                          feedbackTitle = 'msg_incorrect_recitation'.tr;
+                          // Show Wrong Dialog
+                          unawaited(Future.delayed(
+                              const Duration(milliseconds: 1000), () {
+                            if (mounted &&
+                                dialogContext.mounted &&
+                                Navigator.canPop(dialogContext)) {
+                            autoAdvanced = true;
+                              Navigator.pop(dialogContext);
+                            _showWrongDialog(parentContext, aya);
+                            }
+                          }));
+                        }
+                      });
+                    },
+                  );
+                }
               }
             }
 
             // Function to stop listening
-            void stopListening() {
+            void stopListening() async {
               if (_isListening) {
-                _voiceService.stop();
+                if (useQrc) {
+                  await qrcService.stopRecording();
+                  await qrcSub?.cancel();
+                } else if (useCustom) {
+                  try {
+                    await customRecorder.stopRecorder();
+                  } catch (_) {}
+                } else {
+                  await _voiceService.stop();
+                }
                 _isListening = false;
                 setDialogState(() {
                   statusColor = Colors.grey;
@@ -903,23 +1114,133 @@ class _SurahScreenState extends State<SurahScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      spokenText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Amiri',
-                        color: statusColor,
+                  if (!useQrc) ...[
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        spokenText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: 'Amiri',
+                          color: statusColor,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
+                  ],
                   Text(
                     _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
+                  if (useQrc) ...[
+                    const SizedBox(height: 12),
+                    if (qrcStatus.isNotEmpty)
+                      Text(
+                        qrcStatus,
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: expectedText
+                          .split(RegExp(r'\s+'))
+                          .where((t) => t.isNotEmpty)
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final idx = entry.key + 1;
+                        final word = entry.value;
+                        final isCorrect = qrcWordIndex >= idx;
+                        final isMistake = qrcMistakes
+                            .any((m) => m.wordIndex == idx);
+                        Color color = Colors.black87;
+                        if (isCorrect) color = Colors.green;
+                        if (isMistake) color = Colors.redAccent;
+                        return Text(
+                          word,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'Amiri',
+                            color: color,
+                            fontWeight: isCorrect
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    if (qrcMistakeLines.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      for (final line in qrcMistakeLines)
+                        Text(
+                          line,
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.red),
+                        ),
+                    ],
+                  ],
+                  if (showFeedback) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      feedbackTitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      scoreText,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    if (issueLines.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      for (final line in issueLines)
+                        Text(
+                          line,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                    ],
+                    if (hintLabel.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        hintLabel,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        hintWord,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Amiri',
+                        ),
+                      ),
+                    ],
+                    if (repeatLabel.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        repeatLabel,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        repeatWord,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Amiri',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      'msg_coach_tip_slow'.tr,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   const Divider(),
                   Text(
@@ -935,6 +1256,20 @@ class _SurahScreenState extends State<SurahScreen> {
                 ],
               ),
               actions: [
+                TextButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: dialogContext,
+                      builder: (_) => SheikhAudioCoachSheet(
+                        chapterNumber: surah!.id,
+                        verseNumber: aya.verseNumber,
+                        expectedText: expectedText,
+                        reciterId: PrefUtils().getReciterId(),
+                      ),
+                    );
+                  },
+                  child: Text('lbl_listen_sheikh'.tr),
+                ),
                 TextButton(
                   onPressed: () {
                     stopListening();
@@ -953,6 +1288,25 @@ class _SurahScreenState extends State<SurahScreen> {
     if (!autoAdvanced) {
       await _voiceService.stop();
       _isListening = false;
+    await qrcSub?.cancel();
+    await qrcService.dispose();
+    try {
+      await customRecorder.closeRecorder();
+    } catch (_) {}
+  }
+
+  Future<String> _resolveExpectedText(Verse aya) async {
+    if (surah == null) return aya.text;
+    final edition = PrefUtils().getQiraatEdition();
+    if (edition == 'quran-uthmani' || edition.isEmpty) {
+      return aya.text;
+    }
+    final remoteText = await _qiraatService.fetchAyahText(
+      surahId: surah!.id,
+      verseNumber: aya.verseNumber,
+      edition: edition,
+    );
+    return remoteText ?? aya.text;
     }
   }
 
