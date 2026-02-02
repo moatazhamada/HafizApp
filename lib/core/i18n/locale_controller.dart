@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../utils/pref_utils.dart';
 
 class LocaleController {
-  static final ValueNotifier<Locale> notifier =
-      ValueNotifier<Locale>(_initialLocale());
+  static final ValueNotifier<Locale> notifier = ValueNotifier<Locale>(
+    _initialLocale(),
+  );
 
   static Locale _initialLocale() {
     final code = PrefUtils().getLocaleCode();
@@ -11,7 +13,14 @@ class LocaleController {
       case 'en':
         return const Locale('en', 'US');
       case 'ar':
+        return const Locale('ar', 'EG');
+      case 'system':
       default:
+        // Resolve system locale
+        final systemLoc = ui.PlatformDispatcher.instance.locale;
+        if (systemLoc.languageCode == 'en') {
+          return const Locale('en', 'US');
+        }
         return const Locale('ar', 'EG');
     }
   }
@@ -21,4 +30,3 @@ class LocaleController {
     PrefUtils().setLocaleCode(locale.languageCode);
   }
 }
-

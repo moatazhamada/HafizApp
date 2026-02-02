@@ -19,9 +19,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     if (event is OnboardingOpenHomeEvent) {
-      NavigatorService.popAndPushNamed(
-        AppRoutes.homePage,
-      );
+      await NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
     }
   }
 }

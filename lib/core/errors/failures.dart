@@ -29,3 +29,17 @@ class ConnectionFailure extends Failure {
     return 'ConnectionFailure{errorMessage: $errorMessage}';
   }
 }
+
+class CacheFailure extends Failure {
+  final String errorMessage;
+
+  CacheFailure(this.errorMessage);
+
+  @override
+  List<Object> get props => [errorMessage];
+
+  @override
+  String toString() {
+    return 'CacheFailure{errorMessage: $errorMessage}';
+  }
+}

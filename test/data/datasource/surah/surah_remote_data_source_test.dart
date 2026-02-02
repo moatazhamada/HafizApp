@@ -18,48 +18,66 @@ void main() {
   setUp(() {
     mockDio = MockDio();
     mockDio.options = BaseOptions(
-        baseUrl: "https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1");
+      baseUrl: 'https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1',
+    );
+    when(() => mockDio.interceptors).thenReturn(Interceptors());
     networkManagerImpl = NetworkManagerImpl(mockDio);
-    surahRemoteDataSource =
-        SurahRemoteDataSourceImpl(networkManager: networkManagerImpl);
+    surahRemoteDataSource = SurahRemoteDataSourceImpl(
+      networkManager: networkManagerImpl,
+    );
   });
 
-  group("Make sure data source ", () {
+  group('Make sure data source ', () {
     void setUpMockDioSuccess() {
       final responsePayload = json.decode(fixture('surah_response.json'));
       final response = Response(
         data: responsePayload,
         statusCode: 200,
-        requestOptions: RequestOptions(baseUrl: ""),
+        requestOptions: RequestOptions(baseUrl: ''),
       );
       when(
-        () => mockDio.get("/editions/ara-quranuthmanihaf/114.json"),
+        () => mockDio.get(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
       ).thenAnswer((_) async => response);
     }
 
     void setUpMockDioFailed() {
-      final response = Response(
-        data: "{}",
-        statusCode: 400,
-        requestOptions: RequestOptions(baseUrl: ""),
-      );
       when(
-        () => mockDio.get("/editions/ara-quranuthmanihaf/114.json"),
-      ).thenAnswer((_) async => response);
+        () => mockDio.get(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: ''),
+          error: 'Unknown Error',
+          type: DioExceptionType.unknown,
+        ),
+      );
     }
 
-    test("make sure get surah return success", () async {
+    test('make sure get surah return success', () async {
       setUpMockDioSuccess();
-      var result = await surahRemoteDataSource.getSurah("114");
+      var result = await surahRemoteDataSource.getSurah('114');
       expect(result.chapters.length, 6);
-      expect(result.chapters.first.verse, 1);
-      verify(() => mockDio.get("/editions/ara-quranuthmanihaf/114.json"));
+      expect(result.chapters.first.verseNumber, 1);
+      verify(
+        () => mockDio.get(
+          '/verses/by_chapter/114',
+          queryParameters: any(named: 'queryParameters'),
+          options: any(named: 'options'),
+        ),
+      );
     });
 
-    test("make sure get surah return failure", () async {
+    test('make sure get surah return failure', () async {
       setUpMockDioFailed();
       expect(
-        () => surahRemoteDataSource.getSurah("114"),
+        () => surahRemoteDataSource.getSurah('114'),
         throwsA(isA<DioException>()),
       );
     });
