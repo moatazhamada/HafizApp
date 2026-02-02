@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart'; // Required for RenderParagraph
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
-import 'package:hafiz_app/localization/app_localization.dart';
 
 import '../../core/app_export.dart';
 import '../../core/quran_index/quran_surah.dart';
@@ -249,7 +248,6 @@ class _SurahScreenState extends State<SurahScreen> {
         // We really need viewport relative coordinates.
 
         try {
-          final double topOffset = 180; // aprox appbar height
           // We can't easily get viewport relative rects for ALL ranges efficiently.
           // Fallback: Use the scroll offset + heuristic
           // If we have scroll offset, we know we are at N pixels down.
@@ -1449,10 +1447,10 @@ class _SurahScreenState extends State<SurahScreen> {
                 border: (isBookmarked || isRecitationError || isHighlighted)
                     ? Border.all(
                         color: isHighlighted
-                            ? Colors.teal.withOpacity(0.5)
+                            ? Colors.teal.withValues(alpha: 0.5)
                             : isRecitationError
-                            ? Colors.red.withOpacity(0.3)
-                            : Colors.teal.withOpacity(0.3),
+                            ? Colors.red.withValues(alpha: 0.3)
+                            : Colors.teal.withValues(alpha: 0.3),
                         width: isHighlighted ? 2 : 1,
                       )
                     : null,
