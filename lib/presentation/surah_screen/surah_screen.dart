@@ -793,6 +793,7 @@ class _SurahScreenState extends State<SurahScreen> {
     List<String> qrcMistakeLines = [];
     String repeatLabel = '';
     String repeatWord = '';
+    bool qrcConnecting = false;
     StreamSubscription? qrcSub;
     final qrcService = QrcRecitationService();
     final customAsrService = CustomAsrService();
@@ -824,11 +825,16 @@ class _SurahScreenState extends State<SurahScreen> {
                   spokenText = 'lbl_listening'.tr;
                 });
                 if (useQrc) {
+                  setDialogState(() {
+                    qrcConnecting = true;
+                    qrcStatus = 'lbl_connecting'.tr;
+                  });
                   final connected = await qrcService.connect();
                   if (!connected) {
                     setDialogState(() {
                       statusColor = Colors.redAccent;
                       feedbackTitle = 'msg_qrc_missing_key'.tr;
+                      qrcConnecting = false;
                       showFeedback = true;
                       _isListening = false;
                     });
@@ -838,7 +844,14 @@ class _SurahScreenState extends State<SurahScreen> {
                   qrcSub = qrcService.events.listen((event) {
                     if (!mounted) return;
                     if (event is QrcStatusEvent) {
-                      setDialogState(() => qrcStatus = event.status);
+                      setDialogState(() {
+                        qrcStatus = event.status;
+                        if (event.status == 'connected' ||
+                            event.status == 'check_tilawa' ||
+                            event.status == 'CheckTilawaResponse') {
+                          qrcConnecting = false;
+                        }
+                      });
                     } else if (event is QrcCheckEvent) {
                       final data = event.data;
                       setDialogState(() {
@@ -1135,6 +1148,11 @@ class _SurahScreenState extends State<SurahScreen> {
                   ),
                   if (useQrc) ...[
                     const SizedBox(height: 12),
+                    if (qrcConnecting)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     if (qrcStatus.isNotEmpty)
                       Text(
                         qrcStatus,

@@ -116,6 +116,7 @@ final Map<String, String> arEg = {
   'lbl_pause': 'إيقاف',
   'lbl_sheikh_listen': 'استمع وتابع',
   'lbl_repeat_word': 'كرر الكلمة',
+  'lbl_connecting': 'جاري الاتصال...',
   'msg_session_complete': 'اكتملت الجلسة',
   'msg_session_score': 'لقد تلوت الآيات بشكل صحيح.',
   'lbl_try_again': 'حاول مرة أخرى',
