@@ -77,6 +77,8 @@ final Map<String, String> enUs = {
   'lbl_verse_num': 'Ayah', // Unified to Ayah
   'lbl_remove_bookmark': 'Remove Bookmark',
   'lbl_add_bookmark': 'Add Bookmark',
+  'lbl_delete': 'Delete',
+  'msg_swipe_delete': 'Swipe to delete',
   // Surah
   'lbl_listening_active': 'Listening...',
   // About

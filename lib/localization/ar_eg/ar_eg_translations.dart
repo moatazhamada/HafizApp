@@ -77,6 +77,8 @@ final Map<String, String> arEg = {
   'lbl_verse_num': 'آية',
   'lbl_remove_bookmark': 'إزالة العلامة',
   'lbl_add_bookmark': 'إضافة علامة',
+  'lbl_delete': 'حذف',
+  'msg_swipe_delete': 'اسحب للحذف',
   // Surah
   'lbl_listening_active': 'جاري الاستماع...',
   // About

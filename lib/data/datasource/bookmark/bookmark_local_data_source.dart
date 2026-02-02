@@ -16,9 +16,21 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
   @override
   Future<List<BookmarkModel>> getBookmarks() async {
     final List<dynamic> raw = box.values.toList();
-    return raw
-        .map((e) => BookmarkModel.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    final List<BookmarkModel> bookmarks = [];
+
+    for (final e in raw) {
+      if (e is! Map) continue;
+      try {
+        bookmarks.add(
+          BookmarkModel.fromJson(Map<String, dynamic>.from(e)),
+        );
+      } catch (_) {
+        // Skip malformed entries instead of failing the entire read.
+        continue;
+      }
+    }
+
+    return bookmarks;
   }
 
   @override

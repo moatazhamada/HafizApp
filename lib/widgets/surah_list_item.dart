@@ -40,7 +40,6 @@ class SurahListItem extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
-              textDirection: TextDirection.ltr,
               children: [
                 // Number Badge
                 Container(

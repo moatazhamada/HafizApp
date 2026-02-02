@@ -19,8 +19,8 @@ class NetworkManagerImpl extends NetworkManagerI {
     if (kDebugMode) {
       _dio.interceptors.add(
         PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
+          requestHeader: false,
+          requestBody: false,
           responseBody: true,
           responseHeader: false,
           error: true,
