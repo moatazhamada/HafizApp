@@ -10,6 +10,7 @@ class LocalWhisperService {
     WhisperModel model = WhisperModel.base,
   }) async {
     try {
+      await _controller.downloadModel(model);
       final result = await _controller.transcribe(
         model: model,
         audioPath: audioPath,
