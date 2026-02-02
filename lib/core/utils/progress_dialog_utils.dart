@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
@@ -5,23 +6,26 @@ class ProgressDialogUtils {
   static bool isProgressVisible = false;
 
   ///common method for showing progress dialog
-  static void showProgressDialog(
-      {BuildContext? context, isCancellable = false}) async {
+  static void showProgressDialog({
+    BuildContext? context,
+    isCancellable = false,
+  }) async {
     if (!isProgressVisible &&
         NavigatorService.navigatorKey.currentState?.overlay?.context != null) {
-      showDialog(
+      unawaited(
+        showDialog(
           barrierDismissible: isCancellable,
           context: NavigatorService.navigatorKey.currentState!.overlay!.context,
           builder: (BuildContext context) {
             return const Center(
               child: CircularProgressIndicator.adaptive(
                 strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.white,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             );
-          });
+          },
+        ),
+      );
       isProgressVisible = true;
     }
   }
@@ -30,7 +34,8 @@ class ProgressDialogUtils {
   static void hideProgressDialog() {
     if (isProgressVisible) {
       Navigator.pop(
-          NavigatorService.navigatorKey.currentState!.overlay!.context);
+        NavigatorService.navigatorKey.currentState!.overlay!.context,
+      );
     }
     isProgressVisible = false;
   }

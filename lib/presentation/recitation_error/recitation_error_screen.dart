@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/app_export.dart';
-import 'package:hafiz_app/localization/app_localization.dart';
-import '../../injection_container.dart';
 import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
@@ -102,7 +99,7 @@ class RecitationErrorScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -127,9 +124,11 @@ class RecitationErrorScreen extends StatelessWidget {
                               'resume': true,
                             },
                           ).then((_) {
-                            context.read<RecitationErrorBloc>().add(
-                              const LoadRecitationErrorsEvent(),
-                            );
+                            if (context.mounted) {
+                              context.read<RecitationErrorBloc>().add(
+                                const LoadRecitationErrorsEvent(),
+                              );
+                            }
                           });
                         },
                         child: Padding(
@@ -139,7 +138,9 @@ class RecitationErrorScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.1),
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(

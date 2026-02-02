@@ -317,8 +317,9 @@ class _SearchScreenState extends State<SearchScreen> {
       originalEnd++;
     }
 
-    if (originalStart == -1 || originalEnd == -1)
+    if (originalStart == -1 || originalEnd == -1) {
       return _plainText(context, fullText);
+    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark

@@ -4,14 +4,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 
 import 'core/app_export.dart';
-import 'core/utils/logger.dart';
 import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart'; // Just in case, though safe
-import 'package:hafiz_app/presentation/home_screen/bloc/home_bloc.dart'; // Just in case
-import 'package:hafiz_app/theme/bloc/theme_bloc.dart'; // Just in case
+// Just in case, though safe
+// Just in case
+// Just in case
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

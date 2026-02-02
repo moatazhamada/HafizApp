@@ -11,7 +11,7 @@ void main() {
 
   group('VoiceVerificationService', () {
     test('Standard match should return equal', () {
-      final diffs = service.verifyRecitation("الحمد لله", "الحمد لله");
+      final diffs = service.verifyRecitation('الحمد لله', 'الحمد لله');
       expect(diffs.length, 1);
       expect(diffs.first.operation, DIFF_EQUAL);
     });
@@ -20,8 +20,8 @@ void main() {
       // Expected (Quran text): "الم"
       // Spoken (STT output): "أ ل م" or "ا ل م"
 
-      const expected = "الم";
-      const spoken = "أ ل م"; // Typical STT output for separate letters
+      const expected = 'الم';
+      const spoken = 'أ ل م'; // Typical STT output for separate letters
 
       final diffs = service.verifyRecitation(spoken, expected);
 
@@ -31,16 +31,16 @@ void main() {
     });
 
     test('Normalization handles Alef variations', () {
-      const expected = "ألهاكم";
-      const spoken = "الهاكم"; // Missing Hamza
+      const expected = 'ألهاكم';
+      const spoken = 'الهاكم'; // Missing Hamza
 
       final diffs = service.verifyRecitation(spoken, expected);
       expect(diffs.first.operation, DIFF_EQUAL);
     });
 
     test('Normalization handles Tashkeel removal', () {
-      const expected = "بِسْمِ اللَّهِ"; // With Tashkeel
-      const spoken = "بسم الله"; // Without
+      const expected = 'بِسْمِ اللَّهِ'; // With Tashkeel
+      const spoken = 'بسم الله'; // Without
 
       final diffs = service.verifyRecitation(spoken, expected);
       expect(diffs.first.operation, DIFF_EQUAL);

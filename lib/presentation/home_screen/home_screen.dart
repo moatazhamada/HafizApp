@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
-import 'package:hafiz_app/localization/app_localization.dart';
+
 import '../../core/app_export.dart';
 
 import '../../core/scroll/scroll_position_cubit.dart';
@@ -13,7 +12,6 @@ import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
-import '../../core/network/network_info.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -140,7 +138,8 @@ class _HomeScreenState extends State<HomeScreen>
               label: 'lbl_search_tooltip'.tr,
               child: IconButton(
                 icon: const Icon(Icons.search_rounded),
-                onPressed: () => NavigatorService.pushNamed(AppRoutes.searchPage),
+                onPressed: () =>
+                    NavigatorService.pushNamed(AppRoutes.searchPage),
                 tooltip: 'lbl_search_tooltip'.tr,
               ),
             ),
@@ -161,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen>
                 onSelected: (value) {
                   switch (value) {
                     case 'mistakes':
-                      NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+                      NavigatorService.pushNamed(
+                        AppRoutes.recitationErrorsPage,
+                      );
                       break;
                     case 'settings':
                       NavigatorService.pushNamed(AppRoutes.settingsScreen);
@@ -297,7 +298,8 @@ class _HomeScreenState extends State<HomeScreen>
                               },
                               child: Semantics(
                                 button: true,
-                                label: '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                                label:
+                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
                                 child: InkWell(
                                   onTap: () {
                                     PrefUtils().saveLastReadSurah(surah);
@@ -338,7 +340,8 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Semantics(
       container: true,
-      label: '${'lbl_last_read'.tr}: ${lastReadSurah.nameEnglish}${lastVerseIndex != null ? ', ${'lbl_ayah'.tr} ${lastVerseIndex + 1}' : ''}',
+      label:
+          '${'lbl_last_read'.tr}: ${lastReadSurah.nameEnglish}${lastVerseIndex != null ? ', ${'lbl_ayah'.tr} ${lastVerseIndex + 1}' : ''}',
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
@@ -363,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: Stack(
             children: [
               // Decorative circle - exclude from semantics
-              Positioned(
+              const Positioned(
                 right: -30,
                 bottom: -30,
                 child: ExcludeSemantics(
@@ -385,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     Row(
                       children: [
-                        ExcludeSemantics(
+                        const ExcludeSemantics(
                           child: Icon(
                             Icons.menu_book,
                             color: Colors.white70,
@@ -411,7 +414,9 @@ class _HomeScreenState extends State<HomeScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (Localizations.localeOf(context).languageCode !=
+                              if (Localizations.localeOf(
+                                    context,
+                                  ).languageCode !=
                                   'ar')
                                 Text(
                                   lastReadSurah.nameEnglish,
