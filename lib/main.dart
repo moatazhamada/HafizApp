@@ -204,6 +204,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
         crashlytics: crashlytics,
       );
 
+      await Hive.initFlutter();
+      await Hive.openBox('surah_cache');
+      await Hive.openBox('bookmarks');
+      await Hive.openBox('recitation_errors');
+      await Hive.openBox('qiraat_cache');
+      await Hive.openBox('audio_cache');
+
       FlutterError.onError = (errorDetails) {
         Logger.error(
           'Flutter error: ${errorDetails.exception}',
