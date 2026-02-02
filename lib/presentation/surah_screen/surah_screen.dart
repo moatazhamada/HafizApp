@@ -2,16 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // Required for RenderParagraph
-import 'package:flutter_sound/flutter_sound.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
-import 'package:hafiz_app/presentation/surah_screen/qrc_recitation_service.dart';
-import 'package:hafiz_app/presentation/surah_screen/sheikh_audio_coach_sheet.dart';
-import 'package:hafiz_app/presentation/surah_screen/custom_asr_service.dart';
-import 'package:hafiz_app/presentation/surah_screen/local_whisper_service.dart';
-import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
+
+import 'widgets/voice_verification_dialog.dart';
 
 import '../../core/app_export.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -58,7 +53,7 @@ class _SurahScreenState extends State<SurahScreen> {
   // Voice Verification
   final VoiceVerificationService _voiceService = VoiceVerificationService();
   final QiraatService _qiraatService = QiraatService();
-  bool _isListening = false;
+
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
 
@@ -347,7 +342,7 @@ class _SurahScreenState extends State<SurahScreen> {
   void dispose() {
     _offsetSaveDebounce?.cancel();
     _voiceService.stop();
-    _isListening = false;
+
     _scrollControllerForInit?.dispose();
     super.dispose();
   }
@@ -721,7 +716,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 title: Text('lbl_verify_recitation'.tr),
                 onTap: () {
                   Navigator.pop(context);
-                  _showVoiceDialog(context, aya);
+                  _showVoiceDialog(aya);
                 },
               ),
             ),
@@ -731,41 +726,39 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
-  void _showVoiceDialog(BuildContext context, Verse aya) async {
-    final parentContext = context;
+  void _showVoiceDialog(Verse aya) async {
     // 1. Request Permission Lazy
     bool available = await _voiceService.requestPermission();
+
+    if (!mounted) return;
+
     if (!available) {
-      if (context.mounted) {
-        // Show Dialog to guide user to settings
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('msg_mic_permission'.tr),
-            content: Text(
-              'msg_mic_permission_desc'.tr,
-            ), // We might need to add this key or just use generic text
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('lbl_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  openAppSettings();
-                },
-                child: Text('lbl_settings'.tr),
-              ),
-            ],
-          ),
-        );
-      }
+      // Show Dialog to guide user to settings
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('msg_mic_permission'.tr),
+          content: Text('msg_mic_permission_desc'.tr),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('lbl_cancel'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openAppSettings();
+              },
+              child: Text('lbl_settings'.tr),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
     // 2. Prepare Expectation (Strip Bismillah)
-    String expectedText = await _resolveExpectedText(aya);
+    String expectedText = await resolveExpectedText(aya);
     if (aya.verseNumber == 1 && surah?.id != 1) {
       const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
       const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
@@ -776,671 +769,22 @@ class _SurahScreenState extends State<SurahScreen> {
       }
     }
 
-    final provider = PrefUtils().getRecitationProvider();
-    final bool useQrc = provider == 'qrc';
-    final bool useCustom = provider == 'custom';
-    final bool useWhisper = provider == 'local_whisper';
-    final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
-    String spokenText = 'lbl_listening'.tr;
-    Color statusColor = Colors.blueAccent;
-    bool hasStartedListening = false;
-    String feedbackTitle = '';
-    String scoreText = '';
-    String hintLabel = '';
-    String hintWord = '';
-    List<String> issueLines = [];
-    bool showFeedback = false;
-    String qrcStatus = '';
-    int qrcWordIndex = 0;
-    List<QrcTajweedMistake> qrcMistakes = [];
-    List<String> qrcMistakeLines = [];
-    String repeatLabel = '';
-    String repeatWord = '';
-    bool qrcConnecting = false;
-    StreamSubscription? qrcSub;
-    final qrcService = QrcRecitationService();
-    final customAsrService = CustomAsrService();
-    final customRecorder = FlutterSoundRecorder();
-    String? customFilePath;
-    final whisperService = LocalWhisperService();
-    bool whisperTranscribing = false;
-    final whisperModel = _resolveWhisperModel(PrefUtils().getWhisperModel());
-
     if (!mounted) return;
 
-    // Stop any existing session before showing dialog to be safe
-    await _voiceService.stop();
-    _isListening = false;
-
-    bool autoAdvanced = false;
-
-    if (!parentContext.mounted) return;
     await showDialog(
-      context: parentContext,
+      context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Function to start listening
-            void startListening() async {
-              if (!_isListening) {
-                _isListening = true;
-                hasStartedListening = true;
-                setDialogState(() {
-                  statusColor = Colors.blueAccent;
-                  spokenText = 'lbl_listening'.tr;
-                });
-                if (useQrc) {
-                  setDialogState(() {
-                    qrcConnecting = true;
-                    qrcStatus = 'lbl_connecting'.tr;
-                  });
-                  final connected = await qrcService.connect();
-                  if (!connected) {
-                    setDialogState(() {
-                      statusColor = Colors.redAccent;
-                      feedbackTitle = 'msg_qrc_missing_key'.tr;
-                      qrcConnecting = false;
-                      showFeedback = true;
-                      _isListening = false;
-                    });
-                    return;
-                  }
-
-                  qrcSub = qrcService.events.listen((event) {
-                    if (!mounted) return;
-                    if (event is QrcStatusEvent) {
-                      setDialogState(() {
-                        qrcStatus = event.status;
-                        if (event.status == 'connected' ||
-                            event.status == 'check_tilawa' ||
-                            event.status == 'CheckTilawaResponse') {
-                          qrcConnecting = false;
-                        }
-                      });
-                    } else if (event is QrcCheckEvent) {
-                      final data = event.data;
-                      setDialogState(() {
-                        qrcWordIndex = data.wordIndex ?? qrcWordIndex;
-                        qrcMistakes = data.tajweedMistakes;
-                        qrcMistakeLines = qrcMistakes
-                            .map((m) =>
-                                '${m.name ?? 'Tajweed'} (${m.wordIndex ?? '-'})')
-                            .toList();
-                        showFeedback = true;
-                        final expectedTokens = expectedText
-                            .split(RegExp(r'\s+'))
-                            .where((t) => t.isNotEmpty)
-                            .toList();
-                        final expectedCount = expectedTokens.length;
-                        final progress = expectedCount == 0
-                            ? 0
-                            : ((qrcWordIndex / expectedCount) * 100).round();
-                        scoreText =
-                            '${'lbl_recitation_score'.tr}: $progress%';
-                        issueLines = [];
-                        if (qrcMistakes.isNotEmpty) {
-                          issueLines.add(
-                            '${'msg_tajweed_notes'.tr}: ${qrcMistakes.length}',
-                          );
-                        }
-                        repeatLabel = '';
-                        repeatWord = '';
-                        if (qrcMistakes.isNotEmpty &&
-                            (qrcMistakes.first.wordIndex ?? 0) > 0) {
-                          final idx = (qrcMistakes.first.wordIndex ?? 1) - 1;
-                          if (idx >= 0 && idx < expectedTokens.length) {
-                            repeatLabel = 'msg_repeat_word'.tr;
-                            repeatWord = expectedTokens[idx];
-                          }
-                        } else if (qrcWordIndex < expectedCount) {
-                          repeatLabel = 'msg_repeat_word'.tr;
-                          repeatWord = expectedTokens[qrcWordIndex];
-                        }
-                        if (qrcWordIndex >= expectedCount &&
-                            expectedCount > 0 &&
-                            qrcMistakes.isEmpty) {
-                          statusColor = Colors.green;
-                          feedbackTitle = 'lbl_congrats'.tr;
-                          unawaited(Future.delayed(
-                              const Duration(milliseconds: 1000), () {
-                            if (mounted &&
-                                dialogContext.mounted &&
-                                Navigator.canPop(dialogContext)) {
-                              Navigator.pop(dialogContext);
-                              _onRecitationCorrect(aya);
-                            }
-                          }));
-                        }
-                      });
-                    } else if (event is QrcErrorEvent) {
-                      setDialogState(() {
-                        statusColor = Colors.redAccent;
-                        feedbackTitle = event.message;
-                        showFeedback = true;
-                      });
-                    }
-                  });
-
-                  await qrcService.startTilawaSession(
-                    surahIndex: surah!.id,
-                    verseIndex: aya.verseNumber,
-                    hafzLevel: PrefUtils().getQrcHafzLevel(),
-                    tajweedLevel: PrefUtils().getQrcTajweedLevel(),
-                  );
-                  await qrcService.startRecording();
-                } else if (useWhisper) {
-                  await customRecorder.openRecorder();
-                  final dir = await getTemporaryDirectory();
-                  customFilePath =
-                      '${dir.path}/whisper_${surah!.id}_${aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
-                  await customRecorder.startRecorder(
-                    toFile: customFilePath,
-                    codec: Codec.pcm16WAV,
-                    numChannels: 1,
-                    sampleRate: 16000,
-                  );
-                  setDialogState(() {
-                    spokenText = 'lbl_listening'.tr;
-                  });
-                } else {
-                  if (useCustom) {
-                    if (customEndpoint.isEmpty) {
-                      setDialogState(() {
-                        statusColor = Colors.orangeAccent;
-                        feedbackTitle = 'msg_custom_asr_empty'.tr;
-                        showFeedback = true;
-                      });
-                    } else {
-                      await customRecorder.openRecorder();
-                      final dir = await getTemporaryDirectory();
-                      customFilePath =
-                          '${dir.path}/recite_${surah!.id}_${aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
-                      await customRecorder.startRecorder(
-                        toFile: customFilePath,
-                        codec: Codec.pcm16WAV,
-                        numChannels: 1,
-                        sampleRate: 16000,
-                      );
-                    }
-                  }
-
-                  await _voiceService.listen(
-                    onResult: (text) {
-                    if (!dialogContext.mounted) return;
-                      setDialogState(() {
-                        spokenText = text;
-                      });
-                    },
-                    onDone: (finalText) async {
-                      _isListening = false;
-                      if (!dialogContext.mounted) return;
-                      String effectiveText = finalText;
-                      if (useCustom &&
-                          customEndpoint.isNotEmpty &&
-                          customFilePath != null) {
-                        try {
-                          await customRecorder.stopRecorder();
-                        } catch (_) {}
-                        final remoteText = await customAsrService.transcribe(
-                          endpoint: customEndpoint,
-                          filePath: customFilePath!,
-                        );
-                        if (remoteText != null && remoteText.isNotEmpty) {
-                          effectiveText = remoteText;
-                        }
-                      }
-                      final analysis = _voiceService.analyzeRecitation(
-                        effectiveText,
-                        expectedText,
-                        allowPartial: true,
-                      );
-                      setDialogState(() {
-                        spokenText = effectiveText;
-                        final scorePercent = (analysis.score * 100).round();
-                        scoreText =
-                            '${'lbl_recitation_score'.tr}: $scorePercent%';
-                        issueLines = [];
-                        if (analysis.missingCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_missing'.tr}: ${analysis.missingCount}',
-                          );
-                        }
-                        if (analysis.extraCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_extra'.tr}: ${analysis.extraCount}',
-                          );
-                        }
-                        if (analysis.substituteCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_substitute'.tr}: ${analysis.substituteCount}',
-                          );
-                        }
-
-                        hintLabel = '';
-                        hintWord = '';
-                        repeatLabel = '';
-                        repeatWord = '';
-                        final expectedTokens = expectedText
-                            .split(RegExp(r'\s+'))
-                            .where((t) => t.isNotEmpty)
-                            .toList();
-                        if (analysis.expectedRange.isValid &&
-                            analysis.expectedRange.start <
-                                expectedTokens.length &&
-                            !analysis.passed) {
-                          hintLabel = 'msg_recitation_hint_start'.tr;
-                          hintWord = expectedTokens[analysis.expectedRange.start];
-                          repeatLabel = 'msg_repeat_word'.tr;
-                          repeatWord = hintWord;
-                        }
-
-                        showFeedback = true;
-
-                        if (analysis.isTooShort) {
-                          statusColor = Colors.orangeAccent;
-                          feedbackTitle = 'msg_recitation_too_short'.tr;
-                          return;
-                        }
-
-                        if (analysis.passed) {
-                          statusColor = Colors.green;
-                          feedbackTitle = 'lbl_congrats'.tr;
-                          // Auto Advance Delay
-                          unawaited(Future.delayed(
-                              const Duration(milliseconds: 1000), () {
-                            if (mounted &&
-                                dialogContext.mounted &&
-                                Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                              Navigator.pop(dialogContext);
-                              _onRecitationCorrect(aya);
-                            }
-                          }));
-                        } else {
-                          statusColor = Colors.redAccent;
-                          feedbackTitle = 'msg_incorrect_recitation'.tr;
-                          // Show Wrong Dialog
-                          unawaited(Future.delayed(
-                              const Duration(milliseconds: 1000), () {
-                            if (mounted &&
-                                dialogContext.mounted &&
-                                Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                              Navigator.pop(dialogContext);
-                            _showWrongDialog(parentContext, aya);
-                            }
-                          }));
-                      }
-                    });
-                  },
-                );
-              }
-            }
-            }
-
-            // Function to stop listening
-            void stopListening() async {
-              if (_isListening) {
-                if (useQrc) {
-                  await qrcService.stopRecording();
-                  await qrcSub?.cancel();
-                } else if (useWhisper) {
-                  try {
-                    await customRecorder.stopRecorder();
-                  } catch (_) {}
-                  if (customFilePath != null) {
-                    setDialogState(() {
-                      whisperTranscribing = true;
-                      spokenText = 'msg_transcribing'.tr;
-                    });
-                    final transcribed = await whisperService.transcribe(
-                      audioPath: customFilePath!,
-                      language: 'ar',
-                      model: whisperModel,
-                    );
-                    setDialogState(() {
-                      whisperTranscribing = false;
-                    });
-                    if (transcribed != null && transcribed.isNotEmpty) {
-                      final analysis = _voiceService.analyzeRecitation(
-                        transcribed,
-                        expectedText,
-                        allowPartial: true,
-                      );
-                      setDialogState(() {
-                        spokenText = transcribed;
-                        final scorePercent = (analysis.score * 100).round();
-                        scoreText =
-                            '${'lbl_recitation_score'.tr}: $scorePercent%';
-                        issueLines = [];
-                        if (analysis.missingCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_missing'.tr}: ${analysis.missingCount}',
-                          );
-                        }
-                        if (analysis.extraCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_extra'.tr}: ${analysis.extraCount}',
-                          );
-                        }
-                        if (analysis.substituteCount > 0) {
-                          issueLines.add(
-                            '${'msg_recitation_substitute'.tr}: ${analysis.substituteCount}',
-                          );
-                        }
-
-                        hintLabel = '';
-                        hintWord = '';
-                        repeatLabel = '';
-                        repeatWord = '';
-                        final expectedTokens = expectedText
-                            .split(RegExp(r'\s+'))
-                            .where((t) => t.isNotEmpty)
-                            .toList();
-                        if (analysis.expectedRange.isValid &&
-                            analysis.expectedRange.start <
-                                expectedTokens.length &&
-                            !analysis.passed) {
-                          hintLabel = 'msg_recitation_hint_start'.tr;
-                          hintWord = expectedTokens[analysis.expectedRange.start];
-                          repeatLabel = 'msg_repeat_word'.tr;
-                          repeatWord = hintWord;
-                        }
-
-                        showFeedback = true;
-
-                        if (analysis.isTooShort) {
-                          statusColor = Colors.orangeAccent;
-                          feedbackTitle = 'msg_recitation_too_short'.tr;
-                          return;
-                        }
-
-                        if (analysis.passed) {
-                          statusColor = Colors.green;
-                          feedbackTitle = 'lbl_congrats'.tr;
-                          unawaited(Future.delayed(
-                              const Duration(milliseconds: 1000), () {
-                            if (mounted &&
-                                dialogContext.mounted &&
-                                Navigator.canPop(dialogContext)) {
-                              Navigator.pop(dialogContext);
-                              _onRecitationCorrect(aya);
-                            }
-                          }));
-                        } else {
-                          statusColor = Colors.redAccent;
-                          feedbackTitle = 'msg_incorrect_recitation'.tr;
-                          unawaited(Future.delayed(
-                              const Duration(milliseconds: 1000), () {
-                            if (context.mounted &&
-                                dialogContext.mounted &&
-                                Navigator.canPop(dialogContext)) {
-                              Navigator.pop(dialogContext);
-                              _showWrongDialog(context, aya);
-                            }
-                          }));
-                        }
-                      });
-                    }
-                  }
-                } else if (useCustom) {
-                  // Custom ASR records audio via `customRecorder`, but we also started
-                  // SpeechToText via `_voiceService.listen(...)`. Ensure BOTH are stopped
-                  // so "Stop" truly ends the session and avoids late `onDone` callbacks.
-                  try {
-                    await customRecorder.stopRecorder();
-                  } catch (_) {}
-                  await _voiceService.stop();
-                } else {
-                  await _voiceService.stop();
-                }
-                _isListening = false;
-                setDialogState(() {
-                  statusColor = Colors.grey;
-                  spokenText = 'msg_tap_to_resume'.tr;
-                });
-              }
-            }
-
-            // Auto-start on first build
-            if (!hasStartedListening && !_isListening) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                startListening();
-              });
-            }
-
-            return AlertDialog(
-              title: Semantics(
-                header: true,
-                child: Text('lbl_recite_verify'.tr),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    button: true,
-                    label: _isListening
-                        ? 'msg_tap_to_stop'.tr
-                        : 'lbl_tap_to_speak'.tr,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (_isListening) {
-                          stopListening();
-                        } else {
-                          startListening();
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isListening
-                              ? Colors.redAccent.withValues(alpha: 0.1)
-                              : Colors.blueAccent.withValues(alpha: 0.1),
-                        ),
-                        padding: const EdgeInsets.all(20),
-                        child: Icon(
-                          _isListening ? Icons.mic : Icons.mic_off,
-                          size: 48,
-                          color: _isListening
-                              ? Colors.redAccent
-                              : Colors.blueAccent,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (!useQrc) ...[
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        spokenText,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: 'Amiri',
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  Text(
-                    _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  if (useQrc) ...[
-                    const SizedBox(height: 12),
-                    if (qrcConnecting)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8),
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    if (qrcStatus.isNotEmpty)
-                      Text(
-                        qrcStatus,
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: expectedText
-                          .split(RegExp(r'\s+'))
-                          .where((t) => t.isNotEmpty)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final idx = entry.key + 1;
-                        final word = entry.value;
-                        final isCorrect = qrcWordIndex >= idx;
-                        final isMistake = qrcMistakes
-                            .any((m) => m.wordIndex == idx);
-                        Color color = Colors.black87;
-                        if (isCorrect) color = Colors.green;
-                        if (isMistake) color = Colors.redAccent;
-                        return Text(
-                          word,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontFamily: 'Amiri',
-                            color: color,
-                            fontWeight: isCorrect
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    if (qrcMistakeLines.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      for (final line in qrcMistakeLines)
-                        Text(
-                          line,
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.red),
-                        ),
-                    ],
-                  ],
-                  if (useWhisper && whisperTranscribing) ...[
-                    const SizedBox(height: 12),
-                    const CircularProgressIndicator(strokeWidth: 2),
-                  ],
-                  if (showFeedback) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      feedbackTitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      scoreText,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    if (issueLines.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      for (final line in issueLines)
-                        Text(
-                          line,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                    ],
-                    if (hintLabel.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        hintLabel,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      Text(
-                        hintWord,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontFamily: 'Amiri',
-                        ),
-                      ),
-                    ],
-                    if (repeatLabel.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        repeatLabel,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      Text(
-                        repeatWord,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Amiri',
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      'msg_coach_tip_slow'.tr,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  Text(
-                    'lbl_original'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    expectedText, // Display stripped text for verification context
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, fontFamily: 'Amiri'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: dialogContext,
-                      builder: (_) => SheikhAudioCoachSheet(
-                        chapterNumber: surah!.id,
-                        verseNumber: aya.verseNumber,
-                        expectedText: expectedText,
-                        reciterId: PrefUtils().getReciterId(),
-                      ),
-                    );
-                  },
-                  child: Text('lbl_listen_sheikh'.tr),
-                ),
-                TextButton(
-                  onPressed: () {
-                    stopListening();
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text('lbl_close'.tr),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => VoiceVerificationDialog(
+        surah: surah!,
+        aya: aya,
+        expectedText: expectedText,
+        onCorrect: () => _onRecitationCorrect(aya),
+        onWrong: (ctx) => _showWrongDialog(context, aya),
+      ),
     );
-
-    // Cleanup when dialog closes
-    if (!autoAdvanced) {
-      await _voiceService.stop();
-      _isListening = false;
-    await qrcSub?.cancel();
-    await qrcService.dispose();
-    try {
-      await customRecorder.closeRecorder();
-    } catch (_) {}
   }
 
-  Future<String> _resolveExpectedText(Verse aya) async {
+  Future<String> resolveExpectedText(Verse aya) async {
     if (surah == null) return aya.text;
     final edition = PrefUtils().getQiraatEdition();
     if (edition == 'quran-uthmani' || edition.isEmpty) {
@@ -1452,19 +796,6 @@ class _SurahScreenState extends State<SurahScreen> {
       edition: edition,
     );
     return remoteText ?? aya.text;
-    }
-  }
-
-  WhisperModel _resolveWhisperModel(String value) {
-    switch (value) {
-      case 'tiny':
-        return WhisperModel.tiny;
-      case 'small':
-        return WhisperModel.small;
-      case 'base':
-      default:
-        return WhisperModel.base;
-    }
   }
 
   void _onRecitationCorrect(Verse currentVerse) {
@@ -1482,7 +813,7 @@ class _SurahScreenState extends State<SurahScreen> {
       if (currentIndex != -1 && currentIndex < chapters.length - 1) {
         // Next verse exists
         final nextVerse = chapters[currentIndex + 1];
-        _showVoiceDialog(context, nextVerse);
+        _showVoiceDialog(nextVerse);
       } else {
         // End of Surah
         _showCompletionDialog();
@@ -1509,7 +840,7 @@ class _SurahScreenState extends State<SurahScreen> {
               // Wait for pop to finish before opening new dialog
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (parentContext.mounted) {
-                  _showVoiceDialog(parentContext, aya);
+                  _showVoiceDialog(aya);
                 }
               });
             },
@@ -1544,10 +875,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 if (currentIndex != -1 && currentIndex < chapters.length - 1) {
                   Future.delayed(const Duration(milliseconds: 300), () {
                     if (parentContext.mounted) {
-                      _showVoiceDialog(
-                        parentContext,
-                        chapters[currentIndex + 1],
-                      );
+                      _showVoiceDialog(chapters[currentIndex + 1]);
                     }
                   });
                 } else {
