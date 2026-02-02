@@ -106,21 +106,23 @@ class _SurahScreenState extends State<SurahScreen> {
     // Attempt 0: Check if transition is happening
     if (attempt == 0) {
       final route = ModalRoute.of(context);
-      if (route is TransitionRoute &&
-          route.animation != null &&
-          route.animation?.status != AnimationStatus.completed) {
-        // Wait for transition to finish
-        void handler(AnimationStatus status) {
-          if (status == AnimationStatus.completed) {
-            route.animation?.removeStatusListener(handler);
-            if (mounted) {
-              _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
+      if (route is TransitionRoute) {
+        final animation = route.animation;
+        if (animation != null &&
+            animation.status != AnimationStatus.completed) {
+          // Wait for transition to finish
+          void handler(AnimationStatus status) {
+            if (status == AnimationStatus.completed) {
+              animation.removeStatusListener(handler);
+              if (mounted) {
+                _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
+              }
             }
           }
-        }
 
-        route.animation?.addStatusListener(handler);
-        return;
+          animation.addStatusListener(handler);
+          return;
+        }
       }
     }
 
