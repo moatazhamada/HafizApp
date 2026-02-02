@@ -14,7 +14,7 @@ class InitialSurahState extends SurahState {}
 class LoadingSurahState extends SurahState {}
 
 class SuccessSurahState extends SurahState {
-  final List<Chapter> chapters;
+  final List<Verse> chapters;
 
   const SuccessSurahState({required this.chapters});
 

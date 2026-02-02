@@ -4,15 +4,15 @@ import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 
 import '../../../core/errors/failures.dart';
 import '../../../core/usecase/usecase.dart';
-import '../../../data/model/surah_response.dart';
+import '../../entities/verse.dart';
 
-class GetSurah implements UseCase<ChapterResponse, ParamsGetSurah> {
+class GetSurah implements UseCase<List<Verse>, ParamsGetSurah> {
   final SurahRepository surahRepository;
 
   GetSurah({required this.surahRepository});
 
   @override
-  Future<Either<Failure, ChapterResponse>> call(ParamsGetSurah params) async {
+  Future<Either<Failure, List<Verse>>> call(ParamsGetSurah params) async {
     return await surahRepository.getSurah(params.surahId);
   }
 }

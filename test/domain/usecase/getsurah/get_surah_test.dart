@@ -20,25 +20,27 @@ void main() {
     getSurah = GetSurah(surahRepository: mockSurahRepo);
   });
 
-  test("make sure get_surah return success", () async {
-    var surahResponse =
-        ChapterResponse.fromJson(json.decode(fixture("surah_response.json")));
+  test('make sure get_surah return success', () async {
+    var surahResponse = ChapterResponse.fromJson(
+      json.decode(fixture('surah_response.json')),
+    );
 
-    when(() => mockSurahRepo.getSurah("114"))
-        .thenAnswer((_) async => Right(surahResponse));
+    when(
+      () => mockSurahRepo.getSurah('114'),
+    ).thenAnswer((_) async => Right(surahResponse.chapters));
 
-    var result = await getSurah.call(const ParamsGetSurah(surahId: "114"));
-    expect(result, Right(surahResponse));
-    verify(() => mockSurahRepo.getSurah("114"));
+    var result = await getSurah.call(const ParamsGetSurah(surahId: '114'));
+    expect(result, Right(surahResponse.chapters));
+    verify(() => mockSurahRepo.getSurah('114'));
   });
 
-  test("make sure get_surah return failure", () async {
+  test('make sure get_surah return failure', () async {
+    when(
+      () => mockSurahRepo.getSurah('114'),
+    ).thenAnswer((_) async => Left(ServerFailure('error')));
 
-    when(() => mockSurahRepo.getSurah("114"))
-        .thenAnswer((_) async => Left(ServerFailure("error")));
-
-    var result = await getSurah.call(const ParamsGetSurah(surahId: "114"));
-    expect(result, Left(ServerFailure("error")));
-    verify(() => mockSurahRepo.getSurah("114"));
+    var result = await getSurah.call(const ParamsGetSurah(surahId: '114'));
+    expect(result, Left(ServerFailure('error')));
+    verify(() => mockSurahRepo.getSurah('114'));
   });
 }

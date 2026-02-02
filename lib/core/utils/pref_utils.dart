@@ -1,7 +1,8 @@
 //ignore: unused_import
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PrefUtils {
@@ -20,20 +21,49 @@ class PrefUtils {
   }
 
   ///will clear all the data stored in preference
-  void clearPreferencesData() async {
-    _sharedPreferences!.clear();
+  Future<void> clearPreferencesData() async {
+    await _sharedPreferences!.clear();
   }
 
-  Future<void> setIsDarkMode(bool value) {
-    return _sharedPreferences!.setBool('isDarkTheme', value);
+  // Theme Mode: 'system', 'light', 'dark'
+  Future<void> setThemeMode(String mode) async {
+    await _sharedPreferences!.setString('themeMode', mode);
   }
 
-  bool getIsDarkMode() {
+  String getThemeMode() {
     try {
-      return _sharedPreferences!.getBool('isDarkTheme')!;
+      return _sharedPreferences!.getString('themeMode') ?? 'system';
     } catch (e) {
-      return false;
+      Logger.warning('Failed to get theme mode: $e', feature: 'Preferences');
+      return 'system';
     }
+  }
+
+  // Deprecated: getIsDarkMode - compatibility shim
+  bool getIsDarkMode() {
+    final mode = getThemeMode();
+    if (mode == 'dark') return true;
+    if (mode == 'light') return false;
+    // System default fallback: Check platform brightness
+    if (mode == 'system') {
+      try {
+        final brightness =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness;
+        return brightness == Brightness.dark;
+      } catch (e) {
+        Logger.warning(
+          'Failed to get platform brightness: $e',
+          feature: 'Preferences',
+        );
+        return false;
+      }
+    }
+    return false;
+  }
+
+  // Deprecated: setIsDarkMode - compatibility shim
+  Future<void> setIsDarkMode(bool value) {
+    return setThemeMode(value ? 'dark' : 'light');
   }
 
   // Convert Surah object to JSON string
@@ -46,20 +76,29 @@ class PrefUtils {
 
   // Retrieve Surah object from SharedPreferences
   Surah? getLastReadSurah() {
-    final String? jsonString = _sharedPreferences!.getString('surah');
-    return jsonString != null ? Surah.fromJson(jsonString) : null;
+    try {
+      final String? jsonString = _sharedPreferences!.getString('surah');
+      return jsonString != null ? Surah.fromJson(jsonString) : null;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get last read surah: $e',
+        feature: 'Preferences',
+      );
+      return null;
+    }
   }
 
-  // Locale persistence (ar/en)
+  // Locale persistence (ar/en/system)
   Future<void> setLocaleCode(String code) async {
     await _sharedPreferences!.setString('localeCode', code);
   }
 
   String getLocaleCode() {
     try {
-      return _sharedPreferences!.getString('localeCode') ?? 'ar';
-    } catch (_) {
-      return 'ar';
+      return _sharedPreferences!.getString('localeCode') ?? 'system';
+    } catch (e) {
+      Logger.warning('Failed to get locale code: $e', feature: 'Preferences');
+      return 'system';
     }
   }
 
@@ -71,7 +110,11 @@ class PrefUtils {
   double? getSurahOffset(int surahId) {
     try {
       return _sharedPreferences!.getDouble('offset_$surahId');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning(
+        'Failed to get surah offset for surah $surahId: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }
@@ -83,8 +126,30 @@ class PrefUtils {
   int? getSurahVerseIndex(int surahId) {
     try {
       return _sharedPreferences!.getInt('verse_index_$surahId');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning(
+        'Failed to get verse index for surah $surahId: $e',
+        feature: 'Preferences',
+      );
       return null;
+    }
+  }
+
+  // Verse View Mode (false = Continuous/Mushaf, true = Single Line)
+  Future<void> setVerseViewMode(bool isSingleLine) async {
+    await _sharedPreferences!.setBool('isSingleLine', isSingleLine);
+  }
+
+  bool getVerseViewMode() {
+    try {
+      return _sharedPreferences!.getBool('isSingleLine') ??
+          false; // Default Continuous
+    } catch (e) {
+      Logger.warning(
+        'Failed to get verse view mode: $e',
+        feature: 'Preferences',
+      );
+      return false;
     }
   }
 }

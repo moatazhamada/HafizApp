@@ -4,14 +4,38 @@ import '../../core/app_export.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
 import 'package:hafiz_app/main.dart' show globalMessengerKey;
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import '../../core/i18n/locale_controller.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/platform_info.dart';
 
-class AboutScreen extends StatelessWidget {
+import 'package:package_info_plus/package_info_plus.dart';
+
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
   static Widget builder(BuildContext context) => const AboutScreen();
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _version = info.version);
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,84 +48,112 @@ class AboutScreen extends StatelessWidget {
 
     void copy(String text) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('lbl_copied'.tr)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('lbl_copied'.tr)));
     }
 
     Future<void> openExternal(String url) async {
       try {
-        bool ok = await launchUrlString(url, mode: LaunchMode.externalApplication);
+        bool ok = await launchUrlString(
+          url,
+          mode: LaunchMode.externalApplication,
+        );
         if (!ok) {
           // Fallback to platform default (may open custom tabs/in-app)
           ok = await launchUrlString(url, mode: LaunchMode.platformDefault);
         }
         if (!ok) {
           globalMessengerKey.currentState?.showSnackBar(
-            SnackBar(content: Text('Could not open: $url')),
+            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
           );
         }
         if (ok) {
-          sl<AnalyticsService>().logLinkOpened(url);
+          await sl<AnalyticsService>().logLinkOpened(url);
         }
       } catch (e) {
         globalMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text('Could not open: $url')),
+          SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
         );
       }
     }
 
     Future<void> showFeedbackDialog() async {
       final controller = TextEditingController();
+      bool isSending = false;
+
       await showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('about_feedback_title'.tr),
-          content: TextField(
-            controller: controller,
-            maxLines: 6,
-            decoration: InputDecoration(
-              hintText: 'about_feedback_hint'.tr,
-              border: const OutlineInputBorder(),
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text('about_feedback_title'.tr),
+            content: TextField(
+              controller: controller,
+              maxLines: 6,
+              enabled: !isSending,
+              decoration: InputDecoration(
+                hintText: 'about_feedback_hint'.tr,
+                border: const OutlineInputBorder(),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: isSending ? null : () => Navigator.of(ctx).pop(),
+                child: Text('lbl_cancel'.tr),
+              ),
+              FilledButton(
+                onPressed: isSending
+                    ? null
+                    : () async {
+                        final msg = controller.text.trim();
+                        if (msg.isEmpty) return;
+
+                        setState(() => isSending = true);
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('feedback')
+                              .add({
+                                'message': msg,
+                                'timestamp': FieldValue.serverTimestamp(),
+                                'platform': getPlatformLabel(),
+                                'version': _version.isNotEmpty
+                                    ? _version
+                                    : 'Unknown',
+                              });
+
+                          if (context.mounted) {
+                            Navigator.of(ctx).pop();
+                            globalMessengerKey.currentState?.showSnackBar(
+                              SnackBar(content: Text('about_feedback_sent'.tr)),
+                            );
+                            await sl<AnalyticsService>().logFeedbackSubmitted(
+                              method: 'firestore',
+                            );
+                          }
+                        } catch (e) {
+                          setState(() => isSending = false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${"msg_error_prefix".tr}$e'),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text('about_feedback_send'.tr),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                final body = Uri.encodeComponent(controller.text);
-                openExternal(
-                    'mailto:motazhamada@gmail.com?subject=Hafiz%20App%20Feedback&body=$body');
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Email'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final msg = controller.text.trim();
-                try {
-                  if (msg.isNotEmpty) {
-                    await FirebaseCrashlytics.instance
-                        .setCustomKey('user_feedback', msg);
-                    await FirebaseCrashlytics.instance.setCustomKey(
-                        'user_feedback_time',
-                        DateTime.now().toIso8601String());
-                    await FirebaseCrashlytics.instance.recordError(
-                      Exception('UserFeedback'),
-                      StackTrace.current,
-                      reason: 'User submitted feedback',
-                      fatal: false,
-                    );
-                    await sl<AnalyticsService>()
-                        .logFeedbackSubmitted(method: 'crashlytics');
-                  }
-                  globalMessengerKey.currentState?.showSnackBar(
-                    SnackBar(content: Text('about_feedback_sent'.tr)),
-                  );
-                } catch (_) {}
-                if (context.mounted) Navigator.of(ctx).pop();
-              },
-              child: Text('about_feedback_send'.tr),
-            ),
-          ],
         ),
       );
     }
@@ -111,8 +163,19 @@ class AboutScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          Text('app_name'.tr,
-              style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+          Text(
+            'app_name'.tr,
+            style: theme.textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
+          if (_version.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'v$_version',
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
           const SizedBox(height: 12),
           Text('about_intro'.tr, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -121,15 +184,21 @@ class AboutScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ListTile(
-                  title: Text('about_ack_heading'.tr,
-                      style: theme.textTheme.titleMedium),
+                  title: Text(
+                    'about_ack_heading'.tr,
+                    style: theme.textTheme.titleMedium,
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text('about_ack_idea_by'.tr),
-                  subtitle: Text(
-                    'https://github.com/abualgait',
-                    style: linkStyle,
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Mohamed Sayed'),
+                      const SizedBox(height: 4),
+                      Text('https://github.com/abualgait', style: linkStyle),
+                    ],
                   ),
                   onTap: () => openExternal('https://github.com/abualgait'),
                   onLongPress: () => copy('https://github.com/abualgait'),
@@ -148,12 +217,43 @@ class AboutScreen extends StatelessWidget {
                       copy('https://github.com/abualgait/HafizApp'),
                   trailing: const Icon(Icons.open_in_new),
                 ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text('about_maintained_by'.tr),
+                  subtitle: Text('Moataz Mohamed', style: linkStyle),
+                  onTap: () => openExternal('https://github.com/moatazhamada'),
+                  onLongPress: () => copy('https://github.com/moatazhamada'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: Text('about_current_repo'.tr),
+                  subtitle: Text(
+                    'https://github.com/moatazhamada/hafizapp',
+                    style: linkStyle,
+                  ),
+                  onTap: () =>
+                      openExternal('https://github.com/moatazhamada/hafizapp'),
+                  onLongPress: () =>
+                      copy('https://github.com/moatazhamada/hafizapp'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
                 const Divider(height: 0),
                 ListTile(
                   leading: const Icon(Icons.feedback_outlined),
                   title: Text('about_feedback_title'.tr),
                   subtitle: Text('about_feedback_desc'.tr),
                   onTap: showFeedbackDialog,
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.email_outlined),
+                  title: Text('lbl_contact_email'.tr),
+                  subtitle: const Text('support@hafizapp.com'),
+                  onTap: () => openExternal(
+                    'mailto:support@hafizapp.com?subject=Hafiz App Feedback',
+                  ),
                   trailing: const Icon(Icons.open_in_new),
                 ),
               ],
@@ -165,8 +265,10 @@ class AboutScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ListTile(
-                  title: Text('about_sources_title'.tr,
-                      style: theme.textTheme.titleMedium),
+                  title: Text(
+                    'about_sources_title'.tr,
+                    style: theme.textTheme.titleMedium,
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.public),
@@ -177,8 +279,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.public),
-                  title:
-                      Text('about_source_tanzil'.tr, style: linkStyle),
+                  title: Text('about_source_tanzil'.tr, style: linkStyle),
                   onTap: () => openExternal('https://tanzil.net/download/'),
                   onLongPress: () => copy('https://tanzil.net/download/'),
                   trailing: const Icon(Icons.open_in_new),
@@ -187,45 +288,11 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Card(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ListTile(
-                  title: Text('about_language_title'.tr,
-                      style: theme.textTheme.titleMedium),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            LocaleController.setLocale(const Locale('ar', 'EG'));
-                          },
-                          child: const Text('العربية'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            LocaleController.setLocale(const Locale('en', 'US'));
-                          },
-                          child: const Text('English'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
+
+          Text(
+            'about_integrity_heading'.tr,
+            style: theme.textTheme.titleMedium,
           ),
-          const SizedBox(height: 16),
-          Text('about_integrity_heading'.tr,
-              style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
         ],

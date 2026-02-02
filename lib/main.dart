@@ -6,6 +6,12 @@ import 'package:hafiz_app/injection_container.dart' as di;
 import 'core/app_export.dart';
 import 'injection_container.dart';
 
+import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+// Just in case, though safe
+// Just in case
+// Just in case
+
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -17,6 +23,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'package:flutter/foundation.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -62,30 +69,43 @@ Future<void> main() async {
 }
 
 Future<void> initFirebase() async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
-  ThemeData _getTheme(BuildContext context) {
-    return PrefUtils().getIsDarkMode() == true ? darkTheme : lightTheme;
+  ThemeMode _getThemeMode() {
+    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
+    if (mode == 'dark') return ThemeMode.dark;
+    if (mode == 'light') return ThemeMode.light;
+    return ThemeMode.system;
   }
 
   final themeBloc = sl<ThemeBloc>();
+  final bookmarkBloc = sl<BookmarkBloc>();
+  final recitationErrorBloc = sl<RecitationErrorBloc>();
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => themeBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: themeBloc),
+        BlocProvider.value(
+          value: bookmarkBloc..add(const LoadBookmarksEvent()),
+        ),
+        BlocProvider.value(
+          value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
+        ),
+      ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
-            builder: (_, locale, __) => MaterialApp(
-              theme: _getTheme(context),
+            builder: (_, locale, _) => MaterialApp(
+              themeMode: _getThemeMode(),
+              theme: lightTheme,
+              darkTheme: darkTheme, // Important for automatic switching
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
@@ -98,10 +118,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale("en", "US"),
-                Locale("ar", "EG"),
-              ],
+              supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
               initialRoute: AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
             ),
@@ -129,33 +146,48 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 
   Future<void> _init() async {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-    // Enable edge-to-edge so Flutter draws behind system bars.
+    // 1. Critical functional initialization (fast)
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // Use transparent system bars; icon brightness will adapt with theme.
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ));
-    // Fire and forget prefs; default values are handled defensively
-    unawaited(PrefUtils().init());
-    await di.init();
-
-    // Build Hydrated storage using a fast temp directory with a short soft-timeout
-    final storageFuture = HydratedStorage.build(
-      storageDirectory: HydratedStorageDirectory(
-        (await getTemporaryDirectory()).path,
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
-    final softTimeout = Future.delayed(const Duration(milliseconds: 700));
-    await Future.any([storageFuture, softTimeout]);
-    storageFuture.then((s) => HydratedBloc.storage = s);
 
-    // Defer heavier services to avoid long splash times
-    unawaited(_postInitHeavyTasks());
+    try {
+      await PrefUtils().init();
+
+      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
+      await Hive.initFlutter();
+      await Hive.openBox('surah_cache');
+      await Hive.openBox('bookmarks');
+      await Hive.openBox('recitation_errors');
+
+      await di.init();
+
+      final storage = await HydratedStorage.build(
+        storageDirectory: HydratedStorageDirectory(
+          (await getTemporaryDirectory()).path,
+        ),
+      );
+      HydratedBloc.storage = storage;
+    } catch (e) {
+      debugPrint('Critical init failed: $e');
+      // If critical init fails, we might still want to try showing the app
+      // or at least not stuck on splash forever, though likely it will crash later.
+    }
+
+    // 2. Heavy/External services (can be slow, prone to network issues)
+    // We don't want to block the UI forever if Firebase/Hive hangs.
+    try {
+      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('Heavy init failed or timed out: $e');
+      // Continue anyway so the user sees the app
+    }
 
     if (mounted) {
       setState(() => _ready = true);
@@ -165,20 +197,45 @@ class _BootstrapAppState extends State<BootstrapApp> {
   Future<void> _postInitHeavyTasks() async {
     try {
       await initFirebase();
-      // Initialize Hive cache
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      // Crashlytics wiring
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+      final crashlytics = FirebaseCrashlytics.instance;
+      Logger.init(
+        kDebugMode ? LogMode.debug : LogMode.live,
+        crashlytics: crashlytics,
+      );
+
+      FlutterError.onError = (errorDetails) {
+        Logger.error(
+          'Flutter error: ${errorDetails.exception}',
+          feature: 'Flutter',
+          error: errorDetails.exception,
+          stackTrace: errorDetails.stack,
+          fatal: true,
+        );
+        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+      };
+
       ui.PlatformDispatcher.instance.onError = (error, stack) {
+        Logger.error(
+          'Platform error: $error',
+          feature: 'Platform',
+          error: error,
+          stackTrace: stack,
+          fatal: true,
+        );
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
-      // Analytics
+
       unawaited(FirebaseAnalytics.instance.logAppOpen());
-    } catch (_) {
-      // Best-effort; app should remain usable regardless
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Firebase initialization failed: $e',
+        feature: 'Firebase',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow; // Re-throw to trigger the timeout catch in _init if needed
     }
   }
 
@@ -188,9 +245,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
-      child: _ready
-          ? const _ReadyApp()
-          : const _SplashScaffold(),
+      child: _ready ? const _ReadyApp() : const _SplashScaffold(),
     );
   }
 }
@@ -205,12 +260,36 @@ class _SplashScaffold extends StatelessWidget {
   const _SplashScaffold();
   @override
   Widget build(BuildContext context) {
+    // Use the current theme mode to determine splash background
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final isDark = brightness == Brightness.dark;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor:
-            PrefUtils().getIsDarkMode() ? Colors.black : Colors.white,
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: isDark
+                    ? const Color(0xFF87D1A4)
+                    : const Color(0xFF006754),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading Hafiz...',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
