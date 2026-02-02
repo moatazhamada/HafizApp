@@ -65,6 +65,8 @@ dependencies:
   package_info_plus: ^9.0.0
   flutter_launcher_icons: ^0.13.1
   permission_handler: ^11.3.1
+  pretty_dio_logger: ^1.4.0
+  rxdart: ^0.28.0
 
 flutter_icons:
   android: true
@@ -80,7 +82,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  pretty_dio_logger: ^1.4.0
 
 ## dependency_overrides removed as part of Flutter upgrade prep
 
