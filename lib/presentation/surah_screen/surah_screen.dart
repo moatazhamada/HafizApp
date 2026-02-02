@@ -108,7 +108,7 @@ class _SurahScreenState extends State<SurahScreen> {
       final route = ModalRoute.of(context);
       if (route is TransitionRoute &&
           route.animation != null &&
-          route.animation!.status != AnimationStatus.completed) {
+          route.animation?.status != AnimationStatus.completed) {
         // Wait for transition to finish
         void handler(AnimationStatus status) {
           if (status == AnimationStatus.completed) {
@@ -475,6 +475,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 _revealedVerses.clear();
               });
               // Announce mode change for accessibility
+              // ignore: deprecated_member_use
               SemanticsService.announce(
                 _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
                 TextDirection.ltr,
