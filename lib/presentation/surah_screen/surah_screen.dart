@@ -1185,10 +1185,16 @@ class _SurahScreenState extends State<SurahScreen> {
                     }
                   }
                 } else if (useCustom) {
+                  // Custom ASR records audio via `customRecorder`, but we also started
+                  // SpeechToText via `_voiceService.listen(...)`. Ensure BOTH are stopped
+                  // so "Stop" truly ends the session and avoids late `onDone` callbacks.
                   try {
                     await customRecorder.stopRecorder();
                   } catch (_) {}
+                  await _voiceService.stop();
                 } else {
+                  await _voiceService.stop();
+                }
                   await _voiceService.stop();
                 }
                 _isListening = false;
