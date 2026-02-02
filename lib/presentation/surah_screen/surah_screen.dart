@@ -11,6 +11,7 @@ import 'package:hafiz_app/presentation/surah_screen/qrc_recitation_service.dart'
 import 'package:hafiz_app/presentation/surah_screen/sheikh_audio_coach_sheet.dart';
 import 'package:hafiz_app/presentation/surah_screen/custom_asr_service.dart';
 import 'package:hafiz_app/presentation/surah_screen/local_whisper_service.dart';
+import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 
 import '../../core/app_export.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -803,6 +804,7 @@ class _SurahScreenState extends State<SurahScreen> {
     String? customFilePath;
     final whisperService = LocalWhisperService();
     bool whisperTranscribing = false;
+    final whisperModel = _resolveWhisperModel(PrefUtils().getWhisperModel());
 
     if (!mounted) return;
 
@@ -1095,6 +1097,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     final transcribed = await whisperService.transcribe(
                       audioPath: customFilePath!,
                       language: 'ar',
+                      model: whisperModel,
                     );
                     setDialogState(() {
                       whisperTranscribing = false;
@@ -1445,6 +1448,18 @@ class _SurahScreenState extends State<SurahScreen> {
       edition: edition,
     );
     return remoteText ?? aya.text;
+    }
+  }
+
+  WhisperModel _resolveWhisperModel(String value) {
+    switch (value) {
+      case 'tiny':
+        return WhisperModel.tiny;
+      case 'small':
+        return WhisperModel.small;
+      case 'base':
+      default:
+        return WhisperModel.base;
     }
   }
 

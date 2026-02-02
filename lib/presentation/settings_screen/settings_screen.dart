@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
@@ -6,6 +8,7 @@ import '../../core/qiraat/qiraat_models.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/audio/recitation_models.dart';
 import '../../core/audio/recitation_service.dart';
+import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import '../../injection_container.dart' as di;
 
 class SettingsScreen extends StatefulWidget {
@@ -22,12 +25,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _recitationProvider;
   late String _qiraatEdition;
   late int _reciterId;
+  late String _whisperModel;
+  bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
   bool _loadingEditions = true;
   bool _loadingReciters = true;
   final QiraatService _qiraatService = QiraatService();
   final RecitationService _recitationService = RecitationService();
+  final WhisperController _whisperController = WhisperController();
 
   @override
   void initState() {
@@ -38,6 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _recitationProvider = PrefUtils().getRecitationProvider();
     _qiraatEdition = PrefUtils().getQiraatEdition();
     _reciterId = PrefUtils().getReciterId();
+    _whisperModel = PrefUtils().getWhisperModel();
     _loadRecitationResources();
   }
 
@@ -147,6 +154,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text('msg_local_whisper_tip'.tr),
               subtitle: Text('msg_local_whisper_desc'.tr),
             ),
+          if (_recitationProvider == 'local_whisper')
+            ListTile(
+              title: Text('lbl_whisper_model'.tr),
+              subtitle: Text(_whisperModelLabel(_whisperModel)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _whisperDownloading ? null : _selectWhisperModel,
+            ),
         ],
       ),
     );
@@ -241,6 +255,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return reciter.name;
   }
 
+  String _whisperModelLabel(String model) {
+    switch (model) {
+      case 'tiny':
+        return '${'lbl_model_tiny'.tr} (${'lbl_model_tiny_size'.tr})';
+      case 'small':
+        return '${'lbl_model_small'.tr} (${'lbl_model_small_size'.tr})';
+      case 'base':
+      default:
+        return '${'lbl_model_base'.tr} (${'lbl_model_base_size'.tr})';
+    }
+  }
+
   Future<void> _selectRecitationProvider() async {
     final value = await _showSelectionSheet<String>(
       title: 'lbl_recitation_provider'.tr,
@@ -284,6 +310,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final id = int.tryParse(value) ?? _reciterId;
       await PrefUtils().setReciterId(id);
       setState(() => _reciterId = id);
+    }
+  }
+
+  Future<void> _selectWhisperModel() async {
+    final value = await _showSelectionSheet<String>(
+      title: 'lbl_whisper_model'.tr,
+      options: const [
+        _Option('tiny', 'lbl_model_tiny'),
+        _Option('base', 'lbl_model_base'),
+        _Option('small', 'lbl_model_small'),
+      ],
+      selected: _whisperModel,
+    );
+    if (value != null && value != _whisperModel) {
+      setState(() => _whisperDownloading = true);
+      await _downloadWhisperModel(value);
+      await PrefUtils().setWhisperModel(value);
+      setState(() {
+        _whisperModel = value;
+        _whisperDownloading = false;
+      });
+    }
+  }
+
+  Future<void> _downloadWhisperModel(String value) async {
+    final model = _mapWhisperModel(value);
+    unawaited(showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_downloading_model'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(strokeWidth: 2),
+            const SizedBox(height: 12),
+            Text('msg_model_download_wait'.tr),
+          ],
+        ),
+      ),
+    ));
+    try {
+      await _whisperController.downloadModel(model);
+    } finally {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  WhisperModel _mapWhisperModel(String value) {
+    switch (value) {
+      case 'tiny':
+        return WhisperModel.tiny;
+      case 'small':
+        return WhisperModel.small;
+      case 'base':
+      default:
+        return WhisperModel.base;
     }
   }
 
