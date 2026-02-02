@@ -55,8 +55,10 @@ class VoiceVerificationService {
         }
       },
       localeId: localeId,
-      listenMode: ListenMode.dictation,
-      cancelOnError: true,
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        cancelOnError: true,
+      ),
     );
   }
 

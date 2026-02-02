@@ -41,6 +41,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   // Scroll Keys
   final Map<int, GlobalKey> _verseKeys = {};
+  final Map<int, GlobalKey> _richTextVerseKeys = {};
   List<_VerseRange> _currentVerseRanges = [];
 
   // Voice Verification
@@ -107,7 +108,7 @@ class _SurahScreenState extends State<SurahScreen> {
     if (attempt == 0) {
       final route = ModalRoute.of(context);
       if (route is TransitionRoute) {
-        final animation = route.animation;
+        final animation = route?.animation;
         if (animation != null &&
             animation.status != AnimationStatus.completed) {
           // Wait for transition to finish
@@ -161,13 +162,25 @@ class _SurahScreenState extends State<SurahScreen> {
           key.currentContext!,
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
-          alignment: 0.3, // Center-ish
+          alignment: 0.15, // Align slightly below top
         );
         return true;
       }
       return false; // Key not ready
     } else {
-      // Mushaf/RichText Mode
+      // Mushaf/RichText Mode - prefer anchor keys for reliability
+      final anchorKey = _richTextVerseKeys[verseNumber];
+      if (anchorKey != null && anchorKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          anchorKey.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+        return true;
+      }
+
+      // Fallback: RenderParagraph based scroll
       final RenderObject? renderObject = _richTextKey.currentContext
           ?.findRenderObject();
 
@@ -179,7 +192,6 @@ class _SurahScreenState extends State<SurahScreen> {
         );
 
         try {
-          // Get boxes for the text range
           final boxes = renderObject.getBoxesForSelection(
             TextSelection(
               baseOffset: verseRange.start,
@@ -188,36 +200,27 @@ class _SurahScreenState extends State<SurahScreen> {
           );
 
           if (boxes.isNotEmpty && _scrollController.hasClients) {
-            // Calculate target scroll position
-            // but assuming the scroll view fills the screen (minus potential app bars),
-            // using scrollOffset + screen_y works IF the scroll view is at the screen top.
+            final boxTop = boxes.first.top;
+            // Calculate absolute position on screen
+            final globalOffset = renderObject.localToGlobal(Offset(0, boxTop));
 
-            // A more robust generic way:
-            // target = currentScrollOffset + (boxBottom_Global - scrollViewTop_Global)
-            // But we don't easily have scrollViewTop_Global.
+            // Current scroll offset
+            final currentScroll = _scrollController.offset;
 
-            // richTextGlobalOffset.dy is the screen Y position of the TOP of the text.
-            // If we rely on this, it must be accurate.
+            // Desired position on screen (e.g. 140px from top, below AppBar)
+            const double targetScreenY = 140.0;
 
-            // Fix: Use the scroll position to determine relative offset more reliably.
-            // Target = CurrentScroll + (GlobalBoxY - GlobalScrollTopY) - Padding
-            // Since we don't know GlobalScrollTopY (which is roughly AppBar height),
-            // let's assume standard AppBar displacement or calculate relative to RenderObject.
+            // Calculate delta needed to move globalOffset.dy to targetScreenY
+            final delta = globalOffset.dy - targetScreenY;
 
-            // Simplified: The box.top is relative to the RenderParagraph start.
-            // The RenderParagraph represents the whole text.
-            // So we just need to scroll to (box.top + topPaddingOfTheWidget).
-            // But the widget is inside a SliverToBoxAdapter inside CustomScrollView.
-            // So: box.top is essentially the scroll offset we want (plus the top padding of the screen).
-
-            final targetScroll =
-                boxes.first.top + 20; // 20 is padding at top of list
+            // Calculate new scroll position
+            final targetScroll = (currentScroll + delta).clamp(
+              0.0,
+              _scrollController.position.maxScrollExtent,
+            );
 
             _scrollController.animateTo(
-              targetScroll.clamp(
-                0.0,
-                _scrollController.position.maxScrollExtent,
-              ),
+              targetScroll,
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeInOut,
             );
@@ -711,9 +714,9 @@ class _SurahScreenState extends State<SurahScreen> {
     // 1. Request Permission Lazy
     bool available = await _voiceService.requestPermission();
     if (!available) {
-      if (mounted) {
+      if (context.mounted) {
         // Show Dialog to guide user to settings
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text('msg_mic_permission'.tr),
@@ -742,8 +745,8 @@ class _SurahScreenState extends State<SurahScreen> {
     // 2. Prepare Expectation (Strip Bismillah)
     String expectedText = aya.text;
     if (aya.verseNumber == 1 && surah?.id != 1) {
-      const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
-      const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+      const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
+      const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
       if (expectedText.startsWith(bismillahPrefix)) {
         expectedText = expectedText.substring(bismillahPrefix.length).trim();
       } else if (expectedText.startsWith(bismillahSimple)) {
@@ -761,7 +764,8 @@ class _SurahScreenState extends State<SurahScreen> {
     await _voiceService.stop();
     _isListening = false;
 
-    showDialog(
+    if (!context.mounted) return;
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
@@ -797,10 +801,10 @@ class _SurahScreenState extends State<SurahScreen> {
                         statusColor = Colors.green;
                         // Auto Advance Delay
                         Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted && Navigator.canPop(dialogContext)) {
-                            Navigator.pop(
-                              dialogContext,
-                            ); // Close current dialog
+                          if (mounted &&
+                              dialogContext.mounted &&
+                              Navigator.canPop(dialogContext)) {
+                            Navigator.pop(dialogContext);
                             _onRecitationCorrect(aya);
                           }
                         });
@@ -808,7 +812,9 @@ class _SurahScreenState extends State<SurahScreen> {
                         statusColor = Colors.redAccent;
                         // Show Wrong Dialog
                         Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted && Navigator.canPop(dialogContext)) {
+                          if (context.mounted &&
+                              dialogContext.mounted &&
+                              Navigator.canPop(dialogContext)) {
                             Navigator.pop(dialogContext);
                             _showWrongDialog(context, aya);
                           }
@@ -923,11 +929,11 @@ class _SurahScreenState extends State<SurahScreen> {
           },
         );
       },
-    ).then((_) {
-      // Cleanup when dialog closes
-      _voiceService.stop();
-      _isListening = false;
-    });
+    );
+
+    // Cleanup when dialog closes
+    await _voiceService.stop();
+    _isListening = false;
   }
 
   void _onRecitationCorrect(Verse currentVerse) {
@@ -1041,12 +1047,8 @@ class _SurahScreenState extends State<SurahScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ExcludeSemantics(
-                child: const Icon(
-                  Icons.celebration,
-                  color: Colors.green,
-                  size: 50,
-                ),
+              const ExcludeSemantics(
+                child: Icon(Icons.celebration, color: Colors.green, size: 50),
               ),
               const SizedBox(height: 16),
               Text(
@@ -1188,7 +1190,7 @@ class _SurahScreenState extends State<SurahScreen> {
       if (aya.verseNumber == 1 && surah?.id != 1) {
         // EXACT string from the JSON assets (surah_3.json)
         // characters: Ba, Kasra, Sin, Sukun, Mim, Space, Allah...
-        const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+        const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
 
         // Remove Bismillah and any leading whitespace
         if (verseText.startsWith(bismillahPrefix)) {
@@ -1196,12 +1198,29 @@ class _SurahScreenState extends State<SurahScreen> {
         } else {
           // Fallback: Check for standard Bismillah without the specific diacritics of the local file
           // just in case some files differ (though unlikely if they are from same source).
-          const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+          const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
           if (verseText.startsWith(bismillahSimple)) {
             verseText = verseText.substring(bismillahSimple.length).trim();
           }
         }
       }
+
+      // Anchor span for reliable scroll-to-ayah in rich text mode
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: SizedBox(
+            key: _richTextVerseKeys.putIfAbsent(
+              aya.verseNumber,
+              () => GlobalKey(debugLabel: 'verse_anchor_${aya.verseNumber}'),
+            ),
+            width: 0,
+            height: 0,
+          ),
+        ),
+      );
+      // WidgetSpan contributes a placeholder character to text offsets.
+      currentOffset += 1;
 
       // Record Range (Text)
       verseRanges.add(
@@ -1423,11 +1442,11 @@ class _SurahScreenState extends State<SurahScreen> {
 
         String verseText = aya.text;
         if (aya.verseNumber == 1 && surah?.id != 1) {
-          const bismillahPrefix = "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ";
+          const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
           if (verseText.startsWith(bismillahPrefix)) {
             verseText = verseText.substring(bismillahPrefix.length).trim();
           } else {
-            const bismillahSimple = "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ";
+            const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
             if (verseText.startsWith(bismillahSimple)) {
               verseText = verseText.substring(bismillahSimple.length).trim();
             }

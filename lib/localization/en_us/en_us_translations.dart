@@ -71,10 +71,10 @@ final Map<String, String> enUs = {
       '• The verse will be highlighted.\n'
       "• Use this to track verses that need 'Tathbeet' (Strengthening).",
   // Bookmarks
-  'msg_bookmark_added': 'Bookmark added',
-  'msg_bookmark_removed': 'Bookmark removed',
+  'msg_bookmark_added': 'Bookmark Saved',
+  'msg_bookmark_removed': 'Bookmark Removed',
   'msg_no_bookmarks': 'No bookmarks yet',
-  'lbl_verse_num': 'Verse', // Generic "Verse X"
+  'lbl_verse_num': 'Ayah', // Unified to Ayah
   'lbl_remove_bookmark': 'Remove Bookmark',
   'lbl_add_bookmark': 'Add Bookmark',
   // Surah
@@ -86,20 +86,21 @@ final Map<String, String> enUs = {
   // Voice Flow
   'lbl_congrats': 'MashaAllah!',
   'msg_session_complete': 'Session Complete',
-  'msg_session_score': 'You recited correct verses.',
+  'msg_session_score': 'Recitation Accuracy: {score}%',
   'lbl_try_again': 'Try Again',
-  'lbl_save_practice': 'Mark for Practice & Next',
-  'msg_incorrect_recitation': 'Recitation needs improvement.',
-  'lbl_tap_to_speak': 'Tap to Speak',
+  'lbl_save_practice': 'Mark for Practice',
+  'msg_incorrect_recitation':
+      'That didn\'t sound quite right. Keep practicing!',
+  'lbl_tap_to_speak': 'Tap microphone to start',
   'msg_tap_to_stop': 'Tap to Stop',
   'lbl_search_tooltip': 'Search Quran',
   // Offline
   'msg_offline': 'You are offline',
   'msg_offline_data': 'Showing offline data',
   // Voice Dialog
-  'msg_mic_permission': 'Microphone permission required',
+  'msg_mic_permission': 'Microphone Access',
   'msg_tap_to_resume': 'Tap to resume',
-  'lbl_incorrect': 'Needs Improvement',
+  'lbl_incorrect': 'Incorrect',
   // Accessibility
   'lbl_back': 'Go back',
   'lbl_help': 'Help',
@@ -117,7 +118,7 @@ final Map<String, String> enUs = {
   'msg_no_results': 'No results found',
   'msg_search_hint': 'Search for a Surah or verse',
   'lbl_error': 'Error',
-  'msg_error_prefix': 'Error: ',
+  'msg_error_prefix': '', // Removed prefix for cleaner errors
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
 };

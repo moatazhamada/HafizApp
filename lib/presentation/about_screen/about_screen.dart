@@ -69,7 +69,7 @@ class _AboutScreenState extends State<AboutScreen> {
           );
         }
         if (ok) {
-          sl<AnalyticsService>().logLinkOpened(url);
+          await sl<AnalyticsService>().logLinkOpened(url);
         }
       } catch (e) {
         globalMessengerKey.currentState?.showSnackBar(
@@ -126,7 +126,7 @@ class _AboutScreenState extends State<AboutScreen> {
                             globalMessengerKey.currentState?.showSnackBar(
                               SnackBar(content: Text('about_feedback_sent'.tr)),
                             );
-                            sl<AnalyticsService>().logFeedbackSubmitted(
+                            await sl<AnalyticsService>().logFeedbackSubmitted(
                               method: 'firestore',
                             );
                           }

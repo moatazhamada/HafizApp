@@ -15,6 +15,15 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// Ensure all Java compilation tasks use a modern language level to avoid
+// source/target=8 deprecation warnings during release builds.
+subprojects {
+    tasks.withType(JavaCompile).configureEach {
+        sourceCompatibility = JavaVersion.VERSION_21.toString()
+        targetCompatibility = JavaVersion.VERSION_21.toString()
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
