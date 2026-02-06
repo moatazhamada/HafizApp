@@ -18,6 +18,22 @@ platform :android do
     version_line.split("+").last.strip
   end
 
+  # Check if service account is configured
+  def ensure_service_account
+    service_account_path = "fastlane/service-account.json"
+    unless File.exist?(service_account_path)
+      UI.error("❌ Google Play Service Account not found!")
+      UI.error("Please download the service account JSON from Google Play Console:")
+      UI.error("  1. Go to Play Console → Settings → API Access")
+      UI.error("  2. Create a service account and download the JSON key")
+      UI.error("  3. Save it as: android/fastlane/service-account.json")
+      UI.error("")
+      UI.error("Or set the environment variable:")
+      UI.error("  export GOOGLE_PLAY_SERVICE_ACCOUNT_PATH=/path/to/service-account.json")
+      UI.user_error!("Service account missing - cannot deploy to Play Store")
+    end
+  end
+
   desc "Run Flutter tests"
   lane :test do
     Dir.chdir("../") do
@@ -47,6 +63,9 @@ platform :android do
 
   desc "Deploy to Google Play Internal Testing"
   lane :deploy_internal do
+    # Ensure service account is available
+    ensure_service_account
+    
     # Build AAB
     build_aab
     
@@ -66,6 +85,7 @@ platform :android do
 
   desc "Deploy to Google Play Beta (Closed Testing)"
   lane :deploy_beta do
+    ensure_service_account
     build_aab
     
     upload_to_play_store(
@@ -79,6 +99,8 @@ platform :android do
 
   desc "Deploy to Google Play Production"
   lane :deploy_production do
+    ensure_service_account
+    
     # Confirm before production release
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
     

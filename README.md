@@ -95,25 +95,21 @@ bundle exec fastlane deploy_production
 
 ### Setup
 
+✅ **Keystore is already configured** - no manual setup needed!
+
 1. **Install dependencies:**
    ```bash
    cd android
    bundle install
    ```
 
-2. **Configure signing:**
-   - Place your keystore in `android/app/keystore.jks`
-   - Create `android/keystore.properties`:
+2. **Set up Google Play Service Account (one-time):**
+   - Go to Google Play Console → Settings → API Access
+   - Create a service account and download the JSON key
+   - Save as `android/fastlane/service-account.json`:
+     ```bash
+     cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
      ```
-     storeFile=keystore.jks
-     storePassword=your_password
-     keyAlias=your_alias
-     keyPassword=your_password
-     ```
-
-3. **Set up Google Play Service Account:**
-   - Download service account JSON from Play Console
-   - Save as `android/fastlane/service-account.json`
 
 ### GitHub Actions CI/CD
 
