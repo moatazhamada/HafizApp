@@ -118,11 +118,18 @@ platform :android do
     # Confirm before production release
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
     
-    build_aab
+    # Check if AAB already exists, if not build it
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    unless File.exist?(aab_path)
+      UI.important("AAB not found, building...")
+      build_aab
+    else
+      UI.success("✅ Using existing AAB: #{aab_path}")
+    end
     
     upload_to_play_store(
       track: "production",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: aab_path,
       release_status: "draft", # Start as draft for review
     )
     
