@@ -1,0 +1,1 @@
+A beautiful Quran app for memorization (Hifz) with voice verification, bookmarks, and practice tracking.

@@ -1,0 +1,28 @@
+Hafiz is a non-profit Quran memorization (Hifz) app designed to help Muslims memorize and practice the Holy Quran with ease.
+
+<b>Key Features:</b>
+
+📖 <b>Complete Quran</b> - Read all 114 Surahs with authentic Uthmani script
+
+🎙️ <b>Voice Verification</b> - Verify your recitation with on-device speech recognition
+
+🔖 <b>Bookmarks</b> - Save your reading position and important verses
+
+📝 <b>Practice List</b> - Mark verses you find difficult for focused practice
+
+👁️ <b>Hifz Mode</b> - Blur verses to test your memorization
+
+🔍 <b>Search</b> - Find verses quickly in Arabic or English
+
+📑 <b>Juz (Para) Index</b> - Navigate easily by the 30 Juz sections
+
+🌙 <b>Dark Mode</b> - Comfortable reading day or night
+
+🌐 <b>Multilingual</b> - English and Arabic support
+
+📱 <b>Works Offline</b> - No internet needed to read the Quran
+
+<b>About:</b>
+Hafiz is developed as a good deed (Sadaqah Jariyah). The Quran text is sourced from verified Tanzil.net Uthmani script for accuracy.
+
+May Allah accept this effort and make it beneficial for all Muslims.
