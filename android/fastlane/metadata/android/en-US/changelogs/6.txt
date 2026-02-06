@@ -1,0 +1,9 @@
+Version 2.1.1 - Bug fixes and improvements
+
+- Fixed voice verification dialog crashes when widget is disposed
+- Added Juz (Para) index for quick navigation to any of the 30 Juz sections
+- Improved Android 15+ compatibility with edge-to-edge display support
+- Enhanced stability for memorization practice mode
+- General performance improvements
+
+Thank you for using Hafiz! May Allah bless your Quran memorization journey.

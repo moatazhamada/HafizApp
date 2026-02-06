@@ -1,109 +1,112 @@
-# Fastlane Setup for Hafiz App
+fastlane documentation
+----
 
-This directory contains Fastlane configuration for automated Play Store deployments.
+# Installation
 
-## Repository Status
+Make sure you have the latest version of the Xcode command line tools installed:
 
-This is a **PRIVATE** repository. The keystore is stored locally and excluded from git.
-
-## Keystore Location
-
-The signing keystore is stored at:
-- **Keystore:** `android/app/upload-keystore.jks`
-- **Config:** `android/keystore.properties`
-
-These files are in `.gitignore` and won't be committed.
-
-## Prerequisites
-
-1. **Install Ruby dependencies:**
-   ```bash
-   cd android
-   bundle install
-   ```
-
-2. **Set up Google Play Service Account:**
-   - Go to Google Play Console → Settings → API Access
-   - Create a service account and download the JSON key
-   - Save it as `android/fastlane/service-account.json`:
-     ```bash
-     cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
-     ```
-
-## Available Lanes
-
-### Local Development
-
-```bash
-# Run tests
-bundle exec fastlane test
-
-# Build APK for testing
-bundle exec fastlane build_apk
-
-# Build AAB for Play Store
-bundle exec fastlane build_aab
-
-# Bump version code
-bundle exec fastlane bump_version
+```sh
+xcode-select --install
 ```
 
-### Deployment
+For _fastlane_ installation instructions, see [Installing _fastlane_](https://docs.fastlane.tools/#installing-fastlane)
 
-```bash
-# Deploy to Internal Testing
-bundle exec fastlane deploy_internal
+# Available Actions
 
-# Deploy to Beta (Closed Testing)
-bundle exec fastlane deploy_beta
+## Android
 
-# Deploy to Production (requires confirmation)
-bundle exec fastlane deploy_production
+### android test
 
-# Promote Internal to Production
-bundle exec fastlane promote_to_production
+```sh
+[bundle exec] fastlane android test
 ```
 
-### Full CI/CD Pipeline
+Run Flutter tests
 
-```bash
-# Test, bump version, and deploy to Internal
-bundle exec fastlane ci_internal
+### android build_apk
 
-# Test, bump version, and deploy to Production
-bundle exec fastlane ci_production
+```sh
+[bundle exec] fastlane android build_apk
 ```
 
-## Environment Variables
+Build APK for testing
 
-For CI/CD, set these GitHub Secrets:
+### android build_aab
 
-| Variable | Description |
-|----------|-------------|
-| `KEYSTORE_BASE64` | Base64-encoded keystore file |
-| `KEYSTORE_PASSWORD` | Keystore password |
-| `KEY_PASSWORD` | Key password |
-| `KEY_ALIAS` | Key alias |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT` | Base64-encoded service account JSON |
-
-To encode files:
-```bash
-base64 -i android/app/upload-keystore.jks
-base64 -i /path/to/service-account.json
+```sh
+[bundle exec] fastlane android build_aab
 ```
 
-## Play Store Metadata
+Build Android App Bundle (AAB) for Play Store
 
-Edit these files to update Play Store listing:
+### android deploy_internal
 
-- `metadata/android/en-US/title.txt` - App title
-- `metadata/android/en-US/short_description.txt` - Short description (80 chars)
-- `metadata/android/en-US/full_description.txt` - Full description
-- `metadata/android/en-US/changelogs/default.txt` - Default changelog
+```sh
+[bundle exec] fastlane android deploy_internal
+```
 
-## Security Notes
+Deploy to Google Play Internal Testing
 
-- Never commit `service-account.json` or `upload-keystore.jks` to git
-- Keep your keystore file backed up securely
-- The service account JSON has access to your Play Store - protect it carefully
-- This is a private repository - do not make it public without rotating keys
+### android deploy_beta
+
+```sh
+[bundle exec] fastlane android deploy_beta
+```
+
+Deploy to Google Play Beta (Closed Testing)
+
+### android deploy_production
+
+```sh
+[bundle exec] fastlane android deploy_production
+```
+
+Deploy to Google Play Production
+
+### android promote_to_production
+
+```sh
+[bundle exec] fastlane android promote_to_production
+```
+
+Promote from Internal to Production
+
+### android promote_beta_to_production
+
+```sh
+[bundle exec] fastlane android promote_beta_to_production
+```
+
+Promote from Beta to Production
+
+### android bump_version
+
+```sh
+[bundle exec] fastlane android bump_version
+```
+
+Increment version code in pubspec.yaml
+
+### android ci_internal
+
+```sh
+[bundle exec] fastlane android ci_internal
+```
+
+Full CI/CD pipeline: Test, Build, Deploy to Internal
+
+### android ci_production
+
+```sh
+[bundle exec] fastlane android ci_production
+```
+
+Full CI/CD pipeline: Test, Build, Deploy to Production
+
+----
+
+This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
+
+More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).
+
+The documentation of _fastlane_ can be found on [docs.fastlane.tools](https://docs.fastlane.tools).
