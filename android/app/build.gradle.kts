@@ -76,6 +76,13 @@ android {
             }
         }
     }
+    
+    // Support 16 KB page sizes for Android 15+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 flutter {
