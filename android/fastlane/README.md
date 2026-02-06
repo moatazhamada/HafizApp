@@ -2,16 +2,17 @@
 
 This directory contains Fastlane configuration for automated Play Store deployments.
 
-## ⚠️ Security Notice
+## Repository Status
 
-**The keystore files exist locally but have a security concern.** See [../../SECURITY.md](../../SECURITY.md) for details.
+This is a **PRIVATE** repository. The keystore is stored locally and excluded from git.
 
-**Quick Summary:**
-- Keystore: `android/app/upload-keystore.jks` (exists locally)
-- Config: `android/keystore.properties` (exists locally)
-- ⚠️ These files were previously in git history - consider rotating the keystore
+## Keystore Location
 
-For local builds, the existing keystore works. For production, review the security implications.
+The signing keystore is stored at:
+- **Keystore:** `android/app/upload-keystore.jks`
+- **Config:** `android/keystore.properties`
+
+These files are in `.gitignore` and won't be committed.
 
 ## Prerequisites
 
@@ -21,17 +22,13 @@ For local builds, the existing keystore works. For production, review the securi
    bundle install
    ```
 
-2. **Set up Google Play Service Account (Required for deployment):**
+2. **Set up Google Play Service Account:**
    - Go to Google Play Console → Settings → API Access
    - Create a service account and download the JSON key
-   - Save it as `android/fastlane/service-account.json`
-
-   ```bash
-   # Place the service account JSON
-   cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
-   ```
-
-   ⚠️ **Note:** The service account JSON is NOT committed to git (see `.gitignore`).
+   - Save it as `android/fastlane/service-account.json`:
+     ```bash
+     cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
+     ```
 
 ## Available Lanes
 
@@ -79,7 +76,7 @@ bundle exec fastlane ci_production
 
 ## Environment Variables
 
-For CI/CD, set these secrets:
+For CI/CD, set these GitHub Secrets:
 
 | Variable | Description |
 |----------|-------------|
@@ -89,13 +86,11 @@ For CI/CD, set these secrets:
 | `KEY_ALIAS` | Key alias |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT` | Base64-encoded service account JSON |
 
-## GitHub Actions
-
-The `.github/workflows/deploy.yml` file configures automatic deployment:
-
-- **Pushes to `feature/sheikh-recitation-coach`**: Deploys to Internal Testing
-- **Tags starting with `v`**: Deploys to Production (requires manual approval)
-- **Pull requests**: Runs tests only
+To encode files:
+```bash
+base64 -i android/app/upload-keystore.jks
+base64 -i /path/to/service-account.json
+```
 
 ## Play Store Metadata
 
@@ -108,6 +103,7 @@ Edit these files to update Play Store listing:
 
 ## Security Notes
 
-- Never commit `service-account.json` or `keystore.jks` to git
+- Never commit `service-account.json` or `upload-keystore.jks` to git
 - Keep your keystore file backed up securely
 - The service account JSON has access to your Play Store - protect it carefully
+- This is a private repository - do not make it public without rotating keys
