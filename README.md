@@ -76,6 +76,55 @@ An in‑app About page includes acknowledgements and intent. You can find it via
 
 ---
 
+## 🚀 Automated Deployment (Fastlane)
+
+This project uses **Fastlane** for automated Play Store deployments.
+
+### Quick Start
+
+```bash
+cd android
+bundle install
+
+# Deploy to Internal Testing
+bundle exec fastlane deploy_internal
+
+# Deploy to Production
+bundle exec fastlane deploy_production
+```
+
+### Setup
+
+1. **Install dependencies:**
+   ```bash
+   cd android
+   bundle install
+   ```
+
+2. **Configure signing:**
+   - Place your keystore in `android/app/keystore.jks`
+   - Create `android/keystore.properties`:
+     ```
+     storeFile=keystore.jks
+     storePassword=your_password
+     keyAlias=your_alias
+     keyPassword=your_password
+     ```
+
+3. **Set up Google Play Service Account:**
+   - Download service account JSON from Play Console
+   - Save as `android/fastlane/service-account.json`
+
+### GitHub Actions CI/CD
+
+Automatic deployments on push:
+- `feature/sheikh-recitation-coach` → Internal Testing
+- Tags `v*` → Production (requires approval)
+
+See `android/fastlane/README.md` for detailed documentation.
+
+---
+
 ## 🚧 Upcoming Features (Roadmap)
 
 ### 🎯 In Progress (Current Branch)
