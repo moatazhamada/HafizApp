@@ -10,19 +10,26 @@ void main() {
 
   group('VoiceVerificationService', () {
     test('Standard match should return equal', () {
-      final analysis =
-          service.analyzeRecitation('الحمد لله', 'الحمد لله');
+      // Use minWords: 2 since "الحمد لله" has only 2 words
+      final analysis = service.analyzeRecitation(
+        'الحمد لله',
+        'الحمد لله',
+        minWords: 2,
+      );
       expect(analysis.passed, true);
     });
 
     test('Disjointed letters (Alif Lam Mim) should match despite spaces', () {
       // Expected (Quran text): "الم"
       // Spoken (STT output): "أ ل م" or "ا ل م"
-
       const expected = 'الم';
       const spoken = 'أ ل م'; // Typical STT output for separate letters
 
-      final analysis = service.analyzeRecitation(spoken, expected);
+      final analysis = service.analyzeRecitation(
+        spoken,
+        expected,
+        minWords: 1,
+      );
       expect(analysis.passed, true);
     });
 
@@ -30,7 +37,11 @@ void main() {
       const expected = 'ألهاكم';
       const spoken = 'الهاكم'; // Missing Hamza
 
-      final analysis = service.analyzeRecitation(spoken, expected);
+      final analysis = service.analyzeRecitation(
+        spoken,
+        expected,
+        minWords: 1,
+      );
       expect(analysis.passed, true);
     });
 
@@ -38,7 +49,11 @@ void main() {
       const expected = 'بِسْمِ اللَّهِ'; // With Tashkeel
       const spoken = 'بسم الله'; // Without
 
-      final analysis = service.analyzeRecitation(spoken, expected);
+      final analysis = service.analyzeRecitation(
+        spoken,
+        expected,
+        minWords: 2,
+      );
       expect(analysis.passed, true);
     });
   });

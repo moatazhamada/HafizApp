@@ -736,17 +736,17 @@ class _SurahScreenState extends State<SurahScreen> {
       // Show Dialog to guide user to settings
       await showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text('msg_mic_permission'.tr),
           content: Text('msg_mic_permission_desc'.tr),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text('lbl_cancel'.tr),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 openAppSettings();
               },
               child: Text('lbl_settings'.tr),
@@ -770,16 +770,24 @@ class _SurahScreenState extends State<SurahScreen> {
     }
 
     if (!mounted) return;
-
+    
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => VoiceVerificationDialog(
+      builder: (dialogContext) => VoiceVerificationDialog(
         surah: surah!,
         aya: aya,
         expectedText: expectedText,
-        onCorrect: () => _onRecitationCorrect(aya),
-        onWrong: (ctx) => _showWrongDialog(context, aya),
+        onCorrect: () {
+          if (mounted) {
+            _onRecitationCorrect(aya);
+          }
+        },
+        onWrong: (ctx) {
+          if (mounted) {
+            _showWrongDialog(context, aya);
+          }
+        },
       ),
     );
   }
@@ -799,6 +807,8 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   void _onRecitationCorrect(Verse currentVerse) {
+    if (!mounted) return;
+    
     _sessionCorrectCount++;
     _sessionTotalCount++;
 
@@ -893,15 +903,17 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   void _showCompletionDialog() {
+    if (!mounted) return;
+    
     double percentage = 0;
     if (_sessionTotalCount > 0) {
       percentage = (_sessionCorrectCount / _sessionTotalCount) * 100;
     }
 
-    if (percentage >= 50) {
+    if (percentage >= 50 && mounted) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text('lbl_congrats'.tr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -924,7 +936,7 @@ class _SurahScreenState extends State<SurahScreen> {
               onPressed: () {
                 _sessionCorrectCount = 0;
                 _sessionTotalCount = 0;
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: Text('lbl_close'.tr),
             ),

@@ -62,6 +62,7 @@ final Map<String, String> enUs = {
   'lbl_view_mode': 'Reading Mode',
   'lbl_view_continuous': 'Mushaf Page',
   'lbl_view_single_line': 'Single Line',
+  'lbl_juz_index': 'Juz (Para)',
   'lbl_system_default': 'System Default',
   'lbl_theme': 'Appearance',
   'lbl_theme_light': 'Light Mode',

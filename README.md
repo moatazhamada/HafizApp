@@ -74,3 +74,72 @@ Note: Tanzil’s license is CC BY‑ND 3.0. Do not modify the Quran text. Includ
 
 An in‑app About page includes acknowledgements and intent. You can find it via the info icon on the Home screen.
 
+---
+
+## 🚧 Upcoming Features (Roadmap)
+
+### 🎯 In Progress (Current Branch)
+- ✅ **Crash Fixes**: BuildContext stability improvements in voice verification
+- ✅ **Juz (Para) Index**: Quick navigation to any of the 30 Juz
+- ✅ **UI Polish**: Edge-to-edge support for Android 15+
+
+### 🌟 Planned Features
+
+#### 1. **Full Quran Mushaf View** (Next Major Feature)
+A seamless, continuous Mushaf experience that mimics reading from a physical Quran:
+- All 114 Surahs in one continuous scrollable view
+- Exact Mushaf page numbers (Madani/Uthmani script pagination)
+- Page flip animations with realistic curl effect
+- Visual Surah dividers with ornate Islamic headers
+- Bookmarking specific "pages" rather than just verses
+- Jump to any Mushaf page number (1-604)
+
+#### 2. **Audio Recitation Player**
+- Full Surah audio playback with verse highlighting
+- Background audio support with notification controls  
+- Download audio for offline listening
+- Variable playback speed (0.5x - 2x)
+- Loop specific verse ranges for memorization
+- Sleep timer for bedtime listening
+
+#### 3. **Deep Linking & Sharing**
+- Share any verse with a unique link (e.g., `hafiz.app/surah/2/verse/255`)
+- Links open directly to the specific verse in the app
+- Generate beautiful verse images for social sharing
+- Copy verse text with proper attribution
+
+#### 4. **Daily Reading Goals (Khatmah Tracker)**
+- Set daily pages/verses targets
+- Track progress toward completing the Quran
+- Reading streak calendar with reminders
+- Multiple simultaneous Khatmah tracking
+- Group reading challenges
+
+#### 5. **Tafsir Integration**
+- Multiple Tafsir sources (Ibn Kathir, Jalalayn, etc.)
+- Side-by-side or bottom sheet display
+- Download Tafsir for offline reading
+- Bookmark Tafsir explanations
+
+#### 6. **Advanced Memorization Tools**
+- Recording comparison: Record yourself vs. reciter
+- Spaced repetition system for verse review
+- Memorization planner with scheduling
+- Difficulty tracking per verse
+- Audio repeat with customizable delays
+
+#### 7. **Widgets & Quick Actions**
+- Home screen widget: Daily verse
+- Progress widget: Reading streak and goals
+- Quick action: Jump to last read position
+
+#### 8. **Search Enhancements**
+- Search by topic/keyword across all verses
+- Advanced search filters (Surah range, Juz, etc.)
+- Search history and suggestions
+- Voice search
+
+---
+
+*Want to contribute? Pick a feature from the roadmap and open a PR!*
+
