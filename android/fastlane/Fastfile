@@ -72,7 +72,7 @@ platform :android do
     end
     
     UI.success("✅ AAB built successfully!")
-    UI.message("Output: build/app/outputs/bundle/release/app-release.aab")
+    UI.message("Output: ../../build/app/outputs/bundle/release/app-release.aab")
   end
 
   desc "Deploy to Google Play Internal Testing"
@@ -86,7 +86,7 @@ platform :android do
     # Upload to Play Store Internal Testing
     upload_to_play_store(
       track: "internal",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../../build/app/outputs/bundle/release/app-release.aab",
       release_status: "completed",
       skip_upload_metadata: false,
       skip_upload_images: false,
@@ -104,7 +104,7 @@ platform :android do
     
     upload_to_play_store(
       track: "beta",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../../build/app/outputs/bundle/release/app-release.aab",
       release_status: "completed",
     )
     
@@ -119,7 +119,8 @@ platform :android do
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
     
     # Check if AAB already exists, if not build it
-    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    # Path from android/fastlane/ to project root
+    aab_path = "../../build/app/outputs/bundle/release/app-release.aab"
     unless File.exist?(aab_path)
       UI.important("AAB not found, building...")
       build_aab
