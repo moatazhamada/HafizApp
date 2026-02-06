@@ -20,9 +20,20 @@ platform :android do
 
   # Check if service account is configured
   def ensure_service_account
-    service_account_path = "fastlane/service-account.json"
-    unless File.exist?(service_account_path)
+    # Possible paths for service account
+    possible_paths = [
+      "/Users/mm/Main/Projects/Android/HafizApp/android/fastlane/service-account.json",
+      File.join(Dir.pwd, "service-account.json"),
+      ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_PATH"],
+    ].compact
+    
+    service_account_path = possible_paths.find { |p| p && File.exist?(p) }
+    
+    if service_account_path.nil?
       UI.error("❌ Google Play Service Account not found!")
+      UI.error("Checked paths:")
+      possible_paths.each { |p| UI.error("  - #{p}") }
+      UI.error("")
       UI.error("Please download the service account JSON from Google Play Console:")
       UI.error("  1. Go to Play Console → Settings → API Access")
       UI.error("  2. Create a service account and download the JSON key")
@@ -31,19 +42,22 @@ platform :android do
       UI.error("Or set the environment variable:")
       UI.error("  export GOOGLE_PLAY_SERVICE_ACCOUNT_PATH=/path/to/service-account.json")
       UI.user_error!("Service account missing - cannot deploy to Play Store")
+    else
+      UI.success("✅ Found service account at: #{service_account_path}")
     end
   end
 
   desc "Run Flutter tests"
   lane :test do
-    Dir.chdir("../") do
+    # Go up two levels from android/fastlane to project root
+    Dir.chdir("../../") do
       sh("flutter test")
     end
   end
 
   desc "Build APK for testing"
   lane :build_apk do
-    Dir.chdir("../") do
+    Dir.chdir("../../") do
       sh("flutter build apk --release")
     end
   end
@@ -53,12 +67,12 @@ platform :android do
     # Ensure tests pass before building
     test
     
-    Dir.chdir("../") do
+    Dir.chdir("../../") do
       sh("flutter build appbundle --release")
     end
     
     UI.success("✅ AAB built successfully!")
-    UI.message("Output: ../build/app/outputs/bundle/release/app-release.aab")
+    UI.message("Output: build/app/outputs/bundle/release/app-release.aab")
   end
 
   desc "Deploy to Google Play Internal Testing"
