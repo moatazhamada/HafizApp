@@ -2,6 +2,14 @@
 
 This directory contains Fastlane configuration for automated Play Store deployments.
 
+## ✅ Keystore Already Configured
+
+The signing keystore is already included in the repository:
+- Keystore: `android/app/upload-keystore.jks`
+- Config: `android/keystore.properties`
+
+No manual keystore setup needed! 🔒
+
 ## Prerequisites
 
 1. **Install Ruby dependencies:**
@@ -10,10 +18,17 @@ This directory contains Fastlane configuration for automated Play Store deployme
    bundle install
    ```
 
-2. **Set up Google Play Service Account:**
+2. **Set up Google Play Service Account (Required for deployment):**
    - Go to Google Play Console → Settings → API Access
    - Create a service account and download the JSON key
-   - Save it as `fastlane/service-account.json` (do not commit this file!)
+   - Save it as `android/fastlane/service-account.json`
+
+   ```bash
+   # Place the service account JSON
+   cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
+   ```
+
+   ⚠️ **Note:** The service account JSON is NOT committed to git (see `.gitignore`).
 
 ## Available Lanes
 
