@@ -109,7 +109,7 @@ bundle exec fastlane deploy_production
      cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
      ```
 
-⚠️ **Security Note:** See [SECURITY.md](./SECURITY.md) for important information about the keystore.
+**Note:** This is a private repository. See [SECURITY.md](./SECURITY.md) for collaboration guidelines.
 
 ### GitHub Actions CI/CD
 
