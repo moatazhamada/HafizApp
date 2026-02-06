@@ -95,8 +95,6 @@ bundle exec fastlane deploy_production
 
 ### Setup
 
-✅ **Keystore is already configured** - no manual setup needed!
-
 1. **Install dependencies:**
    ```bash
    cd android
@@ -110,6 +108,8 @@ bundle exec fastlane deploy_production
      ```bash
      cp /path/to/downloaded-service-account.json android/fastlane/service-account.json
      ```
+
+⚠️ **Security Note:** See [SECURITY.md](./SECURITY.md) for important information about the keystore.
 
 ### GitHub Actions CI/CD
 
