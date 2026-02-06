@@ -392,18 +392,22 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           await _customRecorder.stopRecorder();
         } catch (_) {}
         if (_customFilePath != null) {
-          setState(() {
-            _whisperTranscribing = true;
-            _spokenText = 'msg_transcribing'.tr;
-          });
+          if (mounted) {
+            setState(() {
+              _whisperTranscribing = true;
+              _spokenText = 'msg_transcribing'.tr;
+            });
+          }
           final transcribed = await _whisperService.transcribe(
             audioPath: _customFilePath!,
             language: 'ar',
             model: _whisperModel,
           );
-          setState(() {
-            _whisperTranscribing = false;
-          });
+          if (mounted) {
+            setState(() {
+              _whisperTranscribing = false;
+            });
+          }
           if (transcribed != null && transcribed.isNotEmpty) {
             _analyzeRecitation(transcribed);
           }

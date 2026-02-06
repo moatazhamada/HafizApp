@@ -77,11 +77,13 @@ class VoiceVerificationService {
     double passThreshold = defaultPassThreshold,
     int minWords = defaultMinWords,
   }) {
-    final normSpoken = _normalizeArabic(spokenText);
-    final normExpected = _normalizeArabic(expectedText);
-
-    final tokensSpoken = _mergeSingleLetterTokens(_tokenize(normSpoken));
-    final tokensExpected = _mergeSingleLetterTokens(_tokenize(normExpected));
+    // Tokenize, merge single letters (like Alif Lam Mim), then normalize
+    final tokensSpoken = _mergeSingleLetterTokens(_tokenize(spokenText))
+        .map(_normalizeArabic)
+        .toList();
+    final tokensExpected = _mergeSingleLetterTokens(_tokenize(expectedText))
+        .map(_normalizeArabic)
+        .toList();
 
     final isTooShort = tokensSpoken.length < minWords;
 
