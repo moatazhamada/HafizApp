@@ -2,13 +2,16 @@
 
 This directory contains Fastlane configuration for automated Play Store deployments.
 
-## ✅ Keystore Already Configured
+## ⚠️ Security Notice
 
-The signing keystore is already included in the repository:
-- Keystore: `android/app/upload-keystore.jks`
-- Config: `android/keystore.properties`
+**The keystore files exist locally but have a security concern.** See [../../SECURITY.md](../../SECURITY.md) for details.
 
-No manual keystore setup needed! 🔒
+**Quick Summary:**
+- Keystore: `android/app/upload-keystore.jks` (exists locally)
+- Config: `android/keystore.properties` (exists locally)
+- ⚠️ These files were previously in git history - consider rotating the keystore
+
+For local builds, the existing keystore works. For production, review the security implications.
 
 ## Prerequisites
 
