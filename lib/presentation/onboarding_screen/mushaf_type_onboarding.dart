@@ -24,11 +24,20 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   int _currentPage = 0;
   
   final List<_OnboardingPage> _pages = [];
+  bool _initialized = false;
   
   @override
   void initState() {
     super.initState();
-    _initPages();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initPages();
+      _initialized = true;
+    }
   }
   
   void _initPages() {
