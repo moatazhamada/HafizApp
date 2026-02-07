@@ -226,7 +226,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
       final storage = await HydratedStorage.build(
         storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
+          (await getApplicationDocumentsDirectory()).path,
         ),
       );
       HydratedBloc.storage = storage;

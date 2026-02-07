@@ -46,6 +46,9 @@ class _MushafScreenState extends State<MushafScreen> {
   // Track visible pages for efficient loading
   final Set<int> _loadedSurahs = {};
   
+  // Stream subscriptions for proper cleanup
+  StreamSubscription<SurahState>? _surahBlocSubscription;
+  
   @override
   void initState() {
     super.initState();
@@ -84,14 +87,25 @@ class _MushafScreenState extends State<MushafScreen> {
     if (_loadedSurahs.contains(surahId)) return;
     
     _surahBloc.add(LoadSurahEvent(surahId: surahId.toString()));
-    // Wait for the bloc to emit state
-    await for (final state in _surahBloc.stream) {
+    
+    // Cancel any existing subscription before creating new one
+    await _surahBlocSubscription?.cancel();
+    
+    // Use StreamSubscription instead of await for
+    final completer = Completer<void>();
+    _surahBlocSubscription = _surahBloc.stream.listen((state) {
       if (state is SuccessSurahState) {
         _surahCache[surahId] = state.chapters;
         _loadedSurahs.add(surahId);
-        break;
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
       }
-    }
+    });
+    
+    await completer.future;
+    await _surahBlocSubscription?.cancel();
+    _surahBlocSubscription = null;
   }
   
   void _onPageChanged(int pageIndex) {
@@ -331,6 +345,8 @@ class _MushafScreenState extends State<MushafScreen> {
   
   @override
   void dispose() {
+    // Cancel stream subscription
+    _surahBlocSubscription?.cancel();
     _pageIndicatorTimer?.cancel();
     _pageController.dispose();
     SystemChrome.setEnabledSystemUIMode(

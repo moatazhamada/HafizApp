@@ -16,8 +16,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Stream<int> get currentVerseStream => _currentVerseController.stream;
   int get currentVerse => _currentVerseController.value;
 
-  // Playback state management
-  final _playbackStateController = BehaviorSubject<PlaybackState>();
+  // Stream subscriptions - stored to properly cancel them
+  StreamSubscription<PlaybackEvent>? _playbackEventSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<ProcessingState>? _processingStateSubscription;
 
   AudioPlayerHandler() {
     _init();
@@ -25,17 +27,17 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   void _init() {
     // Listen to player state changes
-    _player.playbackEventStream.listen((event) {
+    _playbackEventSubscription = _player.playbackEventStream.listen((event) {
       _broadcastState();
     });
 
     // Listen to position updates for verse highlighting
-    _player.positionStream.listen((position) {
+    _positionSubscription = _player.positionStream.listen((position) {
       _updateCurrentVerse(position);
     });
 
     // Listen to processing state
-    _player.processingStateStream.listen((state) {
+    _processingStateSubscription = _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         // Move to next item if available
         if (_player.hasNext) {
@@ -347,9 +349,13 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> dispose() async {
+    // Cancel all stream subscriptions
+    await _playbackEventSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _processingStateSubscription?.cancel();
+
     _sleepTimer?.cancel();
     await _player.dispose();
     await _currentVerseController.close();
-    await _playbackStateController.close();
   }
 }
