@@ -72,7 +72,7 @@ platform :android do
     end
     
     UI.success("✅ AAB built successfully!")
-    UI.message("Output: ../../build/app/outputs/bundle/release/app-release.aab")
+    UI.message("Output: ../build/app/outputs/bundle/release/app-release.aab")
   end
 
   desc "Deploy to Google Play Internal Testing"
@@ -86,7 +86,7 @@ platform :android do
     # Upload to Play Store Internal Testing
     upload_to_play_store(
       track: "internal",
-      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
       release_status: "completed",
       skip_upload_metadata: false,
       skip_upload_images: false,
@@ -104,7 +104,7 @@ platform :android do
     
     upload_to_play_store(
       track: "beta",
-      aab: "../../build/app/outputs/bundle/release/app-release.aab",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
       release_status: "completed",
     )
     
@@ -118,15 +118,11 @@ platform :android do
     # Confirm before production release
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
     
-    # Check if AAB already exists, if not build it
-    # Path from android/fastlane/ to project root
-    aab_path = "../../build/app/outputs/bundle/release/app-release.aab"
-    unless File.exist?(aab_path)
-      UI.important("AAB not found, building...")
-      build_aab
-    else
-      UI.success("✅ Using existing AAB: #{aab_path}")
-    end
+    # Build AAB (skip tests if already built)
+    build_aab_skip_tests_if_exists
+    
+    # Path relative to android/ directory (where Fastfile runs from)
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
     
     upload_to_play_store(
       track: "production",
@@ -136,6 +132,17 @@ platform :android do
     
     UI.success("🚀 Deployed to Production (Draft)!")
     UI.important("Remember to submit the release for review in Play Console.")
+  end
+
+  desc "Build AAB - skip tests if already exists"
+  private_lane :build_aab_skip_tests_if_exists do
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    if File.exist?(aab_path)
+      UI.success("✅ Using existing AAB: #{aab_path}")
+    else
+      UI.important("AAB not found, building...")
+      build_aab
+    end
   end
 
   desc "Promote from Internal to Production"
