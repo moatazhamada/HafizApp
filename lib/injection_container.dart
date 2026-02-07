@@ -25,6 +25,8 @@ import 'core/config/api_config.dart';
 import 'core/scroll/scroll_position_cubit.dart';
 import 'core/analytics/analytics_service.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'core/deep_link/deep_link_service.dart';
+import 'core/audio/audio_player_handler.dart';
 
 final sl = GetIt.instance;
 
@@ -44,6 +46,8 @@ Future<void> init() async {
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
+  sl.registerLazySingleton(() => DeepLinkService());
+  sl.registerFactory(() => AudioPlayerHandler());
 
   // Use Case
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));

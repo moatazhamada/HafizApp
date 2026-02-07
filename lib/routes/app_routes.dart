@@ -9,31 +9,70 @@ import '../presentation/onboarding_screen/onboarding_screen.dart';
 import '../presentation/about_screen/about_screen.dart';
 import '../presentation/recitation_error/recitation_error_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
+import '../presentation/mushaf_screen/mushaf_screen.dart';
+import '../presentation/audio_player/audio_player_screen.dart';
+import '../core/quran_index/quran_surah.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
-  static const String homeScreen = '/home_screen'; // Changed from homePage
+  static const String homeScreen = '/home_screen';
   static const String surahPage = '/surah_screen';
-  static const String bookmarksPage =
-      '/bookmarks'; // Changed path for bookmarksPage
+  static const String bookmarksPage = '/bookmarks';
   static const String searchPage = '/search_screen';
   static const String aboutPage = '/about_screen';
   static const String helpScreen = '/help';
   static const String recitationErrorsPage = '/recitation_errors';
   static const String settingsScreen = '/settings';
+  static const String mushafScreen = '/mushaf';
+  static const String audioPlayerScreen = '/audio_player';
 
   static Map<String, WidgetBuilder> routes = {
-    // Changed from get routes =>
     onboardingScreen: OnboardingScreen.builder,
-    homeScreen: (context) =>
-        const HomeScreen(), // Changed from homePage and removed const
+    homeScreen: (context) => const HomeScreen(),
     surahPage: (context) => const SurahScreen(),
     searchPage: (context) => const SearchScreen(),
     bookmarksPage: (context) => const BookmarksScreen(),
-    aboutPage: (context) =>
-        const AboutScreen(), // Kept existing aboutPage route
+    aboutPage: (context) => const AboutScreen(),
     helpScreen: (context) => const HelpScreen(),
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
     settingsScreen: (context) => const SettingsScreen(),
+    mushafScreen: (context) => const MushafScreen(),
   };
+  
+  /// Navigate to Mushaf screen with optional parameters
+  static void goToMushaf(BuildContext context, {int? page, int? surah, int? verse}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MushafScreen(
+          initialPage: page,
+          highlightSurah: surah,
+          highlightVerse: verse,
+        ),
+      ),
+    );
+  }
+  
+  /// Navigate to Audio Player
+  static void goToAudioPlayer(
+    BuildContext context, {
+    required Surah surah,
+    int? startVerse,
+    required String reciter,
+    required List<String> audioUrls,
+    required List<Duration> verseTimestamps,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AudioPlayerScreen(
+          surah: surah,
+          startVerse: startVerse,
+          reciter: reciter,
+          audioUrls: audioUrls,
+          verseTimestamps: verseTimestamps,
+        ),
+      ),
+    );
+  }
 }

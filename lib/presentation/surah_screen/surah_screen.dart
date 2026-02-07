@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'; // Required for RenderParagraph
+import 'package:flutter/rendering.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
@@ -11,6 +11,7 @@ import 'widgets/voice_verification_dialog.dart';
 import '../../core/app_export.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/deep_link/deep_link_service.dart';
 
 import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
@@ -21,6 +22,8 @@ import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bl
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../widgets/verse_share_sheet.dart';
+import '../../routes/app_routes.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -720,6 +723,36 @@ class _SurahScreenState extends State<SurahScreen> {
                 },
               ),
             ),
+            const Divider(),
+            // Share options
+            Semantics(
+              button: true,
+              label: 'lbl_share_verse'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.share, color: Colors.green),
+                title: Text('lbl_share_verse'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.showVerseShareSheet(
+                    surah: surah!,
+                    verse: aya,
+                  );
+                },
+              ),
+            ),
+            // Play audio from this verse
+            Semantics(
+              button: true,
+              label: 'lbl_listen'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.play_circle_fill, color: Colors.orange),
+                title: Text('lbl_listen_from_here'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  _playAudioFromVerse(aya.verseNumber);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -789,6 +822,28 @@ class _SurahScreenState extends State<SurahScreen> {
           }
         },
       ),
+    );
+  }
+
+  void _playAudioFromVerse(int verseNumber) {
+    if (surah == null) return;
+    
+    // Generate sample timestamps (in production, fetch from API)
+    final timestamps = List.generate(
+      surah!.verseCount,
+      (i) => Duration(seconds: (i + 1) * 10),
+    );
+    
+    // Navigate to audio player
+    AppRoutes.goToAudioPlayer(
+      context,
+      surah: surah!,
+      startVerse: verseNumber,
+      reciter: PrefUtils().getReciterName(),
+      audioUrls: [
+        'https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/${surah!.id.toString().padLeft(3, '0')}.mp3'
+      ],
+      verseTimestamps: timestamps,
     );
   }
 

@@ -23,7 +23,10 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
+import 'core/quran_index/quran_surah.dart';
+import 'routes/app_routes.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -72,19 +75,79 @@ Future<void> initFirebase() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
-class MyApp extends StatelessWidget {
-  MyApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final DeepLinkService _deepLinkService = sl<DeepLinkService>();
+  
+  final themeBloc = sl<ThemeBloc>();
+  final bookmarkBloc = sl<BookmarkBloc>();
+  final recitationErrorBloc = sl<RecitationErrorBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+  
+  Future<void> _initDeepLinks() async {
+    await _deepLinkService.initialize(
+      onDeepLink: _handleDeepLink,
+    );
+  }
+  
+  void _handleDeepLink(DeepLinkData data) {
+    final navigator = NavigatorService.navigatorKey.currentState;
+    if (navigator == null) return;
+    
+    switch (data.type) {
+      case DeepLinkType.verse:
+        if (data.surahId != null) {
+          final surah = QuranIndex.quranSurahs.firstWhere(
+            (s) => s.id == data.surahId,
+            orElse: () => QuranIndex.quranSurahs[0],
+          );
+          navigator.pushNamed(
+            AppRoutes.surahPage,
+            arguments: {
+              'surah': surah,
+              'verseIndex': (data.verseNumber ?? 1) - 1,
+              'resume': true,
+            },
+          );
+        }
+        break;
+      case DeepLinkType.mushafPage:
+        if (data.pageNumber != null) {
+          AppRoutes.goToMushaf(
+            navigator.context,
+            page: data.pageNumber,
+          );
+        }
+        break;
+      case DeepLinkType.juz:
+        // Handle Juz deep link
+        break;
+    }
+  }
 
   ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
+    final mode = PrefUtils().getThemeMode();
     if (mode == 'dark') return ThemeMode.dark;
     if (mode == 'light') return ThemeMode.light;
     return ThemeMode.system;
   }
 
-  final themeBloc = sl<ThemeBloc>();
-  final bookmarkBloc = sl<BookmarkBloc>();
-  final recitationErrorBloc = sl<RecitationErrorBloc>();
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +168,7 @@ class MyApp extends StatelessWidget {
             builder: (_, locale, _) => MaterialApp(
               themeMode: _getThemeMode(),
               theme: lightTheme,
-              darkTheme: darkTheme, // Important for automatic switching
+              darkTheme: darkTheme,
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
@@ -259,7 +322,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
 class _ReadyApp extends StatelessWidget {
   const _ReadyApp();
   @override
-  Widget build(BuildContext context) => MyApp();
+  Widget build(BuildContext context) => const MyApp();
 }
 
 class _SplashScaffold extends StatelessWidget {

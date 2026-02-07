@@ -203,6 +203,18 @@ class PrefUtils {
       return 7;
     }
   }
+  
+  String getReciterName() {
+    final id = getReciterId();
+    // Map common reciter IDs to names
+    final reciters = {
+      7: 'Mishary Alafasy',
+      1: 'Abdul Basit',
+      2: 'Maher Al-Muaiqly',
+      3: 'Saud Al-Shuraim',
+    };
+    return reciters[id] ?? 'Mishary Alafasy';
+  }
 
   Future<void> setCustomAsrEndpoint(String url) async {
     await _sharedPreferences!.setString('custom_asr_endpoint', url);

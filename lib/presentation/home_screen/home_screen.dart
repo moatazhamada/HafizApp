@@ -285,6 +285,9 @@ class _HomeScreenState extends State<HomeScreen>
               child: PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
+                    case 'mushaf':
+                      AppRoutes.goToMushaf(context);
+                      break;
                     case 'mistakes':
                       NavigatorService.pushNamed(
                         AppRoutes.recitationErrorsPage,
@@ -299,6 +302,19 @@ class _HomeScreenState extends State<HomeScreen>
                   }
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'mushaf',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.menu_book,
+                          color: theme.iconTheme.color,
+                        ),
+                        const SizedBox(width: 12),
+                        Text('lbl_mushaf'.tr),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     value: 'mistakes',
                     child: Row(
@@ -333,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen>
                         const SizedBox(width: 12),
                         Text(
                           'about_title'.tr,
-                        ), // Assuming 'about_title' key exists or use 'About'
+                        ),
                       ],
                     ),
                   ),
@@ -610,9 +626,9 @@ class _HomeScreenState extends State<HomeScreen>
                               AppRoutes.surahPage,
                               arguments: {
                                 'surah': lastReadSurah,
-                                'offset': ?offset,
+                                'offset': offset,
                                 'resume': true,
-                                'verseIndex': ?lastVerseIndex,
+                                'verseIndex': lastVerseIndex,
                               },
                             );
                           },
