@@ -11,7 +11,9 @@ import '../presentation/recitation_error/recitation_error_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
 import '../presentation/audio_player/audio_player_screen.dart';
+import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
 import '../core/quran_index/quran_surah.dart';
+import '../core/quran_index/mushaf_types.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -40,7 +42,13 @@ class AppRoutes {
   };
   
   /// Navigate to Mushaf screen with optional parameters
-  static void goToMushaf(BuildContext context, {int? page, int? surah, int? verse}) {
+  static void goToMushaf(
+    BuildContext context, {
+    int? page,
+    int? surah,
+    int? verse,
+    MushafType? mushafType,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -48,6 +56,22 @@ class AppRoutes {
           initialPage: page,
           highlightSurah: surah,
           highlightVerse: verse,
+          mushafType: mushafType ?? MushafType.madani,
+        ),
+      ),
+    );
+  }
+  
+  /// Navigate to Mushaf type onboarding
+  static void goToMushafOnboarding(
+    BuildContext context, {
+    required VoidCallback onComplete,
+  }) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MushafTypeOnboarding(
+          onComplete: onComplete,
         ),
       ),
     );

@@ -200,4 +200,13 @@ final Map<String, String> arEg = {
   'msg_text_copied': 'تم نسخ النص',
   'lbl_listen': 'استماع',
   'lbl_listen_from_here': 'الاستماع من هنا',
+  // Mushaf Type Selector
+  'lbl_select_mushaf_type': 'اختر نوع المصحف',
+  'lbl_change_mushaf_type': 'تغيير نوع المصحف',
+  'msg_mushaf_type_desc': 'اختر نمط المصحف المفضل لديك للقراءة',
+  'lbl_pages': 'صفحة',
+  'lbl_page': 'صفحة',
+  // Mushaf onboarding
+  'msg_mushaf_onboarding_title': 'اختر المصحف المفضل',
+  'msg_mushaf_onboarding_desc': 'اختر نوع المصحف الذي تعتاد عليه. يمكنك تغيير هذا لاحقاً من الإعدادات.',
 };

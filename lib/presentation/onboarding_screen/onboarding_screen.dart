@@ -4,8 +4,10 @@ import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
+import '../../routes/app_routes.dart';
 import 'bloc/onboarding_bloc.dart';
 import 'models/onboarding_model.dart';
+import 'mushaf_type_onboarding.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -212,9 +214,21 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 child: CustomElevatedButton(
                                   key: const ValueKey('get_started_key'),
                                   onPressed: () {
-                                    NavigatorService.pushNamedAndRemoveUntil(
-                                      AppRoutes.homeScreen,
-                                    );
+                                    if (shouldShowMushafOnboarding()) {
+                                      // Show Mushaf type selector first
+                                      AppRoutes.goToMushafOnboarding(
+                                        context,
+                                        onComplete: () {
+                                          NavigatorService.pushNamedAndRemoveUntil(
+                                            AppRoutes.homeScreen,
+                                          );
+                                        },
+                                      );
+                                    } else {
+                                      NavigatorService.pushNamedAndRemoveUntil(
+                                        AppRoutes.homeScreen,
+                                      );
+                                    }
                                   },
                                   text: 'lbl_get_started'.tr,
                                   buttonStyle: ElevatedButton.styleFrom(

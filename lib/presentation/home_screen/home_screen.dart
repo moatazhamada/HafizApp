@@ -264,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen>
               button: true,
               label: 'lbl_juz_index'.tr,
               child: IconButton(
-                icon: const Icon(Icons.menu_book_rounded),
+                icon: const Icon(Icons.view_module_rounded),
                 onPressed: () => _showJuzSelector(context),
                 tooltip: 'lbl_juz_index'.tr,
               ),

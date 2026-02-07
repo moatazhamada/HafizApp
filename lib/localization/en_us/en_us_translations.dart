@@ -201,4 +201,13 @@ final Map<String, String> enUs = {
   'msg_text_copied': 'Text copied to clipboard',
   'lbl_listen': 'Listen',
   'lbl_listen_from_here': 'Listen from here',
+  // Mushaf Type Selector
+  'lbl_select_mushaf_type': 'Select Mushaf Type',
+  'lbl_change_mushaf_type': 'Change Mushaf Type',
+  'msg_mushaf_type_desc': 'Choose the Mushaf style you prefer for reading',
+  'lbl_pages': 'pages',
+  'lbl_page': 'Page',
+  // Mushaf onboarding
+  'msg_mushaf_onboarding_title': 'Choose Your Preferred Mushaf',
+  'msg_mushaf_onboarding_desc': 'Select the Mushaf type you are familiar with. You can change this anytime in settings.',
 };
