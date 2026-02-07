@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
@@ -236,7 +235,7 @@ class _MushafScreenState extends State<MushafScreen> {
         ),
         subtitle: Text(
           '${type.totalPages} ${'lbl_pages'.tr}',
-          style: TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: 12),
         ),
         trailing: isSelected 
             ? const Icon(Icons.check_circle, color: Colors.teal)
@@ -577,7 +576,6 @@ class _MushafScreenState extends State<MushafScreen> {
               : [const Color(0xFFF5F0E0), const Color(0xFFE8E0C8)],
         );
       case MushafType.madani:
-      default:
         return PageStyle(
           backgroundColor: isDark ? const Color(0xFF242424) : const Color(0xFFFEFDF5),
           textColor: isDark ? Colors.white : const Color(0xFF004B40),

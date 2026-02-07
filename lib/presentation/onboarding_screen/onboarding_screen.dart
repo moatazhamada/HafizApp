@@ -4,7 +4,6 @@ import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
-import '../../routes/app_routes.dart';
 import '../home_screen/home_screen.dart';
 import 'bloc/onboarding_bloc.dart';
 import 'models/onboarding_model.dart';

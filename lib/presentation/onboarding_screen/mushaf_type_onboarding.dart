@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/quran_index/mushaf_types.dart';
 import '../../core/utils/pref_utils.dart';
-import '../mushaf_screen/mushaf_screen.dart';
+
 
 /// First-time onboarding screen for selecting Mushaf type
 /// Shown when user first opens the app

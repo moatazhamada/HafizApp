@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +6,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import '../app_export.dart';
 
 /// Deep Link Service handles:
 /// - Incoming deep links (hafiz.app/surah/2/verse/255)
@@ -192,8 +190,6 @@ $link
         context: context,
         delay: const Duration(milliseconds: 100),
       );
-      
-      if (bytes == null) return null;
       
       // Save to temp directory
       final tempDir = await getTemporaryDirectory();

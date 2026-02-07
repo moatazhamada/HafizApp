@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audio_service/audio_service.dart';
+// ignore_for_file: deprecated_member_use
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -7,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 /// Provides media controls, notification, and background playback
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   final _player = AudioPlayer();
+  // TODO: Refactor to use AudioPlayer.setAudioSources instead (deprecated API)
   final _playlist = ConcatenatingAudioSource(children: []);
 
   // Stream for verse highlighting

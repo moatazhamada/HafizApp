@@ -20,7 +20,7 @@ import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import '../../core/utils/number_converter.dart';
-import '../../core/utils/surah_name_formatter.dart';
+
 import '../../widgets/verse_share_sheet.dart';
 
 class SurahScreen extends StatefulWidget {

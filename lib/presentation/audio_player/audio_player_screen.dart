@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/quran_surah.dart';
-import '../../core/utils/number_converter.dart';
+
 
 /// Full Audio Player Screen for Surah recitation
 /// Features: Play/Pause, verse highlighting, speed control, sleep timer

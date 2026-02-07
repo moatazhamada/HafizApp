@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_export.dart';
 import '../core/deep_link/deep_link_service.dart';
@@ -21,6 +22,8 @@ class VerseShareSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final deepLinkService = DeepLinkService();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -75,8 +78,8 @@ class VerseShareSheet extends StatelessWidget {
                   verseText: verse.text,
                   surahName: surah.nameEnglish,
                 );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
+                navigator.pop();
+                scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('msg_link_copied'.tr)),
                 );
               },
@@ -94,7 +97,7 @@ class VerseShareSheet extends StatelessWidget {
                   verseText: verse.text,
                   surahName: surah.nameEnglish,
                 );
-                Navigator.pop(context);
+                navigator.pop();
               },
             ),
             
@@ -118,8 +121,8 @@ class VerseShareSheet extends StatelessWidget {
                   verseText: verse.text,
                   surahName: surah.nameEnglish,
                 );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
+                navigator.pop();
+                scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('msg_text_copied'.tr)),
                 );
               },
@@ -169,7 +172,6 @@ class VerseShareSheet extends StatelessWidget {
   
   void _showImageStylePicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final deepLinkService = DeepLinkService();
     
     showModalBottomSheet(
       context: context,
@@ -238,20 +240,21 @@ class VerseShareSheet extends StatelessWidget {
   }) {
     final isDark = color.computeLuminance() < 0.5;
     final deepLinkService = DeepLinkService();
+    final navigator = Navigator.of(context);
     
     return GestureDetector(
       onTap: () async {
-        Navigator.pop(context); // Close style picker
-        Navigator.pop(context); // Close share sheet
+        navigator.pop(); // Close style picker
+        navigator.pop(); // Close share sheet
         
         // Show loading
-        showDialog(
+        unawaited(showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => const Center(
             child: CircularProgressIndicator(),
           ),
-        );
+        ));
         
         // Generate and share image
         await deepLinkService.shareVerseImage(
@@ -263,7 +266,7 @@ class VerseShareSheet extends StatelessWidget {
           style: style,
         );
         
-        Navigator.pop(context); // Close loading
+        navigator.pop(); // Close loading
       },
       child: Container(
         width: 80,
