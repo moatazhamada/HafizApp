@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
 import '../../core/i18n/locale_controller.dart';
+import '../../core/qiraat/qiraat_models.dart';
+import '../../core/qiraat/qiraat_service.dart';
+import '../../core/audio/recitation_models.dart';
+import '../../core/audio/recitation_service.dart';
+import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import '../../injection_container.dart' as di;
 
 class SettingsScreen extends StatefulWidget {
@@ -15,6 +22,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _themeMode;
   late bool _isSingleLine;
   late String _currentLang;
+  late String _recitationProvider;
+  late String _qiraatEdition;
+  late int _reciterId;
+  late String _whisperModel;
+  bool _whisperDownloading = false;
+  List<QiraatEdition> _editions = [];
+  List<Reciter> _reciters = [];
+  bool _loadingEditions = true;
+  bool _loadingReciters = true;
+  final QiraatService _qiraatService = QiraatService();
+  final RecitationService _recitationService = RecitationService();
+  final WhisperController _whisperController = WhisperController();
 
   @override
   void initState() {
@@ -22,6 +41,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _themeMode = PrefUtils().getThemeMode();
     _isSingleLine = PrefUtils().getVerseViewMode();
     _currentLang = PrefUtils().getLocaleCode();
+    _recitationProvider = PrefUtils().getRecitationProvider();
+    _qiraatEdition = PrefUtils().getQiraatEdition();
+    _reciterId = PrefUtils().getReciterId();
+    _whisperModel = PrefUtils().getWhisperModel();
+    _loadRecitationResources();
+  }
+
+  Future<void> _loadRecitationResources() async {
+    final editions = await _qiraatService.fetchEditions();
+    final reciters = await _recitationService.fetchReciters();
+    if (!mounted) return;
+    setState(() {
+      _editions = editions;
+      _reciters = reciters;
+      _loadingEditions = false;
+      _loadingReciters = false;
+      if (!_editions.any((e) => e.identifier == _qiraatEdition) &&
+          _editions.isNotEmpty) {
+        _qiraatEdition = _editions.first.identifier;
+      }
+      if (!_reciters.any((r) => r.id == _reciterId) &&
+          _reciters.isNotEmpty) {
+        _reciterId = _reciters.first.id;
+      }
+    });
   }
 
   @override
@@ -77,6 +121,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildThemeOption('lbl_system_default'.tr, 'system'),
           _buildThemeOption('lbl_theme_light'.tr, 'light'),
           _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
+          const Divider(),
+          _buildSectionHeader('lbl_recitation_coach'.tr),
+          ListTile(
+            title: Text('lbl_recitation_provider'.tr),
+            subtitle: Text(_recitationProviderLabel(_recitationProvider)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _selectRecitationProvider,
+          ),
+          ListTile(
+            title: Text('lbl_qiraat'.tr),
+            subtitle: Text(
+              _loadingEditions
+                  ? 'lbl_loading'.tr
+                  : _editionLabel(_qiraatEdition),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _loadingEditions ? null : _selectQiraatEdition,
+          ),
+          ListTile(
+            title: Text('lbl_reciter'.tr),
+            subtitle: Text(
+              _loadingReciters
+                  ? 'lbl_loading'.tr
+                  : _reciterLabel(_reciterId),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _loadingReciters ? null : _selectReciter,
+          ),
+          if (_recitationProvider == 'local_whisper')
+            ListTile(
+              title: Text('msg_local_whisper_tip'.tr),
+              subtitle: Text('msg_local_whisper_desc'.tr),
+            ),
+          if (_recitationProvider == 'local_whisper')
+            ListTile(
+              title: Text('lbl_whisper_model'.tr),
+              subtitle: Text(_whisperModelLabel(_whisperModel)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _whisperDownloading ? null : _selectWhisperModel,
+            ),
         ],
       ),
     );
@@ -139,4 +223,191 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
+  String _recitationProviderLabel(String provider) {
+    switch (provider) {
+      case 'local_whisper':
+        return 'lbl_provider_whisper'.tr;
+      default:
+        return 'lbl_provider_local'.tr;
+    }
+  }
+
+  String _editionLabel(String id) {
+    final edition =
+        _editions.firstWhere((e) => e.identifier == id, orElse: () {
+      return const QiraatEdition(
+        identifier: 'quran-uthmani',
+        name: 'Uthmani (Hafs)',
+        language: 'ar',
+        format: 'text',
+        type: 'quran',
+      );
+    });
+    return edition.name;
+  }
+
+  String _reciterLabel(int id) {
+    final reciter = _reciters.firstWhere(
+      (r) => r.id == id,
+      orElse: () => const Reciter(id: 7, name: 'Mishary Alafasy'),
+    );
+    return reciter.name;
+  }
+
+  String _whisperModelLabel(String model) {
+    switch (model) {
+      case 'tiny':
+        return '${'lbl_model_tiny'.tr} (${'lbl_model_tiny_size'.tr})';
+      case 'small':
+        return '${'lbl_model_small'.tr} (${'lbl_model_small_size'.tr})';
+      case 'base':
+      default:
+        return '${'lbl_model_base'.tr} (${'lbl_model_base_size'.tr})';
+    }
+  }
+
+  Future<void> _selectRecitationProvider() async {
+    final value = await _showSelectionSheet<String>(
+      title: 'lbl_recitation_provider'.tr,
+      options: const [
+        _Option('local', 'lbl_provider_local'),
+        _Option('local_whisper', 'lbl_provider_whisper'),
+      ],
+      selected: _recitationProvider,
+    );
+    if (value != null && value != _recitationProvider) {
+      await PrefUtils().setRecitationProvider(value);
+      setState(() => _recitationProvider = value);
+    }
+  }
+
+  Future<void> _selectQiraatEdition() async {
+    final options = _editions
+        .map((e) => _Option(e.identifier, e.name, isKey: false))
+        .toList();
+    final value = await _showSelectionSheet<String>(
+      title: 'lbl_qiraat'.tr,
+      options: options,
+      selected: _qiraatEdition,
+    );
+    if (value != null && value != _qiraatEdition) {
+      await PrefUtils().setQiraatEdition(value);
+      setState(() => _qiraatEdition = value);
+    }
+  }
+
+  Future<void> _selectReciter() async {
+    final options = _reciters
+        .map((r) => _Option(r.id.toString(), r.name, isKey: false))
+        .toList();
+    final value = await _showSelectionSheet<String>(
+      title: 'lbl_reciter'.tr,
+      options: options,
+      selected: _reciterId.toString(),
+    );
+    if (value != null) {
+      final id = int.tryParse(value) ?? _reciterId;
+      await PrefUtils().setReciterId(id);
+      setState(() => _reciterId = id);
+    }
+  }
+
+  Future<void> _selectWhisperModel() async {
+    final value = await _showSelectionSheet<String>(
+      title: 'lbl_whisper_model'.tr,
+      options: const [
+        _Option('tiny', 'lbl_model_tiny'),
+        _Option('base', 'lbl_model_base'),
+        _Option('small', 'lbl_model_small'),
+      ],
+      selected: _whisperModel,
+    );
+    if (value != null && value != _whisperModel) {
+      setState(() => _whisperDownloading = true);
+      await _downloadWhisperModel(value);
+      await PrefUtils().setWhisperModel(value);
+      setState(() {
+        _whisperModel = value;
+        _whisperDownloading = false;
+      });
+    }
+  }
+
+  Future<void> _downloadWhisperModel(String value) async {
+    final model = _mapWhisperModel(value);
+    unawaited(showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_downloading_model'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(strokeWidth: 2),
+            const SizedBox(height: 12),
+            Text('msg_model_download_wait'.tr),
+          ],
+        ),
+      ),
+    ));
+    try {
+      await _whisperController.downloadModel(model);
+    } finally {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  WhisperModel _mapWhisperModel(String value) {
+    switch (value) {
+      case 'tiny':
+        return WhisperModel.tiny;
+      case 'small':
+        return WhisperModel.small;
+      case 'base':
+      default:
+        return WhisperModel.base;
+    }
+  }
+
+
+  Future<T?> _showSelectionSheet<T>({
+    required String title,
+    required List<_Option> options,
+    required String selected,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              title,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          for (final option in options)
+            ListTile(
+              title: Text(option.isKey ? option.label.tr : option.label),
+              trailing:
+                  selected == option.value ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(context, option.value as T),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _Option {
+  final String value;
+  final String label;
+  final bool isKey;
+  const _Option(this.value, this.label, {this.isKey = true});
 }

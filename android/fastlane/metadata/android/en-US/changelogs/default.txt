@@ -1,0 +1,5 @@
+Bug fixes and improvements:
+- Fixed voice verification dialog crashes
+- Added Juz (Para) index for quick navigation
+- Improved Android 15+ compatibility with edge-to-edge support
+- General stability improvements

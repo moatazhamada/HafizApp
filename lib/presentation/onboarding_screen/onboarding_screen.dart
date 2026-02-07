@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
-import 'dart:async';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
@@ -27,13 +26,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  late final StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  late final StreamSubscription<List<ConnectivityResult>>
-  _connectivitySubscription;
 
   @override
   void initState() {
