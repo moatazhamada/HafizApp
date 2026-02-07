@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,7 +7,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:ui' as ui;
 import '../app_export.dart';
 
 /// Deep Link Service handles:
@@ -187,17 +187,13 @@ $link
     
     try {
       // Capture the widget as an image
-      final ui.Image image = await screenshotController.captureFromWidget(
+      final bytes = await screenshotController.captureFromWidget(
         verseWidget,
         context: context,
         delay: const Duration(milliseconds: 100),
       );
       
-      // Convert to bytes
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return null;
-      
-      final bytes = byteData.buffer.asUint8List();
+      if (bytes == null) return null;
       
       // Save to temp directory
       final tempDir = await getTemporaryDirectory();

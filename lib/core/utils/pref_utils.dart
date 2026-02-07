@@ -273,4 +273,34 @@ class PrefUtils {
       return 3;
     }
   }
+  
+  // Generic string storage
+  Future<void> setString(String key, String value) async {
+    await _sharedPreferences!.setString(key, value);
+  }
+  
+  String? getString(String key) {
+    try {
+      return _sharedPreferences!.getString(key);
+    } catch (e) {
+      Logger.warning('Failed to get string for key $key: $e',
+          feature: 'Preferences');
+      return null;
+    }
+  }
+  
+  // String list storage
+  Future<void> setStringList(String key, List<String> value) async {
+    await _sharedPreferences!.setStringList(key, value);
+  }
+  
+  List<String>? getStringList(String key) {
+    try {
+      return _sharedPreferences!.getStringList(key);
+    } catch (e) {
+      Logger.warning('Failed to get string list for key $key: $e',
+          feature: 'Preferences');
+      return null;
+    }
+  }
 }

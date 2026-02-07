@@ -8,30 +8,30 @@ import 'package:rxdart/rxdart.dart';
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   final _player = AudioPlayer();
   final _playlist = ConcatenatingAudioSource(children: []);
-  
+
   // Stream for verse highlighting
   final _currentVerseController = BehaviorSubject<int>.seeded(0);
   Stream<int> get currentVerseStream => _currentVerseController.stream;
   int get currentVerse => _currentVerseController.value;
-  
+
   // Playback state management
   final _playbackStateController = BehaviorSubject<PlaybackState>();
-  
+
   AudioPlayerHandler() {
     _init();
   }
-  
+
   void _init() {
     // Listen to player state changes
     _player.playbackEventStream.listen((event) {
       _broadcastState();
     });
-    
+
     // Listen to position updates for verse highlighting
     _player.positionStream.listen((position) {
       _updateCurrentVerse(position);
     });
-    
+
     // Listen to processing state
     _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
@@ -44,7 +44,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       }
     });
   }
-  
+
   /// Load Surah audio with verse-by-verse highlighting
   Future<void> loadSurah({
     required int surahId,
@@ -55,11 +55,11 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     required String artworkUrl,
   }) async {
     await stop();
-    
+
     // Create media items for each verse
     final mediaItems = <MediaItem>[];
     final audioSources = <AudioSource>[];
-    
+
     for (int i = 0; i < verseUrls.length; i++) {
       final mediaItem = MediaItem(
         id: verseUrls[i],
@@ -68,33 +68,29 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         artist: reciter,
         artUri: Uri.parse(artworkUrl),
         duration: verseDurations[i],
-        extras: {
-          'surahId': surahId,
-          'verseNumber': i + 1,
-        },
+        extras: {'surahId': surahId, 'verseNumber': i + 1},
       );
-      
+
       mediaItems.add(mediaItem);
-      audioSources.add(AudioSource.uri(
-        Uri.parse(verseUrls[i]),
-        tag: mediaItem,
-      ));
+      audioSources.add(
+        AudioSource.uri(Uri.parse(verseUrls[i]), tag: mediaItem),
+      );
     }
-    
+
     // Update queue
     queue.add(mediaItems);
-    
+
     // Set audio source
     await _player.setAudioSource(
       ConcatenatingAudioSource(children: audioSources),
       initialIndex: 0,
       initialPosition: Duration.zero,
     );
-    
+
     // Set initial media item
     mediaItem.add(mediaItems.first);
   }
-  
+
   /// Load full Surah continuous audio
   Future<void> loadSurahContinuous({
     required int surahId,
@@ -106,7 +102,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     required String artworkUrl,
   }) async {
     await stop();
-    
+
     final mediaItem = MediaItem(
       id: audioUrl,
       title: surahName,
@@ -116,34 +112,37 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       duration: duration,
       extras: {
         'surahId': surahId,
-        'verseTimestamps': verseTimestamps.map((d) => d.inMilliseconds).toList(),
+        'verseTimestamps': verseTimestamps
+            .map((d) => d.inMilliseconds)
+            .toList(),
         'isContinuous': true,
       },
     );
-    
+
     queue.add([mediaItem]);
-    
+
     await _player.setAudioSource(
       AudioSource.uri(Uri.parse(audioUrl), tag: mediaItem),
     );
-    
+
     this.mediaItem.add(mediaItem);
-    
+
     // Store verse timestamps for highlighting
     _verseTimestamps = verseTimestamps;
   }
-  
+
   List<Duration> _verseTimestamps = [];
-  
+
   void _updateCurrentVerse(Duration position) {
     if (_verseTimestamps.isEmpty) {
       final currentIndex = _player.currentIndex;
-      if (currentIndex != null && currentIndex != _currentVerseController.value) {
+      if (currentIndex != null &&
+          currentIndex != _currentVerseController.value) {
         _currentVerseController.add(currentIndex + 1);
       }
       return;
     }
-    
+
     // Find current verse based on timestamps
     for (int i = 0; i < _verseTimestamps.length; i++) {
       if (position < _verseTimestamps[i]) {
@@ -154,56 +153,56 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       }
     }
   }
-  
+
   @override
   Future<void> play() async {
     await _player.play();
     _broadcastState();
   }
-  
+
   @override
   Future<void> pause() async {
     await _player.pause();
     _broadcastState();
   }
-  
+
   @override
   Future<void> stop() async {
     await _player.stop();
     _currentVerseController.add(0);
     _broadcastState();
   }
-  
+
   @override
   Future<void> seek(Duration position) async {
     await _player.seek(position);
   }
-  
+
   @override
   Future<void> skipToNext() async {
-    if (await _player.hasNext) {
+    if (_player.hasNext) {
       await _player.seekToNext();
       final index = _player.currentIndex ?? 0;
       mediaItem.add(queue.value[index]);
       _currentVerseController.add(index + 1);
     }
   }
-  
+
   @override
   Future<void> skipToPrevious() async {
-    if (await _player.hasPrevious) {
+    if (_player.hasPrevious) {
       await _player.seekToPrevious();
       final index = _player.currentIndex ?? 0;
       mediaItem.add(queue.value[index]);
       _currentVerseController.add(index + 1);
     }
   }
-  
+
   @override
   Future<void> setSpeed(double speed) async {
     await _player.setSpeed(speed);
   }
-  
+
   @override
   Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
     switch (repeatMode) {
@@ -221,12 +220,12 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         break;
     }
   }
-  
+
   /// Seek to specific verse
   Future<void> seekToVerse(int verseNumber) async {
     if (_verseTimestamps.isNotEmpty && verseNumber <= _verseTimestamps.length) {
-      final position = verseNumber > 1 
-          ? _verseTimestamps[verseNumber - 2] 
+      final position = verseNumber > 1
+          ? _verseTimestamps[verseNumber - 2]
           : Duration.zero;
       await seek(position);
       _currentVerseController.add(verseNumber);
@@ -236,18 +235,18 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       _currentVerseController.add(verseNumber);
     }
   }
-  
+
   /// Loop specific verse range (for memorization)
   Future<void> setLoopRange(int startVerse, int endVerse) async {
     if (_verseTimestamps.isNotEmpty) {
       // For continuous audio - use clip audio
-      final start = startVerse > 1 
-          ? _verseTimestamps[startVerse - 2] 
+      final start = startVerse > 1
+          ? _verseTimestamps[startVerse - 2]
           : Duration.zero;
-      final end = endVerse < _verseTimestamps.length 
-          ? _verseTimestamps[endVerse - 1] 
+      final end = endVerse < _verseTimestamps.length
+          ? _verseTimestamps[endVerse - 1]
           : _player.duration;
-      
+
       // Create clipped audio source
       final currentSource = _player.audioSource;
       if (currentSource is UriAudioSource) {
@@ -269,7 +268,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       await _player.setLoopMode(LoopMode.all);
     }
   }
-  
+
   /// Set sleep timer
   Timer? _sleepTimer;
   void setSleepTimer(Duration duration) {
@@ -278,56 +277,58 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       stop();
     });
   }
-  
+
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
   }
-  
+
   /// Download audio for offline
   Future<void> downloadAudio(String url, String savePath) async {
     // Implementation would use dio or http to download
     // and save to local storage
   }
-  
+
   /// Get current playback speed
   double get speed => _player.speed;
-  
+
   /// Get duration
   Duration? get duration => _player.duration;
-  
+
   /// Get current position
   Stream<Duration> get positionStream => _player.positionStream;
-  
+
   /// Get buffered position
   Stream<Duration> get bufferedPositionStream => _player.bufferedPositionStream;
-  
+
   /// Get playing state
   bool get isPlaying => _player.playing;
-  
+
   void _broadcastState() {
-    playbackState.add(PlaybackState(
-      controls: [
-        MediaControl.skipToPrevious,
-        if (_player.playing) MediaControl.pause else MediaControl.play,
-        MediaControl.skipToNext,
-        MediaControl.stop,
-      ],
-      systemActions: const {
-        MediaAction.seek,
-        MediaAction.seekForward,
-        MediaAction.seekBackward,
-      },
-      androidCompactActionIndices: const [0, 1, 2],
-      processingState: _getProcessingState(),
-      playing: _player.playing,
-      updatePosition: _player.position,
-      bufferedPosition: _player.bufferedPosition,
-      speed: _player.speed,
-      queueIndex: _player.currentIndex,
-    ));
+    playbackState.add(
+      PlaybackState(
+        controls: [
+          MediaControl.skipToPrevious,
+          if (_player.playing) MediaControl.pause else MediaControl.play,
+          MediaControl.skipToNext,
+          MediaControl.stop,
+        ],
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+        },
+        androidCompactActionIndices: const [0, 1, 2],
+        processingState: _getProcessingState(),
+        playing: _player.playing,
+        updatePosition: _player.position,
+        bufferedPosition: _player.bufferedPosition,
+        speed: _player.speed,
+        queueIndex: _player.currentIndex,
+      ),
+    );
   }
-  
+
   AudioProcessingState _getProcessingState() {
     switch (_player.processingState) {
       case ProcessingState.idle:
@@ -342,13 +343,11 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         return AudioProcessingState.completed;
     }
   }
-  
-  @override
+
   Future<void> dispose() async {
     _sleepTimer?.cancel();
     await _player.dispose();
     await _currentVerseController.close();
     await _playbackStateController.close();
-    super.dispose();
   }
 }

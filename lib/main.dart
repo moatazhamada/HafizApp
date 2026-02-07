@@ -26,7 +26,6 @@ import 'core/analytics/analytics_route_observer.dart';
 import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
 import 'core/quran_index/quran_surah.dart';
-import 'routes/app_routes.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -84,7 +83,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final DeepLinkService _deepLinkService = sl<DeepLinkService>();
-  
+
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
@@ -94,17 +93,15 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _initDeepLinks();
   }
-  
+
   Future<void> _initDeepLinks() async {
-    await _deepLinkService.initialize(
-      onDeepLink: _handleDeepLink,
-    );
+    await _deepLinkService.initialize(onDeepLink: _handleDeepLink);
   }
-  
+
   void _handleDeepLink(DeepLinkData data) {
     final navigator = NavigatorService.navigatorKey.currentState;
     if (navigator == null) return;
-    
+
     switch (data.type) {
       case DeepLinkType.verse:
         if (data.surahId != null) {
@@ -124,10 +121,7 @@ class _MyAppState extends State<MyApp> {
         break;
       case DeepLinkType.mushafPage:
         if (data.pageNumber != null) {
-          AppRoutes.goToMushaf(
-            navigator.context,
-            page: data.pageNumber,
-          );
+          AppRoutes.goToMushaf(navigator.context, page: data.pageNumber);
         }
         break;
       case DeepLinkType.juz:

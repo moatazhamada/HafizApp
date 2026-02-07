@@ -16,56 +16,57 @@ class MushafScreen extends StatefulWidget {
   final int? initialPage;
   final int? highlightSurah;
   final int? highlightVerse;
-  
+
   const MushafScreen({
     super.key,
     this.initialPage,
     this.highlightSurah,
     this.highlightVerse,
   });
-  
+
   @override
   State<MushafScreen> createState() => _MushafScreenState();
 }
 
 class _MushafScreenState extends State<MushafScreen> {
   final ItemScrollController _scrollController = ItemScrollController();
-  final ItemPositionsListener _positionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener _positionsListener =
+      ItemPositionsListener.create();
   final SurahBloc _surahBloc = sl<SurahBloc>();
-  
+
   // Cache for loaded Surah verses
   final Map<int, List<Verse>> _surahCache = {};
-  
+
   int _currentPage = 1;
   bool _showPageIndicator = true;
   Timer? _pageIndicatorTimer;
   bool _isLoading = true;
-  
+
   // Track visible pages for efficient loading
   final Set<int> _loadedSurahs = {};
-  
+
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialPage ?? 1;
     _loadInitialData();
-    
+
     // Listen to scroll position
     _positionsListener.itemPositions.addListener(_onScrollPositionChanged);
-    
+
     // Auto-hide page indicator
     _resetPageIndicatorTimer();
   }
-  
+
   Future<void> _loadInitialData() async {
     // Pre-load some Surahs around the initial page
     final initialPage = MushafPageIndex.getPage(_currentPage);
     if (initialPage != null) {
       await _loadSurah(initialPage.surahId);
     }
-    
+
     setState(() => _isLoading = false);
-    
+
     // Scroll to initial page after build
     if (widget.initialPage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,10 +74,10 @@ class _MushafScreenState extends State<MushafScreen> {
       });
     }
   }
-  
+
   Future<void> _loadSurah(int surahId) async {
     if (_loadedSurahs.contains(surahId)) return;
-    
+
     _surahBloc.add(LoadSurahEvent(surahId: surahId.toString()));
     // Wait for the bloc to emit state
     await for (final state in _surahBloc.stream) {
@@ -87,21 +88,23 @@ class _MushafScreenState extends State<MushafScreen> {
       }
     }
   }
-  
+
   void _onScrollPositionChanged() {
     final positions = _positionsListener.itemPositions.value;
     if (positions.isEmpty) return;
-    
+
     // Get the most visible page
     final mostVisible = positions
         .where((p) => p.itemLeadingEdge < 1 && p.itemTrailingEdge > 0)
         .reduce((a, b) => a.itemLeadingEdge < b.itemLeadingEdge ? a : b);
-    
+
     final page = mostVisible.index + 1;
-    if (page != _currentPage && page >= 1 && page <= MushafPageIndex.totalPages) {
+    if (page != _currentPage &&
+        page >= 1 &&
+        page <= MushafPageIndex.totalPages) {
       setState(() => _currentPage = page);
       _resetPageIndicatorTimer();
-      
+
       // Load upcoming Surahs
       final currentPageData = MushafPageIndex.getPage(page);
       if (currentPageData != null) {
@@ -113,7 +116,7 @@ class _MushafScreenState extends State<MushafScreen> {
       }
     }
   }
-  
+
   void _resetPageIndicatorTimer() {
     setState(() => _showPageIndicator = true);
     _pageIndicatorTimer?.cancel();
@@ -123,7 +126,7 @@ class _MushafScreenState extends State<MushafScreen> {
       }
     });
   }
-  
+
   void _scrollToPage(int page) {
     if (page >= 1 && page <= MushafPageIndex.totalPages) {
       _scrollController.scrollTo(
@@ -133,7 +136,7 @@ class _MushafScreenState extends State<MushafScreen> {
       );
     }
   }
-  
+
   void _showPageJumpDialog() {
     final controller = TextEditingController();
     showDialog(
@@ -143,9 +146,9 @@ class _MushafScreenState extends State<MushafScreen> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '1 - ${MushafPageIndex.totalPages}',
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(),
           ),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -171,7 +174,7 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   void _showBookmarkDialog() {
     final noteController = TextEditingController();
     showDialog(
@@ -181,8 +184,12 @@ class _MushafScreenState extends State<MushafScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('msg_bookmark_current_page'.tr
-                .replaceAll('{page}', _currentPage.toString())),
+            Text(
+              'msg_bookmark_current_page'.tr.replaceAll(
+                '{page}',
+                _currentPage.toString(),
+              ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: noteController,
@@ -203,9 +210,9 @@ class _MushafScreenState extends State<MushafScreen> {
             onPressed: () {
               _savePageBookmark(noteController.text);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('msg_page_bookmarked'.tr)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('msg_page_bookmarked'.tr)));
             },
             child: Text('lbl_save'.tr),
           ),
@@ -213,7 +220,7 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   void _savePageBookmark(String note) {
     final pageData = MushafPageIndex.getPage(_currentPage);
     if (pageData != null) {
@@ -222,26 +229,28 @@ class _MushafScreenState extends State<MushafScreen> {
         'mushaf_bookmark_$_currentPage',
         '${DateTime.now().millisecondsSinceEpoch}|$note',
       );
-      
+
       // Also save to bookmarks list
       final bookmarks = PrefUtils().getStringList('mushaf_bookmarks') ?? [];
       bookmarks.add(_currentPage.toString());
       PrefUtils().setStringList('mushaf_bookmarks', bookmarks);
     }
   }
-  
+
   @override
   void dispose() {
     _pageIndicatorTimer?.cancel();
     _positionsListener.itemPositions.removeListener(_onScrollPositionChanged);
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F0E6);
-    
+    final backgroundColor = isDark
+        ? const Color(0xFF1A1A1A)
+        : const Color(0xFFF5F0E6);
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -308,7 +317,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 return _buildMushafPage(pageNumber, isDark);
               },
             ),
-          
+
           // Page number indicator
           AnimatedOpacity(
             opacity: _showPageIndicator ? 1.0 : 0.0,
@@ -317,7 +326,10 @@ class _MushafScreenState extends State<MushafScreen> {
               alignment: Alignment.bottomCenter,
               child: Container(
                 margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.black87 : Colors.white70,
                   borderRadius: BorderRadius.circular(20),
@@ -343,11 +355,11 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   Widget _buildMushafPage(int pageNumber, bool isDark) {
     final pageData = MushafPageIndex.getPage(pageNumber);
     if (pageData == null) return const SizedBox.shrink();
-    
+
     final verses = _surahCache[pageData.surahId];
     if (verses == null) {
       // Show loading placeholder
@@ -357,16 +369,19 @@ class _MushafScreenState extends State<MushafScreen> {
         child: const CircularProgressIndicator(),
       );
     }
-    
+
     // Filter verses for this page
-    final pageVerses = verses.where((v) => 
-      v.verseNumber >= pageData.startVerse && 
-      v.verseNumber <= pageData.endVerse
-    ).toList();
-    
+    final pageVerses = verses
+        .where(
+          (v) =>
+              v.verseNumber >= pageData.startVerse &&
+              v.verseNumber <= pageData.endVerse,
+        )
+        .toList();
+
     final isSurahStart = pageData.isSurahStart;
     final showBismillah = pageData.containsBismillah;
-    
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -392,7 +407,7 @@ class _MushafScreenState extends State<MushafScreen> {
             _buildSurahHeader(pageData, isDark),
             const Divider(height: 1),
           ],
-          
+
           // Page content
           Expanded(
             child: Padding(
@@ -401,13 +416,13 @@ class _MushafScreenState extends State<MushafScreen> {
                 children: [
                   // Bismillah
                   if (showBismillah) _buildBismillah(isDark),
-                  
+
                   // Verses
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       child: _buildPageVerses(
-                        pageVerses, 
+                        pageVerses,
                         pageData.surahId,
                         isDark,
                       ),
@@ -417,25 +432,25 @@ class _MushafScreenState extends State<MushafScreen> {
               ),
             ),
           ),
-          
+
           // Page footer
           _buildPageFooter(pageNumber, isDark),
         ],
       ),
     );
   }
-  
+
   Widget _buildSurahHeader(MushafPageIndex pageData, bool isDark) {
     final surah = QuranIndex.quranSurahs.firstWhere(
       (s) => s.id == pageData.surahId,
       orElse: () => QuranIndex.quranSurahs[0],
     );
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
+          colors: isDark
               ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
               : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
         ),
@@ -473,7 +488,7 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   Widget _buildOrnament(bool isDark, {bool mirror = false}) {
     final color = isDark ? Colors.teal[400]! : const Color(0xFF006754);
     return Transform.scale(
@@ -481,7 +496,7 @@ class _MushafScreenState extends State<MushafScreen> {
       child: Icon(Icons.mosque_outlined, color: color, size: 20),
     );
   }
-  
+
   Widget _buildBismillah(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -498,67 +513,78 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   Widget _buildPageVerses(List<Verse> verses, int surahId, bool isDark) {
     final textColor = isDark ? Colors.white : const Color(0xFF004B40);
-    
+
     // Build continuous text with verse markers
     final spans = <InlineSpan>[];
-    
+
     for (final verse in verses) {
       // Check if this verse should be highlighted
-      final isHighlighted = widget.highlightSurah == surahId && 
-                            widget.highlightVerse == verse.verseNumber;
-      
-      spans.add(TextSpan(
-        text: verse.text,
-        style: TextStyle(
-          fontFamily: 'Amiri',
-          fontSize: 22,
-          height: 2.2,
-          color: isHighlighted ? Colors.teal : textColor,
-          backgroundColor: isHighlighted 
-              ? (isDark ? Colors.teal.withValues(alpha: 0.2) : Colors.teal.withValues(alpha: 0.1))
-              : null,
-          fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+      final isHighlighted =
+          widget.highlightSurah == surahId &&
+          widget.highlightVerse == verse.verseNumber;
+
+      spans.add(
+        TextSpan(
+          text: verse.text,
+          style: TextStyle(
+            fontFamily: 'Amiri',
+            fontSize: 22,
+            height: 2.2,
+            color: isHighlighted ? Colors.teal : textColor,
+            backgroundColor: isHighlighted
+                ? (isDark
+                      ? Colors.teal.withValues(alpha: 0.2)
+                      : Colors.teal.withValues(alpha: 0.1))
+                : null,
+            fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
-      ));
-      
+      );
+
       // Verse end marker
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
-              width: 1.5,
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF87D1A4)
+                    : const Color(0xFF006754),
+                width: 1.5,
+              ),
             ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            verse.verseNumber.toLocalizedNumber(context),
-            style: TextStyle(
-              fontFamily: 'Amiri',
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+            alignment: Alignment.center,
+            child: Text(
+              verse.verseNumber.toLocalizedNumber(context),
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? const Color(0xFF87D1A4)
+                    : const Color(0xFF006754),
+              ),
             ),
           ),
         ),
-      ));
+      );
     }
-    
+
     return RichText(
       textDirection: TextDirection.rtl,
       textAlign: TextAlign.justify,
       text: TextSpan(children: spans),
     );
   }
-  
+
   Widget _buildPageFooter(int pageNumber, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -580,7 +606,7 @@ class _MushafScreenState extends State<MushafScreen> {
               color: isDark ? Colors.grey[500] : Colors.grey[600],
             ),
           ),
-          
+
           // Page number
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -603,10 +629,10 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   void _showMushafBookmarks() {
     final bookmarks = PrefUtils().getStringList('mushaf_bookmarks') ?? [];
-    
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -635,11 +661,9 @@ class _MushafScreenState extends State<MushafScreen> {
                   itemBuilder: (context, index) {
                     final page = int.parse(bookmarks[index]);
                     final pageData = MushafPageIndex.getPage(page);
-                    
+
                     return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(page.toString()),
-                      ),
+                      leading: CircleAvatar(child: Text(page.toString())),
                       title: Text(pageData?.surahNameAr ?? ''),
                       subtitle: Text('Page $page'),
                       onTap: () {
@@ -650,7 +674,10 @@ class _MushafScreenState extends State<MushafScreen> {
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () {
                           bookmarks.removeAt(index);
-                          PrefUtils().setStringList('mushaf_bookmarks', bookmarks);
+                          PrefUtils().setStringList(
+                            'mushaf_bookmarks',
+                            bookmarks,
+                          );
                           Navigator.pop(context);
                           _showMushafBookmarks();
                         },
@@ -664,7 +691,7 @@ class _MushafScreenState extends State<MushafScreen> {
       ),
     );
   }
-  
+
   void _showMushafSettings() {
     showModalBottomSheet(
       context: context,

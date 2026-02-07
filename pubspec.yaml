@@ -78,8 +78,6 @@ dependencies:
   share_plus: ^10.1.4
   # For generating verse images
   screenshot: ^3.0.0
-  # For page curl effect
-  widget_circular_animator: ^0.1.7
 
 flutter_icons:
   android: true
