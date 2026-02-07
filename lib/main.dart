@@ -151,9 +151,8 @@ class _BootstrapAppState extends State<BootstrapApp> {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarDividerColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
 
@@ -203,6 +202,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
         kDebugMode ? LogMode.debug : LogMode.live,
         crashlytics: crashlytics,
       );
+
+      await Hive.initFlutter();
+      await Hive.openBox('surah_cache');
+      await Hive.openBox('bookmarks');
+      await Hive.openBox('recitation_errors');
+      await Hive.openBox('qiraat_cache');
+      await Hive.openBox('audio_cache');
 
       FlutterError.onError = (errorDetails) {
         Logger.error(

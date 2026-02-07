@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
@@ -98,6 +99,119 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  void _showJuzSelector(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'lbl_juz_index'.tr,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: 30,
+                  itemBuilder: (context, index) {
+                    final juz = JuzIndex.getJuz(index + 1);
+                    if (juz == null) return const SizedBox.shrink();
+                    
+                    return Semantics(
+                      button: true,
+                      label: JuzIndex.getJuzName(juz.juzNumber, isArabic: isArabic),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          final surah = QuranIndex.quranSurahs.firstWhere(
+                            (s) => s.id == juz.startSurahId,
+                          );
+                          PrefUtils().saveLastReadSurah(surah);
+                          homeBloc.add(HomeShowLastSurahEvent());
+                          NavigatorService.pushNamed(
+                            AppRoutes.surahPage,
+                            arguments: {
+                              'surah': surah,
+                              'verseIndex': juz.startVerseNumber - 1,
+                            },
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFF006754),
+                                const Color(0xFF006754).withValues(alpha: 0.8),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                juz.juzNumber.toString(),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isArabic ? juz.startSurahNameAr : juz.startSurahNameEn,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     mediaQueryData = MediaQuery.of(context);
@@ -144,6 +258,15 @@ class _HomeScreenState extends State<HomeScreen>
                 onPressed: () =>
                     NavigatorService.pushNamed(AppRoutes.searchPage),
                 tooltip: 'lbl_search_tooltip'.tr,
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: 'lbl_juz_index'.tr,
+              child: IconButton(
+                icon: const Icon(Icons.menu_book_rounded),
+                onPressed: () => _showJuzSelector(context),
+                tooltip: 'lbl_juz_index'.tr,
               ),
             ),
             Semantics(
@@ -487,10 +610,9 @@ class _HomeScreenState extends State<HomeScreen>
                               AppRoutes.surahPage,
                               arguments: {
                                 'surah': lastReadSurah,
-                                if (offset != null) 'offset': offset,
+                                'offset': ?offset,
                                 'resume': true,
-                                if (lastVerseIndex != null)
-                                  'verseIndex': lastVerseIndex,
+                                'verseIndex': ?lastVerseIndex,
                               },
                             );
                           },

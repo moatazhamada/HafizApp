@@ -1,0 +1,13 @@
+# Fastlane Appfile for Hafiz App
+# Contains app-specific configuration
+
+# The package name of your Android app
+package_name("com.hafiz.app.hafiz_app")
+
+# The path to the service account json file for Google Play Store
+# Store this securely - do not commit the actual file to git
+# Place the service account JSON in ~/.fastlane/auth/ or use environment variable
+json_key_file(ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_PATH"] || "fastlane/service-account.json")
+
+# Alternatively, you can use JSON key data from environment variable
+# json_key_data(ENV["GOOGLE_PLAY_JSON_KEY_DATA"])

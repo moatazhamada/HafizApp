@@ -1,11 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // Required for RenderParagraph
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
+import 'widgets/voice_verification_dialog.dart';
+
 import '../../core/app_export.dart';
+import '../../core/qiraat/qiraat_service.dart';
 import '../../core/quran_index/quran_surah.dart';
 
 import '../../domain/entities/verse.dart';
@@ -48,7 +52,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
   // Voice Verification
   final VoiceVerificationService _voiceService = VoiceVerificationService();
-  bool _isListening = false;
+  final QiraatService _qiraatService = QiraatService();
+
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
 
@@ -337,7 +342,7 @@ class _SurahScreenState extends State<SurahScreen> {
   void dispose() {
     _offsetSaveDebounce?.cancel();
     _voiceService.stop();
-    _isListening = false;
+
     _scrollControllerForInit?.dispose();
     super.dispose();
   }
@@ -711,7 +716,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 title: Text('lbl_verify_recitation'.tr),
                 onTap: () {
                   Navigator.pop(context);
-                  _showVoiceDialog(context, aya);
+                  _showVoiceDialog(aya);
                 },
               ),
             ),
@@ -721,41 +726,39 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
-  void _showVoiceDialog(BuildContext context, Verse aya) async {
-    final parentContext = context;
+  void _showVoiceDialog(Verse aya) async {
     // 1. Request Permission Lazy
     bool available = await _voiceService.requestPermission();
+
+    if (!mounted) return;
+
     if (!available) {
-      if (context.mounted) {
-        // Show Dialog to guide user to settings
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('msg_mic_permission'.tr),
-            content: Text(
-              'msg_mic_permission_desc'.tr,
-            ), // We might need to add this key or just use generic text
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('lbl_cancel'.tr),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  openAppSettings();
-                },
-                child: Text('lbl_settings'.tr),
-              ),
-            ],
-          ),
-        );
-      }
+      // Show Dialog to guide user to settings
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('msg_mic_permission'.tr),
+          content: Text('msg_mic_permission_desc'.tr),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('lbl_cancel'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                openAppSettings();
+              },
+              child: Text('lbl_settings'.tr),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
     // 2. Prepare Expectation (Strip Bismillah)
-    String expectedText = aya.text;
+    String expectedText = await resolveExpectedText(aya);
     if (aya.verseNumber == 1 && surah?.id != 1) {
       const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
       const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
@@ -766,197 +769,46 @@ class _SurahScreenState extends State<SurahScreen> {
       }
     }
 
-    String spokenText = 'lbl_listening'.tr;
-    Color statusColor = Colors.blueAccent;
-    bool hasStartedListening = false;
-
     if (!mounted) return;
-
-    // Stop any existing session before showing dialog to be safe
-    await _voiceService.stop();
-    _isListening = false;
-
-    bool autoAdvanced = false;
-
-    if (!parentContext.mounted) return;
+    
     await showDialog(
-      context: parentContext,
+      context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            // Function to start listening
-            void startListening() {
-              if (!_isListening) {
-                _isListening = true;
-                hasStartedListening = true;
-                setDialogState(() {
-                  statusColor = Colors.blueAccent;
-                  spokenText = 'lbl_listening'.tr;
-                });
-                _voiceService.listen(
-                  onResult: (text) {
-                    if (!dialogContext.mounted) return;
-                    setDialogState(() {
-                      spokenText = text;
-                    });
-                  },
-                  onDone: (finalText) {
-                    _isListening = false;
-                    if (!dialogContext.mounted) return;
-                    final diffs = _voiceService.verifyRecitation(
-                      finalText,
-                      expectedText,
-                    );
-                    setDialogState(() {
-                      spokenText = finalText;
-                      // Allow some tolerance (length <= 2 to be slightly more forgiving or logic based on word count)
-                      bool isCorrect = diffs.length <= 1;
-
-                      if (isCorrect) {
-                        statusColor = Colors.green;
-                        // Auto Advance Delay
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted &&
-                              dialogContext.mounted &&
-                              Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                            Navigator.pop(dialogContext);
-                            _onRecitationCorrect(aya);
-                          }
-                        });
-                      } else {
-                        statusColor = Colors.redAccent;
-                        // Show Wrong Dialog
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (mounted &&
-                              dialogContext.mounted &&
-                              Navigator.canPop(dialogContext)) {
-                            autoAdvanced = true;
-                            Navigator.pop(dialogContext);
-                            _showWrongDialog(parentContext, aya);
-                          }
-                        });
-                      }
-                    });
-                  },
-                );
-              }
-            }
-
-            // Function to stop listening
-            void stopListening() {
-              if (_isListening) {
-                _voiceService.stop();
-                _isListening = false;
-                setDialogState(() {
-                  statusColor = Colors.grey;
-                  spokenText = 'msg_tap_to_resume'.tr;
-                });
-              }
-            }
-
-            // Auto-start on first build
-            if (!hasStartedListening && !_isListening) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                startListening();
-              });
-            }
-
-            return AlertDialog(
-              title: Semantics(
-                header: true,
-                child: Text('lbl_recite_verify'.tr),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    button: true,
-                    label: _isListening
-                        ? 'msg_tap_to_stop'.tr
-                        : 'lbl_tap_to_speak'.tr,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (_isListening) {
-                          stopListening();
-                        } else {
-                          startListening();
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isListening
-                              ? Colors.redAccent.withValues(alpha: 0.1)
-                              : Colors.blueAccent.withValues(alpha: 0.1),
-                        ),
-                        padding: const EdgeInsets.all(20),
-                        child: Icon(
-                          _isListening ? Icons.mic : Icons.mic_off,
-                          size: 48,
-                          color: _isListening
-                              ? Colors.redAccent
-                              : Colors.blueAccent,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      spokenText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Amiri',
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  Text(
-                    'lbl_original'.tr,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    expectedText, // Display stripped text for verification context
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, fontFamily: 'Amiri'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    stopListening();
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text('lbl_close'.tr),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogContext) => VoiceVerificationDialog(
+        surah: surah!,
+        aya: aya,
+        expectedText: expectedText,
+        onCorrect: () {
+          if (mounted) {
+            _onRecitationCorrect(aya);
+          }
+        },
+        onWrong: (ctx) {
+          if (mounted) {
+            _showWrongDialog(context, aya);
+          }
+        },
+      ),
     );
+  }
 
-    // Cleanup when dialog closes
-    if (!autoAdvanced) {
-      await _voiceService.stop();
-      _isListening = false;
+  Future<String> resolveExpectedText(Verse aya) async {
+    if (surah == null) return aya.text;
+    final edition = PrefUtils().getQiraatEdition();
+    if (edition == 'quran-uthmani' || edition.isEmpty) {
+      return aya.text;
     }
+    final remoteText = await _qiraatService.fetchAyahText(
+      surahId: surah!.id,
+      verseNumber: aya.verseNumber,
+      edition: edition,
+    );
+    return remoteText ?? aya.text;
   }
 
   void _onRecitationCorrect(Verse currentVerse) {
+    if (!mounted) return;
+    
     _sessionCorrectCount++;
     _sessionTotalCount++;
 
@@ -971,7 +823,7 @@ class _SurahScreenState extends State<SurahScreen> {
       if (currentIndex != -1 && currentIndex < chapters.length - 1) {
         // Next verse exists
         final nextVerse = chapters[currentIndex + 1];
-        _showVoiceDialog(context, nextVerse);
+        _showVoiceDialog(nextVerse);
       } else {
         // End of Surah
         _showCompletionDialog();
@@ -998,7 +850,7 @@ class _SurahScreenState extends State<SurahScreen> {
               // Wait for pop to finish before opening new dialog
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (parentContext.mounted) {
-                  _showVoiceDialog(parentContext, aya);
+                  _showVoiceDialog(aya);
                 }
               });
             },
@@ -1033,10 +885,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 if (currentIndex != -1 && currentIndex < chapters.length - 1) {
                   Future.delayed(const Duration(milliseconds: 300), () {
                     if (parentContext.mounted) {
-                      _showVoiceDialog(
-                        parentContext,
-                        chapters[currentIndex + 1],
-                      );
+                      _showVoiceDialog(chapters[currentIndex + 1]);
                     }
                   });
                 } else {
@@ -1054,15 +903,17 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   void _showCompletionDialog() {
+    if (!mounted) return;
+    
     double percentage = 0;
     if (_sessionTotalCount > 0) {
       percentage = (_sessionCorrectCount / _sessionTotalCount) * 100;
     }
 
-    if (percentage >= 50) {
+    if (percentage >= 50 && mounted) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text('lbl_congrats'.tr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1085,7 +936,7 @@ class _SurahScreenState extends State<SurahScreen> {
               onPressed: () {
                 _sessionCorrectCount = 0;
                 _sessionTotalCount = 0;
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: Text('lbl_close'.tr),
             ),

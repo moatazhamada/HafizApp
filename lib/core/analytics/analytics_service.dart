@@ -32,60 +32,58 @@ class AnalyticsService {
       final ms = DateTime.now().difference(start).inMilliseconds;
       final a = _analytics;
       if (a == null) return;
-      await a.logEvent(name: 'screen_time', parameters: {
-        'screen_name': name,
-        'duration_ms': ms,
-      });
+      await a.logEvent(
+        name: 'screen_time',
+        parameters: {'screen_name': name, 'duration_ms': ms},
+      );
     }
   }
 
   Future<void> logLanguageChange(String code) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'language_change', parameters: {
-      'code': code,
-    });
+    await a.logEvent(name: 'language_change', parameters: {'code': code});
   }
 
   Future<void> logThemeChange(bool isDark) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'theme_toggle', parameters: {
-      // Firebase Analytics only supports String or num parameter values
-      'is_dark': isDark ? 1 : 0,
-    });
+    await a.logEvent(
+      name: 'theme_toggle',
+      parameters: {
+        // Firebase Analytics only supports String or num parameter values
+        'is_dark': isDark ? 1 : 0,
+      },
+    );
   }
 
   Future<void> logContinueReading(int surahId, double? offset) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'continue_reading', parameters: {
-      'surah_id': surahId,
-      if (offset != null) 'offset': offset,
-    });
+    await a.logEvent(
+      name: 'continue_reading',
+      parameters: {'surah_id': surahId, 'offset': ?offset},
+    );
   }
 
   Future<void> logOpenSurah(int surahId) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'open_surah', parameters: {
-      'surah_id': surahId,
-    });
+    await a.logEvent(name: 'open_surah', parameters: {'surah_id': surahId});
   }
 
   Future<void> logLinkOpened(String url) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'open_link', parameters: {
-      'url': url,
-    });
+    await a.logEvent(name: 'open_link', parameters: {'url': url});
   }
 
   Future<void> logFeedbackSubmitted({required String method}) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(name: 'feedback_submitted', parameters: {
-      'method': method,
-    });
+    await a.logEvent(
+      name: 'feedback_submitted',
+      parameters: {'method': method},
+    );
   }
 }

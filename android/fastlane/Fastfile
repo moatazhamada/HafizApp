@@ -1,0 +1,212 @@
+# Fastlane Fastfile for Hafiz App
+# Documentation: https://docs.fastlane.tools
+
+default_platform(:android)
+
+platform :android do
+  # Version from pubspec.yaml
+  def get_version_name
+    # Read version from pubspec.yaml
+    pubspec = File.read("../pubspec.yaml")
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_line.split(":").last.strip.split("+").first
+  end
+
+  def get_version_code
+    pubspec = File.read("../pubspec.yaml")
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_line.split("+").last.strip
+  end
+
+  # Check if service account is configured
+  def ensure_service_account
+    # Possible paths for service account
+    possible_paths = [
+      "/Users/mm/Main/Projects/Android/HafizApp/android/fastlane/service-account.json",
+      File.join(Dir.pwd, "service-account.json"),
+      ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_PATH"],
+    ].compact
+    
+    service_account_path = possible_paths.find { |p| p && File.exist?(p) }
+    
+    if service_account_path.nil?
+      UI.error("❌ Google Play Service Account not found!")
+      UI.error("Checked paths:")
+      possible_paths.each { |p| UI.error("  - #{p}") }
+      UI.error("")
+      UI.error("Please download the service account JSON from Google Play Console:")
+      UI.error("  1. Go to Play Console → Settings → API Access")
+      UI.error("  2. Create a service account and download the JSON key")
+      UI.error("  3. Save it as: android/fastlane/service-account.json")
+      UI.error("")
+      UI.error("Or set the environment variable:")
+      UI.error("  export GOOGLE_PLAY_SERVICE_ACCOUNT_PATH=/path/to/service-account.json")
+      UI.user_error!("Service account missing - cannot deploy to Play Store")
+    else
+      UI.success("✅ Found service account at: #{service_account_path}")
+    end
+  end
+
+  desc "Run Flutter tests"
+  lane :test do
+    # Go up two levels from android/fastlane to project root
+    Dir.chdir("../../") do
+      sh("flutter test")
+    end
+  end
+
+  desc "Build APK for testing"
+  lane :build_apk do
+    Dir.chdir("../../") do
+      sh("flutter build apk --release")
+    end
+  end
+
+  desc "Build Android App Bundle (AAB) for Play Store"
+  lane :build_aab do
+    # Ensure tests pass before building
+    test
+    
+    Dir.chdir("../../") do
+      sh("flutter build appbundle --release")
+    end
+    
+    UI.success("✅ AAB built successfully!")
+    UI.message("Output: ../build/app/outputs/bundle/release/app-release.aab")
+  end
+
+  desc "Deploy to Google Play Internal Testing"
+  lane :deploy_internal do
+    # Ensure service account is available
+    ensure_service_account
+    
+    # Build AAB
+    build_aab
+    
+    # Upload to Play Store Internal Testing
+    upload_to_play_store(
+      track: "internal",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      release_status: "completed",
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      changelog: "Changelog for version #{get_version_name}",
+    )
+    
+    UI.success("🚀 Deployed to Internal Testing!")
+  end
+
+  desc "Deploy to Google Play Beta (Closed Testing)"
+  lane :deploy_beta do
+    ensure_service_account
+    build_aab
+    
+    upload_to_play_store(
+      track: "beta",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      release_status: "completed",
+    )
+    
+    UI.success("🚀 Deployed to Beta (Closed Testing)!")
+  end
+
+  desc "Deploy to Google Play Production"
+  lane :deploy_production do
+    ensure_service_account
+    
+    # Confirm before production release
+    UI.confirm("Are you sure you want to deploy to PRODUCTION?")
+    
+    # Build AAB without tests
+    build_aab_no_tests
+    
+    # Path relative to android/ directory (where Fastfile runs from)
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    
+    upload_to_play_store(
+      track: "production",
+      aab: aab_path,
+      release_status: "draft", # Start as draft for review
+    )
+    
+    UI.success("🚀 Deployed to Production (Draft)!")
+    UI.important("Remember to submit the release for review in Play Console.")
+  end
+
+  desc "Build AAB without running tests"
+  private_lane :build_aab_no_tests do
+    Dir.chdir("../../") do
+      sh("flutter build appbundle --release")
+    end
+    
+    UI.success("✅ AAB built successfully!")
+  end
+
+  desc "Build AAB - skip tests if already exists"
+  private_lane :build_aab_skip_tests_if_exists do
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    if File.exist?(aab_path)
+      UI.success("✅ Using existing AAB: #{aab_path}")
+    else
+      UI.important("AAB not found, building...")
+      build_aab
+    end
+  end
+
+  desc "Promote from Internal to Production"
+  lane :promote_to_production do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      skip_upload_changelogs: false,
+    )
+    
+    UI.success("🚀 Promoted to Production!")
+  end
+
+  desc "Promote from Beta to Production"
+  lane :promote_beta_to_production do
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production",
+      skip_upload_changelogs: false,
+    )
+    
+    UI.success("🚀 Promoted Beta to Production!")
+  end
+
+  desc "Increment version code in pubspec.yaml"
+  lane :bump_version do
+    # Read current version
+    pubspec_path = "../pubspec.yaml"
+    pubspec = File.read(pubspec_path)
+    
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_parts = version_line.strip.split(":").last.strip.split("+")
+    version_name = version_parts.first
+    version_code = version_parts.last.to_i
+    
+    # Increment version code
+    new_version_code = version_code + 1
+    new_version_line = "version: #{version_name}+#{new_version_code}\n"
+    
+    # Update pubspec.yaml
+    new_pubspec = pubspec.gsub(version_line, new_version_line)
+    File.write(pubspec_path, new_pubspec)
+    
+    UI.success("Version bumped to #{version_name}+#{new_version_code}")
+  end
+
+  desc "Full CI/CD pipeline: Test, Build, Deploy to Internal"
+  lane :ci_internal do
+    bump_version
+    deploy_internal
+  end
+
+  desc "Full CI/CD pipeline: Test, Build, Deploy to Production"
+  lane :ci_production do
+    bump_version
+    deploy_production
+  end
+end
