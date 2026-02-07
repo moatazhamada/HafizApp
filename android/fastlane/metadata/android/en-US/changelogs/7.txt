@@ -1,0 +1,16 @@
+<en-US>
+Version 2.1.1 - Bug fixes and improvements
+
+• Fixed voice verification dialog crashes
+• Added Juz index for quick navigation
+• Improved Android 15+ compatibility
+• Enhanced stability for memorization mode
+</en-US>
+<ar>
+الإصدار 2.1.1 - إصلاحات الأخطاء والتحسينات
+
+• إصلاح أعطال مربع حوار التحقق من الصوت
+• إضافة فهرس الأجزاء للتنقل السريع
+• تحسين التوافق مع Android 15+
+• تعزيز الاستقرار لوضع الحفظ
+</ar>
