@@ -5,6 +5,7 @@ import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
 import '../../routes/app_routes.dart';
+import '../home_screen/home_screen.dart';
 import 'bloc/onboarding_bloc.dart';
 import 'models/onboarding_model.dart';
 import 'mushaf_type_onboarding.dart';
@@ -214,19 +215,30 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 child: CustomElevatedButton(
                                   key: const ValueKey('get_started_key'),
                                   onPressed: () {
-                                    if (shouldShowMushafOnboarding()) {
-                                      // Show Mushaf type selector first
-                                      AppRoutes.goToMushafOnboarding(
-                                        context,
-                                        onComplete: () {
-                                          NavigatorService.pushNamedAndRemoveUntil(
-                                            AppRoutes.homeScreen,
-                                          );
-                                        },
-                                      );
-                                    } else {
-                                      NavigatorService.pushNamedAndRemoveUntil(
-                                        AppRoutes.homeScreen,
+                                    try {
+                                      if (shouldShowMushafOnboarding()) {
+                                        // Show Mushaf type selector first
+                                        AppRoutes.goToMushafOnboarding(
+                                          context,
+                                          onComplete: () {
+                                            NavigatorService.pushNamedAndRemoveUntil(
+                                              AppRoutes.homeScreen,
+                                            );
+                                          },
+                                        );
+                                      } else {
+                                        NavigatorService.pushNamedAndRemoveUntil(
+                                          AppRoutes.homeScreen,
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Navigation error: $e');
+                                      // Fallback navigation
+                                      Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                          builder: (context) => const HomeScreen(),
+                                        ),
+                                        (route) => false,
                                       );
                                     }
                                   },
