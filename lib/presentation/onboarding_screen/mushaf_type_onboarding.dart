@@ -382,6 +382,8 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
     switch (type) {
       case MushafType.madani:
         return 'الخط العثماني المستخدم في السعودية ومعظم الدول العربية';
+      case MushafType.egyptian:
+        return 'المصحف المصري القياسي المستخدم في مصر والسودان والدول المجاورة';
       case MushafType.indoPak:
         return 'خط شبه القارة الهندية باكستان والهند وبنغلاديش';
       case MushafType.warsh:

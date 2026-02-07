@@ -15,6 +15,14 @@ enum MushafType {
   /// - Used by Quran.com
   madani,
   
+  /// Egyptian Script (المصحف المصري)
+  /// - Used in Egypt and popular across the Arab world
+  /// - 604 pages with distinct Egyptian printing style
+  /// - Dar Al-Maaref or King Fahd Complex printing style
+  /// - Decorative Surah headers with blue/gold colors
+  /// - Popular in Egypt, Sudan, and surrounding regions
+  egyptian,
+  
   /// Indo-Pak Script (South Asian)
   /// - Used in India, Pakistan, Bangladesh
   /// - Different page count (~558 pages)
@@ -36,6 +44,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 'المصحف المدني (Uthmani)';
+      case MushafType.egyptian:
+        return 'المصحف المصري (Egyptian)';
       case MushafType.indoPak:
         return 'مصحف الهندوباك (Indo-Pak)';
       case MushafType.warsh:
@@ -48,6 +58,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 'Madani (Uthmani)';
+      case MushafType.egyptian:
+        return 'Egyptian (Standard)';
       case MushafType.indoPak:
         return 'Indo-Pak';
       case MushafType.warsh:
@@ -60,6 +72,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 604;
+      case MushafType.egyptian:
+        return 604; // Standard Egyptian Mushaf
       case MushafType.indoPak:
         return 558; // Approximate
       case MushafType.warsh:
@@ -72,6 +86,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 'Amiri';
+      case MushafType.egyptian:
+        return 'Amiri'; // Same Uthmani script
       case MushafType.indoPak:
         return 'IndoPak';
       case MushafType.warsh:
@@ -84,6 +100,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 'Standard Uthmani script used in Saudi Arabia and most Arab countries';
+      case MushafType.egyptian:
+        return 'Egyptian standard Mushaf with distinctive decorative style, widely used in Egypt and Sudan';
       case MushafType.indoPak:
         return 'South Asian script with larger text and different spacing, used in India, Pakistan';
       case MushafType.warsh:
@@ -96,6 +114,8 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return 'madani';
+      case MushafType.egyptian:
+        return 'egyptian';
       case MushafType.indoPak:
         return 'indopak';
       case MushafType.warsh:
@@ -108,10 +128,40 @@ extension MushafTypeExtension on MushafType {
     switch (this) {
       case MushafType.madani:
         return Icons.menu_book;
+      case MushafType.egyptian:
+        return Icons.account_balance; // Mosque/landmark style icon
       case MushafType.indoPak:
         return Icons.auto_stories;
       case MushafType.warsh:
         return Icons.book;
+    }
+  }
+  
+  /// Primary color for the Mushaf type
+  Color get primaryColor {
+    switch (this) {
+      case MushafType.madani:
+        return const Color(0xFF006754); // Teal/Green
+      case MushafType.egyptian:
+        return const Color(0xFF1E4D8C); // Egyptian Blue
+      case MushafType.indoPak:
+        return const Color(0xFF8B4513); // Brown
+      case MushafType.warsh:
+        return const Color(0xFF8B6914); // Gold/Amber
+    }
+  }
+  
+  /// Background color for pages
+  Color get pageBackgroundColor {
+    switch (this) {
+      case MushafType.madani:
+        return const Color(0xFFFEFDF5); // Cream
+      case MushafType.egyptian:
+        return const Color(0xFFF5F8FC); // Light blue-tinted white
+      case MushafType.indoPak:
+        return const Color(0xFFFFFBF0); // Warm cream
+      case MushafType.warsh:
+        return const Color(0xFFF8F4E8); // Beige
     }
   }
 }
@@ -119,6 +169,8 @@ extension MushafTypeExtension on MushafType {
 /// Get Mushaf type from string key
 MushafType mushafTypeFromString(String key) {
   switch (key) {
+    case 'egyptian':
+      return MushafType.egyptian;
     case 'indopak':
       return MushafType.indoPak;
     case 'warsh':
@@ -132,6 +184,7 @@ MushafType mushafTypeFromString(String key) {
 /// Get all available Mushaf types
 List<MushafType> get allMushafTypes => [
   MushafType.madani,
+  MushafType.egyptian,
   MushafType.indoPak,
   MushafType.warsh,
 ];

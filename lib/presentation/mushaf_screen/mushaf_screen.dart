@@ -540,6 +540,18 @@ class _MushafScreenState extends State<MushafScreen> {
   
   PageStyle _getPageStyle(bool isDark) {
     switch (_currentMushafType) {
+      case MushafType.egyptian:
+        return PageStyle(
+          backgroundColor: isDark ? const Color(0xFF1E2A3A) : const Color(0xFFF5F8FC),
+          textColor: isDark ? Colors.white : const Color(0xFF1A1A1A),
+          accentColor: isDark ? Colors.blue[300]! : const Color(0xFF1E4D8C),
+          dividerColor: isDark ? Colors.grey[700]! : const Color(0xFF1E4D8C).withValues(alpha: 0.3),
+          fontSize: 24,
+          lineHeight: 2.2,
+          headerGradient: isDark 
+              ? [const Color(0xFF1E4D8C), const Color(0xFF0F2942)]
+              : [const Color(0xFFE8F0F8), const Color(0xFFD4E4F4)],
+        );
       case MushafType.indoPak:
         return PageStyle(
           backgroundColor: isDark ? const Color(0xFF242424) : const Color(0xFFFFFBF0),
@@ -548,6 +560,9 @@ class _MushafScreenState extends State<MushafScreen> {
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 26,
           lineHeight: 2.4,
+          headerGradient: isDark 
+              ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
+              : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
         );
       case MushafType.warsh:
         return PageStyle(
@@ -557,6 +572,9 @@ class _MushafScreenState extends State<MushafScreen> {
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 24,
           lineHeight: 2.2,
+          headerGradient: isDark 
+              ? [const Color(0xFF2E2A1E), const Color(0xFF1A1610)]
+              : [const Color(0xFFF5F0E0), const Color(0xFFE8E0C8)],
         );
       case MushafType.madani:
       default:
@@ -567,6 +585,9 @@ class _MushafScreenState extends State<MushafScreen> {
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 24,
           lineHeight: 2.2,
+          headerGradient: isDark 
+              ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
+              : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
         );
     }
   }
@@ -581,9 +602,7 @@ class _MushafScreenState extends State<MushafScreen> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-              ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
-              : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
+          colors: style.headerGradient,
         ),
       ),
       child: Column(
@@ -833,6 +852,7 @@ class PageStyle {
   final Color dividerColor;
   final int fontSize;
   final double lineHeight;
+  final List<Color> headerGradient;
   
   PageStyle({
     required this.backgroundColor,
@@ -841,5 +861,6 @@ class PageStyle {
     required this.dividerColor,
     required this.fontSize,
     required this.lineHeight,
+    required this.headerGradient,
   });
 }
