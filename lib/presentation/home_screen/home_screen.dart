@@ -189,8 +189,9 @@ class _HomeScreenState extends State<HomeScreen>
                               Text(
                                 isArabic ? juz.startSurahNameAr : juz.startSurahNameEn,
                                 style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

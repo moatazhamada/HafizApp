@@ -62,7 +62,7 @@ final Map<String, String> arEg = {
   'lbl_view_mode': 'نمط القراءة',
   'lbl_view_continuous': 'صفحات مصحف',
   'lbl_view_single_line': 'سطر لكل آية',
-  'lbl_juz_index': 'الأجزاء (البارا)',
+  'lbl_juz_index': 'الأجزاء',
   'lbl_system_default': 'افتراضي النظام',
   'lbl_theme': 'المظهر',
   'lbl_theme_light': 'الوضع الفاتح',
