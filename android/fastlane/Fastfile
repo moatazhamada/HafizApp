@@ -118,8 +118,8 @@ platform :android do
     # Confirm before production release
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
     
-    # Build AAB (skip tests if already built)
-    build_aab_skip_tests_if_exists
+    # Build AAB without tests
+    build_aab_no_tests
     
     # Path relative to android/ directory (where Fastfile runs from)
     aab_path = "../build/app/outputs/bundle/release/app-release.aab"
@@ -132,6 +132,15 @@ platform :android do
     
     UI.success("🚀 Deployed to Production (Draft)!")
     UI.important("Remember to submit the release for review in Play Console.")
+  end
+
+  desc "Build AAB without running tests"
+  private_lane :build_aab_no_tests do
+    Dir.chdir("../../") do
+      sh("flutter build appbundle --release")
+    end
+    
+    UI.success("✅ AAB built successfully!")
   end
 
   desc "Build AAB - skip tests if already exists"
