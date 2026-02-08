@@ -26,6 +26,7 @@ import 'core/analytics/analytics_route_observer.dart';
 import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
 import 'core/quran_index/quran_surah.dart';
+import 'core/quran_index/mushaf_page_index.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -67,6 +68,8 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PrefUtils().init();
+  await MushafPageIndex.loadPageDataFromAsset();
   runApp(const BootstrapApp());
 }
 
