@@ -5,6 +5,7 @@ import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../widgets/surah_list_item.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -61,7 +62,11 @@ class _SearchScreenState extends State<SearchScreen> {
         body: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
             if (state is SearchLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 8,
+                itemBuilder: (context, index) => const SkeletonListItem(),
+              );
             } else if (state is SearchLoaded) {
               return CustomScrollView(
                 slivers: [

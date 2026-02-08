@@ -5,6 +5,7 @@ import 'package:hafiz_app/injection_container.dart' as di;
 
 import 'core/app_export.dart';
 import 'injection_container.dart';
+import 'widgets/offline_indicator.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
@@ -176,25 +177,30 @@ class _MyAppState extends State<MyApp> {
         builder: (context, state) {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
-            builder: (_, locale, _) => MaterialApp(
-              themeMode: _getThemeMode(),
-              theme: lightTheme,
-              darkTheme: darkTheme,
-              locale: locale,
-              title: 'Hafiz',
-              navigatorKey: NavigatorService.navigatorKey,
-              scaffoldMessengerKey: globalMessengerKey,
-              navigatorObservers: [sl<AnalyticsRouteObserver>()],
-              debugShowCheckedModeBanner: false,
-              localizationsDelegates: const [
-                AppLocalizationDelegate(),
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
-              initialRoute: AppRoutes.onboardingScreen,
-              routes: AppRoutes.routes,
+            builder: (_, locale, _) => OfflineIndicator(
+              child: MaterialApp(
+                themeMode: _getThemeMode(),
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                locale: locale,
+                title: 'Hafiz',
+                navigatorKey: NavigatorService.navigatorKey,
+                scaffoldMessengerKey: globalMessengerKey,
+                navigatorObservers: [sl<AnalyticsRouteObserver>()],
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: const [
+                  AppLocalizationDelegate(),
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('en', 'US'),
+                  Locale('ar', 'EG'),
+                ],
+                initialRoute: AppRoutes.onboardingScreen,
+                routes: AppRoutes.routes,
+              ),
             ),
           );
         },

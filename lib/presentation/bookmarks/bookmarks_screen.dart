@@ -3,7 +3,7 @@ import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
-
+import '../../widgets/skeleton_loader.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -57,7 +57,11 @@ class BookmarksScreen extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is BookmarkLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              itemCount: 5,
+              itemBuilder: (context, index) => const SkeletonListItem(),
+            );
           } else if (state is BookmarkLoaded) {
             if (state.bookmarks.isEmpty) {
               return Center(

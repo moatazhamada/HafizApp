@@ -22,6 +22,7 @@ import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import '../../core/utils/number_converter.dart';
 
 import '../../widgets/verse_share_sheet.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -400,7 +401,12 @@ class _SurahScreenState extends State<SurahScreen> {
               child: BlocBuilder<SurahBloc, SurahState>(
                 builder: (context, state) {
                   if (state is LoadingSurahState) {
-                    return const Center(child: CircularProgressIndicator());
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 10,
+                      itemBuilder: (context, index) =>
+                          const SkeletonVerseCard(),
+                    );
                   } else if (state is FailureSurahState) {
                     return Center(
                       child: Semantics(

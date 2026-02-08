@@ -3,7 +3,7 @@ import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
-
+import '../../widgets/skeleton_loader.dart';
 
 class RecitationErrorScreen extends StatelessWidget {
   const RecitationErrorScreen({super.key});
@@ -42,7 +42,11 @@ class RecitationErrorScreen extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is RecitationErrorLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              itemCount: 5,
+              itemBuilder: (context, index) => const SkeletonListItem(),
+            );
           } else if (state is RecitationErrorLoaded) {
             if (state.errors.isEmpty) {
               return Center(

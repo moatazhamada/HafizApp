@@ -24,9 +24,11 @@ import 'core/network/qf_auth.dart';
 import 'core/config/api_config.dart';
 import 'core/scroll/scroll_position_cubit.dart';
 import 'core/analytics/analytics_service.dart';
+import 'core/analytics/analytics_helper.dart';
 import 'core/analytics/analytics_route_observer.dart';
 import 'core/deep_link/deep_link_service.dart';
 import 'core/audio/audio_player_handler.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 final sl = GetIt.instance;
 
@@ -45,6 +47,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ScrollPositionCubit());
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
+  sl.registerLazySingleton(() => AnalyticsHelper(FirebaseAnalytics.instance));
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
   sl.registerLazySingleton(() => DeepLinkService());
   // FIX: Changed from registerFactory to registerLazySingleton to prevent memory leak
