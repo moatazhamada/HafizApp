@@ -368,5 +368,8 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     _audioSources.clear();
     await _player.dispose();
     await _currentVerseController.close();
+
+    // Call parent dispose
+    await super.stop();
   }
 }

@@ -31,6 +31,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   AudioPlayerHandler? _audioHandler;
   StreamSubscription<int>? _currentVerseSub;
   bool _isLoading = true;
+  String? _errorMessage;
 
   // Playback state
   double _playbackSpeed = 1.0;
@@ -90,13 +91,26 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         await _audioHandler!.seekToVerse(widget.startVerse!);
       }
 
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
 
       // Auto-play
       await _audioHandler!.play();
-    } catch (e) {
-      debugPrint('Error initializing audio: $e');
-      setState(() => _isLoading = false);
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Error initializing audio: $e',
+        feature: 'AudioPlayer',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load audio. Please try again.';
+        });
+      }
     }
   }
 
@@ -158,6 +172,12 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     _remainingSleepTime = duration;
 
     _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // FIX: Add mounted check to prevent setState after dispose
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       setState(() {
         _remainingSleepTime = _remainingSleepTime! - const Duration(seconds: 1);
         if (_remainingSleepTime!.inSeconds <= 0) {
@@ -288,6 +308,47 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Error UI
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.surah.nameEnglish)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _errorMessage = null;
+                      _isLoading = true;
+                    });
+                    _initAudioService();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: isDark

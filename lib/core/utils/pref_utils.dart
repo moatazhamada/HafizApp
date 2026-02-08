@@ -4,15 +4,22 @@ import 'package:flutter/widgets.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synchronized/synchronized.dart';
 
 class PrefUtils {
   static SharedPreferences? _sharedPreferences;
+  static final _initLock = Lock();
 
   PrefUtils();
 
   Future<void> init() async {
-    _sharedPreferences ??= await SharedPreferences.getInstance();
-    debugPrint('SharedPreference Initialized');
+    if (_sharedPreferences != null) return;
+
+    await _initLock.synchronized(() async {
+      if (_sharedPreferences != null) return;
+      _sharedPreferences = await SharedPreferences.getInstance();
+      debugPrint('SharedPreference Initialized');
+    });
   }
 
   /// Ensures SharedPreferences is initialized before any operation
@@ -198,8 +205,7 @@ class PrefUtils {
   String getQiraatEdition() {
     try {
       _ensureInitialized();
-      return _sharedPreferences!.getString('qiraat_edition') ??
-          'quran-uthmani';
+      return _sharedPreferences!.getString('qiraat_edition') ?? 'quran-uthmani';
     } catch (e) {
       Logger.warning(
         'Failed to get qiraat edition: $e',
@@ -219,14 +225,11 @@ class PrefUtils {
       _ensureInitialized();
       return _sharedPreferences!.getInt('reciter_id') ?? 7;
     } catch (e) {
-      Logger.warning(
-        'Failed to get reciter id: $e',
-        feature: 'Preferences',
-      );
+      Logger.warning('Failed to get reciter id: $e', feature: 'Preferences');
       return 7;
     }
   }
-  
+
   String getReciterName() {
     final id = getReciterId();
     // Map common reciter IDs to names
@@ -267,8 +270,7 @@ class PrefUtils {
       _ensureInitialized();
       return _sharedPreferences!.getString('whisper_model') ?? 'base';
     } catch (e) {
-      Logger.warning('Failed to get whisper model: $e',
-          feature: 'Preferences');
+      Logger.warning('Failed to get whisper model: $e', feature: 'Preferences');
       return 'base';
     }
   }
@@ -283,8 +285,10 @@ class PrefUtils {
       _ensureInitialized();
       return _sharedPreferences!.getInt('qrc_hafz_level') ?? 1;
     } catch (e) {
-      Logger.warning('Failed to get qrc hafz level: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get qrc hafz level: $e',
+        feature: 'Preferences',
+      );
       return 1;
     }
   }
@@ -299,42 +303,48 @@ class PrefUtils {
       _ensureInitialized();
       return _sharedPreferences!.getInt('qrc_tajweed_level') ?? 3;
     } catch (e) {
-      Logger.warning('Failed to get qrc tajweed level: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get qrc tajweed level: $e',
+        feature: 'Preferences',
+      );
       return 3;
     }
   }
-  
+
   // Generic string storage
   Future<void> setString(String key, String value) async {
     _ensureInitialized();
     await _sharedPreferences!.setString(key, value);
   }
-  
+
   String? getString(String key) {
     try {
       _ensureInitialized();
       return _sharedPreferences!.getString(key);
     } catch (e) {
-      Logger.warning('Failed to get string for key $key: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get string for key $key: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }
-  
+
   // String list storage
   Future<void> setStringList(String key, List<String> value) async {
     _ensureInitialized();
     await _sharedPreferences!.setStringList(key, value);
   }
-  
+
   List<String>? getStringList(String key) {
     try {
       _ensureInitialized();
       return _sharedPreferences!.getStringList(key);
     } catch (e) {
-      Logger.warning('Failed to get string list for key $key: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get string list for key $key: $e',
+        feature: 'Preferences',
+      );
       return null;
     }
   }

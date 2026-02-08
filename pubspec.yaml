@@ -73,6 +73,8 @@ dependencies:
   # Audio background playback
   audio_service: ^0.18.15
   audio_session: ^0.1.21
+  # Thread safety for SharedPreferences
+  synchronized: ^3.1.0
   # Deep linking and sharing
   app_links: ^6.3.3
   share_plus: ^10.1.4

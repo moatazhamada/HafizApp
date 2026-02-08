@@ -7,7 +7,7 @@ import '../../model/surah_response.dart';
 
 abstract class SurahLocalDataSource {
   Future<ChapterResponse> getSurah(String surahId);
-  Future<List<VerseModel>> searchVerses(String query);
+  Future<List<VerseModel>> searchVerses(String query, {int maxResults});
 }
 
 class SurahLocalDataSourceImpl implements SurahLocalDataSource {
@@ -24,7 +24,10 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
   }
 
   @override
-  Future<List<VerseModel>> searchVerses(String query) async {
+  Future<List<VerseModel>> searchVerses(
+    String query, {
+    int maxResults = 50,
+  }) async {
     try {
       final token = RootIsolateToken.instance;
       if (token == null) {
@@ -34,14 +37,12 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
         return [];
       }
 
-      final rawMatches = await compute(
-        _searchWorker,
-        <String, Object?>{
-          'token': token,
-          'basePath': basePath,
-          'query': query,
-        },
-      );
+      final rawMatches = await compute(_searchWorker, <String, Object?>{
+        'token': token,
+        'basePath': basePath,
+        'query': query,
+        'maxResults': maxResults,
+      });
 
       return rawMatches.map(VerseModel.fromJson).toList();
     } catch (e) {
@@ -61,62 +62,93 @@ String _removeTashkeel(String text) => text.replaceAll(_tashkeelRegex, '');
 Future<List<Map<String, dynamic>>> _searchWorker(
   Map<String, Object?> args,
 ) async {
-  final token = args['token'] as RootIsolateToken;
-  final basePath = args['basePath'] as String;
-  final query = args['query'] as String;
+  try {
+    // Validate all inputs
+    final token = args['token'];
+    if (token is! RootIsolateToken) {
+      debugPrint('Invalid token type in search worker');
+      return [];
+    }
 
-  BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+    final basePath = args['basePath'];
+    if (basePath is! String || basePath.isEmpty) {
+      debugPrint('Invalid basePath in search worker');
+      return [];
+    }
 
-  final List<Map<String, dynamic>> allMatches = [];
-  final normalizedQuery = _removeTashkeel(query);
+    final query = args['query'];
+    if (query is! String || query.isEmpty) {
+      debugPrint('Invalid query in search worker');
+      return [];
+    }
 
-  for (int i = 1; i <= 114; i++) {
-    try {
-      final jsonStr = await rootBundle.loadString(
-        '$basePath/surah_$i.json',
-      );
+    final maxResults = args['maxResults'];
+    if (maxResults is! int || maxResults <= 0) {
+      debugPrint('Invalid maxResults in search worker');
+      return [];
+    }
 
-      // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
-      final normalizedJson = _removeTashkeel(jsonStr);
-      if (!normalizedJson.contains(normalizedQuery)) continue;
+    BackgroundIsolateBinaryMessenger.ensureInitialized(token);
 
-      // Parse only if we have a potential match
-      final Map<String, dynamic> data = json.decode(jsonStr);
-      final response = ChapterResponse.fromJson(data);
+    final List<Map<String, dynamic>> allMatches = [];
+    final normalizedQuery = _removeTashkeel(query);
 
-      for (final verse in response.chapters) {
-        String textToCheck = verse.text;
+    for (int i = 1; i <= 114; i++) {
+      // Early exit if we've reached max results
+      if (allMatches.length >= maxResults) break;
+      try {
+        final jsonStr = await rootBundle.loadString('$basePath/surah_$i.json');
 
-        // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
-        if (verse.chapterId != 1 && verse.verseNumber == 1) {
-          const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
-          if (textToCheck.startsWith(bismillahPrefix)) {
-            textToCheck = textToCheck.substring(bismillahPrefix.length).trim();
-          } else {
-            // Fallback for simple encoding
-            const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
-            if (textToCheck.startsWith(bismillahSimple)) {
+        // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
+        final normalizedJson = _removeTashkeel(jsonStr);
+        if (!normalizedJson.contains(normalizedQuery)) continue;
+
+        // Parse only if we have a potential match
+        final Map<String, dynamic> data = json.decode(jsonStr);
+        final response = ChapterResponse.fromJson(data);
+
+        for (final verse in response.chapters) {
+          String textToCheck = verse.text;
+
+          // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
+          if (verse.chapterId != 1 && verse.verseNumber == 1) {
+            const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
+            if (textToCheck.startsWith(bismillahPrefix)) {
               textToCheck = textToCheck
-                  .substring(bismillahSimple.length)
+                  .substring(bismillahPrefix.length)
                   .trim();
+            } else {
+              // Fallback for simple encoding
+              const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
+              if (textToCheck.startsWith(bismillahSimple)) {
+                textToCheck = textToCheck
+                    .substring(bismillahSimple.length)
+                    .trim();
+              }
             }
           }
-        }
 
-        final normalizedVerse = _removeTashkeel(textToCheck);
-        if (normalizedVerse.contains(normalizedQuery)) {
-          allMatches.add({
-            'chapter': verse.chapterId,
-            'verse': verse.verseNumber,
-            'text': verse.text,
-          });
+          final normalizedVerse = _removeTashkeel(textToCheck);
+          if (normalizedVerse.contains(normalizedQuery)) {
+            allMatches.add({
+              'chapter': verse.chapterId,
+              'verse': verse.verseNumber,
+              'text': verse.text,
+            });
+
+            // Check if we've reached max results
+            if (allMatches.length >= maxResults) break;
+          }
         }
+      } catch (e) {
+        debugPrint('Error searching surah $i: $e');
       }
-    } catch (e) {
-      debugPrint('Error searching surah $i: $e');
     }
+    return allMatches;
+  } catch (e, stackTrace) {
+    debugPrint('Fatal error in search worker: $e\n$stackTrace');
+    return [];
   }
-  return allMatches;
 }
 
 Map<String, dynamic> _decodeJsonToMap(String jsonStr) {

@@ -154,6 +154,9 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _deepLinkService.dispose();
+    themeBloc.close();
+    bookmarkBloc.close();
+    recitationErrorBloc.close();
     super.dispose();
   }
 
@@ -230,11 +233,15 @@ class _BootstrapAppState extends State<BootstrapApp> {
     try {
       await PrefUtils().init();
 
-      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
+      // FIX: Initialize Hive ONCE with all boxes
       await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
+      await Future.wait([
+        Hive.openBox('surah_cache'),
+        Hive.openBox('bookmarks'),
+        Hive.openBox('recitation_errors'),
+        Hive.openBox('qiraat_cache'),
+        Hive.openBox('audio_cache'),
+      ]);
 
       await di.init();
 
@@ -274,12 +281,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
         crashlytics: crashlytics,
       );
 
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('qiraat_cache');
-      await Hive.openBox('audio_cache');
+      // FIX: Removed duplicate Hive initialization - already done in _init()
 
       FlutterError.onError = (errorDetails) {
         Logger.error(

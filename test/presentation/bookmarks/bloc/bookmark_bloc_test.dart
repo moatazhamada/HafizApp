@@ -91,7 +91,7 @@ void main() {
 
   group('AddBookmarkEvent', () {
     blocTest<BookmarkBloc, BookmarkState>(
-      'emits [BookmarkLoading, BookmarkLoaded] when adding succeeds',
+      'emits [BookmarkLoaded] when adding succeeds',
       build: () {
         when(() => mockRepository.addBookmark(any()))
             .thenAnswer((_) async => const Right(true));
@@ -101,7 +101,6 @@ void main() {
       },
       act: (bloc) => bloc.add(AddBookmarkEvent(testBookmark)),
       expect: () => [
-        isA<BookmarkLoading>(),
         predicate<BookmarkState>((state) =>
             state is BookmarkLoaded &&
             state.feedbackMessage == 'msg_bookmark_added'),
@@ -128,7 +127,7 @@ void main() {
 
   group('RemoveBookmarkEvent', () {
     blocTest<BookmarkBloc, BookmarkState>(
-      'emits [BookmarkLoading, BookmarkLoaded] when removing succeeds',
+      'emits [BookmarkLoaded] when removing succeeds',
       build: () {
         when(() => mockRepository.removeBookmark(any(), any()))
             .thenAnswer((_) async => const Right(true));
@@ -138,7 +137,6 @@ void main() {
       },
       act: (bloc) => bloc.add(const RemoveBookmarkEvent(1, 1)),
       expect: () => [
-        isA<BookmarkLoading>(),
         predicate<BookmarkState>((state) =>
             state is BookmarkLoaded &&
             state.feedbackMessage == 'msg_bookmark_removed'),

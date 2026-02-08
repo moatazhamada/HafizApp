@@ -47,7 +47,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
   sl.registerLazySingleton(() => DeepLinkService());
-  sl.registerFactory(() => AudioPlayerHandler());
+  // FIX: Changed from registerFactory to registerLazySingleton to prevent memory leak
+  sl.registerLazySingleton(() => AudioPlayerHandler());
 
   // Use Case
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
