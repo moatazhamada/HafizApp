@@ -26,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _qiraatEdition;
   late int _reciterId;
   late String _whisperModel;
+  late String _defaultQuranView;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -45,6 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _qiraatEdition = PrefUtils().getQiraatEdition();
     _reciterId = PrefUtils().getReciterId();
     _whisperModel = PrefUtils().getWhisperModel();
+    _defaultQuranView = PrefUtils().getDefaultQuranView();
     _loadRecitationResources();
   }
 
@@ -121,6 +123,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildThemeOption('lbl_system_default'.tr, 'system'),
           _buildThemeOption('lbl_theme_light'.tr, 'light'),
           _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
+          const Divider(),
+          _buildSectionHeader('lbl_default_quran_view'.tr),
+          _buildQuranViewOption('lbl_surah_view'.tr, 'surah'),
+          _buildQuranViewOption('lbl_mushaf_view'.tr, 'mushaf'),
           const Divider(),
           _buildSectionHeader('lbl_recitation_coach'.tr),
           ListTile(
@@ -218,6 +224,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           setState(() {
             _themeMode = mode;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildQuranViewOption(String label, String view) {
+    final bool isSelected = _defaultQuranView == view;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setDefaultQuranView(view);
+          setState(() {
+            _defaultQuranView = view;
           });
         }
       },

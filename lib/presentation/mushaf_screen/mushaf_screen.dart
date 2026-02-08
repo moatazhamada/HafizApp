@@ -69,12 +69,16 @@ class _MushafScreenState extends State<MushafScreen> {
     // Pre-load some Surahs around the initial page
     await _loadPageSurahs(_currentPage);
 
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
 
     // Jump to initial page after build
-    if (widget.initialPage != null) {
+    if (widget.initialPage != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _jumpToPage(widget.initialPage! - 1);
+        if (mounted) {
+          _jumpToPage(widget.initialPage! - 1);
+        }
       });
     }
   }
@@ -109,17 +113,17 @@ class _MushafScreenState extends State<MushafScreen> {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (state is SuccessSurahState) {
+      if (state is SuccessSurahState && mounted) {
         _surahCache[surahId] = state.chapters;
         _loadedSurahs.add(surahId);
-        if (mounted) {
-          setState(() {});
-        }
+        setState(() {});
       } else if (state is FailureSurahState) {
         debugPrint('Failed to load surah $surahId: ${state.errorMessage}');
       }
     } catch (e) {
-      debugPrint('Error loading surah $surahId: $e');
+      if (mounted) {
+        debugPrint('Error loading surah $surahId: $e');
+      }
     }
   }
 
@@ -446,11 +450,13 @@ class _MushafScreenState extends State<MushafScreen> {
             const Center(child: CircularProgressIndicator())
           else
             // RTL PageView for authentic Mushaf experience
+            // Always RTL regardless of app language - this is Arabic Quran
             Directionality(
               textDirection: TextDirection.rtl,
               child: PageView.builder(
                 controller: _pageController,
-                reverse: true, // RTL: starts from right side
+                reverse: true, // RTL: starts from right side, swipe left to go next
+                physics: const PageScrollPhysics(), // Consistent scroll behavior
                 onPageChanged: _onPageChanged,
                 itemCount: _currentMushafType.totalPages,
                 itemBuilder: (context, index) {

@@ -275,6 +275,25 @@ class PrefUtils {
     }
   }
 
+  // Default Quran View: 'surah' or 'mushaf'
+  Future<void> setDefaultQuranView(String view) async {
+    _ensureInitialized();
+    await _sharedPreferences!.setString('default_quran_view', view);
+  }
+
+  String getDefaultQuranView() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('default_quran_view') ?? 'surah';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get default Quran view: $e',
+        feature: 'Preferences',
+      );
+      return 'surah';
+    }
+  }
+
   Future<void> setQrcHafzLevel(int level) async {
     _ensureInitialized();
     await _sharedPreferences!.setInt('qrc_hafz_level', level);

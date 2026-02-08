@@ -446,10 +446,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   onTap: () {
                                     PrefUtils().saveLastReadSurah(surah);
                                     homeBloc.add(HomeShowLastSurahEvent());
-                                    NavigatorService.pushNamed(
-                                      AppRoutes.surahPage,
-                                      arguments: surah,
-                                    );
+                                    _navigateToQuranView(surah: surah);
                                   },
                                   child: SurahListItem(
                                     surahId: surah.id,
@@ -471,6 +468,36 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
     );
+  }
+
+  /// Navigate to Quran view based on user preference (Surah or Mushaf)
+  void _navigateToQuranView({
+    required Surah surah,
+    int? verseIndex,
+    double? offset,
+    bool resume = false,
+  }) {
+    final defaultView = PrefUtils().getDefaultQuranView();
+    
+    if (defaultView == 'mushaf') {
+      // Navigate to Mushaf view
+      AppRoutes.goToMushaf(
+        context,
+        surah: surah.id,
+        verse: verseIndex != null ? verseIndex + 1 : null,
+      );
+    } else {
+      // Default: Navigate to Surah view
+      NavigatorService.pushNamed(
+        AppRoutes.surahPage,
+        arguments: {
+          'surah': surah,
+          'verseIndex': verseIndex,
+          'offset': offset,
+          'resume': resume,
+        },
+      );
+    }
   }
 
   Widget _buildCardLastRead(Surah? lastReadSurah, ThemeData theme) {
@@ -622,14 +649,11 @@ class _HomeScreenState extends State<HomeScreen>
                               offset ?? 0.0,
                             );
 
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: {
-                                'surah': lastReadSurah,
-                                'offset': offset,
-                                'resume': true,
-                                'verseIndex': lastVerseIndex,
-                              },
+                            _navigateToQuranView(
+                              surah: lastReadSurah,
+                              verseIndex: lastVerseIndex,
+                              offset: offset,
+                              resume: true,
                             );
                           },
                           style: ElevatedButton.styleFrom(
