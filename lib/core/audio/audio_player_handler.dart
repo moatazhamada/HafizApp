@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:audio_service/audio_service.dart';
-// ignore_for_file: deprecated_member_use
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -8,8 +7,9 @@ import 'package:rxdart/rxdart.dart';
 /// Provides media controls, notification, and background playback
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   final _player = AudioPlayer();
-  // TODO: Refactor to use AudioPlayer.setAudioSources instead (deprecated API)
-  final _playlist = ConcatenatingAudioSource(children: []);
+
+  // Store audio sources for playlist management
+  List<AudioSource> _audioSources = [];
 
   // Stream for verse highlighting
   final _currentVerseController = BehaviorSubject<int>.seeded(0);
@@ -37,7 +37,9 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     });
 
     // Listen to processing state
-    _processingStateSubscription = _player.processingStateStream.listen((state) {
+    _processingStateSubscription = _player.processingStateStream.listen((
+      state,
+    ) {
       if (state == ProcessingState.completed) {
         // Move to next item if available
         if (_player.hasNext) {
@@ -62,7 +64,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     // Create media items for each verse
     final mediaItems = <MediaItem>[];
-    final audioSources = <AudioSource>[];
+    _audioSources = [];
 
     for (int i = 0; i < verseUrls.length; i++) {
       final mediaItem = MediaItem(
@@ -76,7 +78,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       );
 
       mediaItems.add(mediaItem);
-      audioSources.add(
+      _audioSources.add(
         AudioSource.uri(Uri.parse(verseUrls[i]), tag: mediaItem),
       );
     }
@@ -84,9 +86,9 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     // Update queue
     queue.add(mediaItems);
 
-    // Set audio source
-    await _player.setAudioSource(
-      ConcatenatingAudioSource(children: audioSources),
+    // Set audio sources using the modern API
+    await _player.setAudioSources(
+      _audioSources,
       initialIndex: 0,
       initialPosition: Duration.zero,
     );
@@ -125,9 +127,10 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     queue.add([mediaItem]);
 
-    await _player.setAudioSource(
-      AudioSource.uri(Uri.parse(audioUrl), tag: mediaItem),
-    );
+    final source = AudioSource.uri(Uri.parse(audioUrl), tag: mediaItem);
+    _audioSources = [source];
+
+    await _player.setAudioSource(source);
 
     this.mediaItem.add(mediaItem);
 
@@ -147,14 +150,18 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       return;
     }
 
-    // Find current verse based on timestamps
+    // Find current verse based on timestamps.
+    // Timestamps are treated as verse end boundaries.
+    var verse = _verseTimestamps.length;
     for (int i = 0; i < _verseTimestamps.length; i++) {
       if (position < _verseTimestamps[i]) {
-        if (i > 0 && i != _currentVerseController.value) {
-          _currentVerseController.add(i);
-        }
+        verse = i + 1;
         break;
       }
+    }
+
+    if (verse != _currentVerseController.value) {
+      _currentVerseController.add(verse);
     }
   }
 
@@ -262,13 +269,16 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         await _player.setAudioSource(clipped);
         await _player.setLoopMode(LoopMode.one);
       }
-    } else {
-      // For verse-by-verse mode
-      await _player.setAudioSource(
-        ConcatenatingAudioSource(
-          children: _playlist.children.sublist(startVerse - 1, endVerse),
-        ),
-      );
+    } else if (_audioSources.isNotEmpty) {
+      // For verse-by-verse mode - use subset of stored sources
+      if (startVerse < 1 ||
+          endVerse < startVerse ||
+          startVerse > _audioSources.length) {
+        return;
+      }
+      final safeEnd = endVerse.clamp(startVerse, _audioSources.length);
+      final rangeSources = _audioSources.sublist(startVerse - 1, safeEnd);
+      await _player.setAudioSources(rangeSources);
       await _player.setLoopMode(LoopMode.all);
     }
   }
@@ -355,6 +365,7 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     await _processingStateSubscription?.cancel();
 
     _sleepTimer?.cancel();
+    _audioSources.clear();
     await _player.dispose();
     await _currentVerseController.close();
   }

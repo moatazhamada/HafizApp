@@ -59,11 +59,17 @@ class DeepLinkService {
   /// Parse a deep link URI
   DeepLinkData? parseDeepLink(Uri uri) {
     // Support both https://hafiz.app/... and hafiz://... schemes
-    if (uri.host != baseUrl && uri.scheme != 'hafiz') {
+    final isHttpsAppLink = uri.scheme == scheme && uri.host == baseUrl;
+    final isCustomScheme = uri.scheme == 'hafiz';
+    if (!isHttpsAppLink && !isCustomScheme) {
       return null;
     }
-    
-    final pathSegments = uri.pathSegments;
+
+    // For custom-scheme links (e.g. hafiz://surah/2/verse/3), normalize the
+    // host into the first path segment so parsing works consistently.
+    final pathSegments = isCustomScheme && uri.host.isNotEmpty
+        ? <String>[uri.host, ...uri.pathSegments]
+        : uri.pathSegments;
     if (pathSegments.isEmpty) return null;
     
     // Parse /surah/{id}/verse/{number}

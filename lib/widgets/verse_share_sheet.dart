@@ -240,33 +240,39 @@ class VerseShareSheet extends StatelessWidget {
   }) {
     final isDark = color.computeLuminance() < 0.5;
     final deepLinkService = DeepLinkService();
-    final navigator = Navigator.of(context);
     
     return GestureDetector(
       onTap: () async {
-        navigator.pop(); // Close style picker
-        navigator.pop(); // Close share sheet
-        
+        final pageNavigator = Navigator.of(context);
+        pageNavigator.pop(); // Close style picker
+        pageNavigator.pop(); // Close share sheet
+
+        if (!pageNavigator.context.mounted) return;
+
         // Show loading
         unawaited(showDialog(
-          context: context,
+          context: pageNavigator.context,
           barrierDismissible: false,
           builder: (context) => const Center(
             child: CircularProgressIndicator(),
           ),
         ));
-        
-        // Generate and share image
-        await deepLinkService.shareVerseImage(
-          verseText: verse.text,
-          surahName: surah.nameEnglish,
-          verseNumber: verse.verseNumber,
-          context: context,
-          translation: translation,
-          style: style,
-        );
-        
-        navigator.pop(); // Close loading
+
+        try {
+          // Generate and share image
+          await deepLinkService.shareVerseImage(
+            verseText: verse.text,
+            surahName: surah.nameEnglish,
+            verseNumber: verse.verseNumber,
+            context: pageNavigator.context,
+            translation: translation,
+            style: style,
+          );
+        } finally {
+          if (pageNavigator.context.mounted && pageNavigator.canPop()) {
+            pageNavigator.pop(); // Close loading
+          }
+        }
       },
       child: Container(
         width: 80,

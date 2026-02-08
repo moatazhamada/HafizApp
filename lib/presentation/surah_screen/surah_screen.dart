@@ -826,17 +826,15 @@ class _SurahScreenState extends State<SurahScreen> {
   void _playAudioFromVerse(int verseNumber) {
     if (surah == null) return;
 
-    // Generate sample timestamps (in production, fetch from API)
-    final timestamps = List.generate(
-      surah!.verseCount,
-      (i) => Duration(seconds: (i + 1) * 10),
-    );
+    // No reliable per-verse timestamps are available here yet.
+    final timestamps = <Duration>[];
+    final effectiveStartVerse = timestamps.isNotEmpty ? verseNumber : 1;
 
     // Navigate to audio player
     AppRoutes.goToAudioPlayer(
       context,
       surah: surah!,
-      startVerse: verseNumber,
+      startVerse: effectiveStartVerse,
       reciter: PrefUtils().getReciterName(),
       audioUrls: [
         'https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/${surah!.id.toString().padLeft(3, '0')}.mp3',

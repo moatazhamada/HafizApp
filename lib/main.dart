@@ -109,11 +109,18 @@ class _MyAppState extends State<MyApp> {
             (s) => s.id == data.surahId,
             orElse: () => QuranIndex.quranSurahs[0],
           );
+          final verseNumber = data.verseNumber ?? 1;
+          if (verseNumber < 1 || verseNumber > surah.verseCount) {
+            debugPrint(
+              'Ignoring invalid deep link verse $verseNumber for surah ${surah.id}',
+            );
+            return;
+          }
           navigator.pushNamed(
             AppRoutes.surahPage,
             arguments: {
               'surah': surah,
-              'verseIndex': (data.verseNumber ?? 1) - 1,
+              'verseIndex': verseNumber - 1,
               'resume': true,
             },
           );

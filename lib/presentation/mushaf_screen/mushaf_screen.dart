@@ -46,9 +46,6 @@ class _MushafScreenState extends State<MushafScreen> {
   // Track visible pages for efficient loading
   final Set<int> _loadedSurahs = {};
   
-  // Stream subscriptions for proper cleanup
-  StreamSubscription<SurahState>? _surahBlocSubscription;
-  
   @override
   void initState() {
     super.initState();
@@ -84,28 +81,28 @@ class _MushafScreenState extends State<MushafScreen> {
   }
   
   Future<void> _loadSurah(int surahId) async {
-    if (_loadedSurahs.contains(surahId)) return;
-    
+    if (_loadedSurahs.contains(surahId) || _surahCache.containsKey(surahId)) return;
+
     _surahBloc.add(LoadSurahEvent(surahId: surahId.toString()));
-    
-    // Cancel any existing subscription before creating new one
-    await _surahBlocSubscription?.cancel();
-    
-    // Use StreamSubscription instead of await for
-    final completer = Completer<void>();
-    _surahBlocSubscription = _surahBloc.stream.listen((state) {
+
+    try {
+      final state = await _surahBloc.stream.firstWhere(
+        (s) =>
+            s is SuccessSurahState &&
+            s.chapters.isNotEmpty &&
+            s.chapters.first.chapterId == surahId,
+      );
+
       if (state is SuccessSurahState) {
         _surahCache[surahId] = state.chapters;
         _loadedSurahs.add(surahId);
-        if (!completer.isCompleted) {
-          completer.complete();
+        if (mounted) {
+          setState(() {});
         }
       }
-    });
-    
-    await completer.future;
-    await _surahBlocSubscription?.cancel();
-    _surahBlocSubscription = null;
+    } catch (e) {
+      debugPrint('Error loading surah $surahId: $e');
+    }
   }
   
   void _onPageChanged(int pageIndex) {
@@ -119,7 +116,12 @@ class _MushafScreenState extends State<MushafScreen> {
       if (currentPageData != null) {
         _loadSurah(currentPageData.surahId);
         // Preload next Surah if we're near the end
-        if (currentPageData.endVerse >= currentPageData.endVerse - 5) {
+        final surahInfo = QuranIndex.quranSurahs.firstWhere(
+          (s) => s.id == currentPageData.surahId,
+          orElse: () => QuranIndex.quranSurahs.first,
+        );
+        if (currentPageData.endVerse >= surahInfo.verseCount - 5 &&
+            currentPageData.surahId < 114) {
           _loadSurah(currentPageData.surahId + 1);
         }
       }
@@ -345,8 +347,6 @@ class _MushafScreenState extends State<MushafScreen> {
   
   @override
   void dispose() {
-    // Cancel stream subscription
-    _surahBlocSubscription?.cancel();
     _pageIndicatorTimer?.cancel();
     _pageController.dispose();
     SystemChrome.setEnabledSystemUIMode(
