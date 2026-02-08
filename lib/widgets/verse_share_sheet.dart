@@ -10,21 +10,21 @@ class VerseShareSheet extends StatelessWidget {
   final Surah surah;
   final Verse verse;
   final String? translation;
-  
+
   const VerseShareSheet({
     super.key,
     required this.surah,
     required this.verse,
     this.translation,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final deepLinkService = DeepLinkService();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -48,13 +48,13 @@ class VerseShareSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Title
             Text(
               'lbl_share_verse'.tr,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -64,7 +64,7 @@ class VerseShareSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Share options
             _buildShareOption(
               context,
@@ -84,7 +84,7 @@ class VerseShareSheet extends StatelessWidget {
                 );
               },
             ),
-            
+
             _buildShareOption(
               context,
               icon: Icons.share,
@@ -100,7 +100,7 @@ class VerseShareSheet extends StatelessWidget {
                 navigator.pop();
               },
             ),
-            
+
             _buildShareOption(
               context,
               icon: Icons.image,
@@ -108,33 +108,31 @@ class VerseShareSheet extends StatelessWidget {
               subtitle: 'msg_share_image_desc'.tr,
               onTap: () => _showImageStylePicker(context),
             ),
-            
+
             _buildShareOption(
               context,
               icon: Icons.content_copy,
               title: 'lbl_copy_text'.tr,
               subtitle: 'msg_copy_text_desc'.tr,
               onTap: () async {
-                await deepLinkService.copyVerseWithAttribution(
-                  surahId: surah.id,
-                  verseNumber: verse.verseNumber,
-                  verseText: verse.text,
-                  surahName: surah.nameEnglish,
-                );
+                final text = translation == null || translation!.trim().isEmpty
+                    ? verse.text
+                    : '${verse.text}\n\n${translation!}';
+                await deepLinkService.copyPlainText(text);
                 navigator.pop();
                 scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('msg_text_copied'.tr)),
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildShareOption(
     BuildContext context, {
     required IconData icon,
@@ -143,7 +141,7 @@ class VerseShareSheet extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(vertical: 4),
       leading: Container(
@@ -154,10 +152,7 @@ class VerseShareSheet extends StatelessWidget {
         ),
         child: Icon(icon, color: Colors.teal),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(
         subtitle,
         style: TextStyle(
@@ -169,10 +164,10 @@ class VerseShareSheet extends StatelessWidget {
       onTap: onTap,
     );
   }
-  
+
   void _showImageStylePicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -187,12 +182,12 @@ class VerseShareSheet extends StatelessWidget {
           children: [
             Text(
               'lbl_select_style'.tr,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            
+
             // Style options
             Wrap(
               spacing: 12,
@@ -224,14 +219,14 @@ class VerseShareSheet extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildStyleOption(
     BuildContext context, {
     required VerseImageStyle style,
@@ -240,23 +235,24 @@ class VerseShareSheet extends StatelessWidget {
   }) {
     final isDark = color.computeLuminance() < 0.5;
     final deepLinkService = DeepLinkService();
-    
+
     return GestureDetector(
       onTap: () async {
-        final pageNavigator = Navigator.of(context);
-        pageNavigator.pop(); // Close style picker
-        pageNavigator.pop(); // Close share sheet
-
-        if (!pageNavigator.context.mounted) return;
+        final rootContext = context;
+        Navigator.of(rootContext).pop(); // Close style picker
+        Navigator.of(rootContext).pop(); // Close share sheet
+        if (!rootContext.mounted) return;
 
         // Show loading
-        unawaited(showDialog(
-          context: pageNavigator.context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
+        unawaited(
+          showDialog(
+            context: rootContext,
+            barrierDismissible: false,
+            useRootNavigator: true,
+            builder: (context) =>
+                const Center(child: CircularProgressIndicator()),
           ),
-        ));
+        );
 
         try {
           // Generate and share image
@@ -264,13 +260,19 @@ class VerseShareSheet extends StatelessWidget {
             verseText: verse.text,
             surahName: surah.nameEnglish,
             verseNumber: verse.verseNumber,
-            context: pageNavigator.context,
+            context: rootContext,
             translation: translation,
             style: style,
           );
         } finally {
-          if (pageNavigator.context.mounted && pageNavigator.canPop()) {
-            pageNavigator.pop(); // Close loading
+          if (rootContext.mounted) {
+            final rootNavigator = Navigator.of(
+              rootContext,
+              rootNavigator: true,
+            );
+            if (rootNavigator.canPop()) {
+              rootNavigator.pop(); // Close loading
+            }
           }
         }
       },
@@ -280,18 +282,12 @@ class VerseShareSheet extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey[300]!,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.image,
-              color: isDark ? Colors.white : Colors.black54,
-            ),
+            Icon(Icons.image, color: isDark ? Colors.white : Colors.black54),
             const SizedBox(height: 8),
             Text(
               name,
@@ -318,11 +314,8 @@ extension VerseShareSheetExtension on BuildContext {
       context: this,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => VerseShareSheet(
-        surah: surah,
-        verse: verse,
-        translation: translation,
-      ),
+      builder: (context) =>
+          VerseShareSheet(surah: surah, verse: verse, translation: translation),
     );
   }
 }

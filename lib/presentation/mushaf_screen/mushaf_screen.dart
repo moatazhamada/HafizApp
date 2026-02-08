@@ -99,12 +99,15 @@ class _MushafScreenState extends State<MushafScreen> {
     _surahBloc.add(LoadSurahEvent(surahId: surahId.toString()));
 
     try {
-      final state = await _surahBloc.stream.firstWhere(
-        (s) =>
-            s is SuccessSurahState &&
-            s.chapters.isNotEmpty &&
-            s.chapters.first.chapterId == surahId,
-      );
+      final state = await _surahBloc.stream
+          .firstWhere(
+            (s) =>
+                (s is SuccessSurahState &&
+                    s.chapters.isNotEmpty &&
+                    s.chapters.first.chapterId == surahId) ||
+                s is FailureSurahState,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (state is SuccessSurahState) {
         _surahCache[surahId] = state.chapters;
@@ -112,6 +115,8 @@ class _MushafScreenState extends State<MushafScreen> {
         if (mounted) {
           setState(() {});
         }
+      } else if (state is FailureSurahState) {
+        debugPrint('Failed to load surah $surahId: ${state.errorMessage}');
       }
     } catch (e) {
       debugPrint('Error loading surah $surahId: $e');
@@ -863,9 +868,9 @@ class _MushafScreenState extends State<MushafScreen> {
                 ),
               )
             else
-              Expanded(
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.6,
                 child: ListView.builder(
-                  shrinkWrap: true,
                   itemCount: bookmarks.length,
                   itemBuilder: (context, index) {
                     final page = int.parse(bookmarks[index]);

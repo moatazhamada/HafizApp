@@ -5,7 +5,6 @@ import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/quran_surah.dart';
 
-
 /// Full Audio Player Screen for Surah recitation
 /// Features: Play/Pause, verse highlighting, speed control, sleep timer
 class AudioPlayerScreen extends StatefulWidget {
@@ -30,6 +29,7 @@ class AudioPlayerScreen extends StatefulWidget {
 
 class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   AudioPlayerHandler? _audioHandler;
+  StreamSubscription<int>? _currentVerseSub;
   bool _isLoading = true;
 
   // Playback state
@@ -71,21 +71,22 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         surahName: widget.surah.nameEnglish,
         reciter: widget.reciter,
         audioUrl: widget.audioUrls.first,
-        duration: widget.verseTimestamps.last,
+        duration: widget.verseTimestamps.isNotEmpty
+            ? widget.verseTimestamps.last
+            : Duration.zero,
         verseTimestamps: widget.verseTimestamps,
         artworkUrl: 'https://hafiz.app/assets/surah_${widget.surah.id}.png',
       );
 
       // Listen to current verse
-      _audioHandler!.currentVerseStream.listen((verse) {
-        if (mounted) {
-          setState(() => _currentVerse = verse);
-          _scrollToCurrentVerse();
-        }
+      _currentVerseSub = _audioHandler!.currentVerseStream.listen((verse) {
+        if (!mounted) return;
+        setState(() => _currentVerse = verse);
+        _scrollToCurrentVerse();
       });
 
       // Seek to start verse if specified
-      if (widget.startVerse != null) {
+      if (widget.startVerse != null && widget.verseTimestamps.isNotEmpty) {
         await _audioHandler!.seekToVerse(widget.startVerse!);
       }
 
@@ -278,8 +279,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void dispose() {
     _sleepTimer?.cancel();
+    _currentVerseSub?.cancel();
     _verseScrollController.dispose();
-    _audioHandler?.dispose();
+    unawaited(_audioHandler?.dispose());
     super.dispose();
   }
 

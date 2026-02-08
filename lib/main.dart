@@ -108,10 +108,14 @@ class _MyAppState extends State<MyApp> {
     switch (data.type) {
       case DeepLinkType.verse:
         if (data.surahId != null) {
-          final surah = QuranIndex.quranSurahs.firstWhere(
+          final surahIndex = QuranIndex.quranSurahs.indexWhere(
             (s) => s.id == data.surahId,
-            orElse: () => QuranIndex.quranSurahs[0],
           );
+          if (surahIndex == -1) {
+            debugPrint('Ignoring invalid deep link surahId ${data.surahId}');
+            return;
+          }
+          final surah = QuranIndex.quranSurahs[surahIndex];
           final verseNumber = data.verseNumber ?? 1;
           if (verseNumber < 1 || verseNumber > surah.verseCount) {
             debugPrint(
