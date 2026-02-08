@@ -69,13 +69,91 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // System UI configuration
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  // Critical initialization (fast)
   await PrefUtils().init();
   await MushafPageIndex.loadPageDataFromAsset();
-  runApp(const BootstrapApp());
-}
 
-Future<void> initFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize Hive with all boxes
+  await Hive.initFlutter();
+  await Future.wait([
+    Hive.openBox('surah_cache'),
+    Hive.openBox('bookmarks'),
+    Hive.openBox('recitation_errors'),
+    Hive.openBox('qiraat_cache'),
+    Hive.openBox('audio_cache'),
+  ]);
+
+  // Dependency injection
+  await di.init();
+
+  // HydratedStorage for BLoC persistence
+  final storage = await HydratedStorage.build(
+    storageDirectory: HydratedStorageDirectory(
+      (await getApplicationDocumentsDirectory()).path,
+    ),
+  );
+  HydratedBloc.storage = storage;
+
+  // Firebase initialization (with timeout to prevent hanging)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 3));
+
+    final crashlytics = FirebaseCrashlytics.instance;
+    Logger.init(
+      kDebugMode ? LogMode.debug : LogMode.live,
+      crashlytics: crashlytics,
+    );
+
+    // Set up error handlers
+    FlutterError.onError = (errorDetails) {
+      Logger.error(
+        'Flutter error: ${errorDetails.exception}',
+        feature: 'Flutter',
+        error: errorDetails.exception,
+        stackTrace: errorDetails.stack,
+        fatal: true,
+      );
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+
+    ui.PlatformDispatcher.instance.onError = (error, stack) {
+      Logger.error(
+        'Platform error: $error',
+        feature: 'Platform',
+        error: error,
+        stackTrace: stack,
+        fatal: true,
+      );
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    unawaited(FirebaseAnalytics.instance.logAppOpen());
+  } catch (e, stackTrace) {
+    // Log Firebase init failure but continue - app can work without it
+    debugPrint('Firebase initialization failed: $e');
+    Logger.error(
+      'Firebase initialization failed',
+      feature: 'Firebase',
+      error: e,
+      stackTrace: stackTrace,
+    );
+  }
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -204,177 +282,6 @@ class _MyAppState extends State<MyApp> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class BootstrapApp extends StatefulWidget {
-  const BootstrapApp({super.key});
-
-  @override
-  State<BootstrapApp> createState() => _BootstrapAppState();
-}
-
-class _BootstrapAppState extends State<BootstrapApp> {
-  bool _ready = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    // 1. Critical functional initialization (fast)
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    try {
-      await PrefUtils().init();
-
-      // FIX: Initialize Hive ONCE with all boxes
-      await Hive.initFlutter();
-      await Future.wait([
-        Hive.openBox('surah_cache'),
-        Hive.openBox('bookmarks'),
-        Hive.openBox('recitation_errors'),
-        Hive.openBox('qiraat_cache'),
-        Hive.openBox('audio_cache'),
-      ]);
-
-      await di.init();
-
-      final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getApplicationDocumentsDirectory()).path,
-        ),
-      );
-      HydratedBloc.storage = storage;
-    } catch (e) {
-      debugPrint('Critical init failed: $e');
-      // If critical init fails, we might still want to try showing the app
-      // or at least not stuck on splash forever, though likely it will crash later.
-    }
-
-    // 2. Heavy/External services (can be slow, prone to network issues)
-    // We don't want to block the UI forever if Firebase/Hive hangs.
-    try {
-      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('Heavy init failed or timed out: $e');
-      // Continue anyway so the user sees the app
-    }
-
-    if (mounted) {
-      setState(() => _ready = true);
-    }
-  }
-
-  Future<void> _postInitHeavyTasks() async {
-    try {
-      await initFirebase();
-
-      final crashlytics = FirebaseCrashlytics.instance;
-      Logger.init(
-        kDebugMode ? LogMode.debug : LogMode.live,
-        crashlytics: crashlytics,
-      );
-
-      // FIX: Removed duplicate Hive initialization - already done in _init()
-
-      FlutterError.onError = (errorDetails) {
-        Logger.error(
-          'Flutter error: ${errorDetails.exception}',
-          feature: 'Flutter',
-          error: errorDetails.exception,
-          stackTrace: errorDetails.stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      };
-
-      ui.PlatformDispatcher.instance.onError = (error, stack) {
-        Logger.error(
-          'Platform error: $error',
-          feature: 'Platform',
-          error: error,
-          stackTrace: stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-
-      unawaited(FirebaseAnalytics.instance.logAppOpen());
-    } catch (e, stackTrace) {
-      Logger.error(
-        'Firebase initialization failed: $e',
-        feature: 'Firebase',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow; // Re-throw to trigger the timeout catch in _init if needed
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      child: _ready ? const _ReadyApp() : const _SplashScaffold(),
-    );
-  }
-}
-
-class _ReadyApp extends StatelessWidget {
-  const _ReadyApp();
-  @override
-  Widget build(BuildContext context) => const MyApp();
-}
-
-class _SplashScaffold extends StatelessWidget {
-  const _SplashScaffold();
-  @override
-  Widget build(BuildContext context) {
-    // Use the current theme mode to determine splash background
-    final brightness =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness;
-    final isDark = brightness == Brightness.dark;
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: isDark
-                    ? const Color(0xFF87D1A4)
-                    : const Color(0xFF006754),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading Hafiz...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

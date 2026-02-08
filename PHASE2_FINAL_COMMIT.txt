@@ -1,0 +1,58 @@
+feat: Add analytics tracking and constants integration
+
+## Analytics Integration
+- Add AnalyticsHelper to surah screen for tracking surah opens
+- Add analytics to bookmark bloc for tracking add/remove actions
+- Add analytics to search bloc for tracking search queries
+- All analytics events fire asynchronously (fire-and-forget pattern)
+
+## Constants Integration
+- Replace hardcoded search debounce delay with AppConstants.searchDebounceDelay
+- Replace hardcoded min query length with AppConstants.searchMinQueryLength
+- Centralized configuration for better maintainability
+
+## Analytics Events Added
+### Surah Screen
+- `surah_opened` - Tracks when user opens a surah with surah ID and name
+
+### Bookmarks
+- `bookmark_added` - Tracks when user adds a bookmark with surah ID and verse number
+- `bookmark_removed` - Tracks when user removes a bookmark with surah ID and verse number
+
+### Search
+- `search_performed` - Tracks search queries with query length and result count
+
+## Test Updates
+- Update bookmark bloc tests to mock AnalyticsHelper
+- Update search bloc tests to mock AnalyticsHelper
+- Register mock analytics in test setup
+- All 121 tests passing ✅
+
+## Code Quality
+- ✅ Flutter analyze: 3 info warnings (unawaited futures for analytics - expected)
+- ✅ All tests passing: 121/121
+- ✅ Code formatted
+- ✅ Clean Architecture maintained
+- ✅ No breaking changes
+
+## Impact
+- **User Insights**: Now tracking key user actions for product decisions
+- **Configuration**: Centralized constants for easy tuning
+- **Maintainability**: Easier to add new analytics events
+- **Performance**: Fire-and-forget analytics don't block UI
+
+## Files Modified
+- lib/presentation/bookmarks/bloc/bookmark_bloc.dart
+- lib/presentation/search/bloc/search_bloc.dart
+- lib/presentation/surah_screen/surah_screen.dart
+- test/presentation/bookmarks/bloc/bookmark_bloc_test.dart
+- test/presentation/search/bloc/search_bloc_test.dart
+
+## Next Steps
+- Add more analytics events (audio, settings, sharing)
+- Replace more magic numbers with AppConstants
+- Add analytics dashboard monitoring
+
+---
+
+Co-authored-by: Kiro AI Assistant
