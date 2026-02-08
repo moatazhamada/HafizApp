@@ -31,7 +31,7 @@ class MushafScreen extends StatefulWidget {
 }
 
 class _MushafScreenState extends State<MushafScreen> {
-  final PageController _pageController = PageController(initialPage: 0);
+  late PageController _pageController;
   final SurahBloc _surahBloc = sl<SurahBloc>();
 
   // Cache for loaded Surah verses
@@ -51,6 +51,12 @@ class _MushafScreenState extends State<MushafScreen> {
     super.initState();
     _currentMushafType = widget.mushafType;
     _currentPage = widget.initialPage ?? 1;
+
+    // For RTL Mushaf, initialize PageController with the correct initial page
+    // If no initial page specified, start from page 1 (which will be on the right in RTL)
+    final initialPageIndex = (widget.initialPage ?? 1) - 1;
+    _pageController = PageController(initialPage: initialPageIndex);
+
     _loadInitialData();
 
     // Auto-hide page indicator
@@ -73,14 +79,7 @@ class _MushafScreenState extends State<MushafScreen> {
       setState(() => _isLoading = false);
     }
 
-    // Jump to initial page after build
-    if (widget.initialPage != null && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _jumpToPage(widget.initialPage! - 1);
-        }
-      });
-    }
+    // No need to jump - PageController already initialized with correct page
   }
 
   Future<void> _loadPageSurahs(int pageNumber) async {
@@ -293,6 +292,10 @@ class _MushafScreenState extends State<MushafScreen> {
       _currentPage = 1;
       _surahCache.clear();
       _loadedSurahs.clear();
+
+      // Reinitialize PageController with page 1 (index 0)
+      _pageController.dispose();
+      _pageController = PageController(initialPage: 0);
     });
 
     // Save preference
@@ -451,12 +454,15 @@ class _MushafScreenState extends State<MushafScreen> {
           else
             // RTL PageView for authentic Mushaf experience
             // Always RTL regardless of app language - this is Arabic Quran
+            // reverse: true makes swiping work correctly:
+            // - Swipe RIGHT to LEFT = go to NEXT page (forward in Quran)
+            // - Swipe LEFT to RIGHT = go to PREVIOUS page (backward in Quran)
             Directionality(
               textDirection: TextDirection.rtl,
               child: PageView.builder(
                 controller: _pageController,
-                reverse: true, // RTL: starts from right side, swipe left to go next
-                physics: const PageScrollPhysics(), // Consistent scroll behavior
+                reverse: true, // RTL: swipe left to go forward
+                physics: const PageScrollPhysics(),
                 onPageChanged: _onPageChanged,
                 itemCount: _currentMushafType.totalPages,
                 itemBuilder: (context, index) {
