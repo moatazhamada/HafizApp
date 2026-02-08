@@ -11,6 +11,7 @@ import 'widgets/voice_verification_dialog.dart';
 import '../../core/app_export.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/analytics/analytics_helper.dart';
 
 import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
@@ -33,6 +34,7 @@ class SurahScreen extends StatefulWidget {
 
 class _SurahScreenState extends State<SurahScreen> {
   final surahBloc = sl<SurahBloc>();
+  final _analytics = sl<AnalyticsHelper>();
   Surah? surah;
 
   // Scroll management
@@ -92,6 +94,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
       if (surah != null) {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
+        // Log analytics event
+        _analytics.logSurahOpened(surah!.id, surah!.nameEnglish);
       }
 
       _scrollControllerForInit = ScrollController(

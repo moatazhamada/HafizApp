@@ -1,8 +1,10 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/analytics/analytics_helper.dart';
 import '../../../../data/model/bookmark_model.dart';
 import '../../../../domain/repository/bookmark_repository.dart';
+import '../../../../injection_container.dart';
 
 import '../../../../domain/entities/bookmark.dart';
 
@@ -11,6 +13,7 @@ part 'bookmark_state.dart';
 
 class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
   final BookmarkRepository repository;
+  final _analytics = sl<AnalyticsHelper>();
 
   BookmarkBloc({required this.repository}) : super(BookmarkInitial()) {
     on<LoadBookmarksEvent>(_onLoadBookmarks);
@@ -40,6 +43,11 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     await result.fold(
       (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) async {
+        // Log analytics
+        _analytics.logBookmarkAdded(
+          event.bookmark.surahId,
+          event.bookmark.verseNumber,
+        );
         // Reload bookmarks directly instead of adding event to avoid recursion
         final loadResult = await repository.getBookmarks();
         loadResult.fold(
@@ -63,6 +71,8 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     await result.fold(
       (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) async {
+        // Log analytics
+        _analytics.logBookmarkRemoved(event.surahId, event.verseId);
         // Reload bookmarks directly instead of adding event to avoid recursion
         final loadResult = await repository.getBookmarks();
         loadResult.fold(

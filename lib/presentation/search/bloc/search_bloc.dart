@@ -2,8 +2,11 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/utils/app_constants.dart';
+import 'package:hafiz_app/core/analytics/analytics_helper.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
+import 'package:hafiz_app/injection_container.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'search_event.dart';
@@ -11,11 +14,12 @@ part 'search_state.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final SurahRepository repository;
+  final _analytics = sl<AnalyticsHelper>();
 
   SearchBloc({required this.repository}) : super(SearchInitial()) {
     on<SearchQueryChanged>(
       _onSearchQueryChanged,
-      transformer: debounce(const Duration(milliseconds: 500)),
+      transformer: debounce(AppConstants.searchDebounceDelay),
     );
   }
 
@@ -47,8 +51,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       List<Verse> verseResults = [];
       Failure? verseSearchFailure;
 
-      // 2. Search Verses (Async, heavier) - only if query is meaningful (>2 chars) or explicit
-      if (query.length > 2) {
+      // 2. Search Verses (Async, heavier) - only if query is meaningful or explicit
+      if (query.length > AppConstants.searchMinQueryLength) {
         final result = await repository.searchVerses(query);
         result.fold(
           (failure) => verseSearchFailure = failure,
@@ -63,6 +67,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           emit(const SearchEmpty());
         }
       } else {
+        // Log analytics
+        final totalResults = surahResults.length + verseResults.length;
+        _analytics.logSearchPerformed(query, totalResults);
         emit(SearchLoaded(surahResults, verseResults: verseResults));
       }
     } catch (e) {
