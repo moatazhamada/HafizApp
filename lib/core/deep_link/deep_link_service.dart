@@ -70,10 +70,35 @@ class DeepLinkService {
         : uri.pathSegments;
     if (pathSegments.isEmpty) return null;
 
-    // Parse /surah/{id}/verse/{number}
-    if (pathSegments[0] == 'surah' && pathSegments.length >= 2) {
-      final surahId = int.tryParse(pathSegments[1]);
-      if (surahId == null || surahId < 1 || surahId > 114) return null;
+    // Support both https://hafiz.app/... and hafiz://... schemes
+    final isHttpsAppLink = uri.scheme == scheme && uri.host == baseUrl;
+    final isCustomScheme = uri.scheme == 'hafiz';
+    if (!isHttpsAppLink && !isCustomScheme) {
+      return null;
+    }
+
+    // Normalize segments so https and custom-scheme links can be parsed the same way.
+    //
+    // Examples:
+    // - https://hafiz.app/surah/2/verse/3  -> [surah, 2, verse, 3]
+    // - hafiz://surah/2/verse/3           -> [surah, 2, verse, 3] (host is "surah")
+    // - hafiz:///surah/2/verse/3          -> [surah, 2, verse, 3] (host is empty)
+    // - hafiz://hafiz.app/surah/2         -> [surah, 2]          (host is baseUrl)
+    final List<String> pathSegments;
+    if (isCustomScheme) {
+      if (uri.host.isEmpty || uri.host == baseUrl) {
+        pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      } else {
+        pathSegments = <String>[
+          uri.host,
+          ...uri.pathSegments.where((s) => s.isNotEmpty),
+        ];
+      }
+    } else {
+      pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    }
+
+    if (pathSegments.isEmpty) return null;
 
       int? verseNumber;
       if (pathSegments.length >= 4 && pathSegments[2] == 'verse') {
