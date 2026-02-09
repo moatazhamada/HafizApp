@@ -3,17 +3,13 @@ import '../../core/app_export.dart';
 import '../../core/quran_index/mushaf_types.dart';
 import '../../core/utils/pref_utils.dart';
 
-
 /// First-time onboarding screen for selecting Mushaf type
 /// Shown when user first opens the app
 class MushafTypeOnboarding extends StatefulWidget {
   final VoidCallback onComplete;
-  
-  const MushafTypeOnboarding({
-    super.key,
-    required this.onComplete,
-  });
-  
+
+  const MushafTypeOnboarding({super.key, required this.onComplete});
+
   @override
   State<MushafTypeOnboarding> createState() => _MushafTypeOnboardingState();
 }
@@ -22,31 +18,22 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   MushafType? _selectedType;
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   final List<_OnboardingPage> _pages = [];
   bool _initialized = false;
-  
+
   @override
   void initState() {
     super.initState();
   }
-  
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _initPages();
-      _initialized = true;
-    }
-  }
-  
+
   void _initPages() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
     _pages.addAll([
       _OnboardingPage(
         title: isArabic ? 'مرحباً بك في حافظ' : 'Welcome to Hafiz',
-        description: isArabic 
+        description: isArabic
             ? 'تطبيقك المثالي لقراءة وحفظ وفهم القرآن الكريم'
             : 'Your perfect companion for reading, memorizing, and understanding the Quran',
         icon: Icons.menu_book,
@@ -71,19 +58,19 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
       ),
     ]);
   }
-  
+
   void _completeOnboarding() {
     // Save selected Mushaf type
     if (_selectedType != null) {
       PrefUtils().setString('mushaf_type', _selectedType!.prefsKey);
     }
-    
+
     // Mark onboarding as complete
     PrefUtils().setString('mushaf_onboarding_complete', 'true');
-    
+
     widget.onComplete();
   }
-  
+
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
@@ -94,12 +81,17 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
       _completeOnboarding();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
+    if (!_initialized) {
+      _initPages();
+      _initialized = true;
+    }
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
       body: SafeArea(
@@ -107,7 +99,9 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
           children: [
             // Skip button
             Align(
-              alignment: isArabic ? Alignment.centerLeft : Alignment.centerRight,
+              alignment: isArabic
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextButton(
@@ -121,7 +115,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 ),
               ),
             ),
-            
+
             // Page content
             Expanded(
               child: PageView.builder(
@@ -131,7 +125,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 itemBuilder: (context, index) => _buildPage(_pages[index]),
               ),
             ),
-            
+
             // Page indicators
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -153,7 +147,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 ),
               ),
             ),
-            
+
             // Navigation buttons
             Padding(
               padding: const EdgeInsets.all(24),
@@ -171,18 +165,18 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                     )
                   else
                     const SizedBox(width: 80),
-                  
+
                   const Spacer(),
-                  
+
                   ElevatedButton(
-                    onPressed: _currentPage == 1 && _selectedType == null 
-                        ? null 
+                    onPressed: _currentPage == 1 && _selectedType == null
+                        ? null
                         : _nextPage,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 32, 
+                        horizontal: 32,
                         vertical: 12,
                       ),
                       shape: RoundedRectangleBorder(
@@ -204,12 +198,12 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
       ),
     );
   }
-  
+
   Widget _buildPage(_OnboardingPage page) {
     if (page.isMushafSelector) {
       return _buildMushafSelectorPage(page);
     }
-    
+
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -222,19 +216,12 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
               color: page.color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              page.icon,
-              size: 60,
-              color: page.color,
-            ),
+            child: Icon(page.icon, size: 60, color: page.color),
           ),
           const SizedBox(height: 40),
           Text(
             page.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -251,10 +238,10 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
       ),
     );
   }
-  
+
   Widget _buildMushafSelectorPage(_OnboardingPage page) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -266,19 +253,12 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
               color: page.color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              page.icon,
-              size: 50,
-              color: page.color,
-            ),
+            child: Icon(page.icon, size: 50, color: page.color),
           ),
           const SizedBox(height: 24),
           Text(
             page.title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -292,7 +272,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          
+
           // Mushaf type options
           Expanded(
             child: ListView.builder(
@@ -300,7 +280,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
               itemBuilder: (context, index) {
                 final type = allMushafTypes[index];
                 final isSelected = type == _selectedType;
-                
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: isSelected ? 4 : 1,
@@ -328,7 +308,9 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                             ),
                             child: Icon(
                               type.icon,
-                              color: isSelected ? Colors.teal : Colors.grey[600],
+                              color: isSelected
+                                  ? Colors.teal
+                                  : Colors.grey[600],
                               size: 28,
                             ),
                           ),
@@ -338,7 +320,9 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  isArabic ? type.displayName : type.displayNameEn,
+                                  isArabic
+                                      ? type.displayName
+                                      : type.displayNameEn,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -355,7 +339,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  isArabic 
+                                  isArabic
                                       ? _getArabicDesc(type)
                                       : type.description,
                                   style: TextStyle(
@@ -386,7 +370,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
       ),
     );
   }
-  
+
   String _getArabicDesc(MushafType type) {
     switch (type) {
       case MushafType.madani:
@@ -399,7 +383,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
         return 'خط ورش المستخدم في المغرب والجزائر وتونس';
     }
   }
-  
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -413,7 +397,7 @@ class _OnboardingPage {
   final IconData icon;
   final Color color;
   final bool isMushafSelector;
-  
+
   _OnboardingPage({
     required this.title,
     required this.description,

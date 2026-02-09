@@ -76,16 +76,19 @@ class SurahListItem extends StatelessWidget {
                 ] else
                   const Spacer(), // Push Arabic to right if English is hidden
                 // Arabic Name
-                Hero(
-                  tag: 'surah-title-$surahId',
-                  child: Text(
-                    nameArabic,
-                    textDirection: TextDirection.rtl,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontFamily: 'Amiri',
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
+                Flexible(
+                  child: Hero(
+                    tag: 'surah-title-$surahId',
+                    child: Text(
+                      nameArabic,
+                      textDirection: TextDirection.rtl,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontFamily: 'Amiri',
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ),

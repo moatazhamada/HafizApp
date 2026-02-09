@@ -66,6 +66,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         ),
       );
 
+      if (widget.audioUrls.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Failed to load audio. Please try again.';
+          });
+        }
+        return;
+      }
+
       // Load surah audio
       await _audioHandler!.loadSurahContinuous(
         surahId: widget.surah.id,
@@ -632,11 +642,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           child: Column(
             children: [
               Slider(
-                value: position.inMilliseconds.toDouble(),
-                max: duration.inMilliseconds.toDouble(),
-                onChanged: (value) {
-                  _audioHandler?.seek(Duration(milliseconds: value.toInt()));
-                },
+                value: duration.inMilliseconds <= 0
+                    ? 0
+                    : position.inMilliseconds
+                          .clamp(0, duration.inMilliseconds)
+                          .toDouble(),
+                max: duration.inMilliseconds <= 0
+                    ? 1
+                    : duration.inMilliseconds.toDouble(),
+                onChanged: duration.inMilliseconds <= 0
+                    ? null
+                    : (value) {
+                        _audioHandler?.seek(
+                          Duration(milliseconds: value.toInt()),
+                        );
+                      },
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

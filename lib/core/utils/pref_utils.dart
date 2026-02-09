@@ -39,7 +39,7 @@ class PrefUtils {
 
   // Theme Mode: 'system', 'light', 'dark'
   Future<void> setThemeMode(String mode) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('themeMode', mode);
   }
 
@@ -85,7 +85,7 @@ class PrefUtils {
 
   // Store Surah object in SharedPreferences
   Future<void> saveLastReadSurah(Surah surah) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('surah', toJson(surah));
   }
 
@@ -106,7 +106,7 @@ class PrefUtils {
 
   // Locale persistence (ar/en/system)
   Future<void> setLocaleCode(String code) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('localeCode', code);
   }
 
@@ -122,7 +122,7 @@ class PrefUtils {
 
   // Per-surah scroll offset persistence (fallback when hydration isn't ready)
   Future<void> setSurahOffset(int surahId, double offset) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setDouble('offset_$surahId', offset);
   }
 
@@ -140,7 +140,7 @@ class PrefUtils {
   }
 
   Future<void> setSurahVerseIndex(int surahId, int index) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setInt('verse_index_$surahId', index);
   }
 
@@ -159,7 +159,7 @@ class PrefUtils {
 
   // Verse View Mode (false = Continuous/Mushaf, true = Single Line)
   Future<void> setVerseViewMode(bool isSingleLine) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setBool('isSingleLine', isSingleLine);
   }
 
@@ -179,7 +179,7 @@ class PrefUtils {
 
   // Recitation settings
   Future<void> setRecitationProvider(String provider) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('recitation_provider', provider);
   }
 
@@ -198,7 +198,7 @@ class PrefUtils {
   }
 
   Future<void> setQiraatEdition(String edition) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('qiraat_edition', edition);
   }
 
@@ -216,7 +216,7 @@ class PrefUtils {
   }
 
   Future<void> setReciterId(int id) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setInt('reciter_id', id);
   }
 
@@ -243,7 +243,7 @@ class PrefUtils {
   }
 
   Future<void> setCustomAsrEndpoint(String url) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('custom_asr_endpoint', url);
   }
 
@@ -261,7 +261,7 @@ class PrefUtils {
   }
 
   Future<void> setWhisperModel(String model) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('whisper_model', model);
   }
 
@@ -277,7 +277,7 @@ class PrefUtils {
 
   // Default Quran View: 'surah' or 'mushaf'
   Future<void> setDefaultQuranView(String view) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('default_quran_view', view);
   }
 
@@ -295,7 +295,7 @@ class PrefUtils {
   }
 
   Future<void> setQrcHafzLevel(int level) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setInt('qrc_hafz_level', level);
   }
 
@@ -313,7 +313,7 @@ class PrefUtils {
   }
 
   Future<void> setQrcTajweedLevel(int level) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setInt('qrc_tajweed_level', level);
   }
 
@@ -332,7 +332,7 @@ class PrefUtils {
 
   // Generic string storage
   Future<void> setString(String key, String value) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString(key, value);
   }
 
@@ -351,7 +351,7 @@ class PrefUtils {
 
   // String list storage
   Future<void> setStringList(String key, List<String> value) async {
-    _ensureInitialized();
+    if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setStringList(key, value);
   }
 

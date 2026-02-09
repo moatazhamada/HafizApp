@@ -57,28 +57,31 @@ class _OfflineIndicatorState extends State<OfflineIndicator> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          height: _isOnline ? 0 : 32,
-          child: AnimatedOpacity(
-            opacity: _isOnline ? 0 : 1,
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            child: Container(
-              color: Colors.orange[700],
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.cloud_off, size: 16, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text(
-                    'Offline Mode',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+            height: _isOnline ? 0 : 32,
+            child: AnimatedOpacity(
+              opacity: _isOnline ? 0 : 1,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                color: Colors.orange[700],
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.cloud_off, size: 16, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Offline Mode',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

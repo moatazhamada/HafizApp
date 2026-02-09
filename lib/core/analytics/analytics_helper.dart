@@ -229,7 +229,11 @@ class AnalyticsHelper {
       final Map<String, Object> analyticsParams = {};
       parameters.forEach((key, value) {
         if (value != null) {
-          analyticsParams[key] = value;
+          if (value is String || value is num) {
+            analyticsParams[key] = value;
+          } else {
+            analyticsParams[key] = value.toString();
+          }
         }
       });
 

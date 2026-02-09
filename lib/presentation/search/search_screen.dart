@@ -29,216 +29,228 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return BlocProvider(
       create: (context) => sl<SearchBloc>(),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).primaryColor,
-          elevation: 0,
-          leading: Semantics(
-            button: true,
-            label: 'lbl_back'.tr,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => NavigatorService.goBack(),
-            ),
-          ),
-          title: Semantics(
-            textField: true,
-            label: 'lbl_search_surah'.tr,
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white),
-              cursorColor: Colors.white,
-              decoration: InputDecoration(
-                hintText: 'lbl_search_surah'.tr,
-                hintStyle: const TextStyle(color: Colors.white70),
-                border: InputBorder.none,
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).primaryColor,
+              elevation: 0,
+              leading: Semantics(
+                button: true,
+                label: 'lbl_back'.tr,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => NavigatorService.goBack(),
+                ),
               ),
-              onChanged: (value) {
-                context.read<SearchBloc>().add(SearchQueryChanged(value));
-              },
+              title: Semantics(
+                textField: true,
+                label: 'lbl_search_surah'.tr,
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.white,
+                  decoration: InputDecoration(
+                    hintText: 'lbl_search_surah'.tr,
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) {
+                    context.read<SearchBloc>().add(SearchQueryChanged(value));
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-        body: BlocBuilder<SearchBloc, SearchState>(
-          builder: (context, state) {
-            if (state is SearchLoading) {
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: 8,
-                itemBuilder: (context, index) => const SkeletonListItem(),
-              );
-            } else if (state is SearchLoaded) {
-              return CustomScrollView(
-                slivers: [
-                  if (state.results.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        child: Semantics(
-                          header: true,
-                          child: Text(
-                            'lbl_surahs'.tr,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final surah = state.results[index];
-                        return Semantics(
-                          button: true,
-                          label: '${surah.nameEnglish}, ${surah.nameArabic}',
-                          child: InkWell(
-                            onTap: () {
-                              NavigatorService.pushNamed(
-                                AppRoutes.surahPage,
-                                arguments: surah,
-                              );
-                            },
-                            child: SurahListItem(
-                              surahId: surah.id,
-                              nameEnglish: surah.nameEnglish,
-                              nameArabic: surah.nameArabic,
-                            ),
-                          ),
-                        );
-                      }, childCount: state.results.length),
-                    ),
-                  ],
-                  if (state.verseResults.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          16.0,
-                          16.0,
-                          16.0,
-                          8.0,
-                        ),
-                        child: Semantics(
-                          header: true,
-                          child: Text(
-                            'lbl_verses'.tr,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final verse = state.verseResults[index];
-                        // Find surah info for display
-                        final surah = QuranIndex.quranSurahs.firstWhere(
-                          (s) => s.id == verse.chapterId,
-                          orElse: () => QuranIndex.quranSurahs[0], // fallback
-                        );
-
-                        return Semantics(
-                          button: true,
-                          label:
-                              '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish}, ${'lbl_ayah'.tr} ${verse.verseNumber}',
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
+            body: BlocBuilder<SearchBloc, SearchState>(
+              builder: (context, state) {
+                if (state is SearchLoading) {
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: 8,
+                    itemBuilder: (context, index) => const SkeletonListItem(),
+                  );
+                } else if (state is SearchLoaded) {
+                  return CustomScrollView(
+                    slivers: [
+                      if (state.results.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16.0,
                               vertical: 8.0,
                             ),
-                            onTap: () {
-                              NavigatorService.pushNamed(
-                                AppRoutes.surahPage,
-                                arguments: {
-                                  'surah': surah,
-                                  'verseIndex': verse.verseNumber - 1,
-                                  'resume': true,
-                                },
-                              );
-                            },
-                            title: _buildHighlightedText(
-                              context,
-                              verse.text, // Full Uthmani Text
-                              _searchActionTextForHighlighting(
-                                _searchController.text,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
-                              style: TextStyle(
-                                color: isDark ? Colors.grey[400] : null,
-                              ),
-                            ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).primaryColor.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
+                            child: Semantics(
+                              header: true,
                               child: Text(
-                                '${verse.verseNumber}',
+                                'lbl_surahs'.tr,
                                 style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? Colors.white
+                                      : Theme.of(context).primaryColor,
                                 ),
                               ),
                             ),
                           ),
-                        );
-                      }, childCount: state.verseResults.length),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final surah = state.results[index];
+                            return Semantics(
+                              button: true,
+                              label:
+                                  '${surah.nameEnglish}, ${surah.nameArabic}',
+                              child: InkWell(
+                                onTap: () {
+                                  NavigatorService.pushNamed(
+                                    AppRoutes.surahPage,
+                                    arguments: surah,
+                                  );
+                                },
+                                child: SurahListItem(
+                                  surahId: surah.id,
+                                  nameEnglish: surah.nameEnglish,
+                                  nameArabic: surah.nameArabic,
+                                ),
+                              ),
+                            );
+                          }, childCount: state.results.length),
+                        ),
+                      ],
+                      if (state.verseResults.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              16.0,
+                              16.0,
+                              16.0,
+                              8.0,
+                            ),
+                            child: Semantics(
+                              header: true,
+                              child: Text(
+                                'lbl_verses'.tr,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? Colors.white
+                                      : Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final verse = state.verseResults[index];
+                            // Find surah info for display
+                            final surah = QuranIndex.quranSurahs.firstWhere(
+                              (s) => s.id == verse.chapterId,
+                              orElse: () =>
+                                  QuranIndex.quranSurahs[0], // fallback
+                            );
+
+                            return Semantics(
+                              button: true,
+                              label:
+                                  '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish}, ${'lbl_ayah'.tr} ${verse.verseNumber}',
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                onTap: () {
+                                  NavigatorService.pushNamed(
+                                    AppRoutes.surahPage,
+                                    arguments: {
+                                      'surah': surah,
+                                      'verseIndex': verse.verseNumber - 1,
+                                      'resume': true,
+                                    },
+                                  );
+                                },
+                                title: _buildHighlightedText(
+                                  context,
+                                  verse.text, // Full Uthmani Text
+                                  _searchActionTextForHighlighting(
+                                    _searchController.text,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.grey[400] : null,
+                                  ),
+                                ),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '${verse.verseNumber}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }, childCount: state.verseResults.length),
+                        ),
+                      ],
+                    ],
+                  );
+                } else if (state is SearchEmpty) {
+                  return Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        'msg_no_results'.tr,
+                        style: TextStyle(
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
                     ),
-                  ],
-                ],
-              );
-            } else if (state is SearchEmpty) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
+                  );
+                } else if (state is SearchError) {
+                  return Center(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        '${'lbl_error'.tr}: ${state.message}',
+                        style: TextStyle(
+                          color: isDark ? Colors.redAccent : Colors.red,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                // Initial state
+                return Center(
                   child: Text(
-                    'msg_no_results'.tr,
+                    'msg_search_hint'.tr,
                     style: TextStyle(
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
-                ),
-              );
-            } else if (state is SearchError) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    '${'lbl_error'.tr}: ${state.message}',
-                    style: TextStyle(
-                      color: isDark ? Colors.redAccent : Colors.red,
-                    ),
-                  ),
-                ),
-              );
-            }
-            // Initial state
-            return Center(
-              child: Text(
-                'msg_search_hint'.tr,
-                style: TextStyle(
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ),
-            );
-          },
-        ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }

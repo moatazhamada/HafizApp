@@ -115,9 +115,7 @@ class VerseShareSheet extends StatelessWidget {
               title: 'lbl_copy_text'.tr,
               subtitle: 'msg_copy_text_desc'.tr,
               onTap: () async {
-                final text = translation == null || translation!.trim().isEmpty
-                    ? verse.text
-                    : '${verse.text}\n\n${translation!}';
+                final text = verse.text;
                 await deepLinkService.copyPlainText(text);
                 navigator.pop();
                 scaffoldMessenger.showSnackBar(
@@ -238,42 +236,31 @@ class VerseShareSheet extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        final rootContext = context;
-        Navigator.of(rootContext).pop(); // Close style picker
-        Navigator.of(rootContext).pop(); // Close share sheet
-        if (!rootContext.mounted) return;
-
         // Show loading
         unawaited(
           showDialog(
-            context: rootContext,
+            context: context,
             barrierDismissible: false,
-            useRootNavigator: true,
-            builder: (context) =>
-                const Center(child: CircularProgressIndicator()),
+            builder: (ctx) => const Center(child: CircularProgressIndicator()),
           ),
         );
 
         try {
-          // Generate and share image
           await deepLinkService.shareVerseImage(
             verseText: verse.text,
             surahName: surah.nameEnglish,
             verseNumber: verse.verseNumber,
-            context: rootContext,
+            context: context,
             translation: translation,
             style: style,
           );
         } finally {
-          if (rootContext.mounted) {
-            final rootNavigator = Navigator.of(
-              rootContext,
-              rootNavigator: true,
-            );
-            if (rootNavigator.canPop()) {
-              rootNavigator.pop(); // Close loading
-            }
-          }
+          // Pop loading
+          if (context.mounted) Navigator.pop(context);
+          // Pop style picker
+          if (context.mounted) Navigator.pop(context);
+          // Pop share sheet
+          if (context.mounted) Navigator.pop(context);
         }
       },
       child: Container(

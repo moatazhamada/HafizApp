@@ -9,6 +9,7 @@ import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
 import '../surah_screen/bloc/surah_bloc.dart';
 import '../../core/utils/number_converter.dart';
+import 'widgets/mushaf_page_skeleton.dart';
 
 /// Full Mushaf View - Horizontal page turning (RTL) like a real Quran
 /// Supports multiple Mushaf types (Madani, Indo-Pak, Warsh)
@@ -54,7 +55,12 @@ class _MushafScreenState extends State<MushafScreen> {
 
     // For RTL Mushaf, initialize PageController with the correct initial page
     // If no initial page specified, start from page 1 (which will be on the right in RTL)
-    final initialPageIndex = (widget.initialPage ?? 1) - 1;
+    final totalPages = _currentMushafType.totalPages;
+    final initialPageNumber = widget.initialPage ?? 1;
+    final initialPageIndex = (totalPages - initialPageNumber).clamp(
+      0,
+      totalPages - 1,
+    );
     _pageController = PageController(initialPage: initialPageIndex);
 
     _loadInitialData();
@@ -108,7 +114,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 (s is SuccessSurahState &&
                     s.chapters.isNotEmpty &&
                     s.chapters.first.chapterId == surahId) ||
-                s is FailureSurahState,
+                (s is FailureSurahState),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -127,7 +133,7 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   void _onPageChanged(int pageIndex) {
-    final page = pageIndex + 1;
+    final page = _currentMushafType.totalPages - pageIndex;
     if (page != _currentPage &&
         page >= 1 &&
         page <= _currentMushafType.totalPages) {
@@ -194,7 +200,10 @@ class _MushafScreenState extends State<MushafScreen> {
             onPressed: () {
               final page = int.tryParse(controller.text);
               if (page != null) {
-                _jumpToPage(page - 1);
+                // Adjust jump for RTL (reversed)
+                final totalPages = _currentMushafType.totalPages;
+                final targetIndex = totalPages - page;
+                _jumpToPage(targetIndex);
                 Navigator.pop(context);
               }
             },
@@ -293,9 +302,9 @@ class _MushafScreenState extends State<MushafScreen> {
       _surahCache.clear();
       _loadedSurahs.clear();
 
-      // Reinitialize PageController with page 1 (index 0)
+      // Reinitialize PageController with page 1 (which is index total-1 in reversed RTL)
       _pageController.dispose();
-      _pageController = PageController(initialPage: 0);
+      _pageController = PageController(initialPage: type.totalPages - 1);
     });
 
     // Save preference
@@ -450,7 +459,7 @@ class _MushafScreenState extends State<MushafScreen> {
       body: Stack(
         children: [
           if (_isLoading)
-            const Center(child: CircularProgressIndicator())
+            const MushafPageSkeleton()
           else
             // RTL PageView for authentic Mushaf experience
             // Always RTL regardless of app language - this is Arabic Quran
@@ -466,7 +475,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 onPageChanged: _onPageChanged,
                 itemCount: _currentMushafType.totalPages,
                 itemBuilder: (context, index) {
-                  final pageNumber = index + 1;
+                  final pageNumber = _currentMushafType.totalPages - index;
                   return _buildMushafPage(pageNumber, isDark);
                 },
               ),
@@ -522,10 +531,9 @@ class _MushafScreenState extends State<MushafScreen> {
     ) {
       final verses = _surahCache[surahId];
       if (verses == null) {
-        return Container(
-          alignment: Alignment.center,
-          child: const CircularProgressIndicator(),
-        );
+        // Trigger load if not in cache
+        _loadSurah(surahId);
+        return const MushafPageSkeleton();
       }
       final surahInfo = QuranIndex.quranSurahs.firstWhere(
         (s) => s.id == surahId,

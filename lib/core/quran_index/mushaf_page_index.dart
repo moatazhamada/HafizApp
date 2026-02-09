@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'quran_surah.dart';
 
 /// Mushaf Page Index - Maps Madani Mushaf pages (1-604) to Surah/verse ranges.
@@ -36,10 +37,21 @@ class MushafPageIndex {
   static Future<void> loadPageDataFromAsset() async {
     if (_isLoaded) return;
 
-    final jsonString = await rootBundle.loadString(_assetPath);
-    final jsonList = json.decode(jsonString) as List<dynamic>;
+    try {
+      final jsonString = await rootBundle.loadString(_assetPath);
+      _pagesData = await compute(_parseMushafPages, jsonString);
+      _isLoaded = true;
+    } catch (e) {
+      debugPrint('Error loading Mushaf page data: $e');
+      // Initialize with empty data to prevent app crash, or rethrow if critical
+      _pagesData = [];
+      _isLoaded = true;
+    }
+  }
 
-    final parsed = jsonList
+  static List<List<dynamic>> _parseMushafPages(String jsonString) {
+    final jsonList = json.decode(jsonString) as List<dynamic>;
+    return jsonList
         .map((item) {
           final row = item as List<dynamic>;
           return <dynamic>[
@@ -53,15 +65,6 @@ class MushafPageIndex {
           ];
         })
         .toList(growable: false);
-
-    if (parsed.length != totalPages) {
-      throw StateError(
-        'Invalid Mushaf page index length: ${parsed.length}, expected $totalPages',
-      );
-    }
-
-    _pagesData = parsed;
-    _isLoaded = true;
   }
 
   static void _ensureLoaded() {
@@ -145,7 +148,8 @@ class MushafPageIndex {
         orElse: () => QuranIndex.quranSurahs.first,
       );
       final fromVerse = s == page.surahId ? page.startVerse : 1;
-      final toVerse = s == page.endSurahId ? page.endVerse : surah.verseCount;
+      final toVerse = (s == page.endSurahId ? page.endVerse : surah.verseCount)
+          .clamp(1, surah.verseCount);
       for (int v = fromVerse; v <= toVerse; v++) {
         verses.add(
           MushafVerse(surahId: s, verseNumber: v, pageNumber: pageNumber),

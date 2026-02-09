@@ -80,80 +80,148 @@ Future<void> main() async {
     ),
   );
 
-  // Critical initialization (fast)
-  await PrefUtils().init();
-  await MushafPageIndex.loadPageDataFromAsset();
+  runApp(const BootstrapApp());
+}
 
-  // Initialize Hive with all boxes
-  await Hive.initFlutter();
-  await Future.wait([
-    Hive.openBox('surah_cache'),
-    Hive.openBox('bookmarks'),
-    Hive.openBox('recitation_errors'),
-    Hive.openBox('qiraat_cache'),
-    Hive.openBox('audio_cache'),
-  ]);
+class BootstrapApp extends StatefulWidget {
+  const BootstrapApp({super.key});
 
-  // Dependency injection
-  await di.init();
+  @override
+  State<BootstrapApp> createState() => _BootstrapAppState();
+}
 
-  // HydratedStorage for BLoC persistence
-  final storage = await HydratedStorage.build(
-    storageDirectory: HydratedStorageDirectory(
-      (await getApplicationDocumentsDirectory()).path,
-    ),
-  );
-  HydratedBloc.storage = storage;
+class _BootstrapAppState extends State<BootstrapApp> {
+  bool _isInitialized = false;
 
-  // Firebase initialization (with timeout to prevent hanging)
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(const Duration(seconds: 3));
-
-    final crashlytics = FirebaseCrashlytics.instance;
-    Logger.init(
-      kDebugMode ? LogMode.debug : LogMode.live,
-      crashlytics: crashlytics,
-    );
-
-    // Set up error handlers
-    FlutterError.onError = (errorDetails) {
-      Logger.error(
-        'Flutter error: ${errorDetails.exception}',
-        feature: 'Flutter',
-        error: errorDetails.exception,
-        stackTrace: errorDetails.stack,
-        fatal: true,
-      );
-      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-    };
-
-    ui.PlatformDispatcher.instance.onError = (error, stack) {
-      Logger.error(
-        'Platform error: $error',
-        feature: 'Platform',
-        error: error,
-        stackTrace: stack,
-        fatal: true,
-      );
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
-
-    unawaited(FirebaseAnalytics.instance.logAppOpen());
-  } catch (e, stackTrace) {
-    // Log Firebase init failure but continue - app can work without it
-    debugPrint('Firebase initialization failed: $e');
-    Logger.error(
-      'Firebase initialization failed',
-      feature: 'Firebase',
-      error: e,
-      stackTrace: stackTrace,
-    );
+  @override
+  void initState() {
+    super.initState();
+    _init();
   }
 
-  runApp(const MyApp());
+  Future<void> _init() async {
+    try {
+      // Critical initialization (fast)
+      await PrefUtils().init().timeout(const Duration(seconds: 2));
+
+      // Load page data in background to avoid blocking startup
+      unawaited(MushafPageIndex.loadPageDataFromAsset());
+
+      // Initialize Hive with all boxes
+      await Hive.initFlutter();
+      await Future.wait([
+        Hive.openBox('surah_cache'),
+        Hive.openBox('bookmarks'),
+        Hive.openBox('recitation_errors'),
+        Hive.openBox('qiraat_cache'),
+        Hive.openBox('audio_cache'),
+      ]).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('Hive initialization timed out');
+          return [];
+        },
+      );
+
+      // Dependency injection
+      await di.init();
+
+      // HydratedStorage for BLoC persistence
+      final storage = await HydratedStorage.build(
+        storageDirectory: HydratedStorageDirectory(
+          (await getApplicationDocumentsDirectory()).path,
+        ),
+      );
+      HydratedBloc.storage = storage;
+
+      // Firebase initialization (with timeout to prevent hanging)
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(const Duration(seconds: 3));
+
+        final crashlytics = FirebaseCrashlytics.instance;
+        Logger.init(
+          kDebugMode ? LogMode.debug : LogMode.live,
+          crashlytics: crashlytics,
+        );
+
+        // Set up error handlers
+        FlutterError.onError = (errorDetails) {
+          Logger.error(
+            'Flutter error: ${errorDetails.exception}',
+            feature: 'Flutter',
+            error: errorDetails.exception,
+            stackTrace: errorDetails.stack,
+            fatal: true,
+          );
+          FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+        };
+
+        ui.PlatformDispatcher.instance.onError = (error, stack) {
+          Logger.error(
+            'Platform error: $error',
+            feature: 'Platform',
+            error: error,
+            stackTrace: stack,
+            fatal: true,
+          );
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+
+        unawaited(FirebaseAnalytics.instance.logAppOpen());
+      } catch (e, stackTrace) {
+        // Log Firebase init failure but continue - app can work without it
+        debugPrint('Firebase initialization failed: $e');
+        Logger.error(
+          'Firebase initialization failed',
+          feature: 'Firebase',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    } catch (e, stack) {
+      debugPrint('Initialization failed: $e');
+      Logger.error(
+        'Bootstrap initialization failed',
+        feature: 'Bootstrap',
+        error: e,
+        stackTrace: stack,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isInitialized) {
+      return const MyApp();
+    }
+
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Try to display the app icon if possible, or just a spinner
+              // Image.asset('assets/app_icon.png', width: 100, height: 100),
+              // const SizedBox(height: 24),
+              CircularProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -255,30 +323,30 @@ class _MyAppState extends State<MyApp> {
         builder: (context, state) {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
-            builder: (_, locale, _) => OfflineIndicator(
-              child: MaterialApp(
-                themeMode: _getThemeMode(),
-                theme: lightTheme,
-                darkTheme: darkTheme,
-                locale: locale,
-                title: 'Hafiz',
-                navigatorKey: NavigatorService.navigatorKey,
-                scaffoldMessengerKey: globalMessengerKey,
-                navigatorObservers: [sl<AnalyticsRouteObserver>()],
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: const [
-                  AppLocalizationDelegate(),
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('en', 'US'),
-                  Locale('ar', 'EG'),
-                ],
-                initialRoute: AppRoutes.onboardingScreen,
-                routes: AppRoutes.routes,
-              ),
+            builder: (_, locale, _) => MaterialApp(
+              themeMode: _getThemeMode(),
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              locale: locale,
+              title: 'Hafiz',
+              navigatorKey: NavigatorService.navigatorKey,
+              scaffoldMessengerKey: globalMessengerKey,
+              navigatorObservers: [sl<AnalyticsRouteObserver>()],
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                AppLocalizationDelegate(),
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
+              initialRoute: AppRoutes.onboardingScreen,
+              routes: AppRoutes.routes,
+              builder: (context, child) {
+                return OfflineIndicator(
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
             ),
           );
         },

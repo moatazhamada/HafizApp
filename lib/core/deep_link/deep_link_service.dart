@@ -63,20 +63,6 @@ class DeepLinkService {
       return null;
     }
 
-    // For custom-scheme links (e.g. hafiz://surah/2/verse/3), normalize the
-    // host into the first path segment so parsing works consistently.
-    final pathSegments = isCustomScheme && uri.host.isNotEmpty
-        ? <String>[uri.host, ...uri.pathSegments]
-        : uri.pathSegments;
-    if (pathSegments.isEmpty) return null;
-
-    // Support both https://hafiz.app/... and hafiz://... schemes
-    final isHttpsAppLink = uri.scheme == scheme && uri.host == baseUrl;
-    final isCustomScheme = uri.scheme == 'hafiz';
-    if (!isHttpsAppLink && !isCustomScheme) {
-      return null;
-    }
-
     // Normalize segments so https and custom-scheme links can be parsed the same way.
     //
     // Examples:
@@ -99,6 +85,11 @@ class DeepLinkService {
     }
 
     if (pathSegments.isEmpty) return null;
+
+    // Parse /surah/{id}/verse/{number}
+    if (pathSegments[0] == 'surah' && pathSegments.length >= 2) {
+      final surahId = int.tryParse(pathSegments[1]);
+      if (surahId == null || surahId < 1 || surahId > 114) return null;
 
       int? verseNumber;
       if (pathSegments.length >= 4 && pathSegments[2] == 'verse') {
@@ -206,12 +197,15 @@ $link
     final screenshotController = ScreenshotController();
 
     // Create the widget to capture
-    final verseWidget = _buildVerseImageWidget(
-      verseText: verseText,
-      surahName: surahName,
-      verseNumber: verseNumber,
-      style: style,
-      translation: translation,
+    final verseWidget = Directionality(
+      textDirection: TextDirection.ltr,
+      child: _buildVerseImageWidget(
+        verseText: verseText,
+        surahName: surahName,
+        verseNumber: verseNumber,
+        style: style,
+        translation: translation,
+      ),
     );
 
     try {
@@ -225,7 +219,7 @@ $link
       // Save to temp directory
       final tempDir = await getTemporaryDirectory();
       final normalized = surahName
-          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .replaceAll(RegExp(r'[^a-zA-Z0-9\s-]'), '')
           .trim()
           .replaceAll(RegExp(r'\s+'), '_');
       final safeSurahName = normalized.isEmpty

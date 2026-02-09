@@ -645,123 +645,129 @@ class _SurahScreenState extends State<SurahScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            Semantics(
-              button: true,
-              label: isBookmarked
-                  ? 'lbl_remove_bookmark'.tr
-                  : 'lbl_add_bookmark'.tr,
-              child: ListTile(
-                leading: Icon(
-                  isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
-                  color: Colors.teal,
-                ),
-                title: Text(
-                  isBookmarked
-                      ? 'lbl_remove_bookmark'.tr
-                      : 'lbl_add_bookmark'.tr,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (isBookmarked) {
-                    context.read<BookmarkBloc>().add(
-                      RemoveBookmarkEvent(surah!.id, aya.verseNumber),
-                    );
-                  } else {
-                    context.read<BookmarkBloc>().add(
-                      AddBookmarkEvent(
-                        BookmarkModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseNumber: aya.verseNumber,
-                          createdAt: DateTime.now(),
+      builder: (context) => MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: context.read<BookmarkBloc>()),
+          BlocProvider.value(value: context.read<RecitationErrorBloc>()),
+        ],
+        child: SafeArea(
+          child: Wrap(
+            children: [
+              Semantics(
+                button: true,
+                label: isBookmarked
+                    ? 'lbl_remove_bookmark'.tr
+                    : 'lbl_add_bookmark'.tr,
+                child: ListTile(
+                  leading: Icon(
+                    isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
+                    color: Colors.teal,
+                  ),
+                  title: Text(
+                    isBookmarked
+                        ? 'lbl_remove_bookmark'.tr
+                        : 'lbl_add_bookmark'.tr,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (isBookmarked) {
+                      context.read<BookmarkBloc>().add(
+                        RemoveBookmarkEvent(surah!.id, aya.verseNumber),
+                      );
+                    } else {
+                      context.read<BookmarkBloc>().add(
+                        AddBookmarkEvent(
+                          BookmarkModel(
+                            surahId: surah!.id,
+                            surahName: surah!.nameEnglish,
+                            verseNumber: aya.verseNumber,
+                            createdAt: DateTime.now(),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                },
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
-            Semantics(
-              button: true,
-              label: isError
-                  ? 'msg_unmark_practice'.tr
-                  : 'msg_mark_practice'.tr,
-              child: ListTile(
-                leading: Icon(
-                  isError ? Icons.playlist_remove : Icons.error_outline,
-                  color: Colors.redAccent,
-                ),
-                title: Text(
-                  isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
-                  style: const TextStyle(color: Colors.redAccent),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (isError) {
-                    context.read<RecitationErrorBloc>().add(
-                      RemoveRecitationErrorEvent(surah!.id, aya.verseNumber),
-                    );
-                  } else {
-                    context.read<RecitationErrorBloc>().add(
-                      AddRecitationErrorEvent(
-                        RecitationErrorModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseId: aya.verseNumber,
-                          createdAt: DateTime.now(),
+              Semantics(
+                button: true,
+                label: isError
+                    ? 'msg_unmark_practice'.tr
+                    : 'msg_mark_practice'.tr,
+                child: ListTile(
+                  leading: Icon(
+                    isError ? Icons.playlist_remove : Icons.error_outline,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (isError) {
+                      context.read<RecitationErrorBloc>().add(
+                        RemoveRecitationErrorEvent(surah!.id, aya.verseNumber),
+                      );
+                    } else {
+                      context.read<RecitationErrorBloc>().add(
+                        AddRecitationErrorEvent(
+                          RecitationErrorModel(
+                            surahId: surah!.id,
+                            surahName: surah!.nameEnglish,
+                            verseId: aya.verseNumber,
+                            createdAt: DateTime.now(),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_verify_recitation'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.mic, color: Colors.blueAccent),
-                title: Text('lbl_verify_recitation'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showVoiceDialog(aya);
-                },
-              ),
-            ),
-            const Divider(),
-            // Share options
-            Semantics(
-              button: true,
-              label: 'lbl_share_verse'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.share, color: Colors.green),
-                title: Text('lbl_share_verse'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.showVerseShareSheet(surah: surah!, verse: aya);
-                },
-              ),
-            ),
-            // Play audio from this verse
-            Semantics(
-              button: true,
-              label: 'lbl_listen'.tr,
-              child: ListTile(
-                leading: const Icon(
-                  Icons.play_circle_fill,
-                  color: Colors.orange,
+                      );
+                    }
+                  },
                 ),
-                title: Text('lbl_listen_from_here'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _playAudioFromVerse(aya.verseNumber);
-                },
               ),
-            ),
-          ],
+              Semantics(
+                button: true,
+                label: 'lbl_verify_recitation'.tr,
+                child: ListTile(
+                  leading: const Icon(Icons.mic, color: Colors.blueAccent),
+                  title: Text('lbl_verify_recitation'.tr),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showVoiceDialog(aya);
+                  },
+                ),
+              ),
+              const Divider(),
+              // Share options
+              Semantics(
+                button: true,
+                label: 'lbl_share_verse'.tr,
+                child: ListTile(
+                  leading: const Icon(Icons.share, color: Colors.green),
+                  title: Text('lbl_share_verse'.tr),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.showVerseShareSheet(surah: surah!, verse: aya);
+                  },
+                ),
+              ),
+              // Play audio from this verse
+              Semantics(
+                button: true,
+                label: 'lbl_listen'.tr,
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.play_circle_fill,
+                    color: Colors.orange,
+                  ),
+                  title: Text('lbl_listen_from_here'.tr),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _playAudioFromVerse(aya.verseNumber);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -838,7 +844,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
     // No reliable per-verse timestamps are available here yet.
     final timestamps = <Duration>[];
-    final effectiveStartVerse = timestamps.isNotEmpty ? verseNumber : 1;
+    final effectiveStartVerse = verseNumber;
 
     // Navigate to audio player
     AppRoutes.goToAudioPlayer(
