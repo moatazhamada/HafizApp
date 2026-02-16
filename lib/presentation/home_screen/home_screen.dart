@@ -55,7 +55,13 @@ class _HomeScreenState extends State<HomeScreen>
       if (saved != null && _scrollController.hasClients) {
         try {
           _scrollController.jumpTo(saved);
-        } catch (_) {}
+        } catch (e) {
+          Logger.debug(
+            'Error restoring scroll position',
+            feature: 'HomeScreen',
+            error: e,
+          );
+        }
       }
     });
     _scrollController.addListener(() {
@@ -77,7 +83,13 @@ class _HomeScreenState extends State<HomeScreen>
     if (route is PageRoute) {
       try {
         sl<AnalyticsRouteObserver>().subscribe(this, route);
-      } catch (_) {}
+      } catch (e) {
+        Logger.debug(
+          'Error subscribing to analytics',
+          feature: 'HomeScreen',
+          error: e,
+        );
+      }
     }
   }
 
@@ -85,7 +97,13 @@ class _HomeScreenState extends State<HomeScreen>
   void didPopNext() {
     try {
       homeBloc.add(HomeShowLastSurahEvent());
-    } catch (_) {}
+    } catch (e) {
+      Logger.debug(
+        'Error showing last surah',
+        feature: 'HomeScreen',
+        error: e,
+      );
+    }
     if (mounted) setState(() {});
   }
 
@@ -94,7 +112,13 @@ class _HomeScreenState extends State<HomeScreen>
     _connectivitySub?.cancel();
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
-    } catch (_) {}
+    } catch (e) {
+      Logger.debug(
+        'Error unsubscribing from analytics',
+        feature: 'HomeScreen',
+        error: e,
+      );
+    }
     _scrollController.dispose();
     super.dispose();
   }

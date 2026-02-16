@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
@@ -118,23 +119,25 @@ class RecitationErrorScreen extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          NavigatorService.pushNamed(
-                            AppRoutes.surahPage,
-                            arguments: {
-                              'surah': QuranIndex.quranSurahs.firstWhere(
-                                (e) => e.id == error.surahId,
-                                orElse: () => QuranIndex.quranSurahs[0],
-                              ),
-                              'verseIndex': error.verseId - 1,
-                              'resume': true,
-                            },
-                          ).then((_) {
-                            if (context.mounted) {
-                              context.read<RecitationErrorBloc>().add(
-                                const LoadRecitationErrorsEvent(),
-                              );
-                            }
-                          });
+                          unawaited(
+                            NavigatorService.pushNamed(
+                              AppRoutes.surahPage,
+                              arguments: {
+                                'surah': QuranIndex.quranSurahs.firstWhere(
+                                  (e) => e.id == error.surahId,
+                                  orElse: () => QuranIndex.quranSurahs[0],
+                                ),
+                                'verseIndex': error.verseId - 1,
+                                'resume': true,
+                              },
+                            ).then((_) {
+                              if (context.mounted) {
+                                context.read<RecitationErrorBloc>().add(
+                                  const LoadRecitationErrorsEvent(),
+                                );
+                              }
+                            }),
+                          );
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),

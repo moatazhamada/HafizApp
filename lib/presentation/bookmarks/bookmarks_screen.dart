@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
@@ -148,21 +149,23 @@ class BookmarksScreen extends StatelessWidget {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: () {
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: {
-                                'surah': surah,
-                                'verseIndex': bookmark.verseNumber - 1,
-                                'resume': true,
-                              },
-                            ).then((_) {
-                              // Refresh list when returning from Surah page
-                              if (context.mounted) {
-                                context.read<BookmarkBloc>().add(
-                                  const LoadBookmarksEvent(),
-                                );
-                              }
-                            });
+                            unawaited(
+                              NavigatorService.pushNamed(
+                                AppRoutes.surahPage,
+                                arguments: {
+                                  'surah': surah,
+                                  'verseIndex': bookmark.verseNumber - 1,
+                                  'resume': true,
+                                },
+                              ).then((_) {
+                                // Refresh list when returning from Surah page
+                                if (context.mounted) {
+                                  context.read<BookmarkBloc>().add(
+                                    const LoadBookmarksEvent(),
+                                  );
+                                }
+                              }),
+                            );
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
