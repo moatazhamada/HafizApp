@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
 import 'qiraat_models.dart';
+import '../utils/logger.dart';
 
 class QiraatService {
   final Dio _dio;
@@ -49,7 +50,11 @@ class QiraatService {
         return _editionsCache!;
       }
     } catch (e) {
-      debugPrint('Failed to fetch editions: $e');
+      Logger.error(
+        'Failed to fetch qiraat editions',
+        feature: 'QiraatService',
+        error: e,
+      );
     }
     _editionsCache ??= _fallbackEditions();
     return _editionsCache!;
@@ -88,7 +93,11 @@ class QiraatService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch ayah text: $e');
+      Logger.error(
+        'Failed to fetch ayah text',
+        feature: 'QiraatService',
+        error: e,
+      );
     }
     return null;
   }

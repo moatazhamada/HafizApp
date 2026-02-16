@@ -231,7 +231,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                         );
                                       }
                                     } catch (e) {
-                                      debugPrint('Navigation error: $e');
+                                      Logger.error(
+                                        'Navigation error during onboarding',
+                                        feature: 'OnboardingScreen',
+                                        error: e,
+                                      );
                                       // Fallback navigation
                                       Navigator.of(context).pushAndRemoveUntil(
                                         MaterialPageRoute(

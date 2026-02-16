@@ -244,7 +244,11 @@ class _SurahScreenState extends State<SurahScreen> {
             return true;
           }
         } catch (e) {
-          debugPrint('Scroll error: $e');
+          Logger.debug(
+            'Scroll error',
+            feature: 'SurahScreen',
+            error: e,
+          );
           return false;
         }
       }

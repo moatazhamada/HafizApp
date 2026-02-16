@@ -123,11 +123,19 @@ class _MushafScreenState extends State<MushafScreen> {
         _loadedSurahs.add(surahId);
         setState(() {});
       } else if (state is FailureSurahState) {
-        debugPrint('Failed to load surah $surahId: ${state.errorMessage}');
+        Logger.error(
+          'Failed to load surah $surahId',
+          feature: 'MushafScreen',
+          error: state.errorMessage,
+        );
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('Error loading surah $surahId: $e');
+        Logger.error(
+          'Error loading surah $surahId',
+          feature: 'MushafScreen',
+          error: e,
+        );
       }
     }
   }
