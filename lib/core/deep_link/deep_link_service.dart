@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../utils/logger.dart';
 
 /// Deep Link Service handles:
 /// - Incoming deep links (hafiz.app/surah/2/verse/255)
@@ -33,7 +34,11 @@ class DeepLinkService {
         _handleLink(initialUri, onDeepLink);
       }
     } catch (e) {
-      debugPrint('Error getting initial link: $e');
+      Logger.error(
+        'Error getting initial link',
+        feature: 'DeepLink',
+        error: e,
+      );
     }
 
     // Listen for incoming links
@@ -42,7 +47,11 @@ class DeepLinkService {
         _handleLink(uri, onDeepLink);
       },
       onError: (err) {
-        debugPrint('Deep link error: $err');
+        Logger.error(
+          'Deep link error',
+          feature: 'DeepLink',
+          error: err,
+        );
       },
     );
   }
@@ -235,7 +244,11 @@ $link
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
-      debugPrint('Error generating verse image: $e');
+      Logger.error(
+        'Error generating verse image',
+        feature: 'DeepLink',
+        error: e,
+      );
       return null;
     }
   }

@@ -34,7 +34,14 @@ class _AboutScreenState extends State<AboutScreen> {
       if (mounted) {
         setState(() => _version = info.version);
       }
-    } catch (_) {}
+    } catch (e) {
+      Logger.debug(
+        'Error loading package version',
+        feature: 'AboutScreen',
+        error: e,
+      );
+      // Version will remain as default '3.0.0'
+    }
   }
 
   @override

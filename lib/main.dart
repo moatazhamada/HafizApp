@@ -29,7 +29,7 @@ import 'package:flutter/foundation.dart';
 import 'core/quran_index/quran_surah.dart';
 import 'core/quran_index/mushaf_page_index.dart';
 
-var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
@@ -118,7 +118,10 @@ class _BootstrapAppState extends State<BootstrapApp> {
       ]).timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          debugPrint('Hive initialization timed out');
+          Logger.error(
+            'Hive initialization timed out',
+            feature: 'Bootstrap',
+          );
           return [];
         },
       );
@@ -173,7 +176,6 @@ class _BootstrapAppState extends State<BootstrapApp> {
         unawaited(FirebaseAnalytics.instance.logAppOpen());
       } catch (e, stackTrace) {
         // Log Firebase init failure but continue - app can work without it
-        debugPrint('Firebase initialization failed: $e');
         Logger.error(
           'Firebase initialization failed',
           feature: 'Firebase',
@@ -182,7 +184,6 @@ class _BootstrapAppState extends State<BootstrapApp> {
         );
       }
     } catch (e, stack) {
-      debugPrint('Initialization failed: $e');
       Logger.error(
         'Bootstrap initialization failed',
         feature: 'Bootstrap',
@@ -259,14 +260,18 @@ class _MyAppState extends State<MyApp> {
             (s) => s.id == data.surahId,
           );
           if (surahIndex == -1) {
-            debugPrint('Ignoring invalid deep link surahId ${data.surahId}');
+            Logger.debug(
+              'Ignoring invalid deep link surahId ${data.surahId}',
+              feature: 'DeepLink',
+            );
             return;
           }
           final surah = QuranIndex.quranSurahs[surahIndex];
           final verseNumber = data.verseNumber ?? 1;
           if (verseNumber < 1 || verseNumber > surah.verseCount) {
-            debugPrint(
+            Logger.debug(
               'Ignoring invalid deep link verse $verseNumber for surah ${surah.id}',
+              feature: 'DeepLink',
             );
             return;
           }

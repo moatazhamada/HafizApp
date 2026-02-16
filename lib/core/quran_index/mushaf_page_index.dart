@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'quran_surah.dart';
+import '../utils/logger.dart';
 
 /// Mushaf Page Index - Maps Madani Mushaf pages (1-604) to Surah/verse ranges.
 /// Data is loaded from assets/quran/mushaf_page_index.json.
@@ -42,7 +43,11 @@ class MushafPageIndex {
       _pagesData = await compute(_parseMushafPages, jsonString);
       _isLoaded = true;
     } catch (e) {
-      debugPrint('Error loading Mushaf page data: $e');
+      Logger.error(
+        'Error loading Mushaf page data',
+        feature: 'MushafPageIndex',
+        error: e,
+      );
       // Initialize with empty data to prevent app crash, or rethrow if critical
       _pagesData = [];
       _isLoaded = true;

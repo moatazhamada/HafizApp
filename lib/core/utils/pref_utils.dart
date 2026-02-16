@@ -18,7 +18,10 @@ class PrefUtils {
     await _initLock.synchronized(() async {
       if (_sharedPreferences != null) return;
       _sharedPreferences = await SharedPreferences.getInstance();
-      debugPrint('SharedPreference Initialized');
+      Logger.debug(
+        'SharedPreference Initialized',
+        feature: 'PrefUtils',
+      );
     });
   }
 

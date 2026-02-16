@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import '../config/api_config.dart';
 import '../network/qf_auth.dart';
 import 'recitation_models.dart';
+import '../utils/logger.dart';
 
 class RecitationService {
   final Dio _dio;
@@ -95,7 +96,13 @@ class RecitationService {
         if (decoded is Map<String, dynamic>) {
           return ChapterAudioFile.fromJson(decoded);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.debug(
+          'Error decoding cached audio',
+          feature: 'RecitationService',
+          error: e,
+        );
+      }
     }
     return null;
   }
