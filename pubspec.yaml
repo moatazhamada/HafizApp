@@ -132,3 +132,7 @@ flutter:
           weight: 700
         - asset: assets/fonts/AmiriRegular.ttf
           weight: 400
+    - family: Mushaf
+      fonts:
+        - asset: assets/fonts/KFGQPC_Uthmanic_Script_HAFS.ttf
+          weight: 400

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -69,7 +70,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       } else {
         // Log analytics
         final totalResults = surahResults.length + verseResults.length;
-        _analytics.logSearchPerformed(query, totalResults);
+        unawaited(_analytics.logSearchPerformed(query, totalResults));
         emit(SearchLoaded(surahResults, verseResults: verseResults));
       }
     } catch (e) {

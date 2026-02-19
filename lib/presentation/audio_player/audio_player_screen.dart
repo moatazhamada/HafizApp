@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/analytics/analytics_helper.dart';
+import '../../injection_container.dart';
 
 /// Full Audio Player Screen for Surah recitation
 /// Features: Play/Pause, verse highlighting, speed control, sleep timer
@@ -107,6 +109,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
       // Auto-play
       await _audioHandler!.play();
+
+      // Track audio started
+      unawaited(
+        sl<AnalyticsHelper>().logAudioPlayed(
+          widget.surah.id,
+          widget.reciter,
+          surahName: widget.surah.nameEnglish,
+          startVerse: widget.startVerse ?? 1,
+        ),
+      );
     } catch (e, stackTrace) {
       Logger.error(
         'Error initializing audio: $e',
@@ -180,6 +192,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void _setSleepTimer(Duration duration) {
     _sleepTimer?.cancel();
     _remainingSleepTime = duration;
+
+    // Track sleep timer set
+    unawaited(sl<AnalyticsHelper>().logAudioTimerSet(duration.inMinutes));
 
     _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       // FIX: Add mounted check to prevent setState after dispose
@@ -293,6 +308,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     });
 
     _audioHandler?.setLoopRange(start, end);
+
+    // Track loop set
+    unawaited(sl<AnalyticsHelper>().logAudioLoopSet(start, end));
   }
 
   void _cancelLoop() {
@@ -694,6 +712,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     if (selected) {
                       setState(() => _playbackSpeed = speed);
                       _audioHandler?.setSpeed(speed);
+
+                      // Track speed change
+                      unawaited(
+                        sl<AnalyticsHelper>().logAudioSpeedChanged(speed),
+                      );
                     }
                   },
                 ),
@@ -739,8 +762,27 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                       onPressed: () {
                         if (playing) {
                           _audioHandler?.pause();
+
+                          // Track pause
+                          unawaited(
+                            sl<AnalyticsHelper>().logAudioPaused(
+                              widget.surah.id,
+                              0,
+                              currentVerse: _currentVerse,
+                            ),
+                          );
                         } else {
                           _audioHandler?.play();
+
+                          // Track resume
+                          unawaited(
+                            sl<AnalyticsHelper>().logAudioPlayed(
+                              widget.surah.id,
+                              widget.reciter,
+                              surahName: widget.surah.nameEnglish,
+                              startVerse: _currentVerse,
+                            ),
+                          );
                         }
                       },
                     ),

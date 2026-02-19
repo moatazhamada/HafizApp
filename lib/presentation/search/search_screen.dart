@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../core/analytics/analytics_helper.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -106,6 +108,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                   '${surah.nameEnglish}, ${surah.nameArabic}',
                               child: InkWell(
                                 onTap: () {
+                                  // Track search result tap
+                                  unawaited(
+                                    sl<AnalyticsHelper>().logSearchResultTapped(
+                                      surah.id,
+                                      0, // Surah tap, not specific verse
+                                    ),
+                                  );
+
                                   NavigatorService.pushNamed(
                                     AppRoutes.surahPage,
                                     arguments: surah,
@@ -168,6 +178,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                   vertical: 8.0,
                                 ),
                                 onTap: () {
+                                  // Track verse search result tap
+                                  unawaited(
+                                    sl<AnalyticsHelper>().logSearchResultTapped(
+                                      verse.chapterId,
+                                      verse.verseNumber,
+                                    ),
+                                  );
+
                                   NavigatorService.pushNamed(
                                     AppRoutes.surahPage,
                                     arguments: {

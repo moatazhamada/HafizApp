@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/app_export.dart';
+import '../../core/analytics/analytics_helper.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/mushaf_types.dart';
 import '../../core/quran_index/quran_surah.dart';
@@ -10,6 +12,11 @@ import '../../injection_container.dart';
 import '../surah_screen/bloc/surah_bloc.dart';
 import '../../core/utils/number_converter.dart';
 import 'widgets/mushaf_page_skeleton.dart';
+import '../../widgets/verse_share_sheet.dart';
+import '../../core/audio/recitation_service.dart';
+import '../../core/audio/recitation_models.dart';
+import '../surah_screen/voice_verification_service.dart';
+import '../surah_screen/widgets/voice_verification_dialog.dart';
 
 /// Full Mushaf View - Horizontal page turning (RTL) like a real Quran
 /// Supports multiple Mushaf types (Madani, Indo-Pak, Warsh)
@@ -34,6 +41,8 @@ class MushafScreen extends StatefulWidget {
 class _MushafScreenState extends State<MushafScreen> {
   late PageController _pageController;
   final SurahBloc _surahBloc = sl<SurahBloc>();
+  final RecitationService _recitationService = RecitationService();
+  final VoiceVerificationService _voiceService = VoiceVerificationService();
 
   // Cache for loaded Surah verses
   final Map<int, List<Verse>> _surahCache = {};
@@ -41,29 +50,43 @@ class _MushafScreenState extends State<MushafScreen> {
   int _currentPage = 1;
   bool _showPageIndicator = true;
   Timer? _pageIndicatorTimer;
-  bool _isLoading = true;
   late MushafType _currentMushafType;
 
   // Track visible pages for efficient loading
   final Set<int> _loadedSurahs = {};
 
+  // Track practice list (recitation errors) for current surahs on page
+  Set<String> _practiceListKeys = {};
+
   @override
   void initState() {
     super.initState();
     _currentMushafType = widget.mushafType;
-    _currentPage = widget.initialPage ?? 1;
+
+    // Determine initial page: use provided page, or find page from surah/verse
+    int initialPageNumber = widget.initialPage ?? 1;
+    if (widget.initialPage == null && widget.highlightSurah != null) {
+      // Find page for the specified surah and verse
+      final page = MushafPageIndex.findPageForVerse(
+        widget.highlightSurah!,
+        widget.highlightVerse ?? 1,
+      );
+      if (page != null) {
+        initialPageNumber = page;
+      }
+    }
+    _currentPage = initialPageNumber;
 
     // For RTL Mushaf, initialize PageController with the correct initial page
-    // If no initial page specified, start from page 1 (which will be on the right in RTL)
     final totalPages = _currentMushafType.totalPages;
-    final initialPageNumber = widget.initialPage ?? 1;
     final initialPageIndex = (totalPages - initialPageNumber).clamp(
       0,
       totalPages - 1,
     );
     _pageController = PageController(initialPage: initialPageIndex);
 
-    _loadInitialData();
+    // Load data in background without blocking UI
+    unawaited(_loadInitialData());
 
     // Auto-hide page indicator
     _resetPageIndicatorTimer();
@@ -78,14 +101,22 @@ class _MushafScreenState extends State<MushafScreen> {
   Future<void> _loadInitialData() async {
     await MushafPageIndex.loadPageDataFromAsset();
 
-    // Pre-load some Surahs around the initial page
-    await _loadPageSurahs(_currentPage);
+    // Pre-load some Surahs around the initial page in background
+    unawaited(_loadPageSurahs(_currentPage));
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    // Load practice list
+    _loadPracticeList();
+  }
 
-    // No need to jump - PageController already initialized with correct page
+  void _loadPracticeList() {
+    final keys = PrefUtils().getStringList('recitation_errors') ?? [];
+    setState(() {
+      _practiceListKeys = Set<String>.from(keys);
+    });
+  }
+
+  bool _isInPracticeList(int surahId, int verseNumber) {
+    return _practiceListKeys.contains('${surahId}_$verseNumber');
   }
 
   Future<void> _loadPageSurahs(int pageNumber) async {
@@ -139,6 +170,14 @@ class _MushafScreenState extends State<MushafScreen> {
         page <= _currentMushafType.totalPages) {
       setState(() => _currentPage = page);
       _resetPageIndicatorTimer();
+
+      // Track page navigation
+      unawaited(
+        sl<AnalyticsHelper>().logPageNavigated(
+          page,
+          _currentMushafType.prefsKey,
+        ),
+      );
 
       // Load upcoming Surahs
       final currentPageData = MushafPageIndex.getPage(page);
@@ -310,6 +349,9 @@ class _MushafScreenState extends State<MushafScreen> {
     // Save preference
     PrefUtils().setString('mushaf_type', type.prefsKey);
 
+    // Track mushaf type change
+    sl<AnalyticsHelper>().logMushafTypeChanged(type.prefsKey);
+
     // Reload data
     _loadInitialData();
   }
@@ -456,11 +498,9 @@ class _MushafScreenState extends State<MushafScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          if (_isLoading)
-            const MushafPageSkeleton()
-          else
+      body: SafeArea(
+        child: Stack(
+          children: [
             // RTL PageView for authentic Mushaf experience
             // Always RTL regardless of app language - this is Arabic Quran
             // reverse: true makes swiping work correctly:
@@ -481,40 +521,41 @@ class _MushafScreenState extends State<MushafScreen> {
               ),
             ),
 
-          // Page number indicator
-          AnimatedOpacity(
-            opacity: _showPageIndicator ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.black87 : Colors.white70,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
+            // Page number indicator
+            AnimatedOpacity(
+              opacity: _showPageIndicator ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.black87 : Colors.white70,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '${_currentPage.toLocalizedNumber(context)} / ${_currentMushafType.totalPages.toLocalizedNumber(context)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
-                  ],
-                ),
-                child: Text(
-                  '${_currentPage.toLocalizedNumber(context)} / ${_currentMushafType.totalPages.toLocalizedNumber(context)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -523,7 +564,10 @@ class _MushafScreenState extends State<MushafScreen> {
     final pageData = MushafPageIndex.getPage(pageNumber);
     if (pageData == null) return const SizedBox.shrink();
 
-    final pageVerses = <_PageVerseEntry>[];
+    // Group verses by Surah
+    final surahVerses = <int, List<_PageVerseEntry>>{};
+    final surahIds = <int>[];
+
     for (
       int surahId = pageData.surahId;
       surahId <= pageData.endSurahId;
@@ -544,68 +588,65 @@ class _MushafScreenState extends State<MushafScreen> {
           ? pageData.endVerse
           : surahInfo.verseCount;
 
+      final pageVerses = <_PageVerseEntry>[];
       for (final verse in verses) {
         if (verse.verseNumber >= fromVerse && verse.verseNumber <= toVerse) {
           pageVerses.add(_PageVerseEntry(surahId: surahId, verse: verse));
         }
       }
-    }
 
-    final isSurahStart = pageData.isSurahStart;
-    final showBismillah = pageData.containsBismillah;
+      if (pageVerses.isNotEmpty) {
+        surahVerses[surahId] = pageVerses;
+        surahIds.add(surahId);
+      }
+    }
 
     // Page styling based on Mushaf type
     final pageStyle = _getPageStyle(isDark);
 
-    return Container(
-      margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: pageStyle.backgroundColor,
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Surah header for first page of Surah
-          if (isSurahStart) ...[
-            _buildSurahHeader(pageData, isDark, pageStyle),
-            Divider(height: 1, color: pageStyle.dividerColor),
+    // Build page content with proper RTL
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: pageStyle.backgroundColor,
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
-
-          // Page content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // Bismillah
-                  if (showBismillah) _buildBismillah(isDark, pageStyle),
-
-                  // Verses
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: _buildPageVerses(pageVerses, isDark, pageStyle),
-                    ),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Build content for each Surah on this page
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                  child: _buildPageContent(
+                    surahIds,
+                    surahVerses,
+                    pageData,
+                    isDark,
+                    pageStyle,
                   ),
-                ],
+                ),
               ),
             ),
-          ),
 
-          // Page footer
-          _buildPageFooter(pageNumber, isDark, pageStyle),
-        ],
+            // Page footer
+            _buildPageFooter(pageNumber, isDark, pageStyle),
+          ],
+        ),
       ),
     );
   }
@@ -623,7 +664,7 @@ class _MushafScreenState extends State<MushafScreen> {
               ? Colors.grey[700]!
               : const Color(0xFF1E4D8C).withValues(alpha: 0.3),
           fontSize: 24,
-          lineHeight: 2.2,
+          lineHeight: 1.8,
           headerGradient: isDark
               ? [const Color(0xFF1E4D8C), const Color(0xFF0F2942)]
               : [const Color(0xFFE8F0F8), const Color(0xFFD4E4F4)],
@@ -637,7 +678,7 @@ class _MushafScreenState extends State<MushafScreen> {
           accentColor: isDark ? Colors.teal[300]! : const Color(0xFF006754),
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 26,
-          lineHeight: 2.4,
+          lineHeight: 2.0,
           headerGradient: isDark
               ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
               : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
@@ -651,7 +692,7 @@ class _MushafScreenState extends State<MushafScreen> {
           accentColor: isDark ? Colors.amber[300]! : const Color(0xFF8B6914),
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 24,
-          lineHeight: 2.2,
+          lineHeight: 1.8,
           headerGradient: isDark
               ? [const Color(0xFF2E2A1E), const Color(0xFF1A1610)]
               : [const Color(0xFFF5F0E0), const Color(0xFFE8E0C8)],
@@ -665,61 +706,12 @@ class _MushafScreenState extends State<MushafScreen> {
           accentColor: isDark ? Colors.teal[300]! : const Color(0xFF006754),
           dividerColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
           fontSize: 24,
-          lineHeight: 2.2,
+          lineHeight: 1.8,
           headerGradient: isDark
               ? [const Color(0xFF1E3A35), const Color(0xFF0B2D28)]
               : [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)],
         );
     }
-  }
-
-  Widget _buildSurahHeader(
-    MushafPageIndex pageData,
-    bool isDark,
-    PageStyle style,
-  ) {
-    final surah = QuranIndex.quranSurahs.firstWhere(
-      (s) => s.id == pageData.surahId,
-      orElse: () => QuranIndex.quranSurahs[0],
-    );
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: style.headerGradient),
-      ),
-      child: Column(
-        children: [
-          // Ornate header decoration
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildOrnament(style.accentColor, mirror: true),
-              const SizedBox(width: 20),
-              Text(
-                surah.nameArabic,
-                style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : style.accentColor,
-                ),
-              ),
-              const SizedBox(width: 20),
-              _buildOrnament(style.accentColor),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${surah.nameEnglish} • ${surah.verseCount} ${'lbl_verses'.tr}',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildOrnament(Color color, {bool mirror = false}) {
@@ -729,45 +721,152 @@ class _MushafScreenState extends State<MushafScreen> {
     );
   }
 
-  Widget _buildBismillah(bool isDark, PageStyle style) {
+  /// Build page content with multiple Surahs
+  Widget _buildPageContent(
+    List<int> surahIds,
+    Map<int, List<_PageVerseEntry>> surahVerses,
+    MushafPageIndex pageData,
+    bool isDark,
+    PageStyle style,
+  ) {
+    final children = <Widget>[];
+
+    for (int i = 0; i < surahIds.length; i++) {
+      final surahId = surahIds[i];
+      final verses = surahVerses[surahId]!;
+      final surahInfo = QuranIndex.quranSurahs.firstWhere(
+        (s) => s.id == surahId,
+      );
+      final isFirstSurahOnPage = i == 0;
+      // Always show Surah header on every page for each Surah present
+      // In a real Mushaf, every page shows the Surah name at the top
+      final showBismillah = isFirstSurahOnPage
+          ? pageData.containsBismillah
+          : surahId != 9; // Show Bismillah for new Surah except At-Tawbah
+
+      // Surah header (always show for each Surah on this page)
+      children.add(_buildSurahHeaderForMushaf(surahInfo, isDark, style));
+      children.add(const SizedBox(height: 8));
+
+      // Bismillah for this Surah
+      if (showBismillah) {
+        children.add(_buildBismillah(isDark, style));
+        children.add(const SizedBox(height: 8));
+      }
+
+      // Verses for this Surah
+      children.add(_buildSurahVersesForPage(verses, isDark, style));
+
+      // Divider between Surahs (if not the last one)
+      if (i < surahIds.length - 1) {
+        children.add(const SizedBox(height: 16));
+        children.add(
+          Divider(
+            height: 1,
+            color: style.dividerColor,
+            indent: 40,
+            endIndent: 40,
+          ),
+        );
+        children.add(const SizedBox(height: 16));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
+
+  /// Build Surah header for Mushaf page (accepts Surah object directly)
+  Widget _buildSurahHeaderForMushaf(Surah surah, bool isDark, PageStyle style) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      alignment: Alignment.center,
-      child: Text(
-        'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: style.headerGradient),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        children: [
+          // Ornate header decoration
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildOrnament(style.accentColor, mirror: true),
+              const SizedBox(width: 16),
+              Text(
+                surah.nameArabic,
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : style.accentColor,
+                ),
+              ),
+              const SizedBox(width: 16),
+              _buildOrnament(style.accentColor),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${surah.nameEnglish} • ${surah.verseCount} ${'lbl_verses'.tr}',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build verses for a specific Surah on a page
+  /// Uses continuous text flow like a real Mushaf (no gaps between verses)
+  Widget _buildSurahVersesForPage(
+    List<_PageVerseEntry> verses,
+    bool isDark,
+    PageStyle style,
+  ) {
+    // Build all verses as a single continuous text block for proper Mushaf flow
+    return GestureDetector(
+      onTapUp: (details) {
+        // Find which verse was tapped based on text position
+        _showVerseActionsFromPosition(details.globalPosition, verses);
+      },
+      child: RichText(
         textDirection: TextDirection.rtl,
-        style: TextStyle(
-          fontFamily: 'Amiri',
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: style.accentColor,
+        textAlign: TextAlign.justify,
+        softWrap: true,
+        text: TextSpan(
+          children: _buildContinuousVerseSpans(verses, isDark, style),
         ),
       ),
     );
   }
 
-  Widget _buildPageVerses(
+  /// Build continuous verse spans with minimal gaps
+  List<InlineSpan> _buildContinuousVerseSpans(
     List<_PageVerseEntry> verses,
     bool isDark,
     PageStyle style,
   ) {
-    // Build continuous text with verse markers
     final spans = <InlineSpan>[];
 
     for (final entry in verses) {
       final verse = entry.verse;
-      // Check if this verse should be highlighted
       final isHighlighted =
           widget.highlightSurah == entry.surahId &&
           widget.highlightVerse == verse.verseNumber;
 
+      // Verse text
       spans.add(
         TextSpan(
           text: verse.text,
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'Mushaf',
             fontSize: style.fontSize.toDouble(),
-            height: style.lineHeight,
+            height: 1.6, // Tighter line height
+            letterSpacing: 0, // No letter spacing for Arabic
             color: isHighlighted ? Colors.teal : style.textColor,
             backgroundColor: isHighlighted
                 ? (isDark
@@ -779,37 +878,77 @@ class _MushafScreenState extends State<MushafScreen> {
         ),
       );
 
-      // Verse end marker
+      // Verse marker as inline widget with minimal margin
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: style.accentColor, width: 1.5),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              verse.verseNumber.toLocalizedNumber(context),
-              style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: style.accentColor,
-              ),
-            ),
-          ),
+          baseline: TextBaseline.alphabetic,
+          child: _buildCompactVerseMarker(verse.verseNumber, style),
         ),
       );
+
+      // Very small space after verse (just enough to separate)
+      spans.add(const TextSpan(text: ' '));
     }
 
-    return RichText(
-      textDirection: TextDirection.rtl,
-      textAlign: TextAlign.justify,
-      text: TextSpan(children: spans),
+    return spans;
+  }
+
+  /// Build ultra-compact verse marker for inline use
+  Widget _buildCompactVerseMarker(int verseNumber, PageStyle style) {
+    return Container(
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: style.accentColor.withValues(alpha: 0.6),
+          width: 1,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        verseNumber.toString(),
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontFamily: 'Mushaf',
+          fontSize: 6.5,
+          fontWeight: FontWeight.bold,
+          color: style.accentColor,
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  /// Handle tap on verses to show actions
+  void _showVerseActionsFromPosition(
+    Offset position,
+    List<_PageVerseEntry> verses,
+  ) {
+    // For now, show actions for the first verse
+    // A more sophisticated approach would calculate which verse was tapped
+    if (verses.isNotEmpty) {
+      _showVerseActions(verses.first.surahId, verses.first.verse);
+    }
+  }
+
+  Widget _buildBismillah(bool isDark, PageStyle style) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      alignment: Alignment.center,
+      child: Text(
+        'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          fontFamily: 'Mushaf',
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: style.accentColor,
+        ),
+      ),
     );
   }
 
@@ -933,6 +1072,346 @@ class _MushafScreenState extends State<MushafScreen> {
         ),
       ),
     );
+  }
+
+  /// Show verse action menu (Share, Listen, Bookmark)
+  void _showVerseActions(int surahId, Verse verse) {
+    final surah = QuranIndex.quranSurahs.firstWhere(
+      (s) => s.id == surahId,
+      orElse: () => QuranIndex.quranSurahs.first,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Verse preview
+            Text(
+              '${surah.nameArabic} - ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.teal.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                verse.text,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Mushaf',
+                  fontSize: 20,
+                  height: 1.8,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            _buildActionTile(
+              icon: Icons.play_circle_fill,
+              color: Colors.orange,
+              title: 'lbl_listen_from_here'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _playAudioFromVerse(surah, verse.verseNumber);
+              },
+            ),
+            _buildActionTile(
+              icon: Icons.share,
+              color: Colors.green,
+              title: 'lbl_share_verse'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                context.showVerseShareSheet(surah: surah, verse: verse);
+              },
+            ),
+            _buildActionTile(
+              icon: Icons.bookmark_border,
+              color: Colors.teal,
+              title: 'lbl_bookmark_page'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _saveVerseBookmark(surahId, verse.verseNumber);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('msg_page_bookmarked'.tr)),
+                );
+              },
+            ),
+            const Divider(height: 24),
+            // Practice List
+            _buildActionTile(
+              icon: _isInPracticeList(surahId, verse.verseNumber)
+                  ? Icons.playlist_remove
+                  : Icons.error_outline,
+              color: Colors.redAccent,
+              title: _isInPracticeList(surahId, verse.verseNumber)
+                  ? 'msg_unmark_practice'.tr
+                  : 'msg_mark_practice'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _togglePracticeList(surahId, verse.verseNumber);
+              },
+            ),
+            // Voice Verification
+            _buildActionTile(
+              icon: Icons.mic,
+              color: Colors.blueAccent,
+              title: 'lbl_verify_recitation'.tr,
+              onTap: () {
+                Navigator.pop(context);
+                _showVoiceDialog(surah, verse);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(title),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+    );
+  }
+
+  Future<void> _playAudioFromVerse(Surah surah, int verseNumber) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    // Show loading indicator
+    unawaited(
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      ),
+    );
+
+    try {
+      // Fetch audio from API with selected reciter
+      final reciterId = PrefUtils().getReciterId();
+      final audioFile = await _recitationService.fetchChapterAudio(
+        reciterId: reciterId,
+        chapterNumber: surah.id,
+        segments: true,
+      );
+
+      // Hide loading
+      navigator.pop();
+
+      if (audioFile == null || audioFile.audioUrl.isEmpty) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('msg_audio_load_error'.tr)),
+        );
+        return;
+      }
+
+      // Convert segments to timestamps
+      final timestamps = _convertSegmentsToTimestamps(audioFile.timings);
+
+      // Navigate to audio player
+      if (mounted) {
+        AppRoutes.goToAudioPlayer(
+          context,
+          surah: surah,
+          startVerse: verseNumber,
+          reciter: PrefUtils().getReciterName(),
+          audioUrls: [audioFile.audioUrl],
+          verseTimestamps: timestamps,
+        );
+      }
+    } catch (e) {
+      // Hide loading if dialog is still showing
+      navigator.pop();
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('msg_audio_load_error'.tr)),
+      );
+    }
+  }
+
+  List<Duration> _convertSegmentsToTimestamps(List<VerseTiming> timings) {
+    if (timings.isEmpty) return [];
+
+    // Parse verseKey (format: "surah:verse") to get verse number
+    int parseVerseNumber(String verseKey) {
+      final parts = verseKey.split(':');
+      if (parts.length == 2) {
+        return int.tryParse(parts[1]) ?? 0;
+      }
+      return 0;
+    }
+
+    // Find max verse number
+    final verseNumbers = timings
+        .map((t) => parseVerseNumber(t.verseKey))
+        .where((n) => n > 0)
+        .toList();
+
+    if (verseNumbers.isEmpty) return [];
+
+    final maxVerse = verseNumbers.reduce((a, b) => a > b ? a : b);
+    final timestamps = List<Duration>.filled(maxVerse, Duration.zero);
+
+    for (final timing in timings) {
+      final verseNum = parseVerseNumber(timing.verseKey);
+      if (verseNum > 0 && verseNum <= maxVerse) {
+        timestamps[verseNum - 1] = Duration(milliseconds: timing.timestampFrom);
+      }
+    }
+
+    return timestamps;
+  }
+
+  void _togglePracticeList(int surahId, int verseNumber) {
+    final key = '${surahId}_$verseNumber';
+    final isInList = _practiceListKeys.contains(key);
+
+    if (isInList) {
+      _practiceListKeys.remove(key);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('msg_removed_practice'.tr)));
+    } else {
+      _practiceListKeys.add(key);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('msg_added_practice'.tr)));
+    }
+
+    // Save to preferences
+    PrefUtils().setStringList('recitation_errors', _practiceListKeys.toList());
+
+    // Refresh UI
+    setState(() {});
+  }
+
+  Future<void> _showVoiceDialog(Surah surah, Verse verse) async {
+    // 1. Request Permission
+    bool available = await _voiceService.requestPermission();
+
+    if (!mounted) return;
+
+    if (!available) {
+      // Show Dialog to guide user to settings
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('msg_mic_permission'.tr),
+          content: Text('msg_mic_permission_desc'.tr),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('lbl_cancel'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                openAppSettings();
+              },
+              child: Text('lbl_settings'.tr),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 2. Prepare Expected Text
+    String expectedText = verse.text;
+    if (verse.verseNumber == 1 && surah.id != 1) {
+      const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+      const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
+      if (expectedText.startsWith(bismillahPrefix)) {
+        expectedText = expectedText.substring(bismillahPrefix.length).trim();
+      } else if (expectedText.startsWith(bismillahSimple)) {
+        expectedText = expectedText.substring(bismillahSimple.length).trim();
+      }
+    }
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => VoiceVerificationDialog(
+        surah: surah,
+        aya: verse,
+        expectedText: expectedText,
+        onCorrect: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('msg_recitation_correct'.tr)),
+            );
+          }
+        },
+        onWrong: (ctx) {
+          if (mounted) {
+            // Optionally add to practice list
+            _togglePracticeList(surah.id, verse.verseNumber);
+          }
+        },
+      ),
+    );
+  }
+
+  void _saveVerseBookmark(int surahId, int verseNumber) {
+    final key = 'verse_bookmark_${surahId}_$verseNumber';
+    PrefUtils().setString(
+      key,
+      '${DateTime.now().millisecondsSinceEpoch}|Surah $surahId, Ayah $verseNumber',
+    );
+
+    final bookmarks = PrefUtils().getStringList('verse_bookmarks') ?? [];
+    final bookmarkKey = '$surahId:$verseNumber';
+    if (!bookmarks.contains(bookmarkKey)) {
+      bookmarks.add(bookmarkKey);
+      PrefUtils().setStringList('verse_bookmarks', bookmarks);
+    }
   }
 }
 

@@ -8,14 +8,14 @@ final Map<String, String> enUs = {
   // About
   'about_title': 'About Hafiz',
   'about_intro':
-      'A non-profit initiative dedicated to providing a distinct and reliable Quranic experience for you and your loved ones.',
-  'about_ack_heading': 'Acknowledgements',
-  'about_ack_idea_by': 'Original Concept & Foundation:',
+      'A dedicated Quran companion designed to help you read, listen, and memorize the Holy Quran with ease. Built with care for Muslims worldwide.',
+  'about_ack_heading': 'Credits',
+  'about_ack_idea_by': 'Original Creator:',
   'about_repo_prefix': 'Source Code:',
   'about_maintainer_note': 'Maintained and enhanced by the current team.',
-  'about_integrity_heading': 'Text Integrity',
+  'about_integrity_heading': 'Authentic Sources',
   'about_integrity_body':
-      'The Quranic text is sourced from verified repositories to ensure accuracy and offline availability. Please report any discrepancies immediately.',
+      'All Quranic text is sourced from verified and authenticated repositories (Tanzil.net) to ensure accuracy and purity of the Uthmani script. The app works fully offline after initial setup.',
   'about_language_title': 'Language',
   'about_sources_title': 'Data Sources',
   'about_source_quran_api': 'Quran.com API v4',
@@ -67,6 +67,10 @@ final Map<String, String> enUs = {
   'lbl_theme': 'Appearance',
   'lbl_theme_light': 'Light Mode',
   'lbl_theme_dark': 'Dark Mode',
+  'lbl_default_quran_view': 'Default Quran View',
+  'lbl_surah_view': 'Surah View',
+  'lbl_mushaf_view': 'Mushaf View',
+  'msg_switch_to_surah': 'Switch to Surah View',
   'lbl_toggle_theme': 'Toggle Theme',
   'lbl_search': 'Search',
   'lbl_bookmarks': 'Bookmarks',
@@ -137,6 +141,9 @@ final Map<String, String> enUs = {
   'msg_offline_data': 'Showing offline data',
   // Voice Dialog
   'msg_mic_permission': 'Microphone Access',
+  'msg_mic_permission_desc':
+      'Please allow microphone access to verify your recitation.',
+  'msg_recitation_correct': 'Excellent! Your recitation is correct.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility
@@ -176,6 +183,7 @@ final Map<String, String> enUs = {
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_loop_verses': 'Loop Verses',
   'lbl_download_audio': 'Download Audio',
+  'msg_audio_load_error': 'Failed to load audio. Please try again.',
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_from_verse': 'From Verse',
   'lbl_to_verse': 'To Verse',
@@ -209,5 +217,6 @@ final Map<String, String> enUs = {
   'lbl_page': 'Page',
   // Mushaf onboarding
   'msg_mushaf_onboarding_title': 'Choose Your Preferred Mushaf',
-  'msg_mushaf_onboarding_desc': 'Select the Mushaf type you are familiar with. You can change this anytime in settings.',
+  'msg_mushaf_onboarding_desc':
+      'Select the Mushaf type you are familiar with. You can change this anytime in settings.',
 };

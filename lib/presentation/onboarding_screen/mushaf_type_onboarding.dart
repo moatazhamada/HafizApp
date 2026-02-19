@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/quran_index/mushaf_types.dart';
 import '../../core/utils/pref_utils.dart';
+import '../../core/analytics/analytics_helper.dart';
+import '../../injection_container.dart';
 
 /// First-time onboarding screen for selecting Mushaf type
 /// Shown when user first opens the app
@@ -63,6 +66,11 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
     // Save selected Mushaf type
     if (_selectedType != null) {
       PrefUtils().setString('mushaf_type', _selectedType!.prefsKey);
+
+      // Track mushaf type selection
+      unawaited(
+        sl<AnalyticsHelper>().logMushafTypeChanged(_selectedType!.prefsKey),
+      );
     }
 
     // Mark onboarding as complete

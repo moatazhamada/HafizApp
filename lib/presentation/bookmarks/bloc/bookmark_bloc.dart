@@ -44,7 +44,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
       (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) async {
         // Log analytics
-        _analytics.logBookmarkAdded(
+        await _analytics.logBookmarkAdded(
           event.bookmark.surahId,
           event.bookmark.verseNumber,
         );
@@ -72,7 +72,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
       (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
       (_) async {
         // Log analytics
-        _analytics.logBookmarkRemoved(event.surahId, event.verseId);
+        await _analytics.logBookmarkRemoved(event.surahId, event.verseId);
         // Reload bookmarks directly instead of adding event to avoid recursion
         final loadResult = await repository.getBookmarks();
         loadResult.fold(

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_export.dart';
+import '../core/analytics/analytics_helper.dart';
 import '../core/deep_link/deep_link_service.dart';
 import '../core/quran_index/quran_surah.dart';
+import '../injection_container.dart';
 import '../../domain/entities/verse.dart';
 
 /// Bottom sheet for sharing verses with multiple options
@@ -78,6 +80,16 @@ class VerseShareSheet extends StatelessWidget {
                   verseText: verse.text,
                   surahName: surah.nameEnglish,
                 );
+
+                // Track verse sharing
+                unawaited(
+                  sl<AnalyticsHelper>().logVerseShared(
+                    surah.id,
+                    verse.verseNumber,
+                    'copy_link',
+                  ),
+                );
+
                 navigator.pop();
                 scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('msg_link_copied'.tr)),
@@ -97,6 +109,16 @@ class VerseShareSheet extends StatelessWidget {
                   verseText: verse.text,
                   surahName: surah.nameEnglish,
                 );
+
+                // Track verse sharing
+                unawaited(
+                  sl<AnalyticsHelper>().logVerseShared(
+                    surah.id,
+                    verse.verseNumber,
+                    'share_text',
+                  ),
+                );
+
                 navigator.pop();
               },
             ),
@@ -117,6 +139,16 @@ class VerseShareSheet extends StatelessWidget {
               onTap: () async {
                 final text = verse.text;
                 await deepLinkService.copyPlainText(text);
+
+                // Track verse sharing
+                unawaited(
+                  sl<AnalyticsHelper>().logVerseShared(
+                    surah.id,
+                    verse.verseNumber,
+                    'copy_text',
+                  ),
+                );
+
                 navigator.pop();
                 scaffoldMessenger.showSnackBar(
                   SnackBar(content: Text('msg_text_copied'.tr)),
@@ -253,6 +285,15 @@ class VerseShareSheet extends StatelessWidget {
             context: context,
             translation: translation,
             style: style,
+          );
+
+          // Track verse sharing as image
+          unawaited(
+            sl<AnalyticsHelper>().logVerseShared(
+              surah.id,
+              verse.verseNumber,
+              'share_image_${style.name}',
+            ),
           );
         } finally {
           // Pop loading

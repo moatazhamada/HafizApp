@@ -8,9 +8,9 @@ final Map<String, String> arEg = {
   // About
   'about_title': 'عن تطبيق حافظ',
   'about_intro':
-      'مبادرة غير ربحية صدقةً جارية. نسعى لتقديم تجربة قرآنية موثوقة وميسرة لك ولأحبائك.',
-  'about_ack_heading': 'شكر وتقدير',
-  'about_ack_idea_by': 'صاحب الفكرة والأساس:',
+      'رفيقك المخصص للقرآن الكريم، صُمم لمساعدتك على قراءة وتلاوة وحفظ القرآن بسهولة. مُبني بعناية للمسلمين في كل مكان.',
+  'about_ack_heading': 'المساهمون',
+  'about_ack_idea_by': 'المؤسس الأصلي:',
   'about_repo_prefix': 'الشيفرة المصدرية:',
   'about_maintainer_note': 'تم التطوير والتحسين بواسطة الفريق الحالي.',
   'about_integrity_heading': 'موثوقية النص',
@@ -67,6 +67,10 @@ final Map<String, String> arEg = {
   'lbl_theme': 'المظهر',
   'lbl_theme_light': 'الوضع الفاتح',
   'lbl_theme_dark': 'الوضع الداكن',
+  'lbl_default_quran_view': 'طريقة عرض القرآن الافتراضية',
+  'lbl_surah_view': 'عرض السورة',
+  'lbl_mushaf_view': 'عرض المصحف',
+  'msg_switch_to_surah': 'التبديل لعرض السورة',
   'lbl_toggle_theme': 'تبديل المظهر',
   'lbl_search': 'البحث',
   'lbl_bookmarks': 'المفضلة',
@@ -136,6 +140,9 @@ final Map<String, String> arEg = {
   'msg_offline_data': 'عرض البيانات المحفوظة',
   // Voice Dialog
   'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
+  'msg_mic_permission_desc':
+      'يحتاج التطبيق إلى الوصول للميكروفون للتحقق من تلاوتك.',
+  'msg_recitation_correct': 'ممتاز! تلاوتك صحيحة.',
   'msg_tap_to_resume': 'اضغط للمتابعة',
   'lbl_incorrect': 'تحتاج لتحسين',
   // Accessibility
@@ -175,6 +182,7 @@ final Map<String, String> arEg = {
   'lbl_sleep_timer': 'مؤقت النوم',
   'lbl_loop_verses': 'تكرار الآيات',
   'lbl_download_audio': 'تحميل التلاوة',
+  'msg_audio_load_error': 'فشل تحميل التلاوة. يرجى المحاولة مرة أخرى.',
   'lbl_cancel_timer': 'إلغاء المؤقت',
   'lbl_from_verse': 'من الآية',
   'lbl_to_verse': 'إلى الآية',
@@ -208,5 +216,6 @@ final Map<String, String> arEg = {
   'lbl_page': 'صفحة',
   // Mushaf onboarding
   'msg_mushaf_onboarding_title': 'اختر المصحف المفضل',
-  'msg_mushaf_onboarding_desc': 'اختر نوع المصحف الذي تعتاد عليه. يمكنك تغيير هذا لاحقاً من الإعدادات.',
+  'msg_mushaf_onboarding_desc':
+      'اختر نوع المصحف الذي تعتاد عليه. يمكنك تغيير هذا لاحقاً من الإعدادات.',
 };

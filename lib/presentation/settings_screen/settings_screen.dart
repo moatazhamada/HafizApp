@@ -10,6 +10,7 @@ import '../../core/audio/recitation_models.dart';
 import '../../core/audio/recitation_service.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import '../../injection_container.dart' as di;
+import '../../core/analytics/analytics_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -63,8 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _editions.isNotEmpty) {
         _qiraatEdition = _editions.first.identifier;
       }
-      if (!_reciters.any((r) => r.id == _reciterId) &&
-          _reciters.isNotEmpty) {
+      if (!_reciters.any((r) => r.id == _reciterId) && _reciters.isNotEmpty) {
         _reciterId = _reciters.first.id;
       }
     });
@@ -148,9 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             title: Text('lbl_reciter'.tr),
             subtitle: Text(
-              _loadingReciters
-                  ? 'lbl_loading'.tr
-                  : _reciterLabel(_reciterId),
+              _loadingReciters ? 'lbl_loading'.tr : _reciterLabel(_reciterId),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: _loadingReciters ? null : _selectReciter,
@@ -205,6 +203,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           LocaleController.setLocale(newLocale);
           await PrefUtils().setLocaleCode(code);
+
+          // Track language change
+          unawaited(
+            di.sl<AnalyticsHelper>().logLanguageChanged(
+              code == 'system'
+                  ? 'system'
+                  : (code == 'en' ? 'english' : 'arabic'),
+            ),
+          );
+
           setState(() {
             _currentLang = code;
           });
@@ -222,6 +230,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (!isSelected) {
           di.sl<ThemeBloc>().add(ChangeThemeModeEvent(mode));
 
+          // Track theme change
+          unawaited(di.sl<AnalyticsHelper>().logThemeChanged(mode));
+
           setState(() {
             _themeMode = mode;
           });
@@ -238,6 +249,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () async {
         if (!isSelected) {
           await PrefUtils().setDefaultQuranView(view);
+
+          // Track default view change
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'default_quran_view',
+              view,
+            ),
+          );
+
           setState(() {
             _defaultQuranView = view;
           });
@@ -256,16 +276,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _editionLabel(String id) {
-    final edition =
-        _editions.firstWhere((e) => e.identifier == id, orElse: () {
-      return const QiraatEdition(
-        identifier: 'quran-uthmani',
-        name: 'Uthmani (Hafs)',
-        language: 'ar',
-        format: 'text',
-        type: 'quran',
-      );
-    });
+    final edition = _editions.firstWhere(
+      (e) => e.identifier == id,
+      orElse: () {
+        return const QiraatEdition(
+          identifier: 'quran-uthmani',
+          name: 'Uthmani (Hafs)',
+          language: 'ar',
+          format: 'text',
+          type: 'quran',
+        );
+      },
+    );
     return edition.name;
   }
 
@@ -331,6 +353,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (value != null) {
       final id = int.tryParse(value) ?? _reciterId;
       await PrefUtils().setReciterId(id);
+
+      // Track reciter change
+      final reciter = _reciters.firstWhere(
+        (r) => r.id == id,
+        orElse: () => _reciters.first,
+      );
+      unawaited(di.sl<AnalyticsHelper>().logReciterChanged(id, reciter.name));
+
       setState(() => _reciterId = id);
     }
   }
@@ -358,21 +388,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _downloadWhisperModel(String value) async {
     final model = _mapWhisperModel(value);
-    unawaited(showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('lbl_downloading_model'.tr),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(strokeWidth: 2),
-            const SizedBox(height: 12),
-            Text('msg_model_download_wait'.tr),
-          ],
+    unawaited(
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Text('lbl_downloading_model'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(strokeWidth: 2),
+              const SizedBox(height: 12),
+              Text('msg_model_download_wait'.tr),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     try {
       await _whisperController.downloadModel(model);
     } finally {
@@ -394,7 +426,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-
   Future<T?> _showSelectionSheet<T>({
     required String title,
     required List<_Option> options,
@@ -409,15 +440,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               title,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
           for (final option in options)
             ListTile(
               title: Text(option.isKey ? option.label.tr : option.label),
-              trailing:
-                  selected == option.value ? const Icon(Icons.check) : null,
+              trailing: selected == option.value
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () => Navigator.pop(context, option.value as T),
             ),
           const SizedBox(height: 8),

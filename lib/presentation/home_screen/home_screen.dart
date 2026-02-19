@@ -4,6 +4,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
 import '../../core/analytics/analytics_service.dart';
+import '../../core/analytics/analytics_helper.dart';
 import '../../core/analytics/analytics_route_observer.dart';
 
 import '../../core/app_export.dart';
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showJuzSelector(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -140,12 +141,22 @@ class _HomeScreenState extends State<HomeScreen>
                   itemBuilder: (context, index) {
                     final juz = JuzIndex.getJuz(index + 1);
                     if (juz == null) return const SizedBox.shrink();
-                    
+
                     return Semantics(
                       button: true,
-                      label: JuzIndex.getJuzName(juz.juzNumber, isArabic: isArabic),
+                      label: JuzIndex.getJuzName(
+                        juz.juzNumber,
+                        isArabic: isArabic,
+                      ),
                       child: InkWell(
                         onTap: () {
+                          // Track Juz navigation
+                          unawaited(
+                            sl<AnalyticsHelper>().logNavigationToJuz(
+                              juz.juzNumber,
+                            ),
+                          );
+
                           Navigator.pop(context);
                           final surah = QuranIndex.quranSurahs.firstWhere(
                             (s) => s.id == juz.startSurahId,
@@ -187,7 +198,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isArabic ? juz.startSurahNameAr : juz.startSurahNameEn,
+                                isArabic
+                                    ? juz.startSurahNameAr
+                                    : juz.startSurahNameEn,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -218,9 +231,29 @@ class _HomeScreenState extends State<HomeScreen>
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
+    // FAB always opens Mushaf view from home screen
+    final fabLabel = 'lbl_mushaf_view'.tr;
+    final fabIcon = Icons.menu_book_rounded;
+    final fabTooltip = 'lbl_mushaf'.tr;
+
+    // Check if RTL
+    final isRtl = Localizations.localeOf(context).languageCode == 'ar';
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => AppRoutes.goToMushaf(context),
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: Colors.white,
+          icon: Icon(fabIcon),
+          label: Text(fabLabel),
+          tooltip: fabTooltip,
+          elevation: 4,
+        ),
+        floatingActionButtonLocation: isRtl
+            ? FloatingActionButtonLocation.startFloat
+            : FloatingActionButtonLocation.endFloat,
         appBar: CustomAppBar(
           // leading: Removed to allow title to center properly
           // leadingWidth: Removed
@@ -285,9 +318,6 @@ class _HomeScreenState extends State<HomeScreen>
               child: PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
-                    case 'mushaf':
-                      AppRoutes.goToMushaf(context);
-                      break;
                     case 'mistakes':
                       NavigatorService.pushNamed(
                         AppRoutes.recitationErrorsPage,
@@ -302,19 +332,6 @@ class _HomeScreenState extends State<HomeScreen>
                   }
                 },
                 itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'mushaf',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.menu_book,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text('lbl_mushaf'.tr),
-                      ],
-                    ),
-                  ),
                   PopupMenuItem(
                     value: 'mistakes',
                     child: Row(
@@ -347,9 +364,7 @@ class _HomeScreenState extends State<HomeScreen>
                           color: theme.iconTheme.color,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'about_title'.tr,
-                        ),
+                        Text('about_title'.tr),
                       ],
                     ),
                   ),
@@ -368,7 +383,6 @@ class _HomeScreenState extends State<HomeScreen>
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
                   child: Column(
                     children: [
                       // Offline indicator banner
@@ -459,6 +473,8 @@ class _HomeScreenState extends State<HomeScreen>
                           },
                         ),
                       ),
+                      // Extra padding to allow last item to scroll above FAB
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -478,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen>
     bool resume = false,
   }) {
     final defaultView = PrefUtils().getDefaultQuranView();
-    
+
     if (defaultView == 'mushaf') {
       // Navigate to Mushaf view
       AppRoutes.goToMushaf(
