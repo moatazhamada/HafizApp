@@ -37,6 +37,45 @@ class _AboutScreenState extends State<AboutScreen> {
     } catch (_) {}
   }
 
+  Widget _buildContributorItem(
+    BuildContext context, {
+    required String name,
+    required String role,
+    required String url,
+  }) {
+    return InkWell(
+      onTap: () async {
+        try {
+          await launchUrlString(url, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          await Clipboard.setData(ClipboardData(text: url));
+          globalMessengerKey.currentState?.showSnackBar(
+            SnackBar(content: Text('lbl_copied'.tr)),
+          );
+        }
+      },
+      child: Row(
+        children: [
+          const Icon(Icons.person_outline, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  role,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.open_in_new, size: 16),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -229,15 +268,102 @@ class _AboutScreenState extends State<AboutScreen> {
                 ListTile(
                   leading: const Icon(Icons.code),
                   title: Text('about_current_repo'.tr),
-                  subtitle: Text(
-                    'https://github.com/moatazhamada/hafizapp',
-                    style: linkStyle,
+                  subtitle: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'https://github.com/moatazhamada/hafizapp',
+                          style: linkStyle,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Private',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.orange[800],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  onTap: () =>
-                      openExternal('https://github.com/moatazhamada/hafizapp'),
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('about_private_repo_title'.tr),
+                      content: Text('about_private_repo_desc'.tr),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('lbl_close'.tr),
+                        ),
+                      ],
+                    ),
+                  ),
                   onLongPress: () =>
                       copy('https://github.com/moatazhamada/hafizapp'),
-                  trailing: const Icon(Icons.open_in_new),
+                  trailing: const Icon(Icons.lock_outline, size: 18),
+                ),
+                const Divider(height: 0),
+                ListTile(
+                  leading: const Icon(Icons.people_outline),
+                  title: Text('about_contributors'.tr),
+                  subtitle: Text('about_contributors_desc'.tr),
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('about_contributors'.tr),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildContributorItem(
+                            context,
+                            name: 'Mohamed Sayed',
+                            role: 'Original Creator',
+                            url: 'https://github.com/abualgait',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildContributorItem(
+                            context,
+                            name: 'Moataz Mohamed',
+                            role: 'Current Maintainer',
+                            url: 'https://github.com/moatazhamada',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildContributorItem(
+                            context,
+                            name: 'Quran.Foundation',
+                            role: 'API & Data Provider',
+                            url: 'https://quran.foundation',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildContributorItem(
+                            context,
+                            name: 'Tanzil Project',
+                            role: 'Uthmani Text Source',
+                            url: 'https://tanzil.net',
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('lbl_close'.tr),
+                        ),
+                      ],
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
                 ),
                 const Divider(height: 0),
                 ListTile(

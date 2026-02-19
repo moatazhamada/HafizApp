@@ -20,6 +20,11 @@ final Map<String, String> enUs = {
   'about_sources_title': 'Data Sources',
   'about_source_quran_api': 'Quran.com API v4',
   'about_source_tanzil': 'Tanzil (Verified Uthmani Text)',
+  'about_private_repo_title': 'Private Repository',
+  'about_private_repo_desc':
+      'This repository is currently private. The source code is maintained privately by the current team.',
+  'about_contributors': 'Contributors & References',
+  'about_contributors_desc': 'View all contributors and data sources',
   'lbl_ayah': 'Ayah',
   'about_feedback_title': 'Feedback',
   'about_feedback_desc': 'Report bugs or suggest new features via email.',
@@ -219,4 +224,26 @@ final Map<String, String> enUs = {
   'msg_mushaf_onboarding_title': 'Choose Your Preferred Mushaf',
   'msg_mushaf_onboarding_desc':
       'Select the Mushaf type you are familiar with. You can change this anytime in settings.',
+  // External Services
+  'lbl_external_services': 'External Services',
+  'lbl_qrc_service': 'AI Recitation Checker (QRC)',
+  'msg_qrc_configured': 'Configured',
+  'msg_qrc_not_configured': 'Not configured',
+  'msg_qrc_description':
+      'Optional premium service for real-time tajweed feedback. The app works 100% without it.',
+  'lbl_qrc_configuration': 'QRC Configuration',
+  'msg_qrc_explanation':
+      'QRC (Quran Recitation Checker) is an external AI-powered service from Qurani.ai that provides advanced real-time feedback on your recitation, including tajweed mistake detection.',
+  'lbl_qrc_website': 'Website:',
+  'lbl_qrc_api_key': 'API Key',
+  'hint_enter_qrc_api_key': 'Enter your QRC API key here',
+  'lbl_important_notes': 'Important Notes:',
+  'msg_qrc_notes':
+      '• This is a PAID service requiring subscription at qurani.ai\n'
+      '• Your API key is stored ONLY on this device\n'
+      '• It is NEVER synced to any server or cloud\n'
+      '• The app works perfectly without this feature\n'
+      '• Free alternative: Use "On-device Whisper" option above',
+  'msg_qrc_key_saved': 'QRC API key saved',
+  'msg_qrc_key_removed': 'QRC API key removed',
 };

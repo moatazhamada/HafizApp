@@ -330,6 +330,22 @@ class PrefUtils {
     }
   }
 
+  // QRC API Key (for external recitation checking service)
+  Future<void> setQrcApiKey(String apiKey) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('qrc_api_key', apiKey);
+  }
+
+  String getQrcApiKey() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('qrc_api_key') ?? '';
+    } catch (e) {
+      Logger.warning('Failed to get QRC API key: $e', feature: 'Preferences');
+      return '';
+    }
+  }
+
   // Generic string storage
   Future<void> setString(String key, String value) async {
     if (_sharedPreferences == null) await init();

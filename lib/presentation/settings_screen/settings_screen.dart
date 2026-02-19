@@ -28,7 +28,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _reciterId;
   late String _whisperModel;
   late String _defaultQuranView;
+  late String _qrcApiKey;
   bool _whisperDownloading = false;
+  final TextEditingController _qrcApiKeyController = TextEditingController();
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
   bool _loadingEditions = true;
@@ -48,6 +50,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _reciterId = PrefUtils().getReciterId();
     _whisperModel = PrefUtils().getWhisperModel();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
+    _qrcApiKey = PrefUtils().getQrcApiKey();
+    _qrcApiKeyController.text = _qrcApiKey;
     _loadRecitationResources();
   }
 
@@ -68,6 +72,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _reciterId = _reciters.first.id;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _qrcApiKeyController.dispose();
+    super.dispose();
   }
 
   @override
@@ -165,6 +175,165 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _whisperDownloading ? null : _selectWhisperModel,
             ),
+          const Divider(),
+          _buildSectionHeader('lbl_external_services'.tr),
+          _buildQrcApiKeyTile(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrcApiKeyTile() {
+    final hasKey = _qrcApiKey.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: Text('lbl_qrc_service'.tr),
+          subtitle: Text(
+            hasKey ? 'msg_qrc_configured'.tr : 'msg_qrc_not_configured'.tr,
+          ),
+          trailing: Icon(
+            hasKey ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: hasKey ? Colors.green : Colors.grey,
+          ),
+          onTap: _showQrcConfigurationDialog,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'msg_qrc_description'.tr,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showQrcConfigurationDialog() async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_qrc_configuration'.tr),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'msg_qrc_explanation'.tr,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'lbl_qrc_website'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://qurani.ai',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'lbl_qrc_api_key'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _qrcApiKeyController,
+                decoration: InputDecoration(
+                  hintText: 'hint_enter_qrc_api_key'.tr,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _qrcApiKeyController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _qrcApiKeyController.clear();
+                          },
+                        )
+                      : null,
+                ),
+                obscureText: true,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.orange[800],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'lbl_important_notes'.tr,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'msg_qrc_notes'.tr,
+                      style: TextStyle(fontSize: 12, color: Colors.orange[900]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('lbl_cancel'.tr),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newKey = _qrcApiKeyController.text.trim();
+              await PrefUtils().setQrcApiKey(newKey);
+              if (mounted) {
+                setState(() {
+                  _qrcApiKey = newKey;
+                });
+                // ignore: use_build_context_synchronously
+                Navigator.of(context, rootNavigator: true).pop();
+                // ignore: use_build_context_synchronously
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      newKey.isEmpty
+                          ? 'msg_qrc_key_removed'.tr
+                          : 'msg_qrc_key_saved'.tr,
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Text('lbl_save'.tr),
+          ),
         ],
       ),
     );

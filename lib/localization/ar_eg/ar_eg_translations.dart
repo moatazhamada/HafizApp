@@ -20,6 +20,11 @@ final Map<String, String> arEg = {
   'about_sources_title': 'المصادر',
   'about_source_quran_api': 'واجهة Quran.com v4',
   'about_source_tanzil': 'مجمع تنزيل (نص عثماني موثق)',
+  'about_private_repo_title': 'مستودع خاص',
+  'about_private_repo_desc':
+      'هذا المستودع خاص حالياً. يتم صيانة الكود المصدري بشكل خاص من قبل الفريق الحالي.',
+  'about_contributors': 'المساهمون والمراجع',
+  'about_contributors_desc': 'عرض جميع المساهمين ومصادر البيانات',
   'lbl_ayah': 'آية',
   'about_feedback_title': 'الملاحظات والاقتراحات',
   'about_feedback_desc': 'أبلغ عن خطأ برمجي أو اقترح ميزة جديدة عبر البريد.',
@@ -218,4 +223,26 @@ final Map<String, String> arEg = {
   'msg_mushaf_onboarding_title': 'اختر المصحف المفضل',
   'msg_mushaf_onboarding_desc':
       'اختر نوع المصحف الذي تعتاد عليه. يمكنك تغيير هذا لاحقاً من الإعدادات.',
+  // External Services
+  'lbl_external_services': 'الخدمات الخارجية',
+  'lbl_qrc_service': 'المحقق الذكي للتلاوة (QRC)',
+  'msg_qrc_configured': 'مُهيأ',
+  'msg_qrc_not_configured': 'غير مُهيأ',
+  'msg_qrc_description':
+      'خدمة اختيارية مدفوعة لتصحيح التلاوة في الوقت الفعلي. التطبيق يعمل 100% بدونها.',
+  'lbl_qrc_configuration': 'إعدادات QRC',
+  'msg_qrc_explanation':
+      'QRC (محقق تلاوة القرآن) هو خدمة خارجية مدعومة بالذكاء الاصطناعي من Qurani.ai توفر ملاحظات متقدمة في الوقت الفعلي على تلاوتك، بما في ذلك اكتشاف أخطاء التجويد.',
+  'lbl_qrc_website': 'الموقع:',
+  'lbl_qrc_api_key': 'مفتاح API',
+  'hint_enter_qrc_api_key': 'أدخل مفتاح QRC هنا',
+  'lbl_important_notes': 'ملاحظات مهمة:',
+  'msg_qrc_notes':
+      '• هذه خدمة مدفوعة تتطلب اشتراك في qurani.ai\n'
+      '• مفتاح API يُحفظ فقط على هذا الجهاز\n'
+      '• لا يتم مزامنته أبداً مع أي خادم أو سحابة\n'
+      '• التطبيق يعمل بشكل مثالي بدون هذه الميزة\n'
+      '• البديل المجاني: استخدم خيار "ويسبر على الجهاز" أعلاه',
+  'msg_qrc_key_saved': 'تم حفظ مفتاح QRC',
+  'msg_qrc_key_removed': 'تم حذف مفتاح QRC',
 };
