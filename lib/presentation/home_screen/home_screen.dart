@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/quran_index/juz_index.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_helper.dart';
 import '../../core/analytics/analytics_route_observer.dart';
+import '../../core/ramadan/ramadan_theme.dart';
 
 import '../../core/app_export.dart';
 
@@ -13,6 +14,7 @@ import '../../core/scroll/scroll_position_cubit.dart';
 import '../../injection_container.dart';
 import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
+import '../../widgets/ramadan_banner.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
 
@@ -318,6 +320,9 @@ class _HomeScreenState extends State<HomeScreen>
               child: PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
+                    case 'statistics':
+                      NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+                      break;
                     case 'mistakes':
                       NavigatorService.pushNamed(
                         AppRoutes.recitationErrorsPage,
@@ -332,6 +337,19 @@ class _HomeScreenState extends State<HomeScreen>
                   }
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'statistics',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          color: theme.iconTheme.color,
+                        ),
+                        const SizedBox(width: 12),
+                        Text('stats_title'.tr),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     value: 'mistakes',
                     child: Row(
@@ -416,6 +434,13 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
+
+                      // Ramadan greetings and countdown (only during Ramadan)
+                      if (RamadanTheme.isRamadan) ...[
+                        const RamadanBanner(),
+                        const SizedBox(height: 8),
+                        const RamadanCountdown(),
+                      ],
 
                       if (state is UpdateLastReadSurah && state.surah != null)
                         _buildCardLastRead(state.surah, theme),

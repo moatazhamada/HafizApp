@@ -80,6 +80,11 @@ dependencies:
   share_plus: ^10.1.4
   # For generating verse images
   screenshot: ^3.0.0
+  # In-app review
+  in_app_review: ^2.0.10
+  # Local notifications
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
 
 flutter_icons:
   android: true

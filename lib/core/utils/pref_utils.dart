@@ -87,6 +87,7 @@ class PrefUtils {
   Future<void> saveLastReadSurah(Surah surah) async {
     if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('surah', toJson(surah));
+    await recordReadingSession();
   }
 
   // Retrieve Surah object from SharedPreferences
@@ -346,6 +347,48 @@ class PrefUtils {
     }
   }
 
+  // Mushaf font size multiplier (0.8 to 1.5)
+  Future<void> setMushafFontSize(double size) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp between 0.8 and 1.5
+    final clampedSize = size.clamp(0.8, 1.5);
+    await _sharedPreferences!.setDouble('mushaf_font_size', clampedSize);
+  }
+
+  double getMushafFontSize() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getDouble('mushaf_font_size') ?? 1.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get Mushaf font size: $e',
+        feature: 'Preferences',
+      );
+      return 1.0;
+    }
+  }
+
+  // Regular Quran view font size (16 to 32)
+  Future<void> setRegularFontSize(double size) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp between 16 and 32
+    final clampedSize = size.clamp(16.0, 32.0);
+    await _sharedPreferences!.setDouble('regular_font_size', clampedSize);
+  }
+
+  double getRegularFontSize() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getDouble('regular_font_size') ?? 22.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get regular font size: $e',
+        feature: 'Preferences',
+      );
+      return 22.0;
+    }
+  }
+
   // Generic string storage
   Future<void> setString(String key, String value) async {
     if (_sharedPreferences == null) await init();
@@ -381,6 +424,154 @@ class PrefUtils {
         feature: 'Preferences',
       );
       return null;
+    }
+  }
+
+  // Reading Streak Tracking
+  Future<void> recordReadingSession() async {
+    if (_sharedPreferences == null) await init();
+    final today = DateTime.now();
+    final todayString = '${today.year}-${today.month}-${today.day}';
+
+    final lastReadDate = getString('last_read_date');
+    final currentStreak = getReadingStreak();
+
+    if (lastReadDate != todayString) {
+      final lastDate = _parseDate(lastReadDate);
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      if (lastDate != null) {
+        final difference = todayDate.difference(lastDate).inDays;
+        if (difference == 1) {
+          await setInt('reading_streak', currentStreak + 1);
+        } else if (difference > 1) {
+          await setInt('reading_streak', 1);
+        }
+      } else {
+        await setInt('reading_streak', 1);
+      }
+
+      await setString('last_read_date', todayString);
+      await _addToReadingHistory(todayString);
+    }
+  }
+
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null) return null;
+    try {
+      final parts = dateStr.split('-');
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _addToReadingHistory(String date) async {
+    final history = getStringList('reading_history') ?? [];
+    if (!history.contains(date)) {
+      history.add(date);
+      await setStringList('reading_history', history);
+    }
+  }
+
+  int getReadingStreak() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getInt('reading_streak') ?? 0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading streak: $e',
+        feature: 'Preferences',
+      );
+      return 0;
+    }
+  }
+
+  int getTotalReadingDays() {
+    try {
+      _ensureInitialized();
+      final history = _sharedPreferences!.getStringList('reading_history');
+      return history?.length ?? 0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get total reading days: $e',
+        feature: 'Preferences',
+      );
+      return 0;
+    }
+  }
+
+  List<String> getReadingHistory() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getStringList('reading_history') ?? [];
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading history: $e',
+        feature: 'Preferences',
+      );
+      return [];
+    }
+  }
+
+  // Generic int storage
+  Future<void> setInt(String key, int value) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setInt(key, value);
+  }
+
+  int? getInt(String key) {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getInt(key);
+    } catch (e) {
+      Logger.warning(
+        'Failed to get int for key $key: $e',
+        feature: 'Preferences',
+      );
+      return null;
+    }
+  }
+
+  // Orientation preference: 'portrait', 'landscape', 'auto'
+  Future<void> setOrientationMode(String mode) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('orientation_mode', mode);
+  }
+
+  String getOrientationMode() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('orientation_mode') ?? 'portrait';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get orientation mode: $e',
+        feature: 'Preferences',
+      );
+      return 'portrait';
+    }
+  }
+
+  // Reading navigation mode: 'scroll' (current), 'page' (surah-to-surah navigation)
+  Future<void> setReadingNavMode(String mode) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('reading_nav_mode', mode);
+  }
+
+  String getReadingNavMode() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('reading_nav_mode') ?? 'scroll';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading nav mode: $e',
+        feature: 'Preferences',
+      );
+      return 'scroll';
     }
   }
 }

@@ -344,6 +344,20 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  void _navigateToSurah(int surahId) {
+    if (surahId < 1 || surahId > 114) return;
+
+    final targetSurah = QuranIndex.quranSurahs.firstWhere(
+      (s) => s.id == surahId,
+      orElse: () => QuranIndex.quranSurahs[0],
+    );
+
+    NavigatorService.popAndPushNamed(
+      AppRoutes.surahPage,
+      arguments: {'surah': targetSurah, 'resume': true},
+    );
+  }
+
   @override
   void dispose() {
     _offsetSaveDebounce?.cancel();
@@ -471,6 +485,12 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Widget _buildSliverAppBar(bool isDark) {
+    final readingNavMode = PrefUtils().getReadingNavMode();
+    final isPageMode = readingNavMode == 'page';
+    final currentIndex = surah?.id ?? 1;
+    final hasNext = currentIndex < 114;
+    final hasPrevious = currentIndex > 1;
+
     return SliverAppBar(
       expandedHeight: 180.0,
       floating: false,
@@ -485,6 +505,24 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
+        if (isPageMode && hasPrevious)
+          Semantics(
+            button: true,
+            label: 'lbl_previous_surah'.tr,
+            child: IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white),
+              onPressed: () => _navigateToSurah(currentIndex - 1),
+            ),
+          ),
+        if (isPageMode && hasNext)
+          Semantics(
+            button: true,
+            label: 'lbl_next_surah'.tr,
+            child: IconButton(
+              icon: const Icon(Icons.chevron_right, color: Colors.white),
+              onPressed: () => _navigateToSurah(currentIndex + 1),
+            ),
+          ),
         Semantics(
           button: true,
           label: 'lbl_help'.tr,

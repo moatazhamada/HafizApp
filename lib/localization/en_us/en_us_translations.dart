@@ -25,6 +25,8 @@ final Map<String, String> enUs = {
       'This repository is currently private. The source code is maintained privately by the current team.',
   'about_contributors': 'Contributors & References',
   'about_contributors_desc': 'View all contributors and data sources',
+  'about_team_section': 'Development Team',
+  'about_data_section': 'Data Sources & References',
   'lbl_ayah': 'Ayah',
   'about_feedback_title': 'Feedback',
   'about_feedback_desc': 'Report bugs or suggest new features via email.',
@@ -35,6 +37,8 @@ final Map<String, String> enUs = {
   'lbl_copied': 'Copied to clipboard',
   'lbl_practice_list': 'Practice List',
   'msg_no_practice_items': 'No verses marked for practice',
+  'msg_practice_hint':
+      'Mark verses you want to review. They will appear here for easy access.',
   'msg_added_practice': 'Added to Practice List',
   'msg_removed_practice': 'Removed from Practice List',
   'lbl_verify_recitation': 'Verify Recitation (Beta)',
@@ -98,10 +102,48 @@ final Map<String, String> enUs = {
       "• Select 'Mark for Practice'.\n"
       '• The verse will be highlighted.\n'
       "• Use this to track verses that need 'Tathbeet' (Strengthening).",
+  // Help Screen - New Sections
+  'help_section_reading': 'Reading Features',
+  'help_section_mushaf': 'Mushaf View',
+  'help_section_practice': 'Practice Tools',
+  'help_section_customization': 'Customization',
+  'help_mushaf_title': 'Mushaf (Book) View',
+  'help_mushaf_desc':
+      '• Access the traditional Mushaf layout with 604 pages like the physical Quran.\n'
+      '• Supports 4 different Mushaf types: Madani, Egyptian, Indo-Pak, and Warsh.\n'
+      '• Swipe horizontally to turn pages (RTL orientation).\n'
+      '• Tap the page number indicator to jump to any page.\n'
+      '• Bookmarks are saved per Mushaf type.',
+  'help_zoom_title': 'Zoom & Navigation',
+  'help_zoom_desc':
+      '• Pinch to zoom in/out on any Mushaf page.\n'
+      '• When zoomed, page swipe is disabled to allow panning.\n'
+      '• Tap the zoom reset button to return to normal view.\n'
+      '• Adjust font size in Settings > Display Preferences.\n'
+      '• A zoom indicator appears when zoom is active.',
+  'help_voice_title': 'Voice Verification',
+  'help_voice_desc':
+      '• Long-press any verse and select "Verify Recitation".\n'
+      '• Grant microphone permission when prompted.\n'
+      '• Recite the verse and get instant feedback.\n'
+      '• Uses on-device AI (Whisper) - works offline.\n'
+      '• Optional: Connect to QRC service for advanced tajweed checking.',
+  'help_settings_title': 'Settings & Customization',
+  'help_settings_desc':
+      '• Change Mushaf type from the More menu.\n'
+      '• Adjust font sizes for comfortable reading.\n'
+      '• Switch between Light/Dark/System themes.\n'
+      '• Configure audio recitation settings.\n'
+      '• Set up external services like QRC (optional).',
+  'help_tip_title': 'Quick Tip',
+  'help_tip_content':
+      'You can switch between Surah view and Mushaf view anytime. The app remembers your last reading position in both views!',
   // Bookmarks
   'msg_bookmark_added': 'Bookmark Saved',
   'msg_bookmark_removed': 'Bookmark Removed',
   'msg_no_bookmarks': 'No bookmarks yet',
+  'msg_bookmarks_hint':
+      'Bookmark verses to save your reading progress and quickly return to them later.',
   'lbl_verse_num': 'Ayah', // Unified to Ayah
   'lbl_remove_bookmark': 'Remove Bookmark',
   'lbl_add_bookmark': 'Add Bookmark',
@@ -177,7 +219,13 @@ final Map<String, String> enUs = {
   'lbl_bookmark_page': 'Bookmark Page',
   'lbl_mushaf_bookmarks': 'Mushaf Bookmarks',
   'lbl_display_settings': 'Display Settings',
-  'lbl_font_size': 'Font Size',
+  'lbl_reset_zoom': 'Reset Zoom',
+  'msg_font_size_hint':
+      'Adjust text size to fit your screen. Changes are saved automatically.',
+  'lbl_display_preferences': 'Display Preferences',
+  'lbl_quran_font_size': 'Quran Text Size',
+  'lbl_points': 'pt',
+  'msg_font_size_preview': 'بِسْمِ اللَّهِ',
   'lbl_show_page_borders': 'Show Page Borders',
   'msg_bookmark_current_page': 'Bookmark page {page}?',
   'msg_page_bookmarked': 'Page bookmarked',
@@ -246,4 +294,66 @@ final Map<String, String> enUs = {
       '• Free alternative: Use "On-device Whisper" option above',
   'msg_qrc_key_saved': 'QRC API key saved',
   'msg_qrc_key_removed': 'QRC API key removed',
+  // Ramadan Settings
+  'lbl_ramadan_settings': 'Ramadan Settings',
+  'lbl_ramadan_region': 'Region / Moon Sighting',
+  'msg_ramadan_region_desc':
+      'Select your country for accurate Ramadan dates based on local moon sightings',
+  // Share & Rate
+  'about_share_app': 'Share App',
+  'about_share_app_desc': 'Share Hafiz with friends and family',
+  'about_share_subject': 'Check out Hafiz - Quran Memorization App',
+  'about_rate_app': 'Rate Us',
+  'about_rate_app_desc': 'Your feedback helps us improve',
+  // Statistics
+  'stats_title': 'My Progress',
+  'stats_total_verses_read': 'Verses Read',
+  'stats_bookmarks': 'Bookmarks',
+  'stats_practice_verses': 'Practice Verses',
+  'stats_reading_streak': 'Reading Streak',
+  'stats_days': 'days',
+  'stats_total_days': 'Total',
+  'stats_last_read': 'Last Read',
+  'stats_surahs_completed': 'Surahs Completed',
+  'stats_no_activity': 'Start reading to track your progress!',
+  'stats_reading_history': 'Recent Activity',
+  // Export
+  'lbl_export_data': 'Export Data',
+  'lbl_export_data_desc': 'Export bookmarks and practice list',
+  'lbl_export_bookmarks': 'Export Bookmarks',
+  'lbl_export_practice': 'Export Practice List',
+  'msg_export_success': 'Data exported successfully',
+  'msg_export_error': 'Failed to export data',
+  // Notifications
+  'daily_verse_title': 'Daily Verse',
+  'daily_verse_body': 'Start your day with the Quran',
+  'reading_reminder_title': 'Reading Reminder',
+  'reading_reminder_body': "It's time to read the Quran",
+  'lbl_notifications': 'Notifications',
+  'lbl_daily_verse': 'Daily Verse',
+  'lbl_reading_reminder': 'Reading Reminder',
+  'msg_notifications_disabled':
+      'Notifications are disabled. Enable them in settings.',
+  // Orientation & Navigation
+  'lbl_orientation': 'Screen Orientation',
+  'lbl_portrait': 'Portrait',
+  'lbl_landscape': 'Landscape',
+  'lbl_auto_rotate': 'Auto Rotate',
+  'lbl_reading_navigation': 'Reading Navigation',
+  'lbl_scroll_mode': 'Scroll Mode',
+  'lbl_scroll_mode_desc': 'Traditional scrolling through verses',
+  'lbl_page_mode': 'Page Mode',
+  'lbl_page_mode_desc': 'Navigate between surahs directly',
+  'lbl_previous_surah': 'Previous Surah',
+  'lbl_next_surah': 'Next Surah',
+
+  // Ramadan Strings
+  'lbl_ramadan_kareem_suhoor': 'Ramadan Kareem 🌙\nSuhoor Time',
+  'lbl_ramadan_kareem_fasting': 'Ramadan Kareem 🌙\nFasting in Progress',
+  'lbl_ramadan_kareem_iftar': 'Ramadan Kareem 🌙\nIftar Soon!',
+  'lbl_ramadan_kareem_evening': 'Ramadan Kareem 🌙\nEvening Prayers',
+  'lbl_ramadan': 'Ramadan',
+  'lbl_ramadan_kareem': 'Ramadan Kareem',
+  'lbl_day_of_ramadan': 'Day {day} of Ramadan',
+  'lbl_days_until_eid': '{days} days remaining until Eid Al-Fitr',
 };

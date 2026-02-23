@@ -11,6 +11,8 @@ import '../../core/audio/recitation_service.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import '../../injection_container.dart' as di;
 import '../../core/analytics/analytics_helper.dart';
+import '../../core/ramadan/ramadan_date_manager.dart';
+import '../../main.dart' show setOrientationFromPrefs;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -29,6 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _whisperModel;
   late String _defaultQuranView;
   late String _qrcApiKey;
+  late double _regularFontSize;
+  late String _orientationMode;
+  late String _readingNavMode;
   bool _whisperDownloading = false;
   final TextEditingController _qrcApiKeyController = TextEditingController();
   List<QiraatEdition> _editions = [];
@@ -51,6 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _whisperModel = PrefUtils().getWhisperModel();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _qrcApiKey = PrefUtils().getQrcApiKey();
+    _regularFontSize = PrefUtils().getRegularFontSize();
+    _orientationMode = PrefUtils().getOrientationMode();
+    _readingNavMode = PrefUtils().getReadingNavMode();
     _qrcApiKeyController.text = _qrcApiKey;
     _loadRecitationResources();
   }
@@ -134,6 +142,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildThemeOption('lbl_theme_light'.tr, 'light'),
           _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
           const Divider(),
+          _buildSectionHeader('lbl_orientation'.tr),
+          _buildOrientationOption('lbl_portrait'.tr, 'portrait'),
+          _buildOrientationOption('lbl_landscape'.tr, 'landscape'),
+          _buildOrientationOption('lbl_auto_rotate'.tr, 'auto'),
+          const Divider(),
+          _buildSectionHeader('lbl_reading_navigation'.tr),
+          _buildReadingNavOption('lbl_scroll_mode'.tr, 'scroll'),
+          _buildReadingNavOption('lbl_page_mode'.tr, 'page'),
+          const Divider(),
           _buildSectionHeader('lbl_default_quran_view'.tr),
           _buildQuranViewOption('lbl_surah_view'.tr, 'surah'),
           _buildQuranViewOption('lbl_mushaf_view'.tr, 'mushaf'),
@@ -176,10 +193,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _whisperDownloading ? null : _selectWhisperModel,
             ),
           const Divider(),
+          _buildSectionHeader('lbl_display_preferences'.tr),
+          ListTile(
+            title: Text('lbl_quran_font_size'.tr),
+            subtitle: Text('${(_regularFontSize).toInt()} ${'lbl_points'.tr}'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _showRegularFontSizeDialog,
+          ),
+          const Divider(),
           _buildSectionHeader('lbl_external_services'.tr),
           _buildQrcApiKeyTile(),
+          const Divider(),
+          _buildSectionHeader('lbl_ramadan_settings'.tr),
+          _buildRamadanRegionTile(),
         ],
       ),
+    );
+  }
+
+  Widget _buildRamadanRegionTile() {
+    final region = RamadanDateManager.selectedRegion;
+    final dates = RamadanDateManager.getDates();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.mosque, color: Colors.teal),
+          title: Text('lbl_ramadan_region'.tr),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(RamadanDateManager.getRegionName(region)),
+              Text(
+                '${dates.start.day}/${dates.start.month} - ${dates.eid.day}/${dates.eid.month}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            await RamadanDateManager.showRegionSelector(context);
+            setState(() {}); // Refresh to show updated dates
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'msg_ramadan_region_desc'.tr,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ),
+      ],
     );
   }
 
@@ -339,6 +404,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _showRegularFontSizeDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('lbl_quran_font_size'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${_regularFontSize.toInt()} ${'lbl_points'.tr}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: _regularFontSize,
+                min: 16,
+                max: 32,
+                divisions: 16,
+                label: _regularFontSize.toInt().toString(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    _regularFontSize = value;
+                  });
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'msg_font_size_preview'.tr,
+                style: TextStyle(
+                  fontSize: _regularFontSize,
+                  fontFamily: 'Amiri',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('lbl_cancel'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await PrefUtils().setRegularFontSize(_regularFontSize);
+                if (mounted) {
+                  // ignore: use_build_context_synchronously
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('lbl_save'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -429,6 +556,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           setState(() {
             _defaultQuranView = view;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildOrientationOption(String label, String mode) {
+    final bool isSelected = _orientationMode == mode;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setOrientationMode(mode);
+          setOrientationFromPrefs();
+
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'orientation_mode',
+              mode,
+            ),
+          );
+
+          setState(() {
+            _orientationMode = mode;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildReadingNavOption(String label, String mode) {
+    final bool isSelected = _readingNavMode == mode;
+    return ListTile(
+      title: Text(label),
+      subtitle: Text(
+        mode == 'scroll' ? 'lbl_scroll_mode_desc'.tr : 'lbl_page_mode_desc'.tr,
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setReadingNavMode(mode);
+
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'reading_nav_mode',
+              mode,
+            ),
+          );
+
+          setState(() {
+            _readingNavMode = mode;
           });
         }
       },

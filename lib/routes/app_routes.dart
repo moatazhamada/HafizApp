@@ -3,6 +3,7 @@ import 'package:hafiz_app/presentation/surah_screen/surah_screen.dart';
 import '../presentation/bookmarks/bookmarks_screen.dart';
 import '../presentation/help_screen/help_screen.dart';
 import '../presentation/search/search_screen.dart';
+import '../presentation/statistics_screen/statistics_screen.dart';
 
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String settingsScreen = '/settings';
   static const String mushafScreen = '/mushaf';
   static const String audioPlayerScreen = '/audio_player';
+  static const String statisticsScreen = '/statistics';
 
   static Map<String, WidgetBuilder> routes = {
     onboardingScreen: OnboardingScreen.builder,
@@ -40,8 +42,9 @@ class AppRoutes {
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     mushafScreen: (context) => const MushafScreen(),
+    statisticsScreen: StatisticsScreen.builder,
   };
-  
+
   /// Navigate to Mushaf screen with optional parameters
   static void goToMushaf(
     BuildContext context, {
@@ -62,7 +65,7 @@ class AppRoutes {
       ),
     );
   }
-  
+
   /// Navigate to Mushaf type onboarding
   static void goToMushafOnboarding(
     BuildContext context, {
@@ -71,13 +74,11 @@ class AppRoutes {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => MushafTypeOnboarding(
-          onComplete: onComplete,
-        ),
+        builder: (context) => MushafTypeOnboarding(onComplete: onComplete),
       ),
     );
   }
-  
+
   /// Navigate to Audio Player
   static void goToAudioPlayer(
     BuildContext context, {

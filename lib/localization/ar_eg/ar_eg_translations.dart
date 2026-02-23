@@ -25,6 +25,8 @@ final Map<String, String> arEg = {
       'هذا المستودع خاص حالياً. يتم صيانة الكود المصدري بشكل خاص من قبل الفريق الحالي.',
   'about_contributors': 'المساهمون والمراجع',
   'about_contributors_desc': 'عرض جميع المساهمين ومصادر البيانات',
+  'about_team_section': 'فريق التطوير',
+  'about_data_section': 'مصادر البيانات والمراجع',
   'lbl_ayah': 'آية',
   'about_feedback_title': 'الملاحظات والاقتراحات',
   'about_feedback_desc': 'أبلغ عن خطأ برمجي أو اقترح ميزة جديدة عبر البريد.',
@@ -35,6 +37,8 @@ final Map<String, String> arEg = {
   'lbl_copied': 'تم النسخ للحافظة',
   'lbl_practice_list': 'قائمة تثبيت الحفظ',
   'msg_no_practice_items': 'لا توجد آيات لتثبيت الحفظ',
+  'msg_practice_hint':
+      'حدد الآيات التي تريد مراجعتها. ستظهر هنا للوصول السريع.',
   'msg_added_practice': 'تمت الإضافة لتثبيت الحفظ',
   'msg_removed_practice': 'تم الحذف من قائمة تثبيت الحفظ',
   'lbl_verify_recitation': 'التحقق من التلاوة (تجريبي)',
@@ -98,10 +102,48 @@ final Map<String, String> arEg = {
       "• اختر 'تحديد لتثبيت الحفظ'.\n"
       '• سيتم تمييز الآية.\n'
       '• استخدم هذه القائمة لمراجعة وتثبيت حفظك.',
+  // Help Screen - New Sections
+  'help_section_reading': 'ميزات القراءة',
+  'help_section_mushaf': 'عرض المصحف',
+  'help_section_practice': 'أدوات التدريب',
+  'help_section_customization': 'التخصيص',
+  'help_mushaf_title': 'عرض المصحف (الكتاب)',
+  'help_mushaf_desc':
+      '• الوصول إلى تخطيط المصحف التقليدي بـ 604 صفحات مثل المصحف الورقي.\n'
+      '• يدعم 4 أنواع مختلفة من المصاحف: المدني، المصري، الهندي-الباكستاني، والورش.\n'
+      '• اسحب أفقياً لتقليب الصفحات (اتجاه من اليمين لليسار).\n'
+      '• اضغط على مؤشر رقم الصفحة للانتقال إلى أي صفحة.\n'
+      '• يتم حفظ العلامات المرجعية لكل نوع مصحف على حدة.',
+  'help_zoom_title': 'التكبير والتنقل',
+  'help_zoom_desc':
+      '• استخدم إصبعين للتكبير/التصغير على أي صفحة مصحف.\n'
+      '• عند التكبير، يتم تعطيل السحب للسماح بالتنقل في الصفحة.\n'
+      '• اضغط على زر إعادة ضبط التكبير للعودة إلى العرض العادي.\n'
+      '• اضبط حجم الخط من الإعدادات > تفضيلات العرض.\n'
+      '• يظهر مؤشر التكبير عندما يكون التكبير نشطاً.',
+  'help_voice_title': 'التحقق الصوتي',
+  'help_voice_desc':
+      '• اضغط مطولاً على أي آية واختر "التحقق من التلاوة".\n'
+      '• منح إذن الميكروفون عند الطلب.\n'
+      '• اقرأ الآية واحصل على ملاحظات فورية.\n'
+      '• يستخدم الذكاء الاصطناعي على الجهاز (ويسبر) - يعمل بدون إنترنت.\n'
+      '• اختياري: الاتصال بخدمة QRC للتحقق المتقدم من التجويد.',
+  'help_settings_title': 'الإعدادات والتخصيص',
+  'help_settings_desc':
+      '• تغيير نوع المصحف من قائمة المزيد.\n'
+      '• ضبط أحجام الخطوط للقراءة المريحة.\n'
+      '• التبديل بين السمات الفاتحة/الداكنة/نظام.\n'
+      '• تكوين إعدادات التلاوة الصوتية.\n'
+      '• إعداد الخدمات الخارجية مثل QRC (اختياري).',
+  'help_tip_title': 'نصيحة سريعة',
+  'help_tip_content':
+      'يمكنك التبديل بين عرض السورة وعرض المصحف في أي وقت. يتذكر التطبيق موضع القراءة الأخير في كلا العرضين!',
   // Bookmarks
   'msg_bookmark_added': 'تم حفظ العلامة',
   'msg_bookmark_removed': 'تم حذف العلامة',
   'msg_no_bookmarks': 'لا توجد علامات محفوظة',
+  'msg_bookmarks_hint':
+      'احفظ الآيات لتسجيل تقدمك في القراءة والعودة إليها بسرعة لاحقاً.',
   'lbl_verse_num': 'آية',
   'lbl_remove_bookmark': 'إزالة العلامة',
   'lbl_add_bookmark': 'إضافة علامة',
@@ -176,7 +218,13 @@ final Map<String, String> arEg = {
   'lbl_bookmark_page': 'حفظ الصفحة',
   'lbl_mushaf_bookmarks': 'علامات المصحف',
   'lbl_display_settings': 'إعدادات العرض',
-  'lbl_font_size': 'حجم الخط',
+  'lbl_reset_zoom': 'إعادة ضبط التكبير',
+  'msg_font_size_hint':
+      'اضبط حجم النص ليناسب شاشتك. يتم حفظ التغييرات تلقائياً.',
+  'lbl_display_preferences': 'تفضيلات العرض',
+  'lbl_quran_font_size': 'حجم نص القرآن',
+  'lbl_points': 'نقطة',
+  'msg_font_size_preview': 'بِسْمِ اللَّهِ',
   'lbl_show_page_borders': 'إظهار حدود الصفحة',
   'msg_bookmark_current_page': 'حفظ الصفحة {page}؟',
   'msg_page_bookmarked': 'تم حفظ الصفحة',
@@ -245,4 +293,65 @@ final Map<String, String> arEg = {
       '• البديل المجاني: استخدم خيار "ويسبر على الجهاز" أعلاه',
   'msg_qrc_key_saved': 'تم حفظ مفتاح QRC',
   'msg_qrc_key_removed': 'تم حذف مفتاح QRC',
+  // Ramadan Settings
+  'lbl_ramadan_settings': 'إعدادات رمضان',
+  'lbl_ramadan_region': 'المنطقة / رؤية الهلال',
+  'msg_ramadan_region_desc':
+      'اختر بلدك للحصول على مواعيد رمضان الدقيقة بناءً على رؤية الهلال المحلية',
+  // Share & Rate
+  'about_share_app': 'مشاركة التطبيق',
+  'about_share_app_desc': 'شارك حافظ مع الأصدقاء والعائلة',
+  'about_share_subject': 'جرّب تطبيق حافظ لحفظ القرآن',
+  'about_rate_app': 'قيّمنا',
+  'about_rate_app_desc': 'تقييمك يساعدنا على التحسن',
+  // Statistics
+  'stats_title': 'تقدمي',
+  'stats_total_verses_read': 'الآيات المقروءة',
+  'stats_bookmarks': 'المحفوظات',
+  'stats_practice_verses': 'آيات التثبيت',
+  'stats_reading_streak': 'أيام متتالية',
+  'stats_days': 'يوم',
+  'stats_total_days': 'المجموع',
+  'stats_last_read': 'آخر قراءة',
+  'stats_surahs_completed': 'السور المكتملة',
+  'stats_no_activity': 'ابدأ القراءة لتتبع تقدمك!',
+  'stats_reading_history': 'النشاط الأخير',
+  // Export
+  'lbl_export_data': 'تصدير البيانات',
+  'lbl_export_data_desc': 'تصدير المحفوظات وقائمة التثبيت',
+  'lbl_export_bookmarks': 'تصدير المحفوظات',
+  'lbl_export_practice': 'تصدير قائمة التثبيت',
+  'msg_export_success': 'تم تصدير البيانات بنجاح',
+  'msg_export_error': 'فشل تصدير البيانات',
+  // Notifications
+  'daily_verse_title': 'آية اليوم',
+  'daily_verse_body': 'ابدأ يومك مع القرآن',
+  'reading_reminder_title': 'تذكير القراءة',
+  'reading_reminder_body': 'حان وقت قراءة القرآن',
+  'lbl_notifications': 'الإشعارات',
+  'lbl_daily_verse': 'آية اليوم',
+  'lbl_reading_reminder': 'تذكير القراءة',
+  'msg_notifications_disabled': 'الإشعارات معطلة. فعّلها من الإعدادات.',
+  // Orientation & Navigation
+  'lbl_orientation': 'اتجاه الشاشة',
+  'lbl_portrait': 'عمودي',
+  'lbl_landscape': 'أفقي',
+  'lbl_auto_rotate': 'تدوير تلقائي',
+  'lbl_reading_navigation': 'تنقل القراءة',
+  'lbl_scroll_mode': 'وضع التمرير',
+  'lbl_scroll_mode_desc': 'التمرير التقليدي بين الآيات',
+  'lbl_page_mode': 'وضع الصفحات',
+  'lbl_page_mode_desc': 'التنقل المباشر بين السور',
+  'lbl_previous_surah': 'السورة السابقة',
+  'lbl_next_surah': 'السورة التالية',
+
+  // Ramadan Strings
+  'lbl_ramadan_kareem_suhoor': 'رمضان كريم 🌙\nوقت السحور',
+  'lbl_ramadan_kareem_fasting': 'رمضان كريم 🌙\nصيام مقبول',
+  'lbl_ramadan_kareem_iftar': 'رمضان كريم 🌙\nاقترب الإفطار!',
+  'lbl_ramadan_kareem_evening': 'رمضان كريم 🌙\nصلوات المساء',
+  'lbl_ramadan': 'رمضان',
+  'lbl_ramadan_kareem': 'رمضان كريم',
+  'lbl_day_of_ramadan': 'اليوم {day} من رمضان',
+  'lbl_days_until_eid': 'باقي {days} أيام حتى عيد الفطر',
 };
