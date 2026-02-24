@@ -76,7 +76,7 @@ class ForceUpdateService {
       );
     } catch (e) {
       debugPrint('Error checking for update: $e');
-      return UpdateStatus(
+      return const UpdateStatus(
         currentVersion: '0.0.0',
         currentBuildNumber: 0,
         minVersion: '0',

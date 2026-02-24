@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hafiz_app/core/ramadan/ramadan_theme.dart';
 import 'package:hafiz_app/widgets/ramadan_banner.dart';
 
 import '../utils/test_app_widget.dart';

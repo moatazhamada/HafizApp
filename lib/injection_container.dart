@@ -27,7 +27,6 @@ import 'core/analytics/analytics_service.dart';
 import 'core/analytics/analytics_helper.dart';
 import 'core/analytics/analytics_route_observer.dart';
 import 'core/deep_link/deep_link_service.dart';
-import 'core/audio/audio_player_handler.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 
 final sl = GetIt.instance;

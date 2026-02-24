@@ -75,7 +75,7 @@ void main() {
     });
 
     testWidgets('renders empty state correctly', (WidgetTester tester) async {
-      when(() => mockSearchBloc.state).thenReturn(SearchEmpty());
+      when(() => mockSearchBloc.state).thenReturn(const SearchEmpty());
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -109,7 +109,9 @@ void main() {
     });
 
     testWidgets('renders error state correctly', (WidgetTester tester) async {
-      when(() => mockSearchBloc.state).thenReturn(SearchError('Server error'));
+      when(
+        () => mockSearchBloc.state,
+      ).thenReturn(const SearchError('Server error'));
 
       await tester.pumpWidget(createWidgetUnderTest());
 

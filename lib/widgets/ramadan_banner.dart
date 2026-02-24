@@ -19,7 +19,7 @@ class RamadanBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             const Color(0xFFD4AF37), // Golden color
-            const Color(0xFFB8860B).withOpacity(0.8),
+            const Color(0xFFB8860B).withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -27,7 +27,7 @@ class RamadanBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4AF37).withOpacity(0.4),
+            color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -52,7 +52,7 @@ class RamadanBanner extends StatelessWidget {
                 Text(
                   'msg_ramadan_blessings'.tr,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -62,7 +62,7 @@ class RamadanBanner extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

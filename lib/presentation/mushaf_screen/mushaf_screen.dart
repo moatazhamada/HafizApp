@@ -513,7 +513,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 textDirection: TextDirection.rtl,
                 child: PageView.builder(
                   controller: _pageController,
-                  // Remove reverse parameter to rely on native RTL layout scroll
+                  reverse: true, // RTL scrolling for Quran
                   onPageChanged: _onPageChanged,
                   itemCount: _currentMushafType.totalPages,
                   itemBuilder: (context, index) {

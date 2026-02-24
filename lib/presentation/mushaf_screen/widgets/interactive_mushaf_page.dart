@@ -30,7 +30,7 @@ class InteractiveMushafPage extends StatelessWidget {
           return InteractiveViewer(
             minScale: 1.0,
             maxScale: 4.0,
-            child: Container(
+            child: SizedBox(
               width: constraints.maxWidth,
               height: constraints.maxHeight,
               child: Stack(

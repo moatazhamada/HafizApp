@@ -112,8 +112,9 @@ class _SurahScreenState extends State<SurahScreen> {
         _offsetSaveDebounce = Timer(const Duration(milliseconds: 350), () {
           if (!mounted ||
               surah == null ||
-              !_scrollControllerForInit!.hasClients)
+              !_scrollControllerForInit!.hasClients) {
             return;
+          }
           PrefUtils().setSurahOffset(
             surah!.id,
             _scrollControllerForInit!.offset,

@@ -60,6 +60,7 @@ class NetworkManagerImpl extends NetworkManagerI {
       return await requestFuture;
     } finally {
       // Clean up after request completes (success or failure)
+      // ignore: unawaited_futures
       _inFlightRequests.remove(cacheKey);
     }
   }

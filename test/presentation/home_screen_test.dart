@@ -59,7 +59,7 @@ void main() {
     setupStrictOverflowHandler();
 
     // Setup default values
-    when(() => mockHomeBloc.state).thenReturn(HomeState());
+    when(() => mockHomeBloc.state).thenReturn(const HomeState());
     when(() => mockThemeBloc.state).thenReturn(LightThemeState());
     when(() => mockScrollCubit.state).thenReturn({});
     when(() => mockScrollCubit.getOffset(any())).thenReturn(null);
@@ -69,35 +69,44 @@ void main() {
     ).thenAnswer((_) => Stream.value([ConnectivityResult.wifi]));
 
     // Register mocks in GetIt
-    if (sl.isRegistered<HomeBloc>()) sl.unregister<HomeBloc>();
+    if (sl.isRegistered<HomeBloc>()) {
+      sl.unregister<HomeBloc>();
+    }
     sl.registerFactory<HomeBloc>(() => mockHomeBloc);
 
-    if (sl.isRegistered<ThemeBloc>()) sl.unregister<ThemeBloc>();
+    if (sl.isRegistered<ThemeBloc>()) {
+      sl.unregister<ThemeBloc>();
+    }
     sl.registerFactory<ThemeBloc>(() => mockThemeBloc);
 
-    if (sl.isRegistered<ScrollPositionCubit>())
+    if (sl.isRegistered<ScrollPositionCubit>()) {
       sl.unregister<ScrollPositionCubit>();
+    }
     sl.registerLazySingleton<ScrollPositionCubit>(() => mockScrollCubit);
 
-    if (sl.isRegistered<NetworkInfo>()) sl.unregister<NetworkInfo>();
+    if (sl.isRegistered<NetworkInfo>()) {
+      sl.unregister<NetworkInfo>();
+    }
     sl.registerLazySingleton<NetworkInfo>(() => mockNetworkInfo);
 
-    if (sl.isRegistered<AnalyticsHelper>()) sl.unregister<AnalyticsHelper>();
+    if (sl.isRegistered<AnalyticsHelper>()) {
+      sl.unregister<AnalyticsHelper>();
+    }
     sl.registerLazySingleton<AnalyticsHelper>(() => mockAnalyticsHelper);
 
-    if (sl.isRegistered<AnalyticsService>()) sl.unregister<AnalyticsService>();
+    if (sl.isRegistered<AnalyticsService>()) {
+      sl.unregister<AnalyticsService>();
+    }
     sl.registerLazySingleton<AnalyticsService>(() => mockAnalyticsService);
 
-    if (sl.isRegistered<AnalyticsRouteObserver>())
+    if (sl.isRegistered<AnalyticsRouteObserver>()) {
       sl.unregister<AnalyticsRouteObserver>();
+    }
     sl.registerLazySingleton<AnalyticsRouteObserver>(() => mockRouteObserver);
   });
 
   Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
-    return mountTestWidget(
-      const HomeScreen(),
-      screenSize: screenSize,
-    );
+    return mountTestWidget(const HomeScreen(), screenSize: screenSize);
   }
 
   group('HomeScreen UI Tests', () {
@@ -143,7 +152,9 @@ void main() {
     testWidgets('renders layout correctly in landscape without overflows', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(createWidgetUnderTest(screenSize: const Size(800, 360)));
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
       await tester.pump();
     });
   });
