@@ -38,14 +38,14 @@ void main() {
     sl.registerLazySingleton<NetworkInfo>(() => mockNetworkInfo);
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return mountTestWidget(
       Builder(
         builder: (context) {
           return OnboardingScreen.builder(context);
         },
       ),
-      screenSize: const Size(360, 800),
+      screenSize: screenSize,
       routes: {'/onboarding': (context) => OnboardingScreen.builder(context)},
     );
   }
@@ -92,6 +92,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No Internet Connection'), findsOneWidget);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

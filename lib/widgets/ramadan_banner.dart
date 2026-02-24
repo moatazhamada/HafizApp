@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/ramadan/ramadan_theme.dart';
 import '../../core/ramadan/ramadan_date_manager.dart';
+import '../../localization/app_localization.dart';
 
 class RamadanBanner extends StatelessWidget {
   const RamadanBanner({super.key});
@@ -41,7 +42,7 @@ class RamadanBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ramadan Kareem',
+                  'lbl_ramadan_kareem'.tr,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -49,7 +50,7 @@ class RamadanBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'May this holy month bring you peace and blessings.',
+                  'msg_ramadan_blessings'.tr,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white.withOpacity(0.9),
                   ),
@@ -66,8 +67,11 @@ class RamadanBanner extends StatelessWidget {
                   ),
                   child: Text(
                     daysUntilEid > 0
-                        ? '$daysUntilEid days until Eid Al-Fitr'
-                        : 'Eid Mubarak!',
+                        ? 'lbl_days_until_eid'.tr.replaceAll(
+                            '{days}',
+                            daysUntilEid.toString(),
+                          )
+                        : 'lbl_eid_mubarak'.tr,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

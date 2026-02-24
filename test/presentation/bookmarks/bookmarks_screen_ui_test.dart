@@ -24,13 +24,13 @@ void main() {
     setupStrictOverflowHandler();
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return BlocProvider<BookmarkBloc>.value(
       value: mockBookmarkBloc,
       child: mountTestWidget(
         const BookmarksScreen(),
         // Small screen size to easily catch overflows
-        screenSize: const Size(320, 480),
+        screenSize: screenSize,
       ),
     );
   }
@@ -96,6 +96,16 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
 
       expect(find.textContaining('Failed to load'), findsOneWidget);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoaded([]));
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

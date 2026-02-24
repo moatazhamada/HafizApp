@@ -61,7 +61,6 @@ class _MushafScreenState extends State<MushafScreen> {
   Set<String> _practiceListKeys = {};
 
   // Font size control
-  double _baseFontSize = 1.0; // Multiplier for font sizes
 
   @override
   void initState() {
@@ -69,7 +68,6 @@ class _MushafScreenState extends State<MushafScreen> {
     _currentMushafType = widget.mushafType;
 
     // Load saved font size preference
-    _baseFontSize = PrefUtils().getMushafFontSize();
 
     // Determine initial page: use provided page, or find page from surah/verse
     int initialPageNumber = widget.initialPage ?? 1;
@@ -248,20 +246,6 @@ class _MushafScreenState extends State<MushafScreen> {
         setState(() => _showPageIndicator = false);
       }
     });
-  }
-
-  // Font size controls
-
-  void _increaseFontSize() {
-    final newSize = (_baseFontSize + 0.1).clamp(0.8, 1.5);
-    setState(() => _baseFontSize = newSize);
-    PrefUtils().setMushafFontSize(newSize);
-  }
-
-  void _decreaseFontSize() {
-    final newSize = (_baseFontSize - 0.1).clamp(0.8, 1.5);
-    setState(() => _baseFontSize = newSize);
-    PrefUtils().setMushafFontSize(newSize);
   }
 
   void _jumpToPage(int pageIndex) {
@@ -525,15 +509,18 @@ class _MushafScreenState extends State<MushafScreen> {
           children: [
             // Page content
             Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                reverse: true,
-                onPageChanged: _onPageChanged,
-                itemCount: _currentMushafType.totalPages,
-                itemBuilder: (context, index) {
-                  final pageNumber = _currentMushafType.totalPages - index;
-                  return _buildMushafPage(pageNumber, isDark);
-                },
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: PageView.builder(
+                  controller: _pageController,
+                  // Remove reverse parameter to rely on native RTL layout scroll
+                  onPageChanged: _onPageChanged,
+                  itemCount: _currentMushafType.totalPages,
+                  itemBuilder: (context, index) {
+                    final pageNumber = _currentMushafType.totalPages - index;
+                    return _buildMushafPage(pageNumber, isDark);
+                  },
+                ),
               ),
             ),
             // Bottom page indicator
@@ -613,6 +600,7 @@ class _MushafScreenState extends State<MushafScreen> {
             GridView.count(
               shrinkWrap: true,
               crossAxisCount: 4,
+              childAspectRatio: 0.75,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
               children: [
@@ -646,27 +634,6 @@ class _MushafScreenState extends State<MushafScreen> {
             const Divider(),
             const SizedBox(height: 16),
 
-            // Font Size Control
-            Row(
-              children: [
-                const Icon(Icons.format_size),
-                const SizedBox(width: 16),
-                Text(
-                  'lbl_font_size'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: _decreaseFontSize,
-                  icon: const Icon(Icons.remove_circle_outline),
-                ),
-                Text('${(_baseFontSize * 100).toInt()}%'),
-                IconButton(
-                  onPressed: _increaseFontSize,
-                  icon: const Icon(Icons.add_circle_outline),
-                ),
-              ],
-            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -822,21 +789,27 @@ class _MushafScreenState extends State<MushafScreen> {
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.teal.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.teal.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                verse.text,
-                textDirection: TextDirection.rtl,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Mushaf',
-                  fontSize: 20,
-                  height: 1.8,
+            Flexible(
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.teal.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    verse.text,
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Mushaf',
+                      fontSize: 20,
+                      height: 1.8,
+                    ),
+                  ),
                 ),
               ),
             ),

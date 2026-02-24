@@ -7,30 +7,21 @@ class MushafImageProvider {
   // v4 images are high quality, often used on standard Quran apps
   static const String baseImageUrl = 'https://android.quran.com/data/';
 
-  /// Get the full URL for a specific Mushaf page image
   static String getImageUrl(MushafType type, int pageNumber) {
-    // Madani (Hafs) is the standard 15-line Mushaf
-    String typePath = 'images_1280'; // Default base
+    // Format pad page number (e.g. page001.png, page042.png, page604.png)
+    final paddedPage = pageNumber.toString().padLeft(3, '0');
 
     // Different Mushaf types have different image endpoints on the CDN
     switch (type) {
       case MushafType.madani:
-        typePath = 'images_1280';
-        break;
+        return 'https://android.quran.com/data/width_1280/page$paddedPage.png?v=2';
       case MushafType.indoPak:
-        typePath = 'naskh_1280';
-        break;
+        return 'https://files.quran.app/hafs/naskh/width_1280/page$paddedPage.png?v=2';
       case MushafType.egyptian:
-        typePath = 'shamerly'; // Egyptian/Shamerly
-        break;
+        return 'https://files.quran.app/hafs/shemerly/width_1200/page$paddedPage.png?v=2';
       case MushafType.warsh:
-        typePath = 'warsh'; // Warsh/Madani
-        break;
+        return 'https://files.quran.app/warsh/original/width_1024/page$paddedPage.png?v=2';
     }
-
-    // Format pad page number (e.g. page001.png, page042.png, page604.png)
-    final paddedPage = pageNumber.toString().padLeft(3, '0');
-    return '$baseImageUrl$typePath/page$paddedPage.png';
   }
 
   /// Fetch and parse the tap coordinates (Ayah bounding boxes) for a page

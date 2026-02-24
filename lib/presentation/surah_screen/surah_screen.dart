@@ -45,6 +45,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
   // Hifz Mode State
   bool _isHifzMode = false;
+  bool _isHorizontalPagination = false;
+  PageController? _horizontalPageController;
   final Set<int> _revealedVerses = {};
   int? _selectedVerse; // For visual selection feedback
   int? _highlightedVerse; // Verse to highlight and scroll to
@@ -73,6 +75,8 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _isHorizontalPagination = PrefUtils().getHorizontalPagination();
+
     if (_scrollControllerForInit == null) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Surah) {
@@ -102,11 +106,14 @@ class _SurahScreenState extends State<SurahScreen> {
         initialScrollOffset: initialOffset ?? 0,
       );
       _scrollControllerForInit!.addListener(() {
-        if (surah == null) return;
+        if (surah == null || !_scrollControllerForInit!.hasClients) return;
 
         _offsetSaveDebounce?.cancel();
         _offsetSaveDebounce = Timer(const Duration(milliseconds: 350), () {
-          if (!mounted || surah == null) return;
+          if (!mounted ||
+              surah == null ||
+              !_scrollControllerForInit!.hasClients)
+            return;
           PrefUtils().setSurahOffset(
             surah!.id,
             _scrollControllerForInit!.offset,
@@ -362,7 +369,7 @@ class _SurahScreenState extends State<SurahScreen> {
   void dispose() {
     _offsetSaveDebounce?.cancel();
     _voiceService.stop();
-
+    _horizontalPageController?.dispose();
     _scrollControllerForInit?.dispose();
     super.dispose();
   }
@@ -419,11 +426,15 @@ class _SurahScreenState extends State<SurahScreen> {
               child: BlocBuilder<SurahBloc, SurahState>(
                 builder: (context, state) {
                   if (state is LoadingSurahState) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: 10,
-                      itemBuilder: (context, index) =>
-                          const SkeletonVerseCard(),
+                    // Force RTL for Quran content skeleton loading
+                    return Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 10,
+                        itemBuilder: (context, index) =>
+                            const SkeletonVerseCard(),
+                      ),
                     );
                   } else if (state is FailureSurahState) {
                     return Center(
@@ -451,24 +462,45 @@ class _SurahScreenState extends State<SurahScreen> {
                           RecitationErrorState
                         >(
                           builder: (context, errorState) {
-                            return CustomScrollView(
-                              controller: _scrollController,
-                              slivers: [
-                                _buildSliverAppBar(isDark),
-                                SliverPadding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                    vertical: 20.v,
-                                  ),
-                                  sliver: _buildSurahList(
-                                    context,
-                                    chapters,
-                                    bookmarkState,
-                                    errorState,
-                                    isDark,
-                                  ),
+                            if (_isHorizontalPagination) {
+                              return NestedScrollView(
+                                headerSliverBuilder:
+                                    (context, innerBoxIsScrolled) {
+                                      return [_buildSliverAppBar(isDark)];
+                                    },
+                                body: _buildHorizontalPageView(
+                                  context,
+                                  chapters,
+                                  bookmarkState,
+                                  errorState,
+                                  isDark,
                                 ),
-                              ],
+                              );
+                            }
+
+                            // Force RTL for Quran content regardless of app locale
+                            return Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: CustomScrollView(
+                                controller: _scrollController,
+                                slivers: [
+                                  _buildSliverAppBar(isDark),
+                                  SliverPadding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                      vertical: 20.v,
+                                    ),
+                                    sliver: _buildSurahList(
+                                      context,
+                                      chapters,
+                                      bookmarkState,
+                                      errorState,
+                                      isDark,
+                                    ),
+                                  ),
+                                  _buildNavigationFooter(context, isDark),
+                                ],
+                              ),
                             );
                           },
                         );
@@ -523,36 +555,6 @@ class _SurahScreenState extends State<SurahScreen> {
               onPressed: () => _navigateToSurah(currentIndex + 1),
             ),
           ),
-        Semantics(
-          button: true,
-          label: 'lbl_help'.tr,
-          child: IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: _isHifzMode ? 'lbl_exit_hifz_mode'.tr : 'lbl_hifz_mode'.tr,
-          child: IconButton(
-            icon: Icon(
-              _isHifzMode ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _isHifzMode = !_isHifzMode;
-                _revealedVerses.clear();
-              });
-              // Announce mode change for accessibility
-              // ignore: deprecated_member_use
-              SemanticsService.announce(
-                _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
-                TextDirection.ltr,
-              );
-            },
-          ),
-        ),
         BlocBuilder<BookmarkBloc, BookmarkState>(
           builder: (context, state) {
             bool isBookmarked = false;
@@ -594,28 +596,102 @@ class _SurahScreenState extends State<SurahScreen> {
             );
           },
         ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            switch (value) {
+              case 'layout':
+                setState(() {
+                  _isHorizontalPagination = !_isHorizontalPagination;
+                  PrefUtils().setHorizontalPagination(_isHorizontalPagination);
+                });
+                break;
+              case 'hifz':
+                setState(() {
+                  _isHifzMode = !_isHifzMode;
+                  _revealedVerses.clear();
+                });
+                // ignore: deprecated_member_use
+                SemanticsService.announce(
+                  _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
+                  TextDirection.ltr,
+                );
+                break;
+              case 'help':
+                NavigatorService.pushNamed(AppRoutes.helpScreen);
+                break;
+            }
+          },
+          itemBuilder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final iconColor = isDark ? Colors.white : Colors.black87;
+            return [
+              PopupMenuItem(
+                value: 'layout',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isHorizontalPagination
+                          ? Icons.swap_vert
+                          : Icons.swap_horiz,
+                      color: iconColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isHorizontalPagination
+                          ? 'lbl_vertical_scroll'.tr
+                          : 'lbl_horizontal_scroll'.tr,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'hifz',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isHifzMode ? Icons.visibility_off : Icons.visibility,
+                      color: iconColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isHifzMode
+                          ? 'lbl_exit_hifz_mode'.tr
+                          : 'lbl_hifz_mode'.tr,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline, color: iconColor),
+                    const SizedBox(width: 8),
+                    Text('lbl_help'.tr),
+                  ],
+                ),
+              ),
+            ];
+          },
+        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Padding(
-            // Increased padding to prevent overlap with action icons (3 icons * 48 = 144 + margin)
-            padding: const EdgeInsets.symmetric(horizontal: 146.0),
-            child: Semantics(
-              header: true,
-              child: Text(
-                surah?.localizedName(context) ?? '',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  fontFamily: 'Amiri',
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
+        titlePadding: const EdgeInsets.symmetric(horizontal: 90, vertical: 14),
+        title: Semantics(
+          header: true,
+          child: Text(
+            surah?.localizedName(context) ?? '',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              fontFamily: 'Amiri',
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
           ),
         ),
         background: Stack(
@@ -1055,6 +1131,160 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  Widget _buildHorizontalPageView(
+    BuildContext context,
+    List<Verse> chapters,
+    BookmarkState bookmarkState,
+    RecitationErrorState errorState,
+    bool isDark,
+  ) {
+    int versesPerPage = 12; // Configurable if we want
+    int pageCount = (chapters.length / versesPerPage).ceil();
+
+    // Lazily create PageController and reuse across builds
+    _horizontalPageController ??= PageController();
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: PageView.builder(
+        controller: _horizontalPageController!,
+        itemCount: pageCount,
+        physics: const BouncingScrollPhysics(),
+        // TextDirection RTL usually makes swiping right go next page, which matches Arabic reading
+        itemBuilder: (context, pageIndex) {
+          int start = pageIndex * versesPerPage;
+          int end = (start + versesPerPage > chapters.length)
+              ? chapters.length
+              : start + versesPerPage;
+          List<Verse> pageChapters = chapters.sublist(start, end);
+
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.v),
+                sliver: _buildSurahList(
+                  context,
+                  pageChapters,
+                  bookmarkState,
+                  errorState,
+                  isDark,
+                ),
+              ),
+              if (pageIndex == pageCount - 1)
+                _buildNavigationFooter(context, isDark),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNavigationFooter(BuildContext context, bool isDark) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final isArabic = languageCode == 'ar';
+    final currentIndex = surah?.id ?? 1;
+    final hasNext = currentIndex < 114;
+    final hasPrevious = currentIndex > 1;
+
+    String prevName = '';
+    if (hasPrevious) {
+      final prevSurah = QuranIndex.quranSurahs.firstWhere(
+        (s) => s.id == currentIndex - 1,
+        orElse: () => QuranIndex.quranSurahs.first,
+      );
+      prevName = isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish;
+    }
+
+    String nextName = '';
+    if (hasNext) {
+      final nextSurah = QuranIndex.quranSurahs.firstWhere(
+        (s) => s.id == currentIndex + 1,
+        orElse: () => QuranIndex.quranSurahs.last,
+      );
+      nextName = isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish;
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (hasPrevious)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToSurah(currentIndex - 1),
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                    label: Text(
+                      '${'lbl_previous_surah'.tr}\n$prevName',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark
+                          ? const Color(0xFF1E3A35)
+                          : const Color(0xFFE8F5E9),
+                      foregroundColor: isDark
+                          ? Colors.white
+                          : const Color(0xFF004B40),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              const Spacer(),
+            if (hasNext)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: ElevatedButton(
+                    onPressed: () => _navigateToSurah(currentIndex + 1),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark
+                          ? const Color(0xFF1E3A35)
+                          : const Color(0xFFE8F5E9),
+                      foregroundColor: isDark
+                          ? Colors.white
+                          : const Color(0xFF004B40),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${'lbl_next_surah'.tr}\n$nextName',
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_ios, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              const Spacer(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
@@ -1062,11 +1292,13 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
+    bool showBismillah = chapters.isNotEmpty && chapters.first.verseNumber == 1;
+
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildBismillah(isDark),
+          if (showBismillah) _buildBismillah(isDark),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: PrefUtils().getVerseViewMode()

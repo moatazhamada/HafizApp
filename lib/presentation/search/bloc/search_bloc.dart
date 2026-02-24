@@ -57,7 +57,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         final result = await repository.searchVerses(query);
         result.fold(
           (failure) => verseSearchFailure = failure,
-          (verses) => verseResults = verses,
+          (verses) => verseResults = verses
+              .take(AppConstants.searchMaxResults)
+              .toList(),
         );
       }
 

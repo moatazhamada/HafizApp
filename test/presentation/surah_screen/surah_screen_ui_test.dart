@@ -70,7 +70,7 @@ void main() {
     sl.registerLazySingleton<AnalyticsHelper>(() => mockAnalyticsHelper);
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<BookmarkBloc>.value(value: mockBookmarkBloc),
@@ -88,7 +88,7 @@ void main() {
             );
           },
         ),
-        screenSize: const Size(360, 800),
+        screenSize: screenSize,
       ),
     );
   }
@@ -120,6 +120,16 @@ void main() {
 
       expect(find.byType(CustomScrollView), findsOneWidget);
       expect(find.textContaining('Test'), findsWidgets);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockSurahBloc.state).thenReturn(LoadingSurahState());
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

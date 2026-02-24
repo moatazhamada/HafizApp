@@ -81,6 +81,7 @@ Uses **GetIt** service locator configured in `injection_container.dart`:
 
 ### Quran Text
 
+- **CRITICAL RULE FOR ALL AGENTS:** The `quran/*.json` files (and any related json files modeling pure Quran text) located in assets MUST NOT be modified, edited, or touched under ANY circumstances.
 - Local JSON files in `assets/quran/uthmani/surah_<1-114>.json`
 - SurahLocalDataSource reads from assets; remote API is fallback only
 - Schema: `{"chapter": [{"chapter": N, "verse": N, "text": "..."}]}`

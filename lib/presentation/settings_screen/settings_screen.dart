@@ -64,22 +64,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadRecitationResources() async {
-    final editions = await _qiraatService.fetchEditions();
-    final reciters = await _recitationService.fetchReciters();
-    if (!mounted) return;
-    setState(() {
-      _editions = editions;
-      _reciters = reciters;
-      _loadingEditions = false;
-      _loadingReciters = false;
-      if (!_editions.any((e) => e.identifier == _qiraatEdition) &&
-          _editions.isNotEmpty) {
-        _qiraatEdition = _editions.first.identifier;
-      }
-      if (!_reciters.any((r) => r.id == _reciterId) && _reciters.isNotEmpty) {
-        _reciterId = _reciters.first.id;
-      }
-    });
+    try {
+      final editions = await _qiraatService.fetchEditions();
+      final reciters = await _recitationService.fetchReciters();
+      if (!mounted) return;
+      setState(() {
+        _editions = editions;
+        _reciters = reciters;
+        _loadingEditions = false;
+        _loadingReciters = false;
+        if (!_editions.any((e) => e.identifier == _qiraatEdition) &&
+            _editions.isNotEmpty) {
+          _qiraatEdition = _editions.first.identifier;
+        }
+        if (!_reciters.any((r) => r.id == _reciterId) && _reciters.isNotEmpty) {
+          _reciterId = _reciters.first.id;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingEditions = false;
+        _loadingReciters = false;
+      });
+      debugPrint('Failed to load recitation resources: $e');
+    }
   }
 
   @override

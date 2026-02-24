@@ -364,12 +364,12 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     _initAudioService();
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text('lbl_retry'.tr),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Go Back'),
+                  child: Text('lbl_go_back'.tr),
                 ),
               ],
             ),
@@ -385,81 +385,62 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: Column(
-                children: [
-                  // App bar
-                  _buildAppBar(isDark),
+              child: OrientationBuilder(
+                builder: (context, orientation) {
+                  if (orientation == Orientation.portrait) {
+                    return Column(
+                      children: [
+                        // App bar
+                        _buildAppBar(isDark),
 
-                  // Album art and surah info
-                  _buildAlbumArt(isDark),
+                        // Album art and surah info
+                        _buildAlbumArt(isDark),
 
-                  // Verse list with highlighting
-                  Expanded(child: _buildVerseList(isDark)),
+                        // Verse list with highlighting
+                        Expanded(child: _buildVerseList(isDark)),
 
-                  // Sleep timer indicator
-                  if (_remainingSleepTime != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      color: Colors.amber.withValues(alpha: 0.1),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.timer,
-                            size: 16,
-                            color: Colors.amber,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${_remainingSleepTime!.inMinutes}:${(_remainingSleepTime!.inSeconds % 60).toString().padLeft(2, '0')}',
-                            style: const TextStyle(color: Colors.amber),
-                          ),
-                        ],
-                      ),
-                    ),
+                        // Sleep timer indicator
+                        if (_remainingSleepTime != null)
+                          _buildSleepTimerIndicator(),
 
-                  // Loop indicator
-                  if (_isLoopingRange)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      color: Colors.teal.withValues(alpha: 0.1),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.repeat,
-                            size: 16,
-                            color: Colors.teal,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'msg_looping_verses'.tr
-                                .replaceAll(
-                                  '{start}',
-                                  _loopStartVerse.toString(),
-                                )
-                                .replaceAll('{end}', _loopEndVerse.toString()),
-                            style: const TextStyle(color: Colors.teal),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _cancelLoop,
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.red,
+                        // Loop indicator
+                        if (_isLoopingRange) _buildLoopIndicator(),
+
+                        // Progress bar
+                        _buildProgressBar(),
+
+                        // Controls
+                        _buildControls(isDark),
+                      ],
+                    );
+                  } else {
+                    // Landscape layout
+                    return Row(
+                      children: [
+                        // Left side: Art, Controls
+                        Expanded(
+                          flex: 1,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildAppBar(isDark),
+                                _buildAlbumArt(isDark),
+                                if (_remainingSleepTime != null)
+                                  _buildSleepTimerIndicator(),
+                                if (_isLoopingRange) _buildLoopIndicator(),
+                                _buildProgressBar(),
+                                _buildControls(isDark),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-
-                  // Progress bar
-                  _buildProgressBar(),
-
-                  // Controls
-                  _buildControls(isDark),
-                ],
+                        ),
+                        // Right side: Verses
+                        Expanded(flex: 1, child: _buildVerseList(isDark)),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
     );
@@ -645,6 +626,49 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildSleepTimerIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.amber.withValues(alpha: 0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.timer, size: 16, color: Colors.amber),
+          const SizedBox(width: 8),
+          Text(
+            '${_remainingSleepTime!.inMinutes}:${(_remainingSleepTime!.inSeconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(color: Colors.amber),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoopIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.teal.withValues(alpha: 0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.repeat, size: 16, color: Colors.teal),
+          const SizedBox(width: 8),
+          Text(
+            'msg_looping_verses'.tr
+                .replaceAll('{start}', _loopStartVerse.toString())
+                .replaceAll('{end}', _loopEndVerse.toString()),
+            style: const TextStyle(color: Colors.teal),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _cancelLoop,
+            child: const Icon(Icons.close, size: 16, color: Colors.red),
+          ),
+        ],
+      ),
     );
   }
 

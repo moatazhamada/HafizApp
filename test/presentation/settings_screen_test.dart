@@ -37,11 +37,8 @@ void main() {
     sl.registerLazySingleton<AnalyticsHelper>(() => mockAnalyticsHelper);
   });
 
-  Widget createWidgetUnderTest() {
-    return mountTestWidget(
-      const SettingsScreen(),
-      screenSize: const Size(360, 800),
-    );
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
+    return mountTestWidget(const SettingsScreen(), screenSize: screenSize);
   }
 
   group('SettingsScreen UI Tests', () {

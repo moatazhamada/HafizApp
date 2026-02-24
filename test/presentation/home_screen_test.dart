@@ -93,10 +93,10 @@ void main() {
     sl.registerLazySingleton<AnalyticsRouteObserver>(() => mockRouteObserver);
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return mountTestWidget(
       const HomeScreen(),
-      screenSize: const Size(360, 800),
+      screenSize: screenSize,
     );
   }
 
@@ -138,6 +138,13 @@ void main() {
 
       expect(find.textContaining('Resume Reading'), findsOneWidget);
       expect(find.text('Al-Fatiha'), findsWidgets);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createWidgetUnderTest(screenSize: const Size(800, 360)));
+      await tester.pump();
     });
   });
 }

@@ -574,4 +574,23 @@ class PrefUtils {
       return 'scroll';
     }
   }
+
+  // Horizontal Pagination for regular Quran view
+  Future<void> setHorizontalPagination(bool isHorizontal) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('horizontal_pagination', isHorizontal);
+  }
+
+  bool getHorizontalPagination() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getBool('horizontal_pagination') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get horizontal pagination mode: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
 }

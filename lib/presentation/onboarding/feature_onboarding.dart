@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../localization/app_localization.dart';
 
 class FeatureOnboarding extends StatefulWidget {
   final String featureId;
@@ -94,7 +95,7 @@ class _FeatureOnboardingState extends State<FeatureOnboarding> {
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _markAsShown,
-                          child: const Text('Got it!'),
+                          child: Text('lbl_got_it'.tr),
                         ),
                       ],
                     ),

@@ -28,19 +28,21 @@ void main() {
     mockBookmarkBloc = MockBookmarkBloc();
     mockRecitationErrorBloc = MockRecitationErrorBloc();
 
+    when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoaded([]));
+    when(
+      () => mockRecitationErrorBloc.state,
+    ).thenReturn(const RecitationErrorLoaded([]));
+
     setupStrictOverflowHandler();
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<BookmarkBloc>.value(value: mockBookmarkBloc),
         BlocProvider<RecitationErrorBloc>.value(value: mockRecitationErrorBloc),
       ],
-      child: mountTestWidget(
-        const StatisticsScreen(),
-        screenSize: const Size(360, 800),
-      ),
+      child: mountTestWidget(const StatisticsScreen(), screenSize: screenSize),
     );
   }
 
@@ -48,15 +50,19 @@ void main() {
     testWidgets('renders layout correctly and handles loaded states', (
       WidgetTester tester,
     ) async {
-      when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoaded([]));
-      when(
-        () => mockRecitationErrorBloc.state,
-      ).thenReturn(const RecitationErrorLoaded([]));
-
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
       expect(find.byType(ListView), findsOneWidget);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

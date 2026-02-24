@@ -50,8 +50,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AnalyticsHelper(FirebaseAnalytics.instance));
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
   sl.registerLazySingleton(() => DeepLinkService());
-  // FIX: Changed from registerFactory to registerLazySingleton to prevent memory leak
-  sl.registerLazySingleton(() => AudioPlayerHandler());
+  // Note: AudioPlayerHandler is created via AudioService.init() in AudioPlayerScreen
+  // AudioService manages the handler lifecycle for background playback
 
   // Use Case
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));

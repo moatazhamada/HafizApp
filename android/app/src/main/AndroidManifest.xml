@@ -10,7 +10,7 @@
         android:enableOnBackInvokedCallback="true"
         android:extractNativeLibs="true">
         <activity
-            android:name="com.hafiz.app.hafiz_app.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -29,7 +29,7 @@
 
         <activity-alias
             android:name="com.hafiz.app.hafiz_app.DefaultIcon"
-            android:targetActivity="com.hafiz.app.hafiz_app.MainActivity"
+            android:targetActivity=".MainActivity"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
@@ -42,7 +42,7 @@
 
         <activity-alias
             android:name="com.hafiz.app.hafiz_app.RamadanIcon"
-            android:targetActivity="com.hafiz.app.hafiz_app.MainActivity"
+            android:targetActivity=".MainActivity"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_ramadan"

@@ -13,10 +13,10 @@ void main() {
     setupStrictOverflowHandler();
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return mountTestWidget(
       const HelpScreen(),
-      screenSize: const Size(360, 800),
+      screenSize: screenSize,
     );
   }
 
@@ -32,6 +32,13 @@ void main() {
         find.textContaining('App Guide'),
         findsOneWidget,
       ); // Translated title
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createWidgetUnderTest(screenSize: const Size(800, 360)));
+      await tester.pump();
     });
   });
 }

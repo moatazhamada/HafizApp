@@ -45,10 +45,10 @@ void main() {
     setupStrictOverflowHandler();
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return mountTestWidget(
       const SearchScreen(),
-      screenSize: const Size(320, 480), // Small screen to catch overflows
+      screenSize: screenSize, // Small screen to catch overflows
     );
   }
 
@@ -114,6 +114,16 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
 
       expect(find.textContaining('Server error'), findsOneWidget);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockSearchBloc.state).thenReturn(SearchInitial());
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

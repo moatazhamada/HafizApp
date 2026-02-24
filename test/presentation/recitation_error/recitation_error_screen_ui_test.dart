@@ -25,12 +25,12 @@ void main() {
     setupStrictOverflowHandler();
   });
 
-  Widget createWidgetUnderTest() {
+  Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {
     return BlocProvider<RecitationErrorBloc>.value(
       value: mockBloc,
       child: mountTestWidget(
         const RecitationErrorScreen(),
-        screenSize: const Size(360, 800),
+        screenSize: screenSize,
       ),
     );
   }
@@ -97,6 +97,16 @@ void main() {
         findsOneWidget,
       ); // Translated lbl_error
       expect(find.textContaining('Failed to load'), findsOneWidget);
+    });
+
+    testWidgets('renders layout correctly in landscape without overflows', (
+      WidgetTester tester,
+    ) async {
+      when(() => mockBloc.state).thenReturn(const RecitationErrorLoaded([]));
+      await tester.pumpWidget(
+        createWidgetUnderTest(screenSize: const Size(800, 360)),
+      );
+      await tester.pump();
     });
   });
 }

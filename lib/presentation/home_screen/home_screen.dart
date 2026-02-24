@@ -14,7 +14,6 @@ import '../../core/scroll/scroll_position_cubit.dart';
 import '../../injection_container.dart';
 import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
-import '../../widgets/ramadan_banner.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
 
@@ -275,6 +274,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: IconButton(
               icon: Icon(
                 isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                color: isDarkMode ? Colors.white : theme.colorScheme.primary,
               ),
               onPressed: () {
                 themeBloc.add(ToggleThemeEvent());
@@ -289,7 +289,10 @@ class _HomeScreenState extends State<HomeScreen>
               button: true,
               label: 'lbl_search_tooltip'.tr,
               child: IconButton(
-                icon: const Icon(Icons.search_rounded),
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () =>
                     NavigatorService.pushNamed(AppRoutes.searchPage),
                 tooltip: 'lbl_search_tooltip'.tr,
@@ -299,7 +302,10 @@ class _HomeScreenState extends State<HomeScreen>
               button: true,
               label: 'lbl_juz_index'.tr,
               child: IconButton(
-                icon: const Icon(Icons.view_module_rounded),
+                icon: Icon(
+                  Icons.view_module_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () => _showJuzSelector(context),
                 tooltip: 'lbl_juz_index'.tr,
               ),
@@ -308,7 +314,10 @@ class _HomeScreenState extends State<HomeScreen>
               button: true,
               label: 'lbl_bookmarks'.tr,
               child: IconButton(
-                icon: const Icon(Icons.bookmark_border_rounded),
+                icon: Icon(
+                  Icons.bookmark_border_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () =>
                     NavigatorService.pushNamed(AppRoutes.bookmarksPage),
                 tooltip: 'lbl_bookmarks'.tr,
@@ -387,7 +396,10 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ],
-                icon: const Icon(Icons.more_vert),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
               ),
             ),
           ],
@@ -436,66 +448,66 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
 
                       // Ramadan greetings and countdown (only during Ramadan)
-                      if (RamadanTheme.isRamadan) ...[
-                        const RamadanBanner(),
-                        const SizedBox(height: 8),
-                        const RamadanCountdown(),
-                      ],
+                      if (RamadanTheme.isRamadan) ...[const RamadanCountdown()],
 
                       if (state is UpdateLastReadSurah && state.surah != null)
                         _buildCardLastRead(state.surah, theme),
 
-                      Semantics(
-                        label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
-                          key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
+                      // Force RTL for Surah list (Quran content)
+                      Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: Semantics(
+                          label: 'lbl_surah_list'.tr,
+                          child: ListView.builder(
+                            key: const PageStorageKey('home-list'),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: QuranIndex.quranSurahs.length,
+                            itemBuilder: (context, index) {
+                              final surah = QuranIndex.quranSurahs[index];
 
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
+                              // Simple staggered animation logic
+                              return TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0.0, end: 1.0),
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.easeOutQuad,
+                                // Delay based on index, capped to prevent long waits for bottom items
+                                builder: (context, value, child) {
+                                  // Only animate the first 10 items to save performance/time
+                                  final shouldAnimate = index < 10;
+                                  final opacity = shouldAnimate ? value : 1.0;
+                                  final offset = shouldAnimate
+                                      ? Offset(0, 50 * (1 - value))
+                                      : Offset.zero;
 
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    _navigateToQuranView(surah: surah);
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
+                                  return Opacity(
+                                    opacity: opacity,
+                                    child: Transform.translate(
+                                      offset: offset,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Semantics(
+                                  button: true,
+                                  label:
+                                      '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                                  child: InkWell(
+                                    onTap: () {
+                                      PrefUtils().saveLastReadSurah(surah);
+                                      homeBloc.add(HomeShowLastSurahEvent());
+                                      _navigateToQuranView(surah: surah);
+                                    },
+                                    child: SurahListItem(
+                                      surahId: surah.id,
+                                      nameEnglish: surah.nameEnglish,
+                                      nameArabic: surah.nameArabic,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ),
                       // Extra padding to allow last item to scroll above FAB

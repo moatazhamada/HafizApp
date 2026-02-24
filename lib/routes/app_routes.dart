@@ -16,6 +16,7 @@ import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
 
 import '../core/quran_index/quran_surah.dart';
 import '../core/quran_index/mushaf_types.dart';
+import '../core/utils/pref_utils.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -53,6 +54,18 @@ class AppRoutes {
     int? verse,
     MushafType? mushafType,
   }) {
+    // If no explicit type was passed, read the globally saved preference
+    MushafType typeToLoad = mushafType ?? MushafType.madani;
+    if (mushafType == null) {
+      final savedTypeKey = PrefUtils().getString('mushaf_type');
+      if (savedTypeKey != null) {
+        typeToLoad = MushafType.values.firstWhere(
+          (t) => t.prefsKey == savedTypeKey,
+          orElse: () => MushafType.madani,
+        );
+      }
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -60,7 +73,7 @@ class AppRoutes {
           initialPage: page,
           highlightSurah: surah,
           highlightVerse: verse,
-          mushafType: mushafType ?? MushafType.madani,
+          mushafType: typeToLoad,
         ),
       ),
     );

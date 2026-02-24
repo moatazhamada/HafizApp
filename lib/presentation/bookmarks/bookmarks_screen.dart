@@ -190,47 +190,49 @@ class BookmarksScreen extends StatelessWidget {
     return Center(
       child: Semantics(
         liveRegion: true,
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.bookmark_border,
+                    size: 48,
+                    color: colorScheme.primary,
+                  ),
                 ),
-                child: Icon(
-                  Icons.bookmark_border,
-                  size: 48,
-                  color: colorScheme.primary,
+                const SizedBox(height: 24),
+                Text(
+                  'msg_no_bookmarks'.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'msg_no_bookmarks'.tr,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 8),
+                Text(
+                  'msg_bookmarks_hint'.tr,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'msg_bookmarks_hint'.tr,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () =>
+                      NavigatorService.pushNamed(AppRoutes.homeScreen),
+                  icon: const Icon(Icons.menu_book),
+                  label: Text('lbl_surah'.tr),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.homeScreen),
-                icon: const Icon(Icons.menu_book),
-                label: Text('lbl_surah'.tr),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

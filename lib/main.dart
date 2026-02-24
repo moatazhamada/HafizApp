@@ -29,16 +29,20 @@ import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
 import 'core/quran_index/quran_surah.dart';
 import 'core/quran_index/mushaf_page_index.dart';
-import 'core/ramadan/ramadan_theme.dart';
+import 'core/update/force_update_service.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
+// App Theme - Premium green palette (inspired by Ramadan theme)
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF006754), // deep green accent
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.light,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFFFDFBF7), // Warm Ivory
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -50,7 +54,7 @@ final ThemeData lightTheme = ThemeData(
   ),
   appBarTheme: const AppBarTheme(
     centerTitle: true,
-    backgroundColor: Color(0xFF006754),
+    backgroundColor: Color(0xFF1A4326),
     foregroundColor: Colors.white,
     iconTheme: IconThemeData(color: Colors.white),
     actionsIconTheme: IconThemeData(color: Colors.white),
@@ -61,9 +65,12 @@ final ThemeData lightTheme = ThemeData(
 final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF87D1A4), // soft green tint for dark
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.dark,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFF121F14),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -83,13 +90,11 @@ final ThemeData darkTheme = ThemeData(
   ),
 );
 
-/// Get appropriate light theme (regular or Ramadan)
-ThemeData get currentLightTheme =>
-    RamadanTheme.isRamadan ? RamadanTheme.ramadanTheme : lightTheme;
+/// Get light theme
+ThemeData get currentLightTheme => lightTheme;
 
-/// Get appropriate dark theme (regular or Ramadan)
-ThemeData get currentDarkTheme =>
-    RamadanTheme.isRamadan ? RamadanTheme.ramadanDarkTheme : darkTheme;
+/// Get dark theme
+ThemeData get currentDarkTheme => darkTheme;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -197,6 +202,18 @@ class _BootstrapAppState extends State<BootstrapApp> {
         ).timeout(const Duration(seconds: 3));
 
         final crashlytics = FirebaseCrashlytics.instance;
+
+        // Configure Crashlytics based on environment (disable in debug for testing)
+        await crashlytics.setCrashlyticsCollectionEnabled(
+          !kDebugMode, // Only enable in production
+        );
+
+        // Set environment identifier for easier debugging in Firebase console
+        await crashlytics.setCustomKey(
+          'environment',
+          kDebugMode ? 'development' : 'production',
+        );
+
         Logger.init(
           kDebugMode ? LogMode.debug : LogMode.live,
           crashlytics: crashlytics,
@@ -227,6 +244,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
         };
 
         unawaited(FirebaseAnalytics.instance.logAppOpen());
+
+        // Initialize Force Update service with Remote Config
+        try {
+          await ForceUpdateService.initialize();
+        } catch (e) {
+          debugPrint('Force update service initialization failed: $e');
+        }
       } catch (e, stackTrace) {
         // Log Firebase init failure but continue - app can work without it
         debugPrint('Firebase initialization failed: $e');
@@ -407,19 +431,18 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode();
-    if (mode == 'dark') return ThemeMode.dark;
-    if (mode == 'light') return ThemeMode.light;
+  /// Convert ThemeState to ThemeMode
+  ThemeMode _getThemeModeFromState(ThemeState state) {
+    if (state is DarkThemeState) return ThemeMode.dark;
+    if (state is LightThemeState) return ThemeMode.light;
     return ThemeMode.system;
   }
 
   @override
   void dispose() {
     _deepLinkService.dispose();
-    themeBloc.close();
-    bookmarkBloc.close();
-    recitationErrorBloc.close();
+    // Note: Don't close BLoCs here as they are singletons managed by GetIt
+    // Closing them here would cause issues when navigating back to this screen
     super.dispose();
   }
 
@@ -440,7 +463,7 @@ class _MyAppState extends State<MyApp> {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
             builder: (_, locale, _) => MaterialApp(
-              themeMode: _getThemeMode(),
+              themeMode: _getThemeModeFromState(state),
               theme: currentLightTheme,
               darkTheme: currentDarkTheme,
               locale: locale,

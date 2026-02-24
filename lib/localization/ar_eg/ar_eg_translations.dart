@@ -345,6 +345,15 @@ final Map<String, String> arEg = {
   'lbl_previous_surah': 'السورة السابقة',
   'lbl_next_surah': 'السورة التالية',
 
+  // Mushaf Settings
+  'lbl_mushaf_settings': 'إعدادات المصحف',
+  'lbl_type': 'النوع',
+  'lbl_jump': 'انتقال',
+  'lbl_bookmark': 'علامة مرجعية',
+  'lbl_font_size': 'حجم الخط',
+  'lbl_vertical_scroll': 'التمرير العمودي',
+  'lbl_horizontal_scroll': 'التمرير الأفقي',
+
   // Ramadan Strings
   'lbl_ramadan_kareem_suhoor': 'رمضان كريم 🌙\nوقت السحور',
   'lbl_ramadan_kareem_fasting': 'رمضان كريم 🌙\nصيام مقبول',
@@ -352,6 +361,22 @@ final Map<String, String> arEg = {
   'lbl_ramadan_kareem_evening': 'رمضان كريم 🌙\nصلوات المساء',
   'lbl_ramadan': 'رمضان',
   'lbl_ramadan_kareem': 'رمضان كريم',
+  'msg_ramadan_blessings': 'عسى أن يجلب لك هذا الشهر الفضيل السلام والبركات.',
+  'lbl_eid_mubarak': 'عيد مبارك!',
   'lbl_day_of_ramadan': 'اليوم {day} من رمضان',
   'lbl_days_until_eid': 'باقي {days} أيام حتى عيد الفطر',
+
+  // Common UI
+  'lbl_got_it': 'حسناً!',
+  'lbl_retry': 'إعادة المحاولة',
+  'lbl_go_back': 'رجوع',
+
+  // Force Update
+  'lbl_update_available': 'تحديث متاح',
+  'lbl_update_now': 'تحديث الآن',
+  'lbl_later': 'لاحقاً',
+  'lbl_current_version': 'الحالي',
+  'lbl_latest_version': 'الأحدث',
+  'msg_update_description':
+      'يتوفر إصدار جديد مع تحسينات وإصلاحات. يرجى التحديث للحصول على أفضل تجربة.',
 };
