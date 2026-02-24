@@ -381,4 +381,8 @@ final Map<String, String> enUs = {
   'lbl_latest_version': 'Latest',
   'msg_update_description':
       'A new version is available with improvements and bug fixes. Please update for the best experience.',
+
+  // Offline / Network
+  'msg_audio_requires_internet': 'Audio streaming requires internet connection',
+  'msg_audio_stopped_offline': 'Audio stopped - No internet connection',
 };

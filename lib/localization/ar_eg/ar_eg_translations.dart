@@ -379,4 +379,8 @@ final Map<String, String> arEg = {
   'lbl_latest_version': 'الأحدث',
   'msg_update_description':
       'يتوفر إصدار جديد مع تحسينات وإصلاحات. يرجى التحديث للحصول على أفضل تجربة.',
+
+  // Offline / Network
+  'msg_audio_requires_internet': 'بث الصوت يتطلب اتصال بالإنترنت',
+  'msg_audio_stopped_offline': 'توقف الصوت - لا يوجد اتصال بالإنترنت',
 };

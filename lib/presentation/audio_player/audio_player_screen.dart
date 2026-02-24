@@ -32,8 +32,10 @@ class AudioPlayerScreen extends StatefulWidget {
 class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   AudioPlayerHandler? _audioHandler;
   StreamSubscription<int>? _currentVerseSub;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isOffline = false;
 
   // Playback state
   double _playbackSpeed = 1.0;
@@ -52,7 +54,40 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     _initAudioService();
+  }
+
+  void _checkConnectivity() {
+    final networkInfo = sl<NetworkInfo>();
+
+    // Check initial connectivity
+    networkInfo.isConnected().then((connected) {
+      if (mounted) {
+        setState(() => _isOffline = !connected);
+      }
+    });
+
+    // Listen for connectivity changes
+    _connectivitySub = networkInfo.onConnectivityChanged.listen((results) {
+      final connected = results.any((r) => r != ConnectivityResult.none);
+      if (mounted) {
+        setState(() => _isOffline = !connected);
+
+        // Show snackbar when connectivity changes
+        if (!connected &&
+            _audioHandler?.playbackState.valueOrNull?.playing == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('msg_audio_stopped_offline'.tr),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          _audioHandler?.pause();
+        }
+      }
+    });
   }
 
   Future<void> _initAudioService() async {
@@ -328,6 +363,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void dispose() {
     _sleepTimer?.cancel();
     _currentVerseSub?.cancel();
+    _connectivitySub?.cancel();
     _verseScrollController.dispose();
     unawaited(_audioHandler?.dispose());
     super.dispose();
@@ -390,6 +426,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                   if (orientation == Orientation.portrait) {
                     return Column(
                       children: [
+                        // Offline indicator
+                        if (_isOffline) _buildOfflineIndicator(),
+
                         // App bar
                         _buildAppBar(isDark),
 
@@ -424,6 +463,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                if (_isOffline) _buildOfflineIndicator(),
                                 _buildAppBar(isDark),
                                 _buildAlbumArt(isDark),
                                 if (_remainingSleepTime != null)
@@ -443,6 +483,29 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                 },
               ),
             ),
+    );
+  }
+
+  Widget _buildOfflineIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.orange[700],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.cloud_off, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            'msg_audio_requires_internet'.tr,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
