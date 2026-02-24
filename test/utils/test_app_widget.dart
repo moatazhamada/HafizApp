@@ -63,6 +63,7 @@ Future<void> setupTestDependencies() async {
 void setupStrictOverflowHandler() {
   final originalOnError = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
+    // ignore: avoid_print
     print('FlutterError detected: ${details.exceptionAsString()}');
     if (details.exceptionAsString().contains('A RenderFlex overflowed') ||
         details.exceptionAsString().contains('overflowed by')) {
