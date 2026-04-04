@@ -177,8 +177,7 @@ class PrefUtils {
 
   String getQiraatEdition() {
     try {
-      return _sharedPreferences!.getString('qiraat_edition') ??
-          'quran-uthmani';
+      return _sharedPreferences!.getString('qiraat_edition') ?? 'quran-uthmani';
     } catch (e) {
       Logger.warning(
         'Failed to get qiraat edition: $e',
@@ -196,10 +195,7 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getInt('reciter_id') ?? 7;
     } catch (e) {
-      Logger.warning(
-        'Failed to get reciter id: $e',
-        feature: 'Preferences',
-      );
+      Logger.warning('Failed to get reciter id: $e', feature: 'Preferences');
       return 7;
     }
   }
@@ -228,8 +224,7 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getString('whisper_model') ?? 'base';
     } catch (e) {
-      Logger.warning('Failed to get whisper model: $e',
-          feature: 'Preferences');
+      Logger.warning('Failed to get whisper model: $e', feature: 'Preferences');
       return 'base';
     }
   }
@@ -242,8 +237,10 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getInt('qrc_hafz_level') ?? 1;
     } catch (e) {
-      Logger.warning('Failed to get qrc hafz level: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get qrc hafz level: $e',
+        feature: 'Preferences',
+      );
       return 1;
     }
   }
@@ -256,9 +253,44 @@ class PrefUtils {
     try {
       return _sharedPreferences!.getInt('qrc_tajweed_level') ?? 3;
     } catch (e) {
-      Logger.warning('Failed to get qrc tajweed level: $e',
-          feature: 'Preferences');
+      Logger.warning(
+        'Failed to get qrc tajweed level: $e',
+        feature: 'Preferences',
+      );
       return 3;
+    }
+  }
+
+  Future<void> setCloudSyncEnabled(bool enabled) async {
+    await _sharedPreferences!.setBool('cloud_sync_enabled', enabled);
+  }
+
+  bool getCloudSyncEnabled() {
+    try {
+      return _sharedPreferences!.getBool('cloud_sync_enabled') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get cloud sync enabled: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
+
+  Future<void> setCloudSyncDirection(String direction) async {
+    await _sharedPreferences!.setString('cloud_sync_direction', direction);
+  }
+
+  String getCloudSyncDirection() {
+    try {
+      return _sharedPreferences!.getString('cloud_sync_direction') ??
+          'bidirectional';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get cloud sync direction: $e',
+        feature: 'Preferences',
+      );
+      return 'bidirectional';
     }
   }
 }
