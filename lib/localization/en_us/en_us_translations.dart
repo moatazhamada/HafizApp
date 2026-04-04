@@ -159,4 +159,10 @@ final Map<String, String> enUs = {
   'msg_error_prefix': '', // Removed prefix for cleaner errors
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
+  // Musali Teaser
+  'musali_app_name': 'Musali',
+  'musali_status': 'Coming Soon',
+  'musali_teaser_desc':
+      'What starts with something familiar ends up somewhere completely unexpected.',
+  'musali_watch_now': 'Watch Now',
 };
