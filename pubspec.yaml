@@ -60,6 +60,7 @@ dependencies:
   firebase_performance: ^0.11.0+1
   bloc: ^9.2.0
   cloud_firestore: ^6.1.1
+  firebase_auth: ^6.1.4
   speech_to_text: ^7.0.0
   flutter_sound: ^9.2.13
   web_socket_channel: ^3.0.3
