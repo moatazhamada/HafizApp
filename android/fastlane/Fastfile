@@ -1,19 +1,21 @@
 # Fastlane Fastfile for Hafiz App
 # Documentation: https://docs.fastlane.tools
 
+# Hardcoded project path - parent of android folder
+PROJECT_ROOT = "/Users/mm/Main/Projects/Android/HafizApp"
+
 default_platform(:android)
 
 platform :android do
   # Version from pubspec.yaml
   def get_version_name
-    # Read version from pubspec.yaml
-    pubspec = File.read("../pubspec.yaml")
+    pubspec = File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))
     version_line = pubspec.lines.find { |line| line.start_with?("version:") }
     version_line.split(":").last.strip.split("+").first
   end
 
   def get_version_code
-    pubspec = File.read("../pubspec.yaml")
+    pubspec = File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))
     version_line = pubspec.lines.find { |line| line.start_with?("version:") }
     version_line.split("+").last.strip
   end
@@ -178,8 +180,7 @@ platform :android do
 
   desc "Increment version code in pubspec.yaml"
   lane :bump_version do
-    # Read current version
-    pubspec_path = "../pubspec.yaml"
+    pubspec_path = File.join(PROJECT_ROOT, "pubspec.yaml")
     pubspec = File.read(pubspec_path)
     
     version_line = pubspec.lines.find { |line| line.start_with?("version:") }
@@ -187,11 +188,9 @@ platform :android do
     version_name = version_parts.first
     version_code = version_parts.last.to_i
     
-    # Increment version code
     new_version_code = version_code + 1
     new_version_line = "version: #{version_name}+#{new_version_code}\n"
     
-    # Update pubspec.yaml
     new_pubspec = pubspec.gsub(version_line, new_version_line)
     File.write(pubspec_path, new_pubspec)
     
@@ -208,5 +207,27 @@ platform :android do
   lane :ci_production do
     bump_version
     deploy_production
+  end
+
+  desc "Deploy to Firebase App Distribution for testing"
+  lane :deploy_firebase_app_distribution do
+    # Build debug APK
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build apk --debug")
+    end
+
+    # Get version info
+    version_name = get_version_name
+    version_code = get_version_code
+
+    # Upload to Firebase App Distribution using Firebase CLI
+    # First, get the service account key path
+    service_account = File.join(Dir.pwd, "service-account.json")
+
+    # Use firebase CLI to distribute
+    sh("firebase appdistribution:distribute #{File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-debug.apk")} --app 1:854811938553:android:7a72ac4049b699cff65c28 -- testers motazhamada@gmail.com --release-notes \"Cloud Sync feature - First test build v#{version_name}+#{version_code}\" --service-account #{service_account}")
+
+    UI.success("🚀 Uploaded to Firebase App Distribution!")
+    UI.message("Testers will receive an email to install the app.")
   end
 end
