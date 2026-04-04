@@ -1,9 +1,6 @@
 # Miscellaneous
 *.class
 *.log
-*_build_log.txt
-flutter_build_log.txt
-flutter_build_short.txt
 *.pyc
 *.swp
 .DS_Store
@@ -20,6 +17,11 @@ migrate_working_dir/
 *.ipr
 *.iws
 .idea/
+
+# Test logs (local only)
+test_error.log
+test_output.log
+test_results.log
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
