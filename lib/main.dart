@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:audio_service/audio_service.dart';
+import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 
 import 'core/app_export.dart';
+import 'core/utils/app_icon_service.dart';
 import 'injection_container.dart';
+import 'widgets/offline_indicator.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-// Just in case, though safe
-// Just in case
-// Just in case
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -23,16 +24,24 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
+import 'core/quran_index/quran_surah.dart';
+import 'core/quran_index/mushaf_page_index.dart';
+import 'core/update/force_update_service.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
+// App Theme - Premium green palette (inspired by Ramadan theme)
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF006754), // deep green accent
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.light,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFFFDFBF7), // Warm Ivory
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -42,15 +51,25 @@ final ThemeData lightTheme = ThemeData(
       TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
     },
   ),
-  appBarTheme: const AppBarTheme(centerTitle: true),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true,
+    backgroundColor: Color(0xFF1A4326),
+    foregroundColor: Colors.white,
+    iconTheme: IconThemeData(color: Colors.white),
+    actionsIconTheme: IconThemeData(color: Colors.white),
+    systemOverlayStyle: SystemUiOverlayStyle.light,
+  ),
 );
 
 final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF87D1A4), // soft green tint for dark
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.dark,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFF121F14),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -60,31 +79,387 @@ final ThemeData darkTheme = ThemeData(
       TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
     },
   ),
-  appBarTheme: const AppBarTheme(centerTitle: true),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true,
+    backgroundColor: Color(0xFF1E3320),
+    foregroundColor: Colors.white,
+    iconTheme: IconThemeData(color: Colors.white),
+    actionsIconTheme: IconThemeData(color: Colors.white),
+    systemOverlayStyle: SystemUiOverlayStyle.light,
+  ),
 );
+
+/// Get light theme
+ThemeData get currentLightTheme => lightTheme;
+
+/// Get dark theme
+ThemeData get currentDarkTheme => darkTheme;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // System UI configuration
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
   runApp(const BootstrapApp());
 }
 
-Future<void> initFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+void setOrientationFromPrefs() {
+  final mode = PrefUtils().getOrientationMode();
+  switch (mode) {
+    case 'portrait':
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+      break;
+    case 'landscape':
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      break;
+    case 'auto':
+    default:
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      break;
+  }
 }
 
-class MyApp extends StatelessWidget {
-  MyApp({super.key});
+class BootstrapApp extends StatefulWidget {
+  const BootstrapApp({super.key});
 
-  ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
-    if (mode == 'dark') return ThemeMode.dark;
-    if (mode == 'light') return ThemeMode.light;
-    return ThemeMode.system;
+  @override
+  State<BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<BootstrapApp> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
   }
+
+  Future<void> _init() async {
+    try {
+      // Critical initialization (fast)
+      await PrefUtils().init().timeout(const Duration(seconds: 2));
+
+      // Set orientation from preferences
+      setOrientationFromPrefs();
+
+      // Update app icon based on season (Ramadan)
+      unawaited(AppIconService.updateIconBasedOnSeason());
+
+      // Load page data in background to avoid blocking startup
+      unawaited(MushafPageIndex.loadPageDataFromAsset());
+
+      // Initialize Hive with all boxes
+      await Hive.initFlutter();
+      await Future.wait([
+        Hive.openBox('surah_cache'),
+        Hive.openBox('bookmarks'),
+        Hive.openBox('recitation_errors'),
+        Hive.openBox('qiraat_cache'),
+        Hive.openBox('audio_cache'),
+      ]).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('Hive initialization timed out');
+          return [];
+        },
+      );
+
+      // Dependency injection
+      await di.init();
+
+      // Initialize AudioService for background playback
+      try {
+        await AudioService.init(
+          builder: () => sl<AudioPlayerHandler>(),
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.hafizapp.audio',
+            androidNotificationChannelName: 'Quran Recitation',
+            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: true,
+          ),
+        );
+      } catch (e) {
+        debugPrint('AudioService initialization failed (non-critical): $e');
+        // Continue without audio service - app should still work
+      }
+
+      // HydratedStorage for BLoC persistence
+      final storage = await HydratedStorage.build(
+        storageDirectory: HydratedStorageDirectory(
+          (await getApplicationDocumentsDirectory()).path,
+        ),
+      );
+      HydratedBloc.storage = storage;
+
+      // Firebase initialization (with timeout to prevent hanging)
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(const Duration(seconds: 3));
+
+        final crashlytics = FirebaseCrashlytics.instance;
+
+        // Configure Crashlytics based on environment (disable in debug for testing)
+        await crashlytics.setCrashlyticsCollectionEnabled(
+          !kDebugMode, // Only enable in production
+        );
+
+        // Set environment identifier for easier debugging in Firebase console
+        await crashlytics.setCustomKey(
+          'environment',
+          kDebugMode ? 'development' : 'production',
+        );
+
+        Logger.init(
+          kDebugMode ? LogMode.debug : LogMode.live,
+          crashlytics: crashlytics,
+        );
+
+        // Set up error handlers
+        FlutterError.onError = (errorDetails) {
+          Logger.error(
+            'Flutter error: ${errorDetails.exception}',
+            feature: 'Flutter',
+            error: errorDetails.exception,
+            stackTrace: errorDetails.stack,
+            fatal: true,
+          );
+          FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+        };
+
+        ui.PlatformDispatcher.instance.onError = (error, stack) {
+          Logger.error(
+            'Platform error: $error',
+            feature: 'Platform',
+            error: error,
+            stackTrace: stack,
+            fatal: true,
+          );
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+
+        unawaited(FirebaseAnalytics.instance.logAppOpen());
+
+        // Initialize Force Update service with Remote Config
+        try {
+          await ForceUpdateService.initialize();
+        } catch (e) {
+          debugPrint('Force update service initialization failed: $e');
+        }
+      } catch (e, stackTrace) {
+        // Log Firebase init failure but continue - app can work without it
+        debugPrint('Firebase initialization failed: $e');
+        Logger.error(
+          'Firebase initialization failed',
+          feature: 'Firebase',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    } catch (e, stack) {
+      debugPrint('Initialization failed: $e');
+      Logger.error(
+        'Bootstrap initialization failed',
+        feature: 'Bootstrap',
+        error: e,
+        stackTrace: stack,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isInitialized) {
+      return const MyApp();
+    }
+
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: _BrandedSplashScreen(),
+    );
+  }
+}
+
+class _BrandedSplashScreen extends StatelessWidget {
+  const _BrandedSplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF006754),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF006754), Color(0xFF005544), Color(0xFF004433)],
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/app_icon.png',
+                  width: 100,
+                  height: 100,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Hafiz',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'حافظ',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 32,
+                color: Colors.white70,
+              ),
+            ),
+            const Spacer(flex: 2),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+              ),
+            ),
+            const SizedBox(height: 64),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final DeepLinkService _deepLinkService = DeepLinkService();
 
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  Future<void> _initDeepLinks() async {
+    await _deepLinkService.initialize(onDeepLink: _handleDeepLink);
+  }
+
+  void _handleDeepLink(DeepLinkData data) {
+    final navigator = NavigatorService.navigatorKey.currentState;
+    if (navigator == null) return;
+
+    switch (data.type) {
+      case DeepLinkType.verse:
+        if (data.surahId != null) {
+          final surahIndex = QuranIndex.quranSurahs.indexWhere(
+            (s) => s.id == data.surahId,
+          );
+          if (surahIndex == -1) {
+            debugPrint('Ignoring invalid deep link surahId ${data.surahId}');
+            return;
+          }
+          final surah = QuranIndex.quranSurahs[surahIndex];
+          final verseNumber = data.verseNumber ?? 1;
+          if (verseNumber < 1 || verseNumber > surah.verseCount) {
+            debugPrint(
+              'Ignoring invalid deep link verse $verseNumber for surah ${surah.id}',
+            );
+            return;
+          }
+          navigator.pushNamed(
+            AppRoutes.surahPage,
+            arguments: {
+              'surah': surah,
+              'verseIndex': verseNumber - 1,
+              'resume': true,
+            },
+          );
+        }
+        break;
+      case DeepLinkType.mushafPage:
+        if (data.pageNumber != null) {
+          AppRoutes.goToMushaf(navigator.context, page: data.pageNumber);
+        }
+        break;
+      case DeepLinkType.juz:
+        // Handle Juz deep link
+        break;
+    }
+  }
+
+  /// Convert ThemeState to ThemeMode
+  ThemeMode _getThemeModeFromState(ThemeState state) {
+    if (state is DarkThemeState) return ThemeMode.dark;
+    if (state is LightThemeState) return ThemeMode.light;
+    return ThemeMode.system;
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    // Note: Don't close BLoCs here as they are singletons managed by GetIt
+    // Closing them here would cause issues when navigating back to this screen
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +478,9 @@ class MyApp extends StatelessWidget {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
             builder: (_, locale, _) => MaterialApp(
-              themeMode: _getThemeMode(),
-              theme: lightTheme,
-              darkTheme: darkTheme, // Important for automatic switching
+              themeMode: _getThemeModeFromState(state),
+              theme: currentLightTheme,
+              darkTheme: currentDarkTheme,
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
@@ -119,183 +494,18 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
-              initialRoute: AppRoutes.onboardingScreen,
+              initialRoute: PrefUtils().getOnboardingCompleted()
+                  ? AppRoutes.navigationShell
+                  : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
+              builder: (context, child) {
+                return OfflineIndicator(
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class BootstrapApp extends StatefulWidget {
-  const BootstrapApp({super.key});
-
-  @override
-  State<BootstrapApp> createState() => _BootstrapAppState();
-}
-
-class _BootstrapAppState extends State<BootstrapApp> {
-  bool _ready = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    // 1. Critical functional initialization (fast)
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    try {
-      await PrefUtils().init();
-
-      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-
-      await di.init();
-
-      final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
-        ),
-      );
-      HydratedBloc.storage = storage;
-    } catch (e) {
-      debugPrint('Critical init failed: $e');
-      // If critical init fails, we might still want to try showing the app
-      // or at least not stuck on splash forever, though likely it will crash later.
-    }
-
-    // 2. Heavy/External services (can be slow, prone to network issues)
-    // We don't want to block the UI forever if Firebase/Hive hangs.
-    try {
-      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('Heavy init failed or timed out: $e');
-      // Continue anyway so the user sees the app
-    }
-
-    if (mounted) {
-      setState(() => _ready = true);
-    }
-  }
-
-  Future<void> _postInitHeavyTasks() async {
-    try {
-      await initFirebase();
-
-      final crashlytics = FirebaseCrashlytics.instance;
-      Logger.init(
-        kDebugMode ? LogMode.debug : LogMode.live,
-        crashlytics: crashlytics,
-      );
-
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('qiraat_cache');
-      await Hive.openBox('audio_cache');
-
-      FlutterError.onError = (errorDetails) {
-        Logger.error(
-          'Flutter error: ${errorDetails.exception}',
-          feature: 'Flutter',
-          error: errorDetails.exception,
-          stackTrace: errorDetails.stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      };
-
-      ui.PlatformDispatcher.instance.onError = (error, stack) {
-        Logger.error(
-          'Platform error: $error',
-          feature: 'Platform',
-          error: error,
-          stackTrace: stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-
-      unawaited(FirebaseAnalytics.instance.logAppOpen());
-    } catch (e, stackTrace) {
-      Logger.error(
-        'Firebase initialization failed: $e',
-        feature: 'Firebase',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow; // Re-throw to trigger the timeout catch in _init if needed
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      child: _ready ? const _ReadyApp() : const _SplashScaffold(),
-    );
-  }
-}
-
-class _ReadyApp extends StatelessWidget {
-  const _ReadyApp();
-  @override
-  Widget build(BuildContext context) => MyApp();
-}
-
-class _SplashScaffold extends StatelessWidget {
-  const _SplashScaffold();
-  @override
-  Widget build(BuildContext context) {
-    // Use the current theme mode to determine splash background
-    final brightness =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness;
-    final isDark = brightness == Brightness.dark;
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: isDark
-                    ? const Color(0xFF87D1A4)
-                    : const Color(0xFF006754),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading Hafiz...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

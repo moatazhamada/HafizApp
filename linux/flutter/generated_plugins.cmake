@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_sound
+  gtk
   url_launcher_linux
 )
 

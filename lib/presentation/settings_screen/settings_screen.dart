@@ -10,6 +10,10 @@ import '../../core/audio/recitation_models.dart';
 import '../../core/audio/recitation_service.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 import '../../injection_container.dart' as di;
+import '../../core/analytics/analytics_helper.dart';
+import '../../core/ramadan/ramadan_date_manager.dart';
+import '../../core/ramadan/ramadan_theme.dart';
+import '../../main.dart' show setOrientationFromPrefs;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,7 +30,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _qiraatEdition;
   late int _reciterId;
   late String _whisperModel;
+  late String _defaultQuranView;
+  late String _qrcApiKey;
+  late double _regularFontSize;
+  late String _orientationMode;
+  late String _readingNavMode;
+  late bool _isAutoScrollEnabled;
+  late double _autoScrollSpeed;
   bool _whisperDownloading = false;
+  final TextEditingController _qrcApiKeyController = TextEditingController();
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
   bool _loadingEditions = true;
@@ -45,27 +57,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _qiraatEdition = PrefUtils().getQiraatEdition();
     _reciterId = PrefUtils().getReciterId();
     _whisperModel = PrefUtils().getWhisperModel();
+    _defaultQuranView = PrefUtils().getDefaultQuranView();
+    _qrcApiKey = PrefUtils().getQrcApiKey();
+    _regularFontSize = PrefUtils().getRegularFontSize();
+    _orientationMode = PrefUtils().getOrientationMode();
+    _readingNavMode = PrefUtils().getReadingNavMode();
+    _isAutoScrollEnabled = PrefUtils().getAutoScrollEnabled();
+    _autoScrollSpeed = PrefUtils().getAutoScrollSpeed();
+    _qrcApiKeyController.text = _qrcApiKey;
     _loadRecitationResources();
   }
 
   Future<void> _loadRecitationResources() async {
-    final editions = await _qiraatService.fetchEditions();
-    final reciters = await _recitationService.fetchReciters();
-    if (!mounted) return;
-    setState(() {
-      _editions = editions;
-      _reciters = reciters;
-      _loadingEditions = false;
-      _loadingReciters = false;
-      if (!_editions.any((e) => e.identifier == _qiraatEdition) &&
-          _editions.isNotEmpty) {
-        _qiraatEdition = _editions.first.identifier;
-      }
-      if (!_reciters.any((r) => r.id == _reciterId) &&
-          _reciters.isNotEmpty) {
-        _reciterId = _reciters.first.id;
-      }
-    });
+    try {
+      final editions = await _qiraatService.fetchEditions();
+      final reciters = await _recitationService.fetchReciters();
+      if (!mounted) return;
+      setState(() {
+        _editions = editions;
+        _reciters = reciters;
+        _loadingEditions = false;
+        _loadingReciters = false;
+        if (!_editions.any((e) => e.identifier == _qiraatEdition) &&
+            _editions.isNotEmpty) {
+          _qiraatEdition = _editions.first.identifier;
+        }
+        if (!_reciters.any((r) => r.id == _reciterId) && _reciters.isNotEmpty) {
+          _reciterId = _reciters.first.id;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingEditions = false;
+        _loadingReciters = false;
+      });
+      debugPrint('Failed to load recitation resources: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _qrcApiKeyController.dispose();
+    super.dispose();
   }
 
   @override
@@ -94,87 +128,583 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildSectionHeader('about_language_title'.tr),
-          _buildLanguageOption('lbl_system_default'.tr, 'system'),
-          _buildLanguageOption('English', 'en'),
-          _buildLanguageOption('العربية', 'ar'),
-          const Divider(),
-          _buildSectionHeader('lbl_view_mode'.tr),
-          SwitchListTile(
-            title: Text('lbl_view_single_line'.tr),
-            subtitle: Text(
-              _isSingleLine
-                  ? 'lbl_view_single_line'.tr
-                  : 'lbl_view_continuous'.tr,
-            ),
-            value: _isSingleLine,
-            onChanged: (val) {
-              setState(() {
-                _isSingleLine = val;
-                PrefUtils().setVerseViewMode(val);
-              });
-            },
-            activeThumbColor: Colors.teal,
+          ExpansionTile(
+            title: Text('about_language_title'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              _buildLanguageOption('lbl_system_default'.tr, 'system'),
+              _buildLanguageOption('lbl_english'.tr, 'en'),
+              _buildLanguageOption('lbl_arabic'.tr, 'ar'),
+            ],
           ),
-          const Divider(),
-          _buildSectionHeader('lbl_theme'.tr),
-          _buildThemeOption('lbl_system_default'.tr, 'system'),
-          _buildThemeOption('lbl_theme_light'.tr, 'light'),
-          _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
-          const Divider(),
-          _buildSectionHeader('lbl_recitation_coach'.tr),
-          ListTile(
-            title: Text('lbl_recitation_provider'.tr),
-            subtitle: Text(_recitationProviderLabel(_recitationProvider)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _selectRecitationProvider,
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_view_mode'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              SwitchListTile(
+                title: Text('lbl_view_single_line'.tr),
+                subtitle: Text(
+                  _isSingleLine
+                      ? 'lbl_view_single_line'.tr
+                      : 'lbl_view_continuous'.tr,
+                ),
+                value: _isSingleLine,
+                onChanged: (val) {
+                  setState(() {
+                    _isSingleLine = val;
+                    PrefUtils().setVerseViewMode(val);
+                  });
+                },
+                activeThumbColor: Colors.teal,
+              ),
+            ],
           ),
-          ListTile(
-            title: Text('lbl_qiraat'.tr),
-            subtitle: Text(
-              _loadingEditions
-                  ? 'lbl_loading'.tr
-                  : _editionLabel(_qiraatEdition),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _loadingEditions ? null : _selectQiraatEdition,
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_theme'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              _buildThemeOption('lbl_system_default'.tr, 'system'),
+              _buildThemeOption('lbl_theme_light'.tr, 'light'),
+              _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
+            ],
           ),
-          ListTile(
-            title: Text('lbl_reciter'.tr),
-            subtitle: Text(
-              _loadingReciters
-                  ? 'lbl_loading'.tr
-                  : _reciterLabel(_reciterId),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _loadingReciters ? null : _selectReciter,
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_orientation'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              _buildOrientationOption('lbl_portrait'.tr, 'portrait'),
+              _buildOrientationOption('lbl_landscape'.tr, 'landscape'),
+              _buildOrientationOption('lbl_auto_rotate'.tr, 'auto'),
+            ],
           ),
-          if (_recitationProvider == 'local_whisper')
-            ListTile(
-              title: Text('msg_local_whisper_tip'.tr),
-              subtitle: Text('msg_local_whisper_desc'.tr),
-            ),
-          if (_recitationProvider == 'local_whisper')
-            ListTile(
-              title: Text('lbl_whisper_model'.tr),
-              subtitle: Text(_whisperModelLabel(_whisperModel)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _whisperDownloading ? null : _selectWhisperModel,
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_reading_navigation'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              _buildReadingNavOption('lbl_scroll_mode'.tr, 'scroll'),
+              _buildReadingNavOption('lbl_page_mode'.tr, 'page'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_auto_scroll'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              SwitchListTile(
+                title: Text('lbl_enable_auto_scroll'.tr),
+                subtitle: Text(
+                  _isAutoScrollEnabled
+                      ? 'lbl_auto_scroll_enabled'.tr
+                      : 'lbl_auto_scroll_disabled'.tr,
+                ),
+                value: _isAutoScrollEnabled,
+                onChanged: (val) {
+                  setState(() {
+                    _isAutoScrollEnabled = val;
+                    PrefUtils().setAutoScrollEnabled(val);
+                  });
+                },
+                activeThumbImage: null,
+                activeTrackColor: Colors.teal.withValues(alpha: 0.5),
+                activeThumbColor: Colors.teal,
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'lbl_scroll_speed'.tr,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                        Text(
+                          '${_autoScrollSpeed.toStringAsFixed(1)}x',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Slider(
+                      value: _autoScrollSpeed,
+                      min: 0.1,
+                      max: 5.0,
+                      divisions: 49,
+                      label: '${_autoScrollSpeed.toStringAsFixed(1)}x',
+                      onChanged: (value) {
+                        setState(() {
+                          _autoScrollSpeed = value;
+                          PrefUtils().setAutoScrollSpeed(value);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildSpeedPreset(0.5, '0.5x'),
+                        _buildSpeedPreset(1.0, '1x'),
+                        _buildSpeedPreset(2.0, '2x'),
+                        _buildSpeedPreset(3.0, '3x'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_default_quran_view'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              _buildQuranViewOption('lbl_surah_view'.tr, 'surah'),
+              _buildQuranViewOption('lbl_mushaf_view'.tr, 'mushaf'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_recitation_coach'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              ListTile(
+                title: Text('lbl_recitation_provider'.tr),
+                subtitle: Text(_recitationProviderLabel(_recitationProvider)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _selectRecitationProvider,
+              ),
+              ListTile(
+                title: Text('lbl_qiraat'.tr),
+                subtitle: Text(
+                  _loadingEditions
+                      ? 'lbl_loading'.tr
+                      : _editionLabel(_qiraatEdition),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _loadingEditions ? null : _selectQiraatEdition,
+              ),
+              ListTile(
+                title: Text('lbl_reciter'.tr),
+                subtitle: Text(
+                  _loadingReciters
+                      ? 'lbl_loading'.tr
+                      : _reciterLabel(_reciterId),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _loadingReciters ? null : _selectReciter,
+              ),
+              if (_recitationProvider == 'local_whisper')
+                ListTile(
+                  title: Text('msg_local_whisper_tip'.tr),
+                  subtitle: Text('msg_local_whisper_desc'.tr),
+                ),
+              if (_recitationProvider == 'local_whisper')
+                ListTile(
+                  title: Text('lbl_whisper_model'.tr),
+                  subtitle: Text(_whisperModelLabel(_whisperModel)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _whisperDownloading ? null : _selectWhisperModel,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_display_preferences'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [
+              ListTile(
+                title: Text('lbl_quran_font'.tr),
+                subtitle: Text(_getFontDisplayName(PrefUtils().getQuranFont())),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _showFontSelectionDialog,
+              ),
+              ListTile(
+                title: Text('lbl_quran_font_size'.tr),
+                subtitle: Text(
+                  '${(_regularFontSize).toInt()} ${'lbl_points'.tr}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _showRegularFontSizeDialog,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ExpansionTile(
+            title: Text('lbl_external_services'.tr),
+            initiallyExpanded: false,
+            maintainState: true,
+            children: [_buildQrcApiKeyTile()],
+          ),
+          const SizedBox(height: 8),
+          if (RamadanTheme.isRamadan)
+            ExpansionTile(
+              title: Text('lbl_ramadan_settings'.tr),
+              initiallyExpanded: false,
+              maintainState: true,
+              children: [_buildRamadanRegionTile()],
             ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey,
+  Widget _buildRamadanRegionTile() {
+    final region = RamadanDateManager.selectedRegion;
+    final dates = RamadanDateManager.getDates();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.mosque, color: Colors.teal),
+          title: Text('lbl_ramadan_region'.tr),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(RamadanDateManager.getRegionName(region)),
+              Text(
+                '${dates.start.day}/${dates.start.month} - ${dates.eid.day}/${dates.eid.month}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            await RamadanDateManager.showRegionSelector(context);
+            setState(() {}); // Refresh to show updated dates
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'msg_ramadan_region_desc'.tr,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQrcApiKeyTile() {
+    final hasKey = _qrcApiKey.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: Text('lbl_qrc_service'.tr),
+          subtitle: Text(
+            hasKey ? 'msg_qrc_configured'.tr : 'msg_qrc_not_configured'.tr,
+          ),
+          trailing: Icon(
+            hasKey ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: hasKey ? Colors.green : Colors.grey,
+          ),
+          onTap: _showQrcConfigurationDialog,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'msg_qrc_description'.tr,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showQrcConfigurationDialog() async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_qrc_configuration'.tr),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'msg_qrc_explanation'.tr,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'lbl_qrc_website'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                'https://qurani.ai',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'lbl_qrc_api_key'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _qrcApiKeyController,
+                decoration: InputDecoration(
+                  hintText: 'hint_enter_qrc_api_key'.tr,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _qrcApiKeyController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _qrcApiKeyController.clear();
+                          },
+                        )
+                      : null,
+                ),
+                obscureText: true,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.orange[800],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'lbl_important_notes'.tr,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'msg_qrc_notes'.tr,
+                      style: TextStyle(fontSize: 12, color: Colors.orange[900]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('lbl_cancel'.tr),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newKey = _qrcApiKeyController.text.trim();
+              await PrefUtils().setQrcApiKey(newKey);
+              if (mounted) {
+                setState(() {
+                  _qrcApiKey = newKey;
+                });
+                // ignore: use_build_context_synchronously
+                Navigator.of(context, rootNavigator: true).pop();
+                // ignore: use_build_context_synchronously
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      newKey.isEmpty
+                          ? 'msg_qrc_key_removed'.tr
+                          : 'msg_qrc_key_saved'.tr,
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Text('lbl_save'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getFontDisplayName(String fontName) {
+    switch (fontName) {
+      case 'amiri':
+        return 'Amiri';
+      case 'uthmanic':
+        return 'KFGQPC Uthmanic Script HAFS';
+      case 'qcf':
+        return 'QCF (Queens College Boston)';
+      default:
+        return 'Amiri';
+    }
+  }
+
+  Future<void> _showFontSelectionDialog() async {
+    final currentFont = PrefUtils().getQuranFont();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_quran_font'.tr),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildFontOption('amiri', 'Amiri', currentFont),
+              _buildFontOption(
+                'uthmanic',
+                'KFGQPC Uthmanic Script HAFS',
+                currentFont,
+              ),
+              _buildFontOption(
+                'qcf',
+                'QCF (Queens College Boston)',
+                currentFont,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('lbl_cancel'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFontOption(
+    String fontKey,
+    String displayName,
+    String currentFont,
+  ) {
+    final isSelected = fontKey == currentFont;
+
+    return ListTile(
+      title: Text(
+        displayName,
+        style: TextStyle(fontFamily: _getFontFamily(fontKey), fontSize: 18),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () {
+        PrefUtils().setQuranFont(fontKey);
+        setState(() {});
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  String _getFontFamily(String fontKey) {
+    switch (fontKey) {
+      case 'amiri':
+        return 'Amiri';
+      case 'uthmanic':
+        return 'KFGQPC Uthmanic Script HAFS';
+      case 'qcf':
+        return 'QCF';
+      default:
+        return 'Amiri';
+    }
+  }
+
+  Future<void> _showRegularFontSizeDialog() async {
+    double tempFontSize = _regularFontSize;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('lbl_quran_font_size'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${tempFontSize.toInt()} ${'lbl_points'.tr}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Slider(
+                value: tempFontSize,
+                min: 16,
+                max: 32,
+                divisions: 16,
+                label: tempFontSize.toInt().toString(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    tempFontSize = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'msg_font_size_preview'.tr,
+                style: TextStyle(fontSize: tempFontSize, fontFamily: 'Amiri'),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('lbl_cancel'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await PrefUtils().setRegularFontSize(tempFontSize);
+                setState(() {
+                  _regularFontSize = tempFontSize;
+                });
+                if (mounted) {
+                  // ignore: use_build_context_synchronously
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('lbl_save'.tr),
+            ),
+          ],
         ),
       ),
     );
@@ -199,6 +729,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           LocaleController.setLocale(newLocale);
           await PrefUtils().setLocaleCode(code);
+
+          // Track language change
+          unawaited(
+            di.sl<AnalyticsHelper>().logLanguageChanged(
+              code == 'system'
+                  ? 'system'
+                  : (code == 'en' ? 'english' : 'arabic'),
+            ),
+          );
+
           setState(() {
             _currentLang = code;
           });
@@ -216,11 +756,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (!isSelected) {
           di.sl<ThemeBloc>().add(ChangeThemeModeEvent(mode));
 
+          // Track theme change
+          unawaited(di.sl<AnalyticsHelper>().logThemeChanged(mode));
+
           setState(() {
             _themeMode = mode;
           });
         }
       },
+    );
+  }
+
+  Widget _buildQuranViewOption(String label, String view) {
+    final bool isSelected = _defaultQuranView == view;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setDefaultQuranView(view);
+
+          // Track default view change
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'default_quran_view',
+              view,
+            ),
+          );
+
+          setState(() {
+            _defaultQuranView = view;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildOrientationOption(String label, String mode) {
+    final bool isSelected = _orientationMode == mode;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setOrientationMode(mode);
+          setOrientationFromPrefs();
+
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'orientation_mode',
+              mode,
+            ),
+          );
+
+          setState(() {
+            _orientationMode = mode;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildReadingNavOption(String label, String mode) {
+    final bool isSelected = _readingNavMode == mode;
+    return ListTile(
+      title: Text(label),
+      subtitle: Text(
+        mode == 'scroll' ? 'lbl_scroll_mode_desc'.tr : 'lbl_page_mode_desc'.tr,
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+      ),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () async {
+        if (!isSelected) {
+          await PrefUtils().setReadingNavMode(mode);
+
+          unawaited(
+            di.sl<AnalyticsHelper>().logSettingChanged(
+              'reading_nav_mode',
+              mode,
+            ),
+          );
+
+          setState(() {
+            _readingNavMode = mode;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildSpeedPreset(double speed, String label) {
+    final bool isSelected = _autoScrollSpeed == speed;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _autoScrollSpeed = speed;
+          PrefUtils().setAutoScrollSpeed(speed);
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.teal : Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : Colors.black87,
+          ),
+        ),
+      ),
     );
   }
 
@@ -234,16 +882,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _editionLabel(String id) {
-    final edition =
-        _editions.firstWhere((e) => e.identifier == id, orElse: () {
-      return const QiraatEdition(
-        identifier: 'quran-uthmani',
-        name: 'Uthmani (Hafs)',
-        language: 'ar',
-        format: 'text',
-        type: 'quran',
-      );
-    });
+    final edition = _editions.firstWhere(
+      (e) => e.identifier == id,
+      orElse: () {
+        return const QiraatEdition(
+          identifier: 'quran-uthmani',
+          name: 'Uthmani (Hafs)',
+          language: 'ar',
+          format: 'text',
+          type: 'quran',
+        );
+      },
+    );
     return edition.name;
   }
 
@@ -309,6 +959,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (value != null) {
       final id = int.tryParse(value) ?? _reciterId;
       await PrefUtils().setReciterId(id);
+
+      // Track reciter change
+      final reciter = _reciters.firstWhere(
+        (r) => r.id == id,
+        orElse: () => _reciters.first,
+      );
+      unawaited(di.sl<AnalyticsHelper>().logReciterChanged(id, reciter.name));
+
       setState(() => _reciterId = id);
     }
   }
@@ -336,21 +994,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _downloadWhisperModel(String value) async {
     final model = _mapWhisperModel(value);
-    unawaited(showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('lbl_downloading_model'.tr),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(strokeWidth: 2),
-            const SizedBox(height: 12),
-            Text('msg_model_download_wait'.tr),
-          ],
+    unawaited(
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Text('lbl_downloading_model'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(strokeWidth: 2),
+              const SizedBox(height: 12),
+              Text('msg_model_download_wait'.tr),
+            ],
+          ),
         ),
       ),
-    ));
+    );
     try {
       await _whisperController.downloadModel(model);
     } finally {
@@ -372,7 +1032,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-
   Future<T?> _showSelectionSheet<T>({
     required String title,
     required List<_Option> options,
@@ -387,15 +1046,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               title,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
           for (final option in options)
             ListTile(
               title: Text(option.isKey ? option.label.tr : option.label),
-              trailing:
-                  selected == option.value ? const Icon(Icons.check) : null,
+              trailing: selected == option.value
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () => Navigator.pop(context, option.value as T),
             ),
           const SizedBox(height: 8),

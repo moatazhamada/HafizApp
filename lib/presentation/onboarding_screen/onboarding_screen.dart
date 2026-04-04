@@ -4,16 +4,19 @@ import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
+import '../home_screen/home_screen.dart';
 import 'bloc/onboarding_bloc.dart';
 import 'models/onboarding_model.dart';
+import 'mushaf_type_onboarding.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   static Widget builder(BuildContext context) {
     return BlocProvider<OnboardingBloc>(
-      create: (context) =>
-          OnboardingBloc(OnboardingState(onboardingModel: const OnboardingModel())),
+      create: (context) => OnboardingBloc(
+        OnboardingState(onboardingModel: const OnboardingModel()),
+      ),
       child: const OnboardingScreen(),
     );
   }
@@ -26,11 +29,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
-  late final StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  late final StreamSubscription<List<ConnectivityResult>>?
+  _connectivitySubscription;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
 
   @override
   void initState() {
@@ -145,108 +148,162 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       opacity: _fadeAnimation,
                       child: SlideTransition(
                         position: _slideAnimation,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Spacer(flex: 2),
+                        child: Center(
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 32.0,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Hero Image Card
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(30),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: Container(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        child: CustomImageView(
+                                          imagePath:
+                                              ImageConstant.imgQuranOnboarding,
+                                          height: 350.adaptSize,
+                                          width: 300.adaptSize,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
 
-                            // Hero Image Card
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
+                                  const SizedBox(height: 32),
+
+                                  // Title
+                                  Text(
+                                    'app_name'.tr,
+                                    style: theme.textTheme.displayMedium
+                                        ?.copyWith(
+                                          color: const Color(
+                                            0xFFE0F2F1,
+                                          ), // Light Mint
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                        ),
+                                  ),
+                                  SizedBox(height: 16.adaptSize),
+
+                                  // Subtitle
+                                  Text(
+                                    'lbl_learn_quran'.tr,
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          fontFamily: 'Poppins',
+                                          height: 1.5,
+                                        ),
+                                  ),
+
+                                  const SizedBox(height: 48),
+
+                                  // Action Button
+                                  SizedBox(
+                                    width: double.maxFinite,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32.0,
+                                      ),
+                                      child: CustomElevatedButton(
+                                        key: const ValueKey('get_started_key'),
+                                        onPressed: () {
+                                          try {
+                                            // Mark onboarding as completed
+                                            PrefUtils().setOnboardingCompleted(
+                                              true,
+                                            );
+
+                                            if (shouldShowMushafOnboarding()) {
+                                              // Show Mushaf type selector first
+                                              AppRoutes.goToMushafOnboarding(
+                                                context,
+                                                onComplete: () {
+                                                  NavigatorService.pushNamedAndRemoveUntil(
+                                                    AppRoutes.homeScreen,
+                                                  );
+                                                },
+                                              );
+                                            } else {
+                                              NavigatorService.pushNamedAndRemoveUntil(
+                                                AppRoutes.homeScreen,
+                                              );
+                                            }
+                                          } catch (e) {
+                                            debugPrint('Navigation error: $e');
+                                            // Fallback navigation
+                                            Navigator.of(
+                                              context,
+                                            ).pushAndRemoveUntil(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const HomeScreen(),
+                                              ),
+                                              (route) => false,
+                                            );
+                                          }
+                                        },
+                                        text: 'lbl_get_started'.tr,
+                                        buttonStyle: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFFFAF6EB,
+                                          ),
+                                          foregroundColor: const Color(
+                                            0xFF004B40,
+                                          ),
+                                          elevation: 5,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              30.0,
+                                            ),
+                                          ),
+                                        ),
+                                        buttonTextStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                          color: Color(0xFF004B40),
+                                        ),
+                                        rightIcon: const Padding(
+                                          padding: EdgeInsets.only(left: 12.0),
+                                          child: Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 20,
+                                            color: Color(0xFF004B40),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
-                                child: Container(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  child: CustomImageView(
-                                    imagePath: ImageConstant.imgQuranOnboarding,
-                                    height: 350.adaptSize,
-                                    width: 300.adaptSize,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
                             ),
-
-                            const Spacer(),
-
-                            // Title
-                            Text(
-                              'app_name'.tr,
-                              style: theme.textTheme.displayMedium?.copyWith(
-                                color: const Color(0xFFE0F2F1), // Light Mint
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 16.adaptSize),
-
-                            // Subtitle
-                            Text(
-                              'lbl_learn_quran'.tr,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontFamily: 'Poppins',
-                                height: 1.5,
-                              ),
-                            ),
-
-                            const Spacer(flex: 2),
-
-                            // Action Button
-                            SizedBox(
-                              width: double.maxFinite,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32.0,
-                                ),
-                                child: CustomElevatedButton(
-                                  key: const ValueKey('get_started_key'),
-                                  onPressed: () {
-                                    NavigatorService.pushNamedAndRemoveUntil(
-                                      AppRoutes.homeScreen,
-                                    );
-                                  },
-                                  text: 'lbl_get_started'.tr,
-                                  buttonStyle: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFAF6EB),
-                                    foregroundColor: const Color(0xFF004B40),
-                                    elevation: 5,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0),
-                                    ),
-                                  ),
-                                  buttonTextStyle: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                    color: Color(0xFF004B40),
-                                  ),
-                                  rightIcon: const Padding(
-                                    padding: EdgeInsets.only(left: 12.0),
-                                    child: Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 20,
-                                      color: Color(0xFF004B40),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
+                          ),
                         ),
                       ),
                     ),

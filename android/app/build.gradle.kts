@@ -16,6 +16,7 @@ android {
     ndkVersion = "29.0.13113456"
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -78,9 +79,12 @@ android {
     }
     
     // Support 16 KB page sizes for Android 15+
-    packagingOptions {
+    packaging {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/lib/*/libwhisper.so"
         }
     }
 }
@@ -92,4 +96,5 @@ flutter {
 dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("com.google.android.material:material:1.12.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

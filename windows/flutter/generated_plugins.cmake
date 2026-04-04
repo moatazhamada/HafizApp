@@ -3,16 +3,19 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
   cloud_firestore
   connectivity_plus
   firebase_core
   flutter_sound
   permission_handler_windows
+  share_plus
   speech_to_text_windows
   url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_local_notifications_windows
   whisper_ggml_plus
 )
 

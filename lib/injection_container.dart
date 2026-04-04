@@ -18,13 +18,16 @@ import 'package:hafiz_app/data/repository/bookmark/bookmark_repository_impl.dart
 import 'package:hafiz_app/data/repository/recitation_error/recitation_error_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/bookmark_repository.dart';
 import 'package:hafiz_app/domain/repository/recitation_error_repository.dart';
+import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 
 import 'core/network/network_manager.dart';
 import 'core/network/qf_auth.dart';
 import 'core/config/api_config.dart';
 import 'core/scroll/scroll_position_cubit.dart';
 import 'core/analytics/analytics_service.dart';
+import 'core/analytics/analytics_helper.dart';
 import 'core/analytics/analytics_route_observer.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 final sl = GetIt.instance;
 
@@ -43,7 +46,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ScrollPositionCubit());
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
+  sl.registerLazySingleton(() => AnalyticsHelper(FirebaseAnalytics.instance));
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
+
+  // Audio service - register as lazy singleton
+  // This will be initialized when first accessed, which happens in initAudio()
+  sl.registerLazySingleton<AudioPlayerHandler>(() => AudioPlayerHandler());
 
   // Use Case
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
@@ -105,4 +113,7 @@ Future<void> init() async {
     }
     return dio;
   });
+
+  // Wait for all async singletons to be ready (e.g., AudioPlayerHandler)
+  await sl.allReady();
 }

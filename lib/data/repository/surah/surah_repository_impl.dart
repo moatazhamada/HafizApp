@@ -16,6 +16,9 @@ class SurahRepositoryImpl implements SurahRepository {
   final SurahLocalDataSource? surahLocalDataSource;
   final NetworkInfo networkInfo;
 
+  // Request deduplication map
+  final Map<String, Future<Either<Failure, List<Verse>>>> _pendingRequests = {};
+
   SurahRepositoryImpl({
     required this.surahRemoteDataSource,
     this.surahLocalDataSource,
@@ -24,6 +27,29 @@ class SurahRepositoryImpl implements SurahRepository {
 
   @override
   Future<Either<Failure, List<Verse>>> getSurah(String surahId) async {
+    // Check if request is already pending
+    if (_pendingRequests.containsKey(surahId)) {
+      Logger.debug(
+        'Reusing pending request for surah $surahId',
+        feature: 'Surah',
+      );
+      return _pendingRequests[surahId]!;
+    }
+
+    // Create new request
+    final request = _getSurahInternal(surahId);
+    _pendingRequests[surahId] = request;
+
+    try {
+      return await request;
+    } finally {
+      // Synchronously remove from pending requests map
+      // ignore: unawaited_futures
+      _pendingRequests.remove(surahId);
+    }
+  }
+
+  Future<Either<Failure, List<Verse>>> _getSurahInternal(String surahId) async {
     // Attempt local (bundled) text first
     if (surahLocalDataSource != null) {
       try {

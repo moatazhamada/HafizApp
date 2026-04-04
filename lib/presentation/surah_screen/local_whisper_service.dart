@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 
@@ -10,6 +11,18 @@ class LocalWhisperService {
     WhisperModel model = WhisperModel.base,
   }) async {
     try {
+      final audioFile = File(audioPath);
+      if (!await audioFile.exists()) {
+        debugPrint('Local Whisper: Audio file not found');
+        return null;
+      }
+
+      final fileSize = await audioFile.length();
+      if (fileSize < 1000) {
+        debugPrint('Local Whisper: Audio file too small ($fileSize bytes)');
+        return null;
+      }
+
       await _controller.downloadModel(model);
       final result = await _controller.transcribe(
         model: model,
@@ -23,5 +36,9 @@ class LocalWhisperService {
       debugPrint('Local Whisper failed: $e');
       return null;
     }
+  }
+
+  void dispose() {
+    _controller.dispose();
   }
 }

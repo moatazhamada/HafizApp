@@ -55,6 +55,14 @@ Deploy to Google Play Internal Testing
 
 Deploy to Google Play Beta (Closed Testing)
 
+### android deploy_beta_no_build
+
+```sh
+[bundle exec] fastlane android deploy_beta_no_build
+```
+
+Deploy to Google Play Beta (Closed Testing) - skip build
+
 ### android deploy_production
 
 ```sh
@@ -62,6 +70,14 @@ Deploy to Google Play Beta (Closed Testing)
 ```
 
 Deploy to Google Play Production
+
+### android deploy_production_no_build
+
+```sh
+[bundle exec] fastlane android deploy_production_no_build
+```
+
+Deploy to Google Play Production - skip build
 
 ### android promote_to_production
 

@@ -1,8 +1,10 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/analytics/analytics_helper.dart';
 import '../../../../data/model/bookmark_model.dart';
 import '../../../../domain/repository/bookmark_repository.dart';
+import '../../../../injection_container.dart';
 
 import '../../../../domain/entities/bookmark.dart';
 
@@ -11,8 +13,9 @@ part 'bookmark_state.dart';
 
 class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
   final BookmarkRepository repository;
+  final _analytics = sl<AnalyticsHelper>();
 
-  BookmarkBloc({required this.repository}) : super(BookmarkInitial()) {
+  BookmarkBloc({required this.repository}) : super(const BookmarkInitial()) {
     on<LoadBookmarksEvent>(_onLoadBookmarks);
     on<AddBookmarkEvent>(_onAddBookmark);
     on<RemoveBookmarkEvent>(_onRemoveBookmark);
@@ -22,7 +25,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     LoadBookmarksEvent event,
     Emitter<BookmarkState> emit,
   ) async {
-    emit(BookmarkLoading());
+    emit(const BookmarkLoading());
     final result = await repository.getBookmarks();
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
@@ -37,10 +40,23 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     Emitter<BookmarkState> emit,
   ) async {
     final result = await repository.addBookmark(event.bookmark);
-    result.fold(
-      (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
-      (_) =>
-          add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added')),
+    await result.fold(
+      (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
+      (_) async {
+        // Log analytics
+        await _analytics.logBookmarkAdded(
+          event.bookmark.surahId,
+          event.bookmark.verseNumber,
+        );
+        // Reload bookmarks directly instead of adding event to avoid recursion
+        final loadResult = await repository.getBookmarks();
+        loadResult.fold(
+          (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
+          (bookmarks) => emit(
+            BookmarkLoaded(bookmarks, feedbackMessage: 'msg_bookmark_added'),
+          ),
+        );
+      },
     );
   }
 
@@ -52,11 +68,20 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
       event.surahId,
       event.verseId,
     );
-    result.fold(
-      (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
-      (_) => add(
-        const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'),
-      ),
+    await result.fold(
+      (failure) async => emit(BookmarkError(_mapFailureToMessage(failure))),
+      (_) async {
+        // Log analytics
+        await _analytics.logBookmarkRemoved(event.surahId, event.verseId);
+        // Reload bookmarks directly instead of adding event to avoid recursion
+        final loadResult = await repository.getBookmarks();
+        loadResult.fold(
+          (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
+          (bookmarks) => emit(
+            BookmarkLoaded(bookmarks, feedbackMessage: 'msg_bookmark_removed'),
+          ),
+        );
+      },
     );
   }
 

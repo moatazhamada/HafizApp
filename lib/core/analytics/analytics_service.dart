@@ -60,10 +60,11 @@ class AnalyticsService {
   Future<void> logContinueReading(int surahId, double? offset) async {
     final a = _analytics;
     if (a == null) return;
-    await a.logEvent(
-      name: 'continue_reading',
-      parameters: {'surah_id': surahId, 'offset': ?offset},
-    );
+    final params = <String, Object>{'surah_id': surahId};
+    if (offset != null) {
+      params['offset'] = offset;
+    }
+    await a.logEvent(name: 'continue_reading', parameters: params);
   }
 
   Future<void> logOpenSurah(int surahId) async {

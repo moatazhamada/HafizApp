@@ -12,12 +12,31 @@ class AppLocalization {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': enUs,
-    'ar': arEg
+    'ar': arEg,
   };
+
+  static bool _validatedKeys = false;
+
+  static void _validateKeys() {
+    if (_validatedKeys) return;
+    _validatedKeys = true;
+    final enKeys = _localizedValues['en']?.keys.toSet() ?? {};
+    final arKeys = _localizedValues['ar']?.keys.toSet() ?? {};
+    final missingInAr = enKeys.difference(arKeys).toList()..sort();
+    final missingInEn = arKeys.difference(enKeys).toList()..sort();
+
+    if (missingInAr.isNotEmpty || missingInEn.isNotEmpty) {
+      debugPrint(
+        'Localization mismatch - missing in ar: ${missingInAr.join(', ')}, missing in en: ${missingInEn.join(', ')}',
+      );
+    }
+  }
 
   static AppLocalization of() {
     return Localizations.of<AppLocalization>(
-        NavigatorService.navigatorKey.currentContext!, AppLocalization)!;
+      NavigatorService.navigatorKey.currentContext!,
+      AppLocalization,
+    )!;
   }
 
   static List<String> languages() => _localizedValues.keys.toList();
@@ -45,6 +64,7 @@ class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalization> {
   //cause an async "load" operation
   @override
   Future<AppLocalization> load(Locale locale) {
+    AppLocalization._validateKeys();
     return SynchronousFuture<AppLocalization>(AppLocalization(locale));
   }
 
