@@ -158,4 +158,9 @@ final Map<String, String> arEg = {
   'msg_error_prefix': 'حدث خطأ: ',
   'msg_could_not_open': 'تعذر فتح الرابط: ',
   'lbl_search_surah': 'البحث عن سورة...',
+  // Musali Teaser
+  'musali_app_name': 'مُصَالي',
+  'musali_status': 'قريباً',
+  'musali_teaser_desc': 'ما يبدأ بشيء مألوف ينتهي في مكان تماماً غير متوقع.',
+  'musali_watch_now': 'شاهد الآن',
 };

@@ -9,6 +9,7 @@ import '../presentation/onboarding_screen/onboarding_screen.dart';
 import '../presentation/about_screen/about_screen.dart';
 import '../presentation/recitation_error/recitation_error_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
+import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String helpScreen = '/help';
   static const String recitationErrorsPage = '/recitation_errors';
   static const String settingsScreen = '/settings';
+  static const String musaliTeaserScreen = '/musali_teaser_screen';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -35,5 +37,6 @@ class AppRoutes {
     helpScreen: (context) => const HelpScreen(),
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
     settingsScreen: (context) => const SettingsScreen(),
+    musaliTeaserScreen: (context) => const MusaliTeaserScreen(),
   };
 }

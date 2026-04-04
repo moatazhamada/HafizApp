@@ -295,6 +295,97 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
+          const SizedBox(height: 24),
+          const MusaliComingSoonCard(),
+        ],
+      ),
+    );
+  }
+}
+
+class MusaliComingSoonCard extends StatelessWidget {
+  const MusaliComingSoonCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = PrefUtils().getIsDarkMode();
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.grass_rounded,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'musali_app_name'.tr,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'musali_status'.tr,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.black.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'musali_teaser_desc'.tr,
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.maxFinite,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                NavigatorService.pushNamed(AppRoutes.musaliTeaserScreen);
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text('musali_watch_now'.tr),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primaryContainer,
+                foregroundColor: colorScheme.onPrimaryContainer,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
