@@ -12,7 +12,7 @@ class RecitationErrorBloc
   final RecitationErrorRepository repository;
 
   RecitationErrorBloc({required this.repository})
-    : super(RecitationErrorInitial()) {
+    : super(const RecitationErrorInitial()) {
     on<LoadRecitationErrorsEvent>(_onLoadRecitationErrors);
     on<AddRecitationErrorEvent>(_onAddRecitationError);
     on<RemoveRecitationErrorEvent>(_onRemoveRecitationError);
@@ -22,7 +22,7 @@ class RecitationErrorBloc
     LoadRecitationErrorsEvent event,
     Emitter<RecitationErrorState> emit,
   ) async {
-    emit(RecitationErrorLoading());
+    emit(const RecitationErrorLoading());
     final result = await repository.getRecitationErrors();
     result.fold(
       (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),

@@ -39,7 +39,7 @@ void main() {
     testWidgets(
       'renders loading skeleton when state is RecitationErrorLoading',
       (WidgetTester tester) async {
-        when(() => mockBloc.state).thenReturn(RecitationErrorLoading());
+        when(() => mockBloc.state).thenReturn(const RecitationErrorLoading());
 
         await tester.pumpWidget(createWidgetUnderTest());
 

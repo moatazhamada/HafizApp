@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import '../ramadan/ramadan_date_manager.dart';
 import '../utils/logger.dart';
 
 class AppIconService {
@@ -10,26 +9,10 @@ class AppIconService {
 
   static const _channel = MethodChannel('com.hafiz.app/app_icon');
 
+  // Icon switching disabled - using single default icon
   static Future<void> updateIconBasedOnSeason() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
-
-    try {
-      final isRamadan = RamadanDateManager.isRamadan;
-      final currentIcon = await getCurrentIcon();
-
-      if (isRamadan && currentIcon != ramadanIcon) {
-        await setRamadanIcon();
-      } else if (!isRamadan && currentIcon == ramadanIcon) {
-        await setDefaultIcon();
-      }
-
-      Logger.info(
-        'App icon checked. Ramadan: $isRamadan, Current: $currentIcon',
-        feature: 'AppIcon',
-      );
-    } catch (e) {
-      Logger.error('Failed to update app icon', feature: 'AppIcon', error: e);
-    }
+    // Disabled to prevent multiple launcher icons issue
+    return;
   }
 
   static Future<String?> getCurrentIcon() async {

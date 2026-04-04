@@ -1060,6 +1060,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.1"
+  page_flip:
+    dependency: "direct main"
+    description:
+      name: page_flip
+      sha256: e5bdcaa7d0fdff09ecdd8bd8fd4718ba3ec1b0d237de57a07b9c0f4d522cb387
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.5+1"
   path:
     dependency: transitive
     description:
@@ -1773,10 +1781,10 @@ packages:
     dependency: "direct main"
     description:
       name: whisper_ggml_plus
-      sha256: a930495162720ede0c4722d38bdc496b2f052326c87104aa9cd8092c48bd116a
+      sha256: "484950d7767078bd3256fbb256d663322e33de359537a3f3ae0c82607ebebc5c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.1"
+    version: "1.5.2"
   win32:
     dependency: transitive
     description:

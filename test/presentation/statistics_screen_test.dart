@@ -22,16 +22,21 @@ void main() {
 
   setUpAll(() async {
     await setupTestDependencies();
+    registerFallbackValue(const BookmarkInitial());
+    registerFallbackValue(const LoadBookmarksEvent());
+    registerFallbackValue(const RecitationErrorLoaded([]));
   });
 
   setUp(() {
     mockBookmarkBloc = MockBookmarkBloc();
     mockRecitationErrorBloc = MockRecitationErrorBloc();
 
-    when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoaded([]));
+    when(() => mockBookmarkBloc.state).thenReturn(const BookmarkInitial());
     when(
       () => mockRecitationErrorBloc.state,
-    ).thenReturn(const RecitationErrorLoaded([]));
+    ).thenReturn(const RecitationErrorInitial());
+    // Stream mocking removed to allow mock's default behavior
+    // This ensures tests catch stream-related bugs
 
     setupStrictOverflowHandler();
   });

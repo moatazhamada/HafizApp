@@ -93,7 +93,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
                         children: [
                           Icon((button.icon as Icon).icon, size: 20),
                           const SizedBox(width: 8),
-                          Text(button.tooltip ?? 'Action'),
+                          Text(button.tooltip ?? 'lbl_action'.tr),
                         ],
                       ),
                     ),

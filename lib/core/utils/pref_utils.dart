@@ -114,10 +114,10 @@ class PrefUtils {
   String getLocaleCode() {
     try {
       _ensureInitialized();
-      return _sharedPreferences!.getString('localeCode') ?? 'system';
+      return _sharedPreferences!.getString('localeCode') ?? 'ar';
     } catch (e) {
       Logger.warning('Failed to get locale code: $e', feature: 'Preferences');
-      return 'system';
+      return 'ar';
     }
   }
 
@@ -572,6 +572,88 @@ class PrefUtils {
         feature: 'Preferences',
       );
       return 'scroll';
+    }
+  }
+
+  // Onboarding completed flag
+  Future<void> setOnboardingCompleted(bool completed) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('onboarding_completed', completed);
+  }
+
+  bool getOnboardingCompleted() {
+    if (_sharedPreferences == null) {
+      return false;
+    }
+    try {
+      return _sharedPreferences!.getBool('onboarding_completed') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get onboarding completed flag: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
+
+  // Autoscroll settings
+  Future<void> setAutoScrollEnabled(bool enabled) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('auto_scroll_enabled', enabled);
+  }
+
+  bool getAutoScrollEnabled() {
+    if (_sharedPreferences == null) {
+      return false;
+    }
+    try {
+      return _sharedPreferences!.getBool('auto_scroll_enabled') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get auto scroll enabled: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
+
+  Future<void> setAutoScrollSpeed(double speed) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp speed between 0.1x (very slow) and 5x (very fast)
+    final clampedSpeed = speed.clamp(0.1, 5.0);
+    await _sharedPreferences!.setDouble('auto_scroll_speed', clampedSpeed);
+  }
+
+  double getAutoScrollSpeed() {
+    if (_sharedPreferences == null) {
+      return 1.0;
+    }
+    try {
+      return _sharedPreferences!.getDouble('auto_scroll_speed') ?? 1.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get auto scroll speed: $e',
+        feature: 'Preferences',
+      );
+      return 1.0;
+    }
+  }
+
+  // Selected Quran font
+  Future<void> setQuranFont(String fontName) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('quran_font', fontName);
+  }
+
+  String getQuranFont() {
+    if (_sharedPreferences == null) {
+      return 'amiri';
+    }
+    try {
+      return _sharedPreferences!.getString('quran_font') ?? 'amiri';
+    } catch (e) {
+      Logger.warning('Failed to get Quran font: $e', feature: 'Preferences');
+      return 'amiri';
     }
   }
 

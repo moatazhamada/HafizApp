@@ -27,6 +27,7 @@ class SurahRemoteDataSourceImpl implements SurahRemoteDataSource {
             'per_page': 300,
             'words': 'false',
             'fields': 'chapter_id,verse_key,text_uthmani',
+            'translations': '131', // Sahih International
           },
         );
         response = r;
@@ -71,10 +72,25 @@ class SurahRemoteDataSourceImpl implements SurahRemoteDataSource {
               ((m['verse_key'] as String?) ?? '0:0').split(':').last,
             ) ??
             0;
+
+        String? translation;
+        if (m.containsKey('translations') && m['translations'] is List) {
+          final List trList = m['translations'] as List;
+          if (trList.isNotEmpty) {
+            translation = trList[0]['text'] as String?;
+            // Remove HTML tags if any
+            translation = translation?.replaceAll(
+              RegExp(r'<[^>]*>|&[^;]+;'),
+              '',
+            );
+          }
+        }
+
         return VerseModel(
           chapter: (m['chapter_id'] as num?)?.toInt() ?? int.parse(surahId),
           verse: verseNumber,
           text: (m['text_uthmani'] as String?) ?? '',
+          translation: translation,
         );
       }).toList();
       return ChapterResponse(chapters: chapters);

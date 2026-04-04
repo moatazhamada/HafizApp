@@ -16,8 +16,10 @@ import '../../core/utils/number_converter.dart';
 import '../../widgets/verse_share_sheet.dart';
 import '../../core/audio/recitation_service.dart';
 import '../../core/audio/recitation_models.dart';
+import '../../core/audio/audio_player_handler.dart';
 import '../surah_screen/voice_verification_service.dart';
 import '../surah_screen/widgets/voice_verification_dialog.dart';
+import '../widgets/inline_audio_player.dart';
 import 'widgets/interactive_mushaf_page.dart';
 
 /// Full Mushaf View - Horizontal page turning (RTL) like a real Quran
@@ -59,6 +61,14 @@ class _MushafScreenState extends State<MushafScreen> {
 
   // Track practice list (recitation errors) for current surahs on page
   Set<String> _practiceListKeys = {};
+
+  // Inline Audio Player State
+  bool _showInlineAudioPlayer = false;
+  int _audioStartVerse = 1;
+  List<Duration> _audioVerseTimestamps = [];
+  AudioPlayerHandler? _audioPlayerHandler;
+  StreamSubscription<int>? _audioVerseSubscription;
+  Surah? _currentAudioSurah;
 
   // Font size control
 
@@ -539,6 +549,22 @@ class _MushafScreenState extends State<MushafScreen> {
           ],
         ),
       ),
+      // Inline Audio Player at the bottom
+      bottomNavigationBar: _showInlineAudioPlayer && _currentAudioSurah != null
+          ? InlineAudioPlayer(
+              surah: _currentAudioSurah!,
+              startVerse: _audioStartVerse,
+              reciter: PrefUtils().getReciterName(),
+              audioUrls: [
+                'https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/${_currentAudioSurah!.id.toString().padLeft(3, '0')}.mp3',
+              ],
+              verseTimestamps: _audioVerseTimestamps,
+              onVerseChanged: (verse) {
+                // Handle verse change if needed
+              },
+              onClose: _closeInlineAudioPlayer,
+            )
+          : null,
     );
   }
 
@@ -900,6 +926,12 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   Future<void> _playAudioFromVerse(Surah surah, int verseNumber) async {
+    // If audio is already playing and user tapped a different verse, show dialog
+    if (_showInlineAudioPlayer && _audioPlayerHandler != null) {
+      _showVerseChangeDialog(verseNumber);
+      return;
+    }
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -934,16 +966,17 @@ class _MushafScreenState extends State<MushafScreen> {
       // Convert segments to timestamps
       final timestamps = _convertSegmentsToTimestamps(audioFile.timings);
 
-      // Navigate to audio player
+      // Use inline audio player instead of navigating to new page
       if (mounted) {
-        AppRoutes.goToAudioPlayer(
-          context,
-          surah: surah,
-          startVerse: verseNumber,
-          reciter: PrefUtils().getReciterName(),
-          audioUrls: [audioFile.audioUrl],
-          verseTimestamps: timestamps,
-        );
+        setState(() {
+          _showInlineAudioPlayer = true;
+          _currentAudioSurah = surah;
+          _audioStartVerse = verseNumber;
+          _audioVerseTimestamps = timestamps;
+        });
+
+        // Setup audio verse listener
+        _setupAudioVerseListener();
       }
     } catch (e) {
       // Hide loading if dialog is still showing
@@ -986,6 +1019,72 @@ class _MushafScreenState extends State<MushafScreen> {
     }
 
     return timestamps;
+  }
+
+  void _setupAudioVerseListener() {
+    // Cancel existing subscription
+    _audioVerseSubscription?.cancel();
+
+    // Get audio handler and listen to verse changes
+    _audioPlayerHandler = sl<AudioPlayerHandler>();
+    _audioVerseSubscription = _audioPlayerHandler!.currentVerseStream.listen((
+      verse,
+    ) {
+      if (mounted) {
+        // Auto-scroll to the current verse - for MushafScreen, we navigate to the page
+        _navigateToVerse(verse);
+      }
+    });
+  }
+
+  void _navigateToVerse(int verse) {
+    // Find the page for this verse
+    final page = MushafPageIndex.findPageForVerse(
+      _currentAudioSurah!.id,
+      verse,
+    );
+    if (page != null && page != _currentPage) {
+      setState(() {
+        _currentPage = page;
+      });
+      _pageController.jumpToPage(_currentMushafType.totalPages - page);
+    }
+  }
+
+  void _closeInlineAudioPlayer() {
+    _audioVerseSubscription?.cancel();
+    _audioPlayerHandler?.stop();
+    setState(() {
+      _showInlineAudioPlayer = false;
+      _currentAudioSurah = null;
+      _audioStartVerse = 1;
+    });
+  }
+
+  void _showVerseChangeDialog(int newVerse) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Change verse?'.tr),
+        content: Text(
+          'Audio is currently playing. Would you like to jump to verse $newVerse?'
+              .tr,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _audioPlayerHandler?.seekToVerse(newVerse);
+            },
+            child: Text('Jump to verse'.tr),
+          ),
+        ],
+      ),
+    );
   }
 
   void _togglePracticeList(int surahId, int verseNumber) {

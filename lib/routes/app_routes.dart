@@ -4,6 +4,7 @@ import '../presentation/bookmarks/bookmarks_screen.dart';
 import '../presentation/help_screen/help_screen.dart';
 import '../presentation/search/search_screen.dart';
 import '../presentation/statistics_screen/statistics_screen.dart';
+import '../widgets/adaptive_navigation_shell.dart';
 
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
@@ -20,6 +21,7 @@ import '../core/utils/pref_utils.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
+  static const String navigationShell = '/navigation_shell';
   static const String homeScreen = '/home_screen';
   static const String surahPage = '/surah_screen';
   static const String bookmarksPage = '/bookmarks';
@@ -34,6 +36,7 @@ class AppRoutes {
 
   static Map<String, WidgetBuilder> routes = {
     onboardingScreen: OnboardingScreen.builder,
+    navigationShell: (context) => const AdaptiveNavigationShell(),
     homeScreen: (context) => const HomeScreen(),
     surahPage: (context) => const SurahScreen(),
     searchPage: (context) => const SearchScreen(),

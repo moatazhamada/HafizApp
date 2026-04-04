@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/ramadan/ramadan_theme.dart';
 import '../../core/ramadan/ramadan_date_manager.dart';
 import '../../localization/app_localization.dart';
+import '../../core/utils/number_converter.dart';
 
 class RamadanBanner extends StatelessWidget {
   const RamadanBanner({super.key});
@@ -65,17 +66,19 @@ class RamadanBanner extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    daysUntilEid > 0
-                        ? 'lbl_days_until_eid'.tr.replaceAll(
-                            '{days}',
-                            daysUntilEid.toString(),
-                          )
-                        : 'lbl_eid_mubarak'.tr,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  child: Builder(
+                    builder: (context) => Text(
+                      daysUntilEid > 0
+                          ? 'lbl_days_until_eid'.tr.replaceAll(
+                              '{days}',
+                              daysUntilEid.toLocalizedNumber(context),
+                            )
+                          : 'lbl_eid_mubarak'.tr,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),

@@ -117,6 +117,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   Future<void> _startListening() async {
     if (_isListening) return;
 
+    if (!mounted) return;
     setState(() {
       _isListening = true;
 
@@ -131,6 +132,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
 
     if (useQrc) {
+      if (!mounted) return;
       setState(() {
         _qrcConnecting = true;
         _qrcStatus = 'lbl_connecting'.tr;
@@ -152,6 +154,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _qrcSub = _qrcService.events.listen((event) {
         if (!mounted) return;
         if (event is QrcStatusEvent) {
+          if (!mounted) return;
           setState(() {
             _qrcStatus = event.status;
             if (event.status == 'connected' ||
@@ -163,6 +166,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         } else if (event is QrcCheckEvent) {
           _handleQrcCheck(event.data);
         } else if (event is QrcErrorEvent) {
+          if (!mounted) return;
           setState(() {
             _statusColor = Colors.redAccent;
             _feedbackTitle = event.message;
@@ -189,12 +193,14 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         numChannels: 1,
         sampleRate: 16000,
       );
+      if (!mounted) return;
       setState(() {
         _spokenText = 'lbl_listening'.tr;
       });
     } else {
       if (useCustom) {
         if (customEndpoint.isEmpty) {
+          if (!mounted) return;
           setState(() {
             _statusColor = Colors.orangeAccent;
             _feedbackTitle = 'msg_custom_asr_empty'.tr;
@@ -222,8 +228,8 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           });
         },
         onDone: (finalText) async {
-          _isListening = false;
           if (!mounted) return;
+          _isListening = false;
           String effectiveText = finalText;
 
           if (useCustom &&
@@ -248,6 +254,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   }
 
   void _handleQrcCheck(QrcCheckTilawa data) {
+    if (!mounted) return;
     setState(() {
       _qrcWordIndex = data.wordIndex ?? _qrcWordIndex;
       _qrcMistakes = data.tajweedMistakes;
@@ -296,6 +303,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _expectedText,
       allowPartial: true,
     );
+    if (!mounted) return;
     setState(() {
       _spokenText = effectiveText;
       final scorePercent = (analysis.score * 100).round();
@@ -355,7 +363,8 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   void _handleSuccess() {
     unawaited(
       Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted && Navigator.canPop(context)) {
+        if (!mounted) return;
+        if (Navigator.canPop(context)) {
           _autoAdvanced = true;
           Navigator.pop(context);
           widget.onCorrect();
@@ -367,7 +376,8 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   void _handleFailure() {
     unawaited(
       Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted && Navigator.canPop(context)) {
+        if (!mounted) return;
+        if (Navigator.canPop(context)) {
           _autoAdvanced = true;
           Navigator.pop(context); // Close dialog
           widget.onWrong(
@@ -392,22 +402,20 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           await _customRecorder.stopRecorder();
         } catch (_) {}
         if (_customFilePath != null) {
-          if (mounted) {
-            setState(() {
-              _whisperTranscribing = true;
-              _spokenText = 'msg_transcribing'.tr;
-            });
-          }
+          if (!mounted) return;
+          setState(() {
+            _whisperTranscribing = true;
+            _spokenText = 'msg_transcribing'.tr;
+          });
           final transcribed = await _whisperService.transcribe(
             audioPath: _customFilePath!,
             language: 'ar',
             model: _whisperModel,
           );
-          if (mounted) {
-            setState(() {
-              _whisperTranscribing = false;
-            });
-          }
+          if (!mounted) return;
+          setState(() {
+            _whisperTranscribing = false;
+          });
           if (transcribed != null && transcribed.isNotEmpty) {
             _analyzeRecitation(transcribed);
           }
@@ -422,13 +430,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         await _voiceService.stop();
       }
 
+      if (!mounted) return;
       _isListening = false;
-      if (mounted) {
-        setState(() {
-          _statusColor = Colors.grey;
-          _spokenText = 'msg_tap_to_resume'.tr;
-        });
-      }
+      setState(() {
+        _statusColor = Colors.grey;
+        _spokenText = 'msg_tap_to_resume'.tr;
+      });
     }
   }
 

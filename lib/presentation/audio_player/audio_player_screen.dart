@@ -92,16 +92,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   Future<void> _initAudioService() async {
     try {
-      // Initialize audio service
-      _audioHandler = await AudioService.init(
-        builder: () => AudioPlayerHandler(),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.hafizapp.audio',
-          androidNotificationChannelName: 'Quran Recitation',
-          androidNotificationOngoing: true,
-          androidStopForegroundOnPause: true,
-        ),
-      );
+      // Get shared audio handler instance
+      _audioHandler = sl<AudioPlayerHandler>();
 
       if (widget.audioUrls.isEmpty) {
         if (mounted) {

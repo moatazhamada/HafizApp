@@ -12,6 +12,9 @@ import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bl
 import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart';
 import 'package:hafiz_app/presentation/surah_screen/surah_screen.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:hafiz_app/core/audio/audio_player_handler.dart';
+import 'package:rxdart/rxdart.dart';
 
 import '../../utils/test_app_widget.dart';
 
@@ -27,15 +30,20 @@ class MockRecitationErrorBloc
 
 class MockAnalyticsHelper extends Mock implements AnalyticsHelper {}
 
+class MockAudioPlayerHandler extends Mock implements AudioPlayerHandler {}
+
 void main() {
   late MockSurahBloc mockSurahBloc;
   late MockBookmarkBloc mockBookmarkBloc;
   late MockRecitationErrorBloc mockRecitationErrorBloc;
   late MockAnalyticsHelper mockAnalyticsHelper;
+  late MockAudioPlayerHandler mockAudioPlayerHandler;
 
   setUpAll(() async {
     await setupTestDependencies();
     registerFallbackValue(Surah(1, 'Test', 'Test'));
+    registerFallbackValue(const LoadSurahEvent(surahId: '1'));
+    registerFallbackValue(LoadingSurahState());
 
     // Bypass SVG errors by pointing to a mock PNG that actually exists
     ImageConstant.imgQuranOnboarding = ImageConstant.imgBismillah;
@@ -48,10 +56,14 @@ void main() {
     mockBookmarkBloc = MockBookmarkBloc();
     mockRecitationErrorBloc = MockRecitationErrorBloc();
     mockAnalyticsHelper = MockAnalyticsHelper();
+    mockAudioPlayerHandler = MockAudioPlayerHandler();
 
     setupStrictOverflowHandler();
 
-    // Mock initial states
+    // Mock initial states and streams
+    when(() => mockSurahBloc.state).thenReturn(LoadingSurahState());
+    // Stream mocking removed to allow mock's default behavior
+    // This ensures tests catch stream-related bugs
     when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoaded([]));
     when(
       () => mockRecitationErrorBloc.state,
@@ -62,12 +74,28 @@ void main() {
       () => mockAnalyticsHelper.logSurahOpened(any(), any()),
     ).thenAnswer((_) async {});
 
+    // Mock audio handler playback state to keep mini player stable
+    final playbackSubject = BehaviorSubject.seeded(PlaybackState());
+    when(
+      () => mockAudioPlayerHandler.playbackState,
+    ).thenAnswer((_) => playbackSubject);
+
+    // Add teardown to close the stream
+    addTearDown(() {
+      playbackSubject.close();
+    });
+
     // Register blocs
     if (sl.isRegistered<SurahBloc>()) sl.unregister<SurahBloc>();
     sl.registerFactory<SurahBloc>(() => mockSurahBloc);
 
     if (sl.isRegistered<AnalyticsHelper>()) sl.unregister<AnalyticsHelper>();
     sl.registerLazySingleton<AnalyticsHelper>(() => mockAnalyticsHelper);
+
+    if (sl.isRegistered<AudioPlayerHandler>()) {
+      sl.unregister<AudioPlayerHandler>();
+    }
+    sl.registerLazySingleton<AudioPlayerHandler>(() => mockAudioPlayerHandler);
   });
 
   Widget createWidgetUnderTest({Size screenSize = const Size(360, 800)}) {

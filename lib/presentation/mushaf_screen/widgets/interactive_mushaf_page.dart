@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/app_export.dart';
 import '../../../core/quran_index/mushaf_types.dart';
 import '../../../core/network/mushaf_image_provider.dart';
 
@@ -77,7 +78,10 @@ class InteractiveMushafPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Failed to load page $pageNumber',
+                              'msg_page_load_failed'.tr.replaceAll(
+                                '{page}',
+                                pageNumber.toString(),
+                              ),
                               style: const TextStyle(color: Colors.grey),
                             ),
                           ],
@@ -86,18 +90,16 @@ class InteractiveMushafPage extends StatelessWidget {
                     ),
                   ),
 
-                  // Invisible Gesture Overlay
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTapUp: (details) {
-                        // TODO: Fetch and iterate through MushafPageCoords JSON.
-                        if (onVerseTapped != null) {
+                  if (onVerseTapped != null)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTapUp: (details) {
+                          // TODO: Fetch and iterate through MushafPageCoords JSON.
                           onVerseTapped!(-1, -1);
-                        }
-                      },
-                      child: Container(color: Colors.transparent),
+                        },
+                        child: Container(color: Colors.transparent),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

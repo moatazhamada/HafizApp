@@ -19,7 +19,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
   Future<ChapterResponse> getSurah(String surahId) async {
     final path = '$basePath/surah_$surahId.json';
     final jsonStr = await rootBundle.loadString(path);
-    final data = await compute(_decodeJsonToMap, jsonStr);
+    final data = json.decode(jsonStr) as Map<String, dynamic>;
     return ChapterResponse.fromJson(data);
   }
 
@@ -149,8 +149,4 @@ Future<List<Map<String, dynamic>>> _searchWorker(
     debugPrint('Fatal error in search worker: $e\n$stackTrace');
     return [];
   }
-}
-
-Map<String, dynamic> _decodeJsonToMap(String jsonStr) {
-  return json.decode(jsonStr) as Map<String, dynamic>;
 }

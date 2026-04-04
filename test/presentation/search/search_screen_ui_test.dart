@@ -79,7 +79,8 @@ void main() {
 
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.textContaining('No results found'), findsOneWidget);
+      // The actual text uses translation key 'msg_no_results'
+      expect(find.bySemanticsLabel('msg_no_results'), findsOneWidget);
     });
 
     testWidgets('renders loaded state with results correctly', (

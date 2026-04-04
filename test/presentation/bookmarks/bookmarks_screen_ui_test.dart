@@ -17,10 +17,13 @@ void main() {
 
   setUpAll(() async {
     await setupTestDependencies();
+    registerFallbackValue(const BookmarkInitial());
+    registerFallbackValue(const LoadBookmarksEvent());
   });
 
   setUp(() {
     mockBookmarkBloc = MockBookmarkBloc();
+    when(() => mockBookmarkBloc.state).thenReturn(const BookmarkInitial());
     setupStrictOverflowHandler();
   });
 
@@ -39,7 +42,7 @@ void main() {
     testWidgets('renders loading skeleton when state is BookmarkLoading', (
       WidgetTester tester,
     ) async {
-      when(() => mockBookmarkBloc.state).thenReturn(BookmarkLoading());
+      when(() => mockBookmarkBloc.state).thenReturn(const BookmarkLoading());
 
       await tester.pumpWidget(createWidgetUnderTest());
 

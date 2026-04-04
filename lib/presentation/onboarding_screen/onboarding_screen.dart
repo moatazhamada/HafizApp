@@ -231,6 +231,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                         key: const ValueKey('get_started_key'),
                                         onPressed: () {
                                           try {
+                                            // Mark onboarding as completed
+                                            PrefUtils().setOnboardingCompleted(
+                                              true,
+                                            );
+
                                             if (shouldShowMushafOnboarding()) {
                                               // Show Mushaf type selector first
                                               AppRoutes.goToMushafOnboarding(

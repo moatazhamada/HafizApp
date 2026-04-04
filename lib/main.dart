@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:audio_service/audio_service.dart';
+import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 
 import 'core/app_export.dart';
 import 'core/utils/app_icon_service.dart';
@@ -10,9 +12,6 @@ import 'widgets/offline_indicator.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-// Just in case, though safe
-// Just in case
-// Just in case
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -186,6 +185,22 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
       // Dependency injection
       await di.init();
+
+      // Initialize AudioService for background playback
+      try {
+        await AudioService.init(
+          builder: () => sl<AudioPlayerHandler>(),
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.hafizapp.audio',
+            androidNotificationChannelName: 'Quran Recitation',
+            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: true,
+          ),
+        );
+      } catch (e) {
+        debugPrint('AudioService initialization failed (non-critical): $e');
+        // Continue without audio service - app should still work
+      }
 
       // HydratedStorage for BLoC persistence
       final storage = await HydratedStorage.build(
@@ -372,7 +387,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final DeepLinkService _deepLinkService = sl<DeepLinkService>();
+  final DeepLinkService _deepLinkService = DeepLinkService();
 
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
@@ -479,7 +494,9 @@ class _MyAppState extends State<MyApp> {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
-              initialRoute: AppRoutes.onboardingScreen,
+              initialRoute: PrefUtils().getOnboardingCompleted()
+                  ? AppRoutes.navigationShell
+                  : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
               builder: (context, child) {
                 return OfflineIndicator(

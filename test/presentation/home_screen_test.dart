@@ -116,7 +116,8 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.byType(ListView), findsOneWidget);
+      // HomeScreen uses SliverList in CustomScrollView, not ListView
+      expect(find.byType(CustomScrollView), findsOneWidget);
       expect(find.textContaining('Al-Baqarah'), findsWidgets);
     });
 

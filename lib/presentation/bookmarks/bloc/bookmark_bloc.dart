@@ -15,7 +15,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
   final BookmarkRepository repository;
   final _analytics = sl<AnalyticsHelper>();
 
-  BookmarkBloc({required this.repository}) : super(BookmarkInitial()) {
+  BookmarkBloc({required this.repository}) : super(const BookmarkInitial()) {
     on<LoadBookmarksEvent>(_onLoadBookmarks);
     on<AddBookmarkEvent>(_onAddBookmark);
     on<RemoveBookmarkEvent>(_onRemoveBookmark);
@@ -25,7 +25,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     LoadBookmarksEvent event,
     Emitter<BookmarkState> emit,
   ) async {
-    emit(BookmarkLoading());
+    emit(const BookmarkLoading());
     final result = await repository.getBookmarks();
     result.fold(
       (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),

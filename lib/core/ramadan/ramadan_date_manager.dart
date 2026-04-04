@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/pref_utils.dart';
+import 'package:hafiz_app/core/app_export.dart';
 
 /// Ramadan Region - Different regions may have different moon sighting dates
 enum RamadanRegion {
@@ -302,7 +302,7 @@ class RamadanDateManager {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Your Region'),
+        title: Text('lbl_select_your_region'.tr),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -353,14 +353,14 @@ class RamadanDateManager {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Set Custom Dates'),
+        title: Text('lbl_set_custom_dates'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Ramadan Start'),
+              title: Text('lbl_ramadan_start'.tr),
               subtitle: Text(
-                start != null ? _formatDate(start!) : 'Select date',
+                start != null ? _formatDate(start!) : 'lbl_select_date'.tr,
               ),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
@@ -374,8 +374,10 @@ class RamadanDateManager {
               },
             ),
             ListTile(
-              title: const Text('Ramadan End'),
-              subtitle: Text(end != null ? _formatDate(end!) : 'Select date'),
+              title: Text('lbl_ramadan_end'.tr),
+              subtitle: Text(
+                end != null ? _formatDate(end!) : 'lbl_select_date'.tr,
+              ),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
                 final picked = await showDatePicker(
@@ -388,8 +390,10 @@ class RamadanDateManager {
               },
             ),
             ListTile(
-              title: const Text('Eid Al-Fitr'),
-              subtitle: Text(eid != null ? _formatDate(eid!) : 'Select date'),
+              title: Text('lbl_eid_al_fitr'.tr),
+              subtitle: Text(
+                eid != null ? _formatDate(eid!) : 'lbl_select_date'.tr,
+              ),
               trailing: const Icon(Icons.calendar_today),
               onTap: () async {
                 final picked = await showDatePicker(
@@ -406,7 +410,7 @@ class RamadanDateManager {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('lbl_cancel'.tr),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -417,7 +421,7 @@ class RamadanDateManager {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Save'),
+            child: Text('lbl_save'.tr),
           ),
         ],
       ),

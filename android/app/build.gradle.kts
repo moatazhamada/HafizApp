@@ -79,9 +79,12 @@ android {
     }
     
     // Support 16 KB page sizes for Android 15+
-    packagingOptions {
+    packaging {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/lib/*/libwhisper.so"
         }
     }
 }

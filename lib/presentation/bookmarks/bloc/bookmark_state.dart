@@ -7,9 +7,13 @@ abstract class BookmarkState extends Equatable {
   List<Object> get props => [];
 }
 
-class BookmarkInitial extends BookmarkState {}
+class BookmarkInitial extends BookmarkState {
+  const BookmarkInitial();
+}
 
-class BookmarkLoading extends BookmarkState {}
+class BookmarkLoading extends BookmarkState {
+  const BookmarkLoading();
+}
 
 class BookmarkLoaded extends BookmarkState {
   final List<Bookmark> bookmarks;
