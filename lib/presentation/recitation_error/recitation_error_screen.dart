@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
@@ -11,34 +10,17 @@ class RecitationErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF9F9F9),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF006754),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => NavigatorService.goBack(),
-        ),
-        centerTitle: true,
-        title: Text(
-          'lbl_practice_list'.tr,
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: Text('lbl_practice_list'.tr), centerTitle: true),
       body: BlocConsumer<RecitationErrorBloc, RecitationErrorState>(
         listener: (context, state) {
-          if (state is RecitationErrorLoaded) {
-            // Optional: Show snackbar on error removal if needed, or handle in UI
+          if (state is RecitationErrorLoaded && state.feedbackMessage != null) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.feedbackMessage!.tr)));
           }
         },
         builder: (context, state) {
@@ -50,34 +32,19 @@ class RecitationErrorScreen extends StatelessWidget {
             );
           } else if (state is RecitationErrorLoaded) {
             if (state.errors.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      size: 64,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'msg_no_practice_items'.tr,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey[600],
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return _buildEmptyState(context);
             }
             return ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: state.errors.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final error = state.errors[index];
+                final surah = QuranIndex.quranSurahs.firstWhere(
+                  (e) => e.id == error.surahId,
+                  orElse: () => QuranIndex.quranSurahs[0],
+                );
+
                 return Dismissible(
                   key: Key('${error.surahId}_${error.verseId}'),
                   direction: DismissDirection.endToStart,
@@ -98,117 +65,83 @@ class RecitationErrorScreen extends StatelessWidget {
                       RemoveRecitationErrorEvent(error.surahId, error.verseId),
                     );
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  child: Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
+                      side: BorderSide(
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          unawaited(
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: {
-                                'surah': QuranIndex.quranSurahs.firstWhere(
-                                  (e) => e.id == error.surahId,
-                                  orElse: () => QuranIndex.quranSurahs[0],
-                                ),
-                                'verseIndex': error.verseId - 1,
-                                'resume': true,
-                              },
-                            ).then((_) {
-                              if (context.mounted) {
-                                context.read<RecitationErrorBloc>().add(
-                                  const LoadRecitationErrorsEvent(),
-                                );
-                              }
-                            }),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withValues(
-                                    alpha: 0.1,
+                      onTap: () {
+                        NavigatorService.pushNamed(
+                          AppRoutes.surahPage,
+                          arguments: {
+                            'surah': surah,
+                            'verseIndex': error.verseId - 1,
+                            'resume': true,
+                          },
+                        ).then((_) {
+                          if (context.mounted) {
+                            context.read<RecitationErrorBloc>().add(
+                              const LoadRecitationErrorsEvent(),
+                            );
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.error_outline,
+                                color: Colors.amber,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    surah.localizedName(context),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.redAccent,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      QuranIndex.quranSurahs
-                                          .firstWhere(
-                                            (e) => e.id == error.surahId,
-                                            orElse: () =>
-                                                QuranIndex.quranSurahs[0],
-                                          )
-                                          .localizedName(context),
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: isDark
-                                            ? Colors.white
-                                            : const Color(0xFF2D2D2D),
-                                      ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${'lbl_verse_num'.tr} ${error.verseId.toLocalizedNumber(context)}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${'lbl_verse_num'.tr} ${error.verseId.toLocalizedNumber(context)}',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 13,
-                                        color: isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  context.read<RecitationErrorBloc>().add(
-                                    RemoveRecitationErrorEvent(
-                                      error.surahId,
-                                      error.verseId,
-                                    ),
-                                  );
-                                },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.green,
                               ),
-                            ],
-                          ),
+                              onPressed: () {
+                                context.read<RecitationErrorBloc>().add(
+                                  RemoveRecitationErrorEvent(
+                                    error.surahId,
+                                    error.verseId,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -217,10 +150,54 @@ class RecitationErrorScreen extends StatelessWidget {
               },
             );
           } else if (state is RecitationErrorError) {
-            return Center(child: Text('Error: ${state.message}'));
+            return Center(child: Text('${'lbl_error'.tr}: ${state.message}'));
           }
           return const SizedBox();
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                size: 48,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'msg_no_practice_items'.tr,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'msg_practice_hint'.tr,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

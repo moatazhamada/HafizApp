@@ -90,6 +90,7 @@ class PrefUtils {
   Future<void> saveLastReadSurah(Surah surah) async {
     if (_sharedPreferences == null) await init();
     await _sharedPreferences!.setString('surah', toJson(surah));
+    await recordReadingSession();
   }
 
   // Retrieve Surah object from SharedPreferences
@@ -116,10 +117,10 @@ class PrefUtils {
   String getLocaleCode() {
     try {
       _ensureInitialized();
-      return _sharedPreferences!.getString('localeCode') ?? 'system';
+      return _sharedPreferences!.getString('localeCode') ?? 'ar';
     } catch (e) {
       Logger.warning('Failed to get locale code: $e', feature: 'Preferences');
-      return 'system';
+      return 'ar';
     }
   }
 
@@ -333,6 +334,64 @@ class PrefUtils {
     }
   }
 
+  // QRC API Key (for external recitation checking service)
+  Future<void> setQrcApiKey(String apiKey) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('qrc_api_key', apiKey);
+  }
+
+  String getQrcApiKey() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('qrc_api_key') ?? '';
+    } catch (e) {
+      Logger.warning('Failed to get QRC API key: $e', feature: 'Preferences');
+      return '';
+    }
+  }
+
+  // Mushaf font size multiplier (0.8 to 1.5)
+  Future<void> setMushafFontSize(double size) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp between 0.8 and 1.5
+    final clampedSize = size.clamp(0.8, 1.5);
+    await _sharedPreferences!.setDouble('mushaf_font_size', clampedSize);
+  }
+
+  double getMushafFontSize() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getDouble('mushaf_font_size') ?? 1.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get Mushaf font size: $e',
+        feature: 'Preferences',
+      );
+      return 1.0;
+    }
+  }
+
+  // Regular Quran view font size (16 to 32)
+  Future<void> setRegularFontSize(double size) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp between 16 and 32
+    final clampedSize = size.clamp(16.0, 32.0);
+    await _sharedPreferences!.setDouble('regular_font_size', clampedSize);
+  }
+
+  double getRegularFontSize() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getDouble('regular_font_size') ?? 22.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get regular font size: $e',
+        feature: 'Preferences',
+      );
+      return 22.0;
+    }
+  }
+
   // Generic string storage
   Future<void> setString(String key, String value) async {
     if (_sharedPreferences == null) await init();
@@ -368,6 +427,255 @@ class PrefUtils {
         feature: 'Preferences',
       );
       return null;
+    }
+  }
+
+  // Reading Streak Tracking
+  Future<void> recordReadingSession() async {
+    if (_sharedPreferences == null) await init();
+    final today = DateTime.now();
+    final todayString = '${today.year}-${today.month}-${today.day}';
+
+    final lastReadDate = getString('last_read_date');
+    final currentStreak = getReadingStreak();
+
+    if (lastReadDate != todayString) {
+      final lastDate = _parseDate(lastReadDate);
+      final todayDate = DateTime(today.year, today.month, today.day);
+
+      if (lastDate != null) {
+        final difference = todayDate.difference(lastDate).inDays;
+        if (difference == 1) {
+          await setInt('reading_streak', currentStreak + 1);
+        } else if (difference > 1) {
+          await setInt('reading_streak', 1);
+        }
+      } else {
+        await setInt('reading_streak', 1);
+      }
+
+      await setString('last_read_date', todayString);
+      await _addToReadingHistory(todayString);
+    }
+  }
+
+  DateTime? _parseDate(String? dateStr) {
+    if (dateStr == null) return null;
+    try {
+      final parts = dateStr.split('-');
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _addToReadingHistory(String date) async {
+    final history = getStringList('reading_history') ?? [];
+    if (!history.contains(date)) {
+      history.add(date);
+      await setStringList('reading_history', history);
+    }
+  }
+
+  int getReadingStreak() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getInt('reading_streak') ?? 0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading streak: $e',
+        feature: 'Preferences',
+      );
+      return 0;
+    }
+  }
+
+  int getTotalReadingDays() {
+    try {
+      _ensureInitialized();
+      final history = _sharedPreferences!.getStringList('reading_history');
+      return history?.length ?? 0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get total reading days: $e',
+        feature: 'Preferences',
+      );
+      return 0;
+    }
+  }
+
+  List<String> getReadingHistory() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getStringList('reading_history') ?? [];
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading history: $e',
+        feature: 'Preferences',
+      );
+      return [];
+    }
+  }
+
+  // Generic int storage
+  Future<void> setInt(String key, int value) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setInt(key, value);
+  }
+
+  int? getInt(String key) {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getInt(key);
+    } catch (e) {
+      Logger.warning(
+        'Failed to get int for key $key: $e',
+        feature: 'Preferences',
+      );
+      return null;
+    }
+  }
+
+  // Orientation preference: 'portrait', 'landscape', 'auto'
+  Future<void> setOrientationMode(String mode) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('orientation_mode', mode);
+  }
+
+  String getOrientationMode() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('orientation_mode') ?? 'portrait';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get orientation mode: $e',
+        feature: 'Preferences',
+      );
+      return 'portrait';
+    }
+  }
+
+  // Reading navigation mode: 'scroll' (current), 'page' (surah-to-surah navigation)
+  Future<void> setReadingNavMode(String mode) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('reading_nav_mode', mode);
+  }
+
+  String getReadingNavMode() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getString('reading_nav_mode') ?? 'scroll';
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading nav mode: $e',
+        feature: 'Preferences',
+      );
+      return 'scroll';
+    }
+  }
+
+  // Onboarding completed flag
+  Future<void> setOnboardingCompleted(bool completed) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('onboarding_completed', completed);
+  }
+
+  bool getOnboardingCompleted() {
+    if (_sharedPreferences == null) {
+      return false;
+    }
+    try {
+      return _sharedPreferences!.getBool('onboarding_completed') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get onboarding completed flag: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
+
+  // Autoscroll settings
+  Future<void> setAutoScrollEnabled(bool enabled) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('auto_scroll_enabled', enabled);
+  }
+
+  bool getAutoScrollEnabled() {
+    if (_sharedPreferences == null) {
+      return false;
+    }
+    try {
+      return _sharedPreferences!.getBool('auto_scroll_enabled') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get auto scroll enabled: $e',
+        feature: 'Preferences',
+      );
+      return false;
+    }
+  }
+
+  Future<void> setAutoScrollSpeed(double speed) async {
+    if (_sharedPreferences == null) await init();
+    // Clamp speed between 0.1x (very slow) and 5x (very fast)
+    final clampedSpeed = speed.clamp(0.1, 5.0);
+    await _sharedPreferences!.setDouble('auto_scroll_speed', clampedSpeed);
+  }
+
+  double getAutoScrollSpeed() {
+    if (_sharedPreferences == null) {
+      return 1.0;
+    }
+    try {
+      return _sharedPreferences!.getDouble('auto_scroll_speed') ?? 1.0;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get auto scroll speed: $e',
+        feature: 'Preferences',
+      );
+      return 1.0;
+    }
+  }
+
+  // Selected Quran font
+  Future<void> setQuranFont(String fontName) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setString('quran_font', fontName);
+  }
+
+  String getQuranFont() {
+    if (_sharedPreferences == null) {
+      return 'amiri';
+    }
+    try {
+      return _sharedPreferences!.getString('quran_font') ?? 'amiri';
+    } catch (e) {
+      Logger.warning('Failed to get Quran font: $e', feature: 'Preferences');
+      return 'amiri';
+    }
+  }
+
+  // Horizontal Pagination for regular Quran view
+  Future<void> setHorizontalPagination(bool isHorizontal) async {
+    if (_sharedPreferences == null) await init();
+    await _sharedPreferences!.setBool('horizontal_pagination', isHorizontal);
+  }
+
+  bool getHorizontalPagination() {
+    try {
+      _ensureInitialized();
+      return _sharedPreferences!.getBool('horizontal_pagination') ?? false;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get horizontal pagination mode: $e',
+        feature: 'Preferences',
+      );
+      return false;
     }
   }
 }

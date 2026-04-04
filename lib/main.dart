@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:audio_service/audio_service.dart';
+import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 
 import 'core/app_export.dart';
+import 'core/utils/app_icon_service.dart';
 import 'injection_container.dart';
 import 'widgets/offline_indicator.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-// Just in case, though safe
-// Just in case
-// Just in case
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -28,15 +28,20 @@ import 'core/deep_link/deep_link_service.dart';
 import 'package:flutter/foundation.dart';
 import 'core/quran_index/quran_surah.dart';
 import 'core/quran_index/mushaf_page_index.dart';
+import 'core/update/force_update_service.dart';
 
 final GlobalKey<ScaffoldMessengerState> globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
+// App Theme - Premium green palette (inspired by Ramadan theme)
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF006754), // deep green accent
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.light,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFFFDFBF7), // Warm Ivory
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -46,15 +51,25 @@ final ThemeData lightTheme = ThemeData(
       TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
     },
   ),
-  appBarTheme: const AppBarTheme(centerTitle: true),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true,
+    backgroundColor: Color(0xFF1A4326),
+    foregroundColor: Colors.white,
+    iconTheme: IconThemeData(color: Colors.white),
+    actionsIconTheme: IconThemeData(color: Colors.white),
+    systemOverlayStyle: SystemUiOverlayStyle.light,
+  ),
 );
 
 final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF87D1A4), // soft green tint for dark
+    seedColor: const Color(0xFF1A4326), // Deep Forest Green
     brightness: Brightness.dark,
+    primary: const Color(0xFF1A4326),
+    secondary: const Color(0xFFD4AF37), // Metallic Gold accent
   ),
+  scaffoldBackgroundColor: const Color(0xFF121F14),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -64,14 +79,26 @@ final ThemeData darkTheme = ThemeData(
       TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
     },
   ),
-  appBarTheme: const AppBarTheme(centerTitle: true),
+  appBarTheme: const AppBarTheme(
+    centerTitle: true,
+    backgroundColor: Color(0xFF1E3320),
+    foregroundColor: Colors.white,
+    iconTheme: IconThemeData(color: Colors.white),
+    actionsIconTheme: IconThemeData(color: Colors.white),
+    systemOverlayStyle: SystemUiOverlayStyle.light,
+  ),
 );
+
+/// Get light theme
+ThemeData get currentLightTheme => lightTheme;
+
+/// Get dark theme
+ThemeData get currentDarkTheme => darkTheme;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // System UI configuration
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -81,6 +108,33 @@ Future<void> main() async {
   );
 
   runApp(const BootstrapApp());
+}
+
+void setOrientationFromPrefs() {
+  final mode = PrefUtils().getOrientationMode();
+  switch (mode) {
+    case 'portrait':
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+      break;
+    case 'landscape':
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      break;
+    case 'auto':
+    default:
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      break;
+  }
 }
 
 class BootstrapApp extends StatefulWidget {
@@ -103,6 +157,12 @@ class _BootstrapAppState extends State<BootstrapApp> {
     try {
       // Critical initialization (fast)
       await PrefUtils().init().timeout(const Duration(seconds: 2));
+
+      // Set orientation from preferences
+      setOrientationFromPrefs();
+
+      // Update app icon based on season (Ramadan)
+      unawaited(AppIconService.updateIconBasedOnSeason());
 
       // Load page data in background to avoid blocking startup
       unawaited(MushafPageIndex.loadPageDataFromAsset());
@@ -129,6 +189,22 @@ class _BootstrapAppState extends State<BootstrapApp> {
       // Dependency injection
       await di.init();
 
+      // Initialize AudioService for background playback
+      try {
+        await AudioService.init(
+          builder: () => sl<AudioPlayerHandler>(),
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.hafizapp.audio',
+            androidNotificationChannelName: 'Quran Recitation',
+            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: true,
+          ),
+        );
+      } catch (e) {
+        debugPrint('AudioService initialization failed (non-critical): $e');
+        // Continue without audio service - app should still work
+      }
+
       // HydratedStorage for BLoC persistence
       final storage = await HydratedStorage.build(
         storageDirectory: HydratedStorageDirectory(
@@ -144,6 +220,18 @@ class _BootstrapAppState extends State<BootstrapApp> {
         ).timeout(const Duration(seconds: 3));
 
         final crashlytics = FirebaseCrashlytics.instance;
+
+        // Configure Crashlytics based on environment (disable in debug for testing)
+        await crashlytics.setCrashlyticsCollectionEnabled(
+          !kDebugMode, // Only enable in production
+        );
+
+        // Set environment identifier for easier debugging in Firebase console
+        await crashlytics.setCustomKey(
+          'environment',
+          kDebugMode ? 'development' : 'production',
+        );
+
         Logger.init(
           kDebugMode ? LogMode.debug : LogMode.live,
           crashlytics: crashlytics,
@@ -174,6 +262,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
         };
 
         unawaited(FirebaseAnalytics.instance.logAppOpen());
+
+        // Initialize Force Update service with Remote Config
+        try {
+          await ForceUpdateService.initialize();
+        } catch (e) {
+          debugPrint('Force update service initialization failed: $e');
+        }
       } catch (e, stackTrace) {
         // Log Firebase init failure but continue - app can work without it
         Logger.error(
@@ -207,18 +302,78 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Try to display the app icon if possible, or just a spinner
-              // Image.asset('assets/app_icon.png', width: 100, height: 100),
-              // const SizedBox(height: 24),
-              CircularProgressIndicator(),
-            ],
+      home: _BrandedSplashScreen(),
+    );
+  }
+}
+
+class _BrandedSplashScreen extends StatelessWidget {
+  const _BrandedSplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF006754),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF006754), Color(0xFF005544), Color(0xFF004433)],
           ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/app_icon.png',
+                  width: 100,
+                  height: 100,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Hafiz',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'حافظ',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 32,
+                color: Colors.white70,
+              ),
+            ),
+            const Spacer(flex: 2),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+              ),
+            ),
+            const SizedBox(height: 64),
+          ],
         ),
       ),
     );
@@ -233,7 +388,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final DeepLinkService _deepLinkService = sl<DeepLinkService>();
+  final DeepLinkService _deepLinkService = DeepLinkService();
 
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
@@ -296,19 +451,18 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode();
-    if (mode == 'dark') return ThemeMode.dark;
-    if (mode == 'light') return ThemeMode.light;
+  /// Convert ThemeState to ThemeMode
+  ThemeMode _getThemeModeFromState(ThemeState state) {
+    if (state is DarkThemeState) return ThemeMode.dark;
+    if (state is LightThemeState) return ThemeMode.light;
     return ThemeMode.system;
   }
 
   @override
   void dispose() {
     _deepLinkService.dispose();
-    themeBloc.close();
-    bookmarkBloc.close();
-    recitationErrorBloc.close();
+    // Note: Don't close BLoCs here as they are singletons managed by GetIt
+    // Closing them here would cause issues when navigating back to this screen
     super.dispose();
   }
 
@@ -329,9 +483,9 @@ class _MyAppState extends State<MyApp> {
           return ValueListenableBuilder<Locale>(
             valueListenable: LocaleController.notifier,
             builder: (_, locale, _) => MaterialApp(
-              themeMode: _getThemeMode(),
-              theme: lightTheme,
-              darkTheme: darkTheme,
+              themeMode: _getThemeModeFromState(state),
+              theme: currentLightTheme,
+              darkTheme: currentDarkTheme,
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
@@ -345,7 +499,9 @@ class _MyAppState extends State<MyApp> {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
-              initialRoute: AppRoutes.onboardingScreen,
+              initialRoute: PrefUtils().getOnboardingCompleted()
+                  ? AppRoutes.navigationShell
+                  : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
               builder: (context, child) {
                 return OfflineIndicator(

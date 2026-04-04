@@ -46,6 +46,11 @@ class _SurahScreenState extends State<SurahScreen> {
   // Hifz Mode State
   bool _isHifzMode = false;
   final Set<int> _revealedVerses = {};
+
+  // Auto Scroll State
+  bool _isAutoScrollEnabled = false;
+  double _autoScrollSpeed = 1.0;
+
   int? _selectedVerse; // For visual selection feedback
   int? _highlightedVerse; // Verse to highlight and scroll to
 
@@ -73,6 +78,9 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Initialize auto scroll speed, but reset enabled state on load
+    _autoScrollSpeed = PrefUtils().getAutoScrollSpeed();
+
     if (_scrollControllerForInit == null) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Surah) {
@@ -102,11 +110,15 @@ class _SurahScreenState extends State<SurahScreen> {
         initialScrollOffset: initialOffset ?? 0,
       );
       _scrollControllerForInit!.addListener(() {
-        if (surah == null) return;
+        if (surah == null || !_scrollControllerForInit!.hasClients) return;
 
         _offsetSaveDebounce?.cancel();
         _offsetSaveDebounce = Timer(const Duration(milliseconds: 350), () {
-          if (!mounted || surah == null) return;
+          if (!mounted ||
+              surah == null ||
+              !_scrollControllerForInit!.hasClients) {
+            return;
+          }
           PrefUtils().setSurahOffset(
             surah!.id,
             _scrollControllerForInit!.offset,
@@ -348,11 +360,24 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  void _navigateToSurah(int surahId) {
+    if (surahId < 1 || surahId > 114) return;
+
+    final targetSurah = QuranIndex.quranSurahs.firstWhere(
+      (s) => s.id == surahId,
+      orElse: () => QuranIndex.quranSurahs[0],
+    );
+
+    NavigatorService.popAndPushNamed(
+      AppRoutes.surahPage,
+      arguments: {'surah': targetSurah, 'resume': true},
+    );
+  }
+
   @override
   void dispose() {
     _offsetSaveDebounce?.cancel();
     _voiceService.stop();
-
     _scrollControllerForInit?.dispose();
     super.dispose();
   }
@@ -409,11 +434,15 @@ class _SurahScreenState extends State<SurahScreen> {
               child: BlocBuilder<SurahBloc, SurahState>(
                 builder: (context, state) {
                   if (state is LoadingSurahState) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: 10,
-                      itemBuilder: (context, index) =>
-                          const SkeletonVerseCard(),
+                    // Force RTL for Quran content skeleton loading
+                    return Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 10,
+                        itemBuilder: (context, index) =>
+                            const SkeletonVerseCard(),
+                      ),
                     );
                   } else if (state is FailureSurahState) {
                     return Center(
@@ -441,24 +470,39 @@ class _SurahScreenState extends State<SurahScreen> {
                           RecitationErrorState
                         >(
                           builder: (context, errorState) {
-                            return CustomScrollView(
-                              controller: _scrollController,
-                              slivers: [
-                                _buildSliverAppBar(isDark),
-                                SliverPadding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                    vertical: 20.v,
+                            // Force RTL for Quran content regardless of app locale
+                            return Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Stack(
+                                children: [
+                                  CustomScrollView(
+                                    controller: _scrollController,
+                                    slivers: [
+                                      _buildSliverAppBar(isDark),
+                                      SliverPadding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                          vertical: 20.v,
+                                        ),
+                                        sliver: _buildSurahList(
+                                          context,
+                                          chapters,
+                                          bookmarkState,
+                                          errorState,
+                                          isDark,
+                                        ),
+                                      ),
+                                      SliverToBoxAdapter(
+                                        child: _buildNavigationFooter(
+                                          context,
+                                          isDark,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  sliver: _buildSurahList(
-                                    context,
-                                    chapters,
-                                    bookmarkState,
-                                    errorState,
-                                    isDark,
-                                  ),
-                                ),
-                              ],
+                                  _buildAutoScrollControls(context, isDark),
+                                ],
+                              ),
                             );
                           },
                         );
@@ -474,9 +518,249 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
+  /// Auto Scroll Controls Widget
+  Widget _buildAutoScrollControls(BuildContext context, bool isDark) {
+    return Positioned(
+      right: 16,
+      bottom: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Speed settings button
+          FloatingActionButton.small(
+            heroTag: 'auto_scroll_speed_fab',
+            backgroundColor: isDark
+                ? const Color(0xFF2A2A2A)
+                : Colors.grey[200],
+            foregroundColor: isDark ? Colors.white : Colors.black,
+            child: Text(
+              '${_autoScrollSpeed.toStringAsFixed(1)}x',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            onPressed: () => _showSpeedControlSheet(context, isDark),
+          ),
+          const SizedBox(height: 12),
+          // Play/Pause button
+          FloatingActionButton(
+            heroTag: 'auto_scroll_play_fab',
+            backgroundColor: isDark ? const Color(0xFF006754) : Colors.teal,
+            onPressed: () => _toggleAutoScroll(),
+            child: Icon(_isAutoScrollEnabled ? Icons.pause : Icons.play_arrow),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show speed control bottom sheet
+  void _showSpeedControlSheet(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'lbl_auto_scroll_speed'.tr,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Preset speeds
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _buildSpeedPreset(
+                    context,
+                    isDark,
+                    0.5,
+                    '0.5x',
+                    setSheetState,
+                  ),
+                  _buildSpeedPreset(context, isDark, 1.0, '1x', setSheetState),
+                  _buildSpeedPreset(context, isDark, 2.0, '2x', setSheetState),
+                  _buildSpeedPreset(context, isDark, 3.0, '3x', setSheetState),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Slider
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'lbl_custom_speed'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                      Text(
+                        '${_autoScrollSpeed.toStringAsFixed(1)}x',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _autoScrollSpeed,
+                    min: 0.1,
+                    max: 5.0,
+                    divisions: 49,
+                    label: '${_autoScrollSpeed.toStringAsFixed(1)}x',
+                    onChanged: (value) {
+                      setSheetState(() {
+                        _autoScrollSpeed = value;
+                      });
+                      setState(() {
+                        _autoScrollSpeed = value;
+                        PrefUtils().setAutoScrollSpeed(value);
+                      });
+                      if (_isAutoScrollEnabled) {
+                        _startAutoScroll();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build preset speed button
+  Widget _buildSpeedPreset(
+    BuildContext context,
+    bool isDark,
+    double speed,
+    String label,
+    StateSetter setSheetState,
+  ) {
+    final isSelected = _autoScrollSpeed == speed;
+    return GestureDetector(
+      onTap: () {
+        setSheetState(() {
+          _autoScrollSpeed = speed;
+        });
+        setState(() {
+          _autoScrollSpeed = speed;
+          PrefUtils().setAutoScrollSpeed(speed);
+        });
+        if (_isAutoScrollEnabled) {
+          _startAutoScroll();
+        }
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF006754) : Colors.teal)
+              : (isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.white70 : Colors.black87),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Toggle auto scroll on/off
+  void _toggleAutoScroll() {
+    setState(() {
+      _isAutoScrollEnabled = !_isAutoScrollEnabled;
+      // Removed saving to PrefUtils so it resets
+    });
+
+    if (_isAutoScrollEnabled) {
+      _startAutoScroll();
+    } else {
+      _stopAutoScroll();
+    }
+  }
+
+  /// Start auto scroll
+  void _startAutoScroll() {
+    if (!_isAutoScrollEnabled || !_scrollController.hasClients) return;
+
+    // Check if we are at bottom
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    final distance = maxScroll - currentScroll;
+
+    if (distance <= 0) {
+      _toggleAutoScroll(); // toggles off
+      return;
+    }
+
+    // Calculate total duration for smooth continuous scrolling
+    // Base speed: 30 pixels per second.
+    final durationSeconds = distance / (30.0 * _autoScrollSpeed);
+
+    _scrollController
+        .animateTo(
+          maxScroll,
+          duration: Duration(milliseconds: (durationSeconds * 1000).toInt()),
+          curve: Curves.linear,
+        )
+        .then((_) {
+          // When animation finishes or is interrupted
+          if (_isAutoScrollEnabled && mounted) {
+            Future.delayed(const Duration(milliseconds: 500), () {
+              // If the user hasn't explicitly disabled auto-scroll, check if they are manually scrolling
+              if (_isAutoScrollEnabled &&
+                  mounted &&
+                  !_scrollController.position.isScrollingNotifier.value) {
+                _startAutoScroll();
+              }
+            });
+          }
+        });
+  }
+
+  /// Stop auto scroll
+  void _stopAutoScroll() {
+    if (_scrollController.hasClients) {
+      // Jumping to the current offset safely cancels the active animateTo
+      _scrollController.jumpTo(_scrollController.offset);
+    }
+  }
+
   Widget _buildSliverAppBar(bool isDark) {
+    final readingNavMode = PrefUtils().getReadingNavMode();
+    final isPageMode = readingNavMode == 'page';
+    final currentIndex = surah?.id ?? 1;
+    final hasNext = currentIndex < 114;
+    final hasPrevious = currentIndex > 1;
+
     return SliverAppBar(
-      expandedHeight: 180.0,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF006754),
@@ -489,36 +773,6 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
-        Semantics(
-          button: true,
-          label: 'lbl_help'.tr,
-          child: IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: _isHifzMode ? 'lbl_exit_hifz_mode'.tr : 'lbl_hifz_mode'.tr,
-          child: IconButton(
-            icon: Icon(
-              _isHifzMode ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _isHifzMode = !_isHifzMode;
-                _revealedVerses.clear();
-              });
-              // Announce mode change for accessibility
-              // ignore: deprecated_member_use
-              SemanticsService.announce(
-                _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
-                TextDirection.ltr,
-              );
-            },
-          ),
-        ),
         BlocBuilder<BookmarkBloc, BookmarkState>(
           builder: (context, state) {
             bool isBookmarked = false;
@@ -560,28 +814,125 @@ class _SurahScreenState extends State<SurahScreen> {
             );
           },
         ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            switch (value) {
+              case 'hifz':
+                setState(() {
+                  _isHifzMode = !_isHifzMode;
+                  _revealedVerses.clear();
+                });
+                // ignore: deprecated_member_use
+                SemanticsService.announce(
+                  _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
+                  TextDirection.ltr,
+                );
+                break;
+              case 'help':
+                NavigatorService.pushNamed(AppRoutes.helpScreen);
+                break;
+            }
+          },
+          itemBuilder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final iconColor = isDark ? Colors.white : Colors.black87;
+            return [
+              PopupMenuItem(
+                value: 'hifz',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isHifzMode ? Icons.visibility_off : Icons.visibility,
+                      color: iconColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isHifzMode
+                          ? 'lbl_exit_hifz_mode'.tr
+                          : 'lbl_hifz_mode'.tr,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    Icon(Icons.help_outline, color: iconColor),
+                    const SizedBox(width: 8),
+                    Text('lbl_help'.tr),
+                  ],
+                ),
+              ),
+            ];
+          },
+        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Padding(
-            // Increased padding to prevent overlap with action icons (3 icons * 48 = 144 + margin)
-            padding: const EdgeInsets.symmetric(horizontal: 146.0),
-            child: Semantics(
-              header: true,
-              child: Text(
-                surah?.localizedName(context) ?? '',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  fontFamily: 'Amiri',
+        titlePadding: EdgeInsets.zero,
+        title: Semantics(
+          header: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isPageMode && hasPrevious)
+                Semantics(
+                  button: true,
+                  label: 'lbl_previous_surah'.tr,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _navigateToSurah(currentIndex - 1),
+                      borderRadius: BorderRadius.circular(24),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+              Flexible(
+                child: Text(
+                  surah?.localizedName(context) ?? '',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontFamily: 'Amiri',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
+              if (isPageMode && hasNext)
+                Semantics(
+                  button: true,
+                  label: 'lbl_next_surah'.tr,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _navigateToSurah(currentIndex + 1),
+                      borderRadius: BorderRadius.circular(24),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.chevron_right,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         background: Stack(
@@ -1021,6 +1372,109 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  Widget _buildNavigationFooter(BuildContext context, bool isDark) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final isArabic = languageCode == 'ar';
+    final currentIndex = surah?.id ?? 1;
+    final hasNext = currentIndex < 114;
+    final hasPrevious = currentIndex > 1;
+
+    String prevName = '';
+    if (hasPrevious) {
+      final prevSurah = QuranIndex.quranSurahs.firstWhere(
+        (s) => s.id == currentIndex - 1,
+        orElse: () => QuranIndex.quranSurahs.first,
+      );
+      prevName = isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish;
+    }
+
+    String nextName = '';
+    if (hasNext) {
+      final nextSurah = QuranIndex.quranSurahs.firstWhere(
+        (s) => s.id == currentIndex + 1,
+        orElse: () => QuranIndex.quranSurahs.last,
+      );
+      nextName = isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (hasPrevious)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ElevatedButton.icon(
+                  onPressed: () => _navigateToSurah(currentIndex - 1),
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                  label: Text(
+                    '${'lbl_previous_surah'.tr}\n$prevName',
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E3A35)
+                        : const Color(0xFFE8F5E9),
+                    foregroundColor: isDark
+                        ? Colors.white
+                        : const Color(0xFF004B40),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+          if (hasNext)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: ElevatedButton(
+                  onPressed: () => _navigateToSurah(currentIndex + 1),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E3A35)
+                        : const Color(0xFFE8F5E9),
+                    foregroundColor: isDark
+                        ? Colors.white
+                        : const Color(0xFF004B40),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${'lbl_next_surah'.tr}\n$nextName',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
@@ -1028,11 +1482,13 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
+    bool showBismillah = chapters.isNotEmpty && chapters.first.verseNumber == 1;
+
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildBismillah(isDark),
+          if (showBismillah) _buildBismillah(isDark),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: PrefUtils().getVerseViewMode()
@@ -1245,46 +1701,34 @@ class _SurahScreenState extends State<SurahScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Semantics(
-          label: 'lbl_quran_text'.tr,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) {
-              final range = _findRange(details.localPosition, verseRanges);
-              if (range == null) return;
-
-              if (_isHifzMode) {
-                // Unblur (toggle reveal) only
-                setState(() {
-                  if (_revealedVerses.contains(range.verse.verseNumber)) {
-                    _revealedVerses.remove(range.verse.verseNumber);
-                  } else {
-                    _revealedVerses.add(range.verse.verseNumber);
-                  }
-                });
-              } else {
-                // Standard mode: Open menu
-                // Save interaction
-                if (surah != null) {
-                  PrefUtils().setSurahVerseIndex(
-                    surah!.id,
-                    range.verse.verseNumber - 1,
-                  );
-                  PrefUtils().saveLastReadSurah(surah!);
-                }
-                _showVerseMenu(
-                  context,
-                  range.verse,
-                  range.isBookmarked,
-                  range.isError,
-                );
-              }
-            },
-            onLongPressStart: (details) {
-              if (_isHifzMode) {
-                // Hifz mode: Open menu on long press
+        return IntrinsicHeight(
+          child: Semantics(
+            label: 'lbl_quran_text'.tr,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
                 final range = _findRange(details.localPosition, verseRanges);
-                if (range != null) {
+                if (range == null) return;
+
+                if (_isHifzMode) {
+                  // Unblur (toggle reveal) only
+                  setState(() {
+                    if (_revealedVerses.contains(range.verse.verseNumber)) {
+                      _revealedVerses.remove(range.verse.verseNumber);
+                    } else {
+                      _revealedVerses.add(range.verse.verseNumber);
+                    }
+                  });
+                } else {
+                  // Standard mode: Open menu
+                  // Save interaction
+                  if (surah != null) {
+                    PrefUtils().setSurahVerseIndex(
+                      surah!.id,
+                      range.verse.verseNumber - 1,
+                    );
+                    PrefUtils().saveLastReadSurah(surah!);
+                  }
                   _showVerseMenu(
                     context,
                     range.verse,
@@ -1292,13 +1736,27 @@ class _SurahScreenState extends State<SurahScreen> {
                     range.isError,
                   );
                 }
-              }
-            },
-            child: RichText(
-              key: _richTextKey,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.justify,
-              text: textSpan,
+              },
+              onLongPressStart: (details) {
+                if (_isHifzMode) {
+                  // Hifz mode: Open menu on long press
+                  final range = _findRange(details.localPosition, verseRanges);
+                  if (range != null) {
+                    _showVerseMenu(
+                      context,
+                      range.verse,
+                      range.isBookmarked,
+                      range.isError,
+                    );
+                  }
+                }
+              },
+              child: RichText(
+                key: _richTextKey,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.justify,
+                text: textSpan,
+              ),
             ),
           ),
         );

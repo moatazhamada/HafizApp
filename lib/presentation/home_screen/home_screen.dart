@@ -4,7 +4,9 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
 import '../../core/analytics/analytics_service.dart';
+import '../../core/analytics/analytics_helper.dart';
 import '../../core/analytics/analytics_route_observer.dart';
+import '../../core/ramadan/ramadan_theme.dart';
 
 import '../../core/app_export.dart';
 
@@ -125,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showJuzSelector(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -164,12 +166,22 @@ class _HomeScreenState extends State<HomeScreen>
                   itemBuilder: (context, index) {
                     final juz = JuzIndex.getJuz(index + 1);
                     if (juz == null) return const SizedBox.shrink();
-                    
+
                     return Semantics(
                       button: true,
-                      label: JuzIndex.getJuzName(juz.juzNumber, isArabic: isArabic),
+                      label: JuzIndex.getJuzName(
+                        juz.juzNumber,
+                        isArabic: isArabic,
+                      ),
                       child: InkWell(
                         onTap: () {
+                          // Track Juz navigation
+                          unawaited(
+                            sl<AnalyticsHelper>().logNavigationToJuz(
+                              juz.juzNumber,
+                            ),
+                          );
+
                           Navigator.pop(context);
                           final surah = QuranIndex.quranSurahs.firstWhere(
                             (s) => s.id == juz.startSurahId,
@@ -211,7 +223,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isArabic ? juz.startSurahNameAr : juz.startSurahNameEn,
+                                isArabic
+                                    ? juz.startSurahNameAr
+                                    : juz.startSurahNameEn,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -245,9 +259,9 @@ class _HomeScreenState extends State<HomeScreen>
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
+        drawer: _buildDrawer(context, theme),
         appBar: CustomAppBar(
           // leading: Removed to allow title to center properly
-          // leadingWidth: Removed
           title: Semantics(
             header: true,
             child: Text(
@@ -258,127 +272,47 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
-          leading: Semantics(
-            button: true,
-            label: 'lbl_toggle_theme'.tr,
-            child: IconButton(
-              icon: Icon(
-                isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+          leading: Builder(
+            builder: (context) => Semantics(
+              button: true,
+              label: 'Open navigation menu',
+              child: IconButton(
+                icon: Icon(
+                  Icons.menu,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'Open navigation menu',
               ),
-              onPressed: () {
-                themeBloc.add(ToggleThemeEvent());
-                sl<AnalyticsService>().logThemeChange(!isDarkMode);
-              },
-              tooltip: 'lbl_toggle_theme'.tr,
             ),
           ),
           centerTitle: true,
           actions: [
             Semantics(
               button: true,
-              label: 'lbl_search_tooltip'.tr,
-              child: IconButton(
-                icon: const Icon(Icons.search_rounded),
-                onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.searchPage),
-                tooltip: 'lbl_search_tooltip'.tr,
-              ),
-            ),
-            Semantics(
-              button: true,
               label: 'lbl_juz_index'.tr,
               child: IconButton(
-                icon: const Icon(Icons.view_module_rounded),
+                icon: Icon(
+                  Icons.view_module_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () => _showJuzSelector(context),
                 tooltip: 'lbl_juz_index'.tr,
               ),
             ),
             Semantics(
               button: true,
-              label: 'lbl_bookmarks'.tr,
+              label: 'lbl_toggle_theme'.tr,
               child: IconButton(
-                icon: const Icon(Icons.bookmark_border_rounded),
-                onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.bookmarksPage),
-                tooltip: 'lbl_bookmarks'.tr,
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_more_options'.tr,
-              child: PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'mushaf':
-                      AppRoutes.goToMushaf(context);
-                      break;
-                    case 'mistakes':
-                      NavigatorService.pushNamed(
-                        AppRoutes.recitationErrorsPage,
-                      );
-                      break;
-                    case 'settings':
-                      NavigatorService.pushNamed(AppRoutes.settingsScreen);
-                      break;
-                    case 'about':
-                      NavigatorService.pushNamed(AppRoutes.aboutPage);
-                      break;
-                  }
+                icon: Icon(
+                  isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
+                onPressed: () {
+                  themeBloc.add(ToggleThemeEvent());
+                  sl<AnalyticsService>().logThemeChange(!isDarkMode);
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'mushaf',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.menu_book,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text('lbl_mushaf'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'mistakes',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.playlist_add_check,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text('lbl_practice_list'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, color: theme.iconTheme.color),
-                        const SizedBox(width: 12),
-                        Text('lbl_settings'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'about',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'about_title'.tr,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                icon: const Icon(Icons.more_vert),
+                tooltip: 'lbl_toggle_theme'.tr,
               ),
             ),
           ],
@@ -389,15 +323,13 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, state) {
               return SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
+                child: CustomScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      // Offline indicator banner
-                      if (_isOffline)
-                        Semantics(
+                  slivers: [
+                    if (_isOffline)
+                      SliverToBoxAdapter(
+                        child: Semantics(
                           liveRegion: true,
                           child: Container(
                             width: double.infinity,
@@ -426,65 +358,80 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
+                      ),
 
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        _buildCardLastRead(state.surah, theme),
+                    if (RamadanTheme.isRamadan)
+                      const SliverToBoxAdapter(child: RamadanCountdown()),
 
-                      Semantics(
+                    if (state is UpdateLastReadSurah && state.surah != null)
+                      SliverToBoxAdapter(
+                        child: _buildCardLastRead(state.surah, theme),
+                      ),
+
+                    SliverToBoxAdapter(
+                      child: Semantics(
+                        container: true,
                         label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
-                          key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
+                        child: const SizedBox.shrink(),
+                      ),
+                    ),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final surah = QuranIndex.quranSurahs[index];
+                        final isArabic =
+                            Localizations.localeOf(context).languageCode ==
+                            'ar';
+                        final surahLabel = isArabic
+                            ? surah.nameArabic
+                            : surah.nameEnglish;
 
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
+                        // Simple staggered animation logic
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeOutQuad,
+                          // Delay based on index, capped to prevent long waits for bottom items
+                          builder: (context, value, child) {
+                            // Only animate the first 10 items to save performance/time
+                            final shouldAnimate = index < 10;
+                            final opacity = shouldAnimate ? value : 1.0;
+                            final offset = shouldAnimate
+                                ? Offset(0, 50 * (1 - value))
+                                : Offset.zero;
 
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    _navigateToQuranView(surah: surah);
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
-                                  ),
-                                ),
+                            return Opacity(
+                              opacity: opacity,
+                              child: Transform.translate(
+                                offset: offset,
+                                child: child,
                               ),
                             );
                           },
-                        ),
-                      ),
-                    ],
-                  ),
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Semantics(
+                              button: true,
+                              label:
+                                  '$surahLabel, ${'lbl_surah'.tr} ${surah.id}',
+                              child: InkWell(
+                                onTap: () {
+                                  PrefUtils().saveLastReadSurah(surah);
+                                  homeBloc.add(HomeShowLastSurahEvent());
+                                  _navigateToQuranView(surah: surah);
+                                },
+                                child: SurahListItem(
+                                  surahId: surah.id,
+                                  nameEnglish: surah.nameEnglish,
+                                  nameArabic: surah.nameArabic,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }, childCount: QuranIndex.quranSurahs.length),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  ],
                 ),
               );
             },
@@ -502,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen>
     bool resume = false,
   }) {
     final defaultView = PrefUtils().getDefaultQuranView();
-    
+
     if (defaultView == 'mushaf') {
       // Navigate to Mushaf view
       AppRoutes.goToMushaf(
@@ -522,6 +469,134 @@ class _HomeScreenState extends State<HomeScreen>
         },
       );
     }
+  }
+
+  /// Build navigation drawer with main navigation and extra options
+  Widget _buildDrawer(BuildContext context, ThemeData theme) {
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    return NavigationDrawer(
+      selectedIndex: 0, // Home is selected
+      onDestinationSelected: (index) {
+        Navigator.of(context).pop();
+        switch (index) {
+          case 0:
+            // Already on home
+            break;
+          case 1:
+            NavigatorService.pushNamed(AppRoutes.mushafScreen);
+            break;
+          case 2:
+            NavigatorService.pushNamed(AppRoutes.searchPage);
+            break;
+          case 3:
+            NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+            break;
+          case 4:
+            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            break;
+        }
+      },
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Text(
+                  'app_name'.tr[0],
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'app_name'.tr,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        const SizedBox(height: 12),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.home_rounded),
+          selectedIcon: const Icon(Icons.home_rounded),
+          label: Text('lbl_home'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.menu_book_outlined),
+          selectedIcon: const Icon(Icons.menu_book_rounded),
+          label: Text('lbl_mushaf'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.search_outlined),
+          selectedIcon: const Icon(Icons.search_rounded),
+          label: Text('lbl_search'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.bookmark_outline_rounded),
+          selectedIcon: const Icon(Icons.bookmark_rounded),
+          label: Text('lbl_bookmarks'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings_rounded),
+          label: Text('lbl_settings'.tr),
+        ),
+        const Divider(height: 32),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'lbl_more_options'.tr,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.bar_chart_rounded),
+          title: Text('stats_title'.tr),
+          onTap: () {
+            Navigator.of(context).pop();
+            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.playlist_add_check),
+          title: Text('lbl_practice_list'.tr),
+          onTap: () {
+            Navigator.of(context).pop();
+            NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline_rounded),
+          title: Text('about_title'.tr),
+          onTap: () {
+            Navigator.of(context).pop();
+            NavigatorService.pushNamed(AppRoutes.aboutPage);
+          },
+        ),
+        ListTile(
+          leading: Icon(
+            isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+          ),
+          title: Text('lbl_toggle_theme'.tr),
+          onTap: () {
+            Navigator.of(context).pop();
+            themeBloc.add(ToggleThemeEvent());
+            sl<AnalyticsService>().logThemeChange(!isDarkMode);
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildCardLastRead(Surah? lastReadSurah, ThemeData theme) {

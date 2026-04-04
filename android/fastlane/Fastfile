@@ -100,7 +100,20 @@ platform :android do
   desc "Deploy to Google Play Beta (Closed Testing)"
   lane :deploy_beta do
     ensure_service_account
-    build_aab
+    build_aab_skip_tests_if_exists
+    
+    upload_to_play_store(
+      track: "beta",
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      release_status: "completed",
+    )
+    
+    UI.success("🚀 Deployed to Beta (Closed Testing)!")
+  end
+
+  desc "Deploy to Google Play Beta (Closed Testing) - skip build"
+  lane :deploy_beta_no_build do
+    ensure_service_account
     
     upload_to_play_store(
       track: "beta",
@@ -116,10 +129,29 @@ platform :android do
     ensure_service_account
     
     # Confirm before production release
-    UI.confirm("Are you sure you want to deploy to PRODUCTION?")
+    if ENV["CI"] != "true"
+      UI.confirm("Are you sure you want to deploy to PRODUCTION?")
+    end
     
     # Build AAB without tests
     build_aab_no_tests
+    
+    # Path relative to android/ directory (where Fastfile runs from)
+    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
+    
+    upload_to_play_store(
+      track: "production",
+      aab: aab_path,
+      release_status: "draft", # Start as draft for review
+    )
+    
+    UI.success("🚀 Deployed to Production (Draft)!")
+    UI.important("Remember to submit the release for review in Play Console.")
+  end
+
+  desc "Deploy to Google Play Production - skip build"
+  lane :deploy_production_no_build do
+    ensure_service_account
     
     # Path relative to android/ directory (where Fastfile runs from)
     aab_path = "../build/app/outputs/bundle/release/app-release.aab"

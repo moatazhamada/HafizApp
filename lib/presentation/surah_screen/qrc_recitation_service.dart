@@ -5,6 +5,7 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/config/api_config.dart';
+import '../../core/utils/pref_utils.dart';
 
 class QrcTajweedMistake {
   final String? name;
@@ -103,15 +104,25 @@ class QrcRecitationService {
 
   Stream<QrcEvent> get events => _events.stream;
 
+  /// Get QRC API key from runtime preferences or compile-time config
+  String _getQrcApiKey() {
+    // First check runtime preferences (user-configured)
+    final runtimeKey = PrefUtils().getQrcApiKey();
+    if (runtimeKey.isNotEmpty) {
+      return runtimeKey;
+    }
+    // Fall back to compile-time config (build-time dart-define)
+    return ApiConfig.qrcApiKey;
+  }
+
   Future<bool> connect() async {
-    if (ApiConfig.qrcApiKey.isEmpty) {
+    final apiKey = _getQrcApiKey();
+    if (apiKey.isEmpty) {
       _events.add(QrcErrorEvent('Missing QRC API key'));
       return false;
     }
 
-    final uri = Uri.parse(
-      '${ApiConfig.qrcWsBase}?api_key=${ApiConfig.qrcApiKey}',
-    );
+    final uri = Uri.parse('${ApiConfig.qrcWsBase}?api_key=$apiKey');
     _channel = WebSocketChannel.connect(uri);
     _socketSub = _channel!.stream.listen(
       _handleSocketMessage,
@@ -173,10 +184,12 @@ class QrcRecitationService {
         final json = jsonDecode(message);
         if (json is Map<String, dynamic>) {
           final event = json['event']?.toString();
-      if (event == 'check_tilawa' || event == 'CheckTilawaResponse') {
+          if (event == 'check_tilawa' || event == 'CheckTilawaResponse') {
             _events.add(QrcCheckEvent(QrcCheckTilawa.fromJson(json)));
           } else if (event == 'error') {
-            _events.add(QrcErrorEvent(json['message']?.toString() ?? 'QRC error'));
+            _events.add(
+              QrcErrorEvent(json['message']?.toString() ?? 'QRC error'),
+            );
           } else if (event != null) {
             _events.add(QrcStatusEvent(event));
           }

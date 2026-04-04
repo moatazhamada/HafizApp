@@ -7,9 +7,13 @@ abstract class RecitationErrorState extends Equatable {
   List<Object> get props => [];
 }
 
-class RecitationErrorInitial extends RecitationErrorState {}
+class RecitationErrorInitial extends RecitationErrorState {
+  const RecitationErrorInitial();
+}
 
-class RecitationErrorLoading extends RecitationErrorState {}
+class RecitationErrorLoading extends RecitationErrorState {
+  const RecitationErrorLoading();
+}
 
 class RecitationErrorLoaded extends RecitationErrorState {
   final List<RecitationErrorModel> errors;

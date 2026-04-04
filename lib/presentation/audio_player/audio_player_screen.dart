@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/analytics/analytics_helper.dart';
+import '../../injection_container.dart';
 
 /// Full Audio Player Screen for Surah recitation
 /// Features: Play/Pause, verse highlighting, speed control, sleep timer
@@ -30,8 +32,10 @@ class AudioPlayerScreen extends StatefulWidget {
 class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   AudioPlayerHandler? _audioHandler;
   StreamSubscription<int>? _currentVerseSub;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isOffline = false;
 
   // Playback state
   double _playbackSpeed = 1.0;
@@ -50,21 +54,46 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     _initAudioService();
+  }
+
+  void _checkConnectivity() {
+    final networkInfo = sl<NetworkInfo>();
+
+    // Check initial connectivity
+    networkInfo.isConnected().then((connected) {
+      if (mounted) {
+        setState(() => _isOffline = !connected);
+      }
+    });
+
+    // Listen for connectivity changes
+    _connectivitySub = networkInfo.onConnectivityChanged.listen((results) {
+      final connected = results.any((r) => r != ConnectivityResult.none);
+      if (mounted) {
+        setState(() => _isOffline = !connected);
+
+        // Show snackbar when connectivity changes
+        if (!connected &&
+            _audioHandler?.playbackState.valueOrNull?.playing == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('msg_audio_stopped_offline'.tr),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          _audioHandler?.pause();
+        }
+      }
+    });
   }
 
   Future<void> _initAudioService() async {
     try {
-      // Initialize audio service
-      _audioHandler = await AudioService.init(
-        builder: () => AudioPlayerHandler(),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.hafizapp.audio',
-          androidNotificationChannelName: 'Quran Recitation',
-          androidNotificationOngoing: true,
-          androidStopForegroundOnPause: true,
-        ),
-      );
+      // Get shared audio handler instance
+      _audioHandler = sl<AudioPlayerHandler>();
 
       if (widget.audioUrls.isEmpty) {
         if (mounted) {
@@ -107,6 +136,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
       // Auto-play
       await _audioHandler!.play();
+
+      // Track audio started
+      unawaited(
+        sl<AnalyticsHelper>().logAudioPlayed(
+          widget.surah.id,
+          widget.reciter,
+          surahName: widget.surah.nameEnglish,
+          startVerse: widget.startVerse ?? 1,
+        ),
+      );
     } catch (e, stackTrace) {
       Logger.error(
         'Error initializing audio: $e',
@@ -180,6 +219,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void _setSleepTimer(Duration duration) {
     _sleepTimer?.cancel();
     _remainingSleepTime = duration;
+
+    // Track sleep timer set
+    unawaited(sl<AnalyticsHelper>().logAudioTimerSet(duration.inMinutes));
 
     _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       // FIX: Add mounted check to prevent setState after dispose
@@ -293,6 +335,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     });
 
     _audioHandler?.setLoopRange(start, end);
+
+    // Track loop set
+    unawaited(sl<AnalyticsHelper>().logAudioLoopSet(start, end));
   }
 
   void _cancelLoop() {
@@ -310,6 +355,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void dispose() {
     _sleepTimer?.cancel();
     _currentVerseSub?.cancel();
+    _connectivitySub?.cancel();
     _verseScrollController.dispose();
     unawaited(_audioHandler?.dispose());
     super.dispose();
@@ -346,12 +392,12 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     _initAudioService();
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text('lbl_retry'.tr),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Go Back'),
+                  child: Text('lbl_go_back'.tr),
                 ),
               ],
             ),
@@ -367,83 +413,91 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: Column(
-                children: [
-                  // App bar
-                  _buildAppBar(isDark),
+              child: OrientationBuilder(
+                builder: (context, orientation) {
+                  if (orientation == Orientation.portrait) {
+                    return Column(
+                      children: [
+                        // Offline indicator
+                        if (_isOffline) _buildOfflineIndicator(),
 
-                  // Album art and surah info
-                  _buildAlbumArt(isDark),
+                        // App bar
+                        _buildAppBar(isDark),
 
-                  // Verse list with highlighting
-                  Expanded(child: _buildVerseList(isDark)),
+                        // Album art and surah info
+                        _buildAlbumArt(isDark),
 
-                  // Sleep timer indicator
-                  if (_remainingSleepTime != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      color: Colors.amber.withValues(alpha: 0.1),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.timer,
-                            size: 16,
-                            color: Colors.amber,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${_remainingSleepTime!.inMinutes}:${(_remainingSleepTime!.inSeconds % 60).toString().padLeft(2, '0')}',
-                            style: const TextStyle(color: Colors.amber),
-                          ),
-                        ],
-                      ),
-                    ),
+                        // Verse list with highlighting
+                        Expanded(child: _buildVerseList(isDark)),
 
-                  // Loop indicator
-                  if (_isLoopingRange)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      color: Colors.teal.withValues(alpha: 0.1),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.repeat,
-                            size: 16,
-                            color: Colors.teal,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'msg_looping_verses'.tr
-                                .replaceAll(
-                                  '{start}',
-                                  _loopStartVerse.toString(),
-                                )
-                                .replaceAll('{end}', _loopEndVerse.toString()),
-                            style: const TextStyle(color: Colors.teal),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _cancelLoop,
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.red,
+                        // Sleep timer indicator
+                        if (_remainingSleepTime != null)
+                          _buildSleepTimerIndicator(),
+
+                        // Loop indicator
+                        if (_isLoopingRange) _buildLoopIndicator(),
+
+                        // Progress bar
+                        _buildProgressBar(),
+
+                        // Controls
+                        _buildControls(isDark),
+                      ],
+                    );
+                  } else {
+                    // Landscape layout
+                    return Row(
+                      children: [
+                        // Left side: Art, Controls
+                        Expanded(
+                          flex: 1,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (_isOffline) _buildOfflineIndicator(),
+                                _buildAppBar(isDark),
+                                _buildAlbumArt(isDark),
+                                if (_remainingSleepTime != null)
+                                  _buildSleepTimerIndicator(),
+                                if (_isLoopingRange) _buildLoopIndicator(),
+                                _buildProgressBar(),
+                                _buildControls(isDark),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-
-                  // Progress bar
-                  _buildProgressBar(),
-
-                  // Controls
-                  _buildControls(isDark),
-                ],
+                        ),
+                        // Right side: Verses
+                        Expanded(flex: 1, child: _buildVerseList(isDark)),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
+    );
+  }
+
+  Widget _buildOfflineIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.orange[700],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.cloud_off, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            'msg_audio_requires_internet'.tr,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -630,6 +684,49 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
+  Widget _buildSleepTimerIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.amber.withValues(alpha: 0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.timer, size: 16, color: Colors.amber),
+          const SizedBox(width: 8),
+          Text(
+            '${_remainingSleepTime!.inMinutes}:${(_remainingSleepTime!.inSeconds % 60).toString().padLeft(2, '0')}',
+            style: const TextStyle(color: Colors.amber),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoopIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.teal.withValues(alpha: 0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.repeat, size: 16, color: Colors.teal),
+          const SizedBox(width: 8),
+          Text(
+            'msg_looping_verses'.tr
+                .replaceAll('{start}', _loopStartVerse.toString())
+                .replaceAll('{end}', _loopEndVerse.toString()),
+            style: const TextStyle(color: Colors.teal),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _cancelLoop,
+            child: const Icon(Icons.close, size: 16, color: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProgressBar() {
     return StreamBuilder<Duration>(
       stream: _audioHandler?.positionStream,
@@ -694,6 +791,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     if (selected) {
                       setState(() => _playbackSpeed = speed);
                       _audioHandler?.setSpeed(speed);
+
+                      // Track speed change
+                      unawaited(
+                        sl<AnalyticsHelper>().logAudioSpeedChanged(speed),
+                      );
                     }
                   },
                 ),
@@ -739,8 +841,27 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                       onPressed: () {
                         if (playing) {
                           _audioHandler?.pause();
+
+                          // Track pause
+                          unawaited(
+                            sl<AnalyticsHelper>().logAudioPaused(
+                              widget.surah.id,
+                              0,
+                              currentVerse: _currentVerse,
+                            ),
+                          );
                         } else {
                           _audioHandler?.play();
+
+                          // Track resume
+                          unawaited(
+                            sl<AnalyticsHelper>().logAudioPlayed(
+                              widget.surah.id,
+                              widget.reciter,
+                              surahName: widget.surah.nameEnglish,
+                              startVerse: _currentVerse,
+                            ),
+                          );
                         }
                       },
                     ),

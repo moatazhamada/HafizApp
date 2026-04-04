@@ -56,14 +56,29 @@ class AnalyticsHelper {
   }
 
   // Audio Actions
-  Future<void> logAudioPlayed(int surahId, String reciter) async {
-    await _logEvent('audio_played', {'surah_id': surahId, 'reciter': reciter});
+  Future<void> logAudioPlayed(
+    int surahId,
+    String reciter, {
+    int? startVerse,
+    String? surahName,
+  }) async {
+    await _logEvent('audio_played', {
+      'surah_id': surahId,
+      'reciter': reciter,
+      'start_verse': ?startVerse,
+      'surah_name': ?surahName,
+    });
   }
 
-  Future<void> logAudioPaused(int surahId, int position) async {
+  Future<void> logAudioPaused(
+    int surahId,
+    int position, {
+    int? currentVerse,
+  }) async {
     await _logEvent('audio_paused', {
       'surah_id': surahId,
       'position_seconds': position,
+      'current_verse': ?currentVerse,
     });
   }
 
@@ -75,8 +90,23 @@ class AnalyticsHelper {
     await _logEvent('playback_speed_changed', {'speed': speed});
   }
 
+  Future<void> logAudioSpeedChanged(double speed) async {
+    await logPlaybackSpeedChanged(speed);
+  }
+
   Future<void> logSleepTimerSet(int minutes) async {
     await _logEvent('sleep_timer_set', {'minutes': minutes});
+  }
+
+  Future<void> logAudioTimerSet(int duration) async {
+    await logSleepTimerSet(duration);
+  }
+
+  Future<void> logAudioLoopSet(int startVerse, int endVerse) async {
+    await _logEvent('audio_loop_set', {
+      'start_verse': startVerse,
+      'end_verse': endVerse,
+    });
   }
 
   // Search Actions
@@ -135,6 +165,10 @@ class AnalyticsHelper {
     await _logEvent('language_changed', {'language_code': languageCode});
   }
 
+  Future<void> logSettingChanged(String setting, String value) async {
+    await _logEvent('setting_changed', {'setting': setting, 'value': value});
+  }
+
   Future<void> logMushafTypeChanged(String mushafType) async {
     await _logEvent('mushaf_type_changed', {'mushaf_type': mushafType});
   }
@@ -173,6 +207,10 @@ class AnalyticsHelper {
       'page_number': pageNumber,
       'mushaf_type': mushafType,
     });
+  }
+
+  Future<void> logPageNavigated(int pageNumber, String mushafType) async {
+    await logNavigationToPage(pageNumber, mushafType);
   }
 
   // Error Tracking

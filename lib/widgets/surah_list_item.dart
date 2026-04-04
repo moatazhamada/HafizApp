@@ -54,7 +54,7 @@ class SurahListItem extends StatelessWidget {
                     surahId.toLocalizedNumber(context),
                     // Also localize Surah ID here!
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
+                      color: isDark ? Colors.white : colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -85,7 +85,7 @@ class SurahListItem extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontFamily: 'Amiri',
-                        color: colorScheme.primary,
+                        color: isDark ? Colors.white : colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         height: 1.2,
                       ),

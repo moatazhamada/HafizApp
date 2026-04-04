@@ -3,6 +3,8 @@ import 'package:hafiz_app/presentation/surah_screen/surah_screen.dart';
 import '../presentation/bookmarks/bookmarks_screen.dart';
 import '../presentation/help_screen/help_screen.dart';
 import '../presentation/search/search_screen.dart';
+import '../presentation/statistics_screen/statistics_screen.dart';
+import '../widgets/adaptive_navigation_shell.dart';
 
 import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
@@ -15,9 +17,11 @@ import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
 
 import '../core/quran_index/quran_surah.dart';
 import '../core/quran_index/mushaf_types.dart';
+import '../core/utils/pref_utils.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
+  static const String navigationShell = '/navigation_shell';
   static const String homeScreen = '/home_screen';
   static const String surahPage = '/surah_screen';
   static const String bookmarksPage = '/bookmarks';
@@ -28,9 +32,11 @@ class AppRoutes {
   static const String settingsScreen = '/settings';
   static const String mushafScreen = '/mushaf';
   static const String audioPlayerScreen = '/audio_player';
+  static const String statisticsScreen = '/statistics';
 
   static Map<String, WidgetBuilder> routes = {
     onboardingScreen: OnboardingScreen.builder,
+    navigationShell: (context) => const AdaptiveNavigationShell(),
     homeScreen: (context) => const HomeScreen(),
     surahPage: (context) => const SurahScreen(),
     searchPage: (context) => const SearchScreen(),
@@ -40,8 +46,9 @@ class AppRoutes {
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     mushafScreen: (context) => const MushafScreen(),
+    statisticsScreen: StatisticsScreen.builder,
   };
-  
+
   /// Navigate to Mushaf screen with optional parameters
   static void goToMushaf(
     BuildContext context, {
@@ -50,6 +57,18 @@ class AppRoutes {
     int? verse,
     MushafType? mushafType,
   }) {
+    // If no explicit type was passed, read the globally saved preference
+    MushafType typeToLoad = mushafType ?? MushafType.madani;
+    if (mushafType == null) {
+      final savedTypeKey = PrefUtils().getString('mushaf_type');
+      if (savedTypeKey != null) {
+        typeToLoad = MushafType.values.firstWhere(
+          (t) => t.prefsKey == savedTypeKey,
+          orElse: () => MushafType.madani,
+        );
+      }
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -57,12 +76,12 @@ class AppRoutes {
           initialPage: page,
           highlightSurah: surah,
           highlightVerse: verse,
-          mushafType: mushafType ?? MushafType.madani,
+          mushafType: typeToLoad,
         ),
       ),
     );
   }
-  
+
   /// Navigate to Mushaf type onboarding
   static void goToMushafOnboarding(
     BuildContext context, {
@@ -71,13 +90,11 @@ class AppRoutes {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => MushafTypeOnboarding(
-          onComplete: onComplete,
-        ),
+        builder: (context) => MushafTypeOnboarding(onComplete: onComplete),
       ),
     );
   }
-  
+
   /// Navigate to Audio Player
   static void goToAudioPlayer(
     BuildContext context, {

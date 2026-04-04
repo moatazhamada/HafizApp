@@ -3,6 +3,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:hafiz_app/core/app_export.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -181,7 +182,7 @@ $verseText
 
 — $surahName ($verseNumber)
 
-via Hafiz App
+${'msg_via_app'.tr.replaceAll('{app}', 'app_name'.tr)}
 $link
 '''
             .trim();
@@ -272,10 +273,32 @@ $link
     );
 
     if (file != null) {
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: '$surahName ($verseNumber) - via Hafiz App');
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text:
+            '$surahName ($verseNumber) - ${'msg_via_app'.tr.replaceAll('{app}', 'app_name'.tr)}',
+      );
     }
+  }
+
+  double _scaledVerseFontSize(String text, double base) {
+    final length = text.replaceAll(RegExp(r'\s+'), ' ').trim().length;
+    if (length > 650) return base * 0.55;
+    if (length > 520) return base * 0.65;
+    if (length > 380) return base * 0.75;
+    if (length > 260) return base * 0.85;
+    if (length > 180) return base * 0.92;
+    return base;
+  }
+
+  double _scaledTranslationFontSize(String? text, double base) {
+    if (text == null) return base;
+    final length = text.replaceAll(RegExp(r'\s+'), ' ').trim().length;
+    if (length > 650) return base * 0.7;
+    if (length > 520) return base * 0.78;
+    if (length > 380) return base * 0.85;
+    if (length > 260) return base * 0.92;
+    return base;
   }
 
   /// Build the verse image widget
@@ -324,6 +347,9 @@ $link
     required int verseNumber,
     String? translation,
   }) {
+    final verseFontSize = _scaledVerseFontSize(verseText, 56);
+    final translationFontSize = _scaledTranslationFontSize(translation, 28);
+
     return Container(
       width: 1080,
       padding: const EdgeInsets.all(60),
@@ -352,11 +378,11 @@ $link
             verseText,
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Amiri',
-              fontSize: 56,
+              fontSize: verseFontSize,
               height: 1.8,
-              color: Color(0xFF1A1A1A),
+              color: const Color(0xFF1A1A1A),
             ),
           ),
 
@@ -367,11 +393,11 @@ $link
             Text(
               translation,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 28,
+                fontSize: translationFontSize,
                 height: 1.6,
-                color: Color(0xFF666666),
+                color: const Color(0xFF666666),
               ),
             ),
           ],
@@ -386,7 +412,7 @@ $link
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '$surahName • $verseNumber',
+              '$surahName • ${'lbl_verse'.tr} $verseNumber',
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 24,
@@ -404,14 +430,14 @@ $link
           const SizedBox(height: 20),
 
           // App branding
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.menu_book, color: Color(0xFF999999), size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.menu_book, color: Color(0xFF999999), size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Hafiz App',
-                style: TextStyle(
+                'app_name'.tr,
+                style: const TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 18,
                   color: Color(0xFF999999),
@@ -430,6 +456,9 @@ $link
     required int verseNumber,
     String? translation,
   }) {
+    final verseFontSize = _scaledVerseFontSize(verseText, 56);
+    final translationFontSize = _scaledTranslationFontSize(translation, 28);
+
     return Container(
       width: 1080,
       padding: const EdgeInsets.all(60),
@@ -450,9 +479,9 @@ $link
             verseText,
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Amiri',
-              fontSize: 56,
+              fontSize: verseFontSize,
               height: 1.8,
               color: Colors.white,
             ),
@@ -465,7 +494,7 @@ $link
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 28,
+                fontSize: translationFontSize,
                 height: 1.6,
                 color: Colors.white.withValues(alpha: 0.85),
               ),
@@ -482,7 +511,7 @@ $link
               borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
-              '$surahName • Verse $verseNumber',
+              '$surahName • ${'lbl_verse'.tr} $verseNumber',
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 22,
@@ -496,7 +525,7 @@ $link
 
           // App branding
           Text(
-            'via Hafiz App',
+            'msg_via_app'.tr.replaceAll('{app}', 'app_name'.tr),
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 18,
@@ -514,6 +543,9 @@ $link
     required int verseNumber,
     String? translation,
   }) {
+    final verseFontSize = _scaledVerseFontSize(verseText, 52);
+    final translationFontSize = _scaledTranslationFontSize(translation, 24);
+
     return Container(
       width: 1080,
       padding: const EdgeInsets.all(60),
@@ -528,11 +560,11 @@ $link
           Text(
             verseText,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Amiri',
-              fontSize: 52,
+              fontSize: verseFontSize,
               height: 1.8,
-              color: Color(0xFF1A1A1A),
+              color: const Color(0xFF1A1A1A),
             ),
           ),
 
@@ -545,7 +577,7 @@ $link
 
           // Surah info
           Text(
-            '$surahName, $verseNumber',
+            '$surahName, ${'lbl_verse'.tr} $verseNumber',
             style: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 20,
@@ -557,11 +589,11 @@ $link
             const SizedBox(height: 30),
             Text(
               translation,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 24,
+                fontSize: translationFontSize,
                 height: 1.6,
-                color: Color(0xFF444444),
+                color: const Color(0xFF444444),
               ),
             ),
           ],
@@ -569,9 +601,9 @@ $link
           const SizedBox(height: 40),
 
           // App branding
-          const Text(
-            'Hafiz App',
-            style: TextStyle(
+          Text(
+            'app_name'.tr,
+            style: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 16,
               color: Color(0xFFAAAAAA),
@@ -588,6 +620,9 @@ $link
     required int verseNumber,
     String? translation,
   }) {
+    final verseFontSize = _scaledVerseFontSize(verseText, 56);
+    final translationFontSize = _scaledTranslationFontSize(translation, 28);
+
     return Container(
       width: 1080,
       padding: const EdgeInsets.all(60),
@@ -622,9 +657,9 @@ $link
             verseText,
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Amiri',
-              fontSize: 56,
+              fontSize: verseFontSize,
               height: 1.8,
               color: Colors.white,
             ),
@@ -637,7 +672,7 @@ $link
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 28,
+                fontSize: translationFontSize,
                 height: 1.6,
                 color: Colors.white.withValues(alpha: 0.8),
               ),
@@ -654,7 +689,7 @@ $link
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '$surahName • $verseNumber',
+              '$surahName • ${'lbl_verse'.tr} $verseNumber',
               style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 20,
@@ -667,7 +702,7 @@ $link
 
           // App branding
           Text(
-            '✦ Hafiz App ✦',
+            '✦ ${'app_name'.tr} ✦',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 18,
