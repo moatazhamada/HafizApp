@@ -1,9 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/usecase/usecase.dart';
+import 'package:hafiz_app/localization/app_localization.dart';
+import 'package:hafiz_app/localization/app_localization.dart'
+    as app_localization;
 import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/cloud_sync_usecase.dart';
-import 'package:hafiz_app/core/usecase/usecase.dart';
 
 part 'cloud_sync_event.dart';
 part 'cloud_sync_state.dart';
@@ -74,7 +77,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
-      (_) => emit(const CloudSyncSuccess('Synced to cloud')),
+      (_) => emit(CloudSyncSuccess('lbl_cloud_sync'.tr)),
     );
   }
 
@@ -88,7 +91,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
-      (_) => emit(const CloudSyncSuccess('Synced from cloud')),
+      (_) => emit(CloudSyncSuccess('lbl_cloud_sync'.tr)),
     );
   }
 
@@ -102,18 +105,18 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
-      (_) => emit(const CloudSyncSuccess('Bidirectional sync complete')),
+      (_) => emit(CloudSyncSuccess('msg_sync_bidirectional_complete'.tr)),
     );
   }
 
   String _mapFailureToMessage(Failure failure) {
     if (failure is ServerFailure) {
-      return 'Server error: ${failure.errorMessage}';
+      return 'msg_cloud_sync_error'.tr;
     } else if (failure is CacheFailure) {
-      return 'Cache error: ${failure.errorMessage}';
+      return 'msg_cloud_sync_error'.tr;
     } else if (failure is ConnectionFailure) {
-      return 'Connection error: ${failure.errorMessage}';
+      return 'msg_cloud_sync_error'.tr;
     }
-    return 'Unknown error occurred';
+    return 'msg_cloud_sync_error'.tr;
   }
 }
