@@ -1,12 +1,18 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'bloc/musali_teaser_bloc.dart';
 
 class MusaliTeaserScreen extends StatefulWidget {
   const MusaliTeaserScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return const MusaliTeaserScreen();
+    return BlocProvider(
+      create: (context) => MusaliTeaserBloc()..add(NextSlidePressed()),
+      child: const MusaliTeaserScreen(),
+    );
   }
 
   @override
@@ -18,41 +24,13 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  int _currentSlide = 0;
-
-  final List<Map<String, String>> _slides = [
-    {
-      'title_en': 'The name misled you. That\'s the point.',
-      'title_ar': 'الاسم خدعك. وهذا هو السر.',
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': "It's not what you think.",
-      'title_ar': 'ليس كما تتخيل.',
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en':
-          'The name promised one thing. You\'re about to get something entirely different.',
-      'title_ar': 'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'Musali',
-      'title_ar': 'مُصَالي',
-      'sub_en': 'Think again.',
-      'sub_ar': 'فكر مجدداً.',
-    },
-  ];
+  Timer? _autoSlideTimer;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _startAutoSlide();
+    context.read<MusaliTeaserBloc>()._startAutoSlide();
   }
 
   void _setupAnimations() {
@@ -74,32 +52,52 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
     _animationController.forward();
   }
 
-  void _startAutoSlide() {
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted && _currentSlide < _slides.length - 1) {
-        setState(() {
-          _currentSlide++;
-        });
-        _animationController.forward(from: 0);
-        _startAutoSlide();
-      }
-    });
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
+    _autoSlideTimer?.cancel();
+    context.read<MusaliTeaserBloc>().dispose();
     super.dispose();
   }
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
 
+  List<Map<String, String>> get _slides => [
+    {
+      'title_en': 'musali_teaser_slide1_title'.tr,
+      'title_ar': 'musali_teaser_slide1_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_teaser_slide2_title'.tr,
+      'title_ar': 'musali_teaser_slide2_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_teaser_slide3_title'.tr,
+      'title_ar': 'musali_teaser_slide3_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_app_name'.tr,
+      'title_ar': 'musali_app_name'.tr,
+      'sub_en': 'musali_teaser_slide4_sub'.tr,
+      'sub_ar': 'musali_teaser_slide4_sub_ar'.tr,
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final currentSlide = _slides[_currentSlide];
+    final state = context.read<MusaliTeaserBloc>().state;
+    final currentSlideIndex = state is TeaserSlideUpdated
+        ? state.slideIndex
+        : 0;
+    final isLastSlide = currentSlideIndex == _slides.length - 1;
 
     return Scaffold(
       backgroundColor: _isArabic
@@ -123,25 +121,24 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
           child: Stack(
             children: [
               DecorativeBackgroundElement(isArabic: _isArabic),
-
               MainContent(
-                currentSlide: currentSlide,
+                currentSlideIndex: currentSlideIndex,
                 fadeAnimation: _fadeAnimation,
                 slideAnimation: _slideAnimation,
                 isArabic: _isArabic,
+                isLastSlide: isLastSlide,
                 onDismiss: () {
-                  NavigatorService.goBack();
+                  _finishTeaser(context);
                 },
                 onNext: () {
-                  if (_currentSlide < _slides.length - 1) {
-                    setState(() {
-                      _currentSlide++;
-                    });
-                    _animationController.forward(from: 0);
+                  if (isLastSlide) {
+                    _finishTeaser(context);
+                  } else {
+                    context.read<MusaliTeaserBloc>().add(NextSlidePressed());
                   }
                 },
                 onSkip: () {
-                  NavigatorService.goBack();
+                  _finishTeaser(context);
                 },
               ),
             ],
@@ -149,6 +146,13 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
         ),
       ),
     );
+  }
+
+  void _finishTeaser(BuildContext context) {
+    context.read<MusaliTeaserBloc>().add(Dismissed());
+    context.read<MusaliTeaserBloc>()._autoSlideTimer?.cancel();
+
+    NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
   }
 }
 
@@ -176,28 +180,58 @@ class DecorativeBackgroundElement extends StatelessWidget {
 }
 
 class MainContent extends StatelessWidget {
-  final Map<String, String> currentSlide;
+  final int currentSlideIndex;
   final Animation<double> fadeAnimation;
   final Animation<Offset> slideAnimation;
   final bool isArabic;
+  final bool isLastSlide;
   final VoidCallback onDismiss;
   final VoidCallback onNext;
   final VoidCallback onSkip;
 
   const MainContent({
     super.key,
-    required this.currentSlide,
+    required this.currentSlideIndex,
     required this.fadeAnimation,
     required this.slideAnimation,
     required this.isArabic,
+    required this.isLastSlide,
     required this.onDismiss,
     required this.onNext,
     required this.onSkip,
   });
 
+  List<Map<String, String>> get _slides => [
+    {
+      'title_en': 'musali_teaser_slide1_title'.tr,
+      'title_ar': 'musali_teaser_slide1_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_teaser_slide2_title'.tr,
+      'title_ar': 'musali_teaser_slide2_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_teaser_slide3_title'.tr,
+      'title_ar': 'musali_teaser_slide3_title_ar'.tr,
+      'sub_en': '',
+      'sub_ar': '',
+    },
+    {
+      'title_en': 'musali_app_name'.tr,
+      'title_ar': 'musali_app_name'.tr,
+      'sub_en': 'musali_teaser_slide4_sub'.tr,
+      'sub_ar': 'musali_teaser_slide4_sub_ar'.tr,
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentSlide = _slides[currentSlideIndex];
     final subtitle = currentSlide['sub_${isArabic ? 'ar' : 'en'}']!;
 
     return FadeTransition(
@@ -208,8 +242,6 @@ class MainContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(flex: 2),
-
-            // Logo Card
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(30),
@@ -240,7 +272,6 @@ class MainContent extends StatelessWidget {
                 ),
               ),
             ),
-
             if (subtitle.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
@@ -254,10 +285,7 @@ class MainContent extends StatelessWidget {
                 ),
               ),
             ],
-
             const Spacer(flex: 2),
-
-            // Navigation Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Row(
@@ -273,17 +301,30 @@ class MainContent extends StatelessWidget {
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: onNext,
-                    child: Text(
-                      'lbl_next'.tr,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                  if (!isLastSlide)
+                    TextButton(
+                      onPressed: onNext,
+                      child: Text(
+                        'lbl_next'.tr,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                  else
+                    TextButton(
+                      onPressed: onNext,
+                      child: Text(
+                        'lbl_continue'.tr,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
