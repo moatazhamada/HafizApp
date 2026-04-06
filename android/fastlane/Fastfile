@@ -220,12 +220,19 @@ platform :android do
     version_name = get_version_name
     version_code = get_version_code
 
-    # Upload to Firebase App Distribution using Firebase CLI
-    # First, get the service account key path
-    service_account = File.join(Dir.pwd, "service-account.json")
+    # Get service account path
+    service_account_path = File.join(Dir.pwd, "service-account.json")
 
-    # Use firebase CLI to distribute
-    sh("firebase appdistribution:distribute #{File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-debug.apk")} --app 1:854811938553:android:7a72ac4049b699cff65c28 -- testers motazhamada@gmail.com --release-notes \"Cloud Sync feature - First test build v#{version_name}+#{version_code}\" --service-account #{service_account}")
+    # Get APK path
+    apk_path = File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-debug.apk")
+
+    # Upload to Firebase App Distribution using Firebase CLI
+    sh(
+      "firebase appdistribution:distribute #{apk_path} " \
+        "--app 1:854811938553:android:7a72ac4049b699cff65c28 " \
+        "--testers motazhamada@gmail.com " \
+        "--release-notes 'Cloud Sync feature - First test build v#{version_name}+#{version_code}'"
+    )
 
     UI.success("🚀 Uploaded to Firebase App Distribution!")
     UI.message("Testers will receive an email to install the app.")

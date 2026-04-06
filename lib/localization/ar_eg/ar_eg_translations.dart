@@ -158,4 +158,16 @@ final Map<String, String> arEg = {
   'msg_error_prefix': 'حدث خطأ: ',
   'msg_could_not_open': 'تعذر فتح الرابط: ',
   'lbl_search_surah': 'البحث عن سورة...',
+  // Cloud Sync
+  'lbl_cloud_sync': 'النسخ السحابي',
+  'msg_synced_to_cloud': 'تمت المزامنة مع السحابة',
+  'msg_synced_from_cloud': 'تم استرجاع البيانات من السحابة',
+  'msg_sync_bidirectional_complete': 'اكتملت المزامنة ثنائية الاتجاه',
+  'msg_cloud_sync_error': 'خطأ في النسخ السحابي',
+  'msg_cloud_sync_success': 'نجحت المزامنة السحابية',
+  'msg_authenticating': 'جاري المصادقة...',
+  'msg_signed_in': 'تم تسجيل الدخول',
+  'msg_signed_out': 'تم تسجيل الخروج',
+  'msg_syncing': 'جاري المزامنة...',
+  'msg_checking_auth': 'جاري التحقق من المصادقة...',
 };
