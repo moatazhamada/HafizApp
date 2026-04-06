@@ -17,16 +17,26 @@ class PerformCloudSync implements UseCase<void, ParamsCloudSync> {
       if (!isAuthenticated) {
         final signInResult = await repository.signInAnonymously();
         return signInResult.fold((failure) => Left(failure), (_) async {
-          return repository.performFullSync(
-            params.userId ?? 'anonymous',
-            direction: params.direction,
-          );
+          final userIdResult = await repository.getCurrentUserId();
+          return userIdResult.fold((failure) => Left(failure), (userId) async {
+            if (userId == null) {
+              return Left(ServerFailure('Failed to get user ID after sign in'));
+            }
+            return repository.performFullSync(
+              userId,
+              direction: params.direction,
+            );
+          });
         });
       }
-      return repository.performFullSync(
-        params.userId ?? 'anonymous',
-        direction: params.direction,
-      );
+
+      final userIdResult = await repository.getCurrentUserId();
+      return userIdResult.fold((failure) => Left(failure), (userId) async {
+        if (userId == null) {
+          return Left(ServerFailure('User not authenticated'));
+        }
+        return repository.performFullSync(userId, direction: params.direction);
+      });
     });
   }
 }

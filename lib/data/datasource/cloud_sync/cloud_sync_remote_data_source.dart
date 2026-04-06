@@ -127,7 +127,7 @@ class CloudSyncRemoteDataSourceImpl implements CloudSyncRemoteDataSource {
       }).toList();
     } catch (e) {
       Logger.error('Failed to get bookmarks: $e', feature: 'CloudSync');
-      return [];
+      rethrow;
     }
   }
 
@@ -199,7 +199,7 @@ class CloudSyncRemoteDataSourceImpl implements CloudSyncRemoteDataSource {
       }).toList();
     } catch (e) {
       Logger.error('Failed to get recitation errors: $e', feature: 'CloudSync');
-      return [];
+      rethrow;
     }
   }
 
