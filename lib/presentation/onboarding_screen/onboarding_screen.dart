@@ -12,8 +12,9 @@ class OnboardingScreen extends StatefulWidget {
 
   static Widget builder(BuildContext context) {
     return BlocProvider<OnboardingBloc>(
-      create: (context) =>
-          OnboardingBloc(OnboardingState(onboardingModel: const OnboardingModel())),
+      create: (context) => OnboardingBloc(
+        OnboardingState(onboardingModel: const OnboardingModel()),
+      ),
       child: const OnboardingScreen(),
     );
   }
@@ -26,11 +27,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final networkInfo = sl<NetworkInfo>();
   bool isConnected = true;
-  late final StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  late final StreamSubscription<List<ConnectivityResult>>?
+  _connectivitySubscription;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
 
   @override
   void initState() {
@@ -213,7 +214,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   key: const ValueKey('get_started_key'),
                                   onPressed: () {
                                     NavigatorService.pushNamedAndRemoveUntil(
-                                      AppRoutes.homeScreen,
+                                      AppRoutes.musaliTeaserScreen,
                                     );
                                   },
                                   text: 'lbl_get_started'.tr,
