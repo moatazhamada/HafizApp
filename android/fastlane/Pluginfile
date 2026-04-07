@@ -1,0 +1,2 @@
+# Fastlane Plugins
+plugin 'fastlane-plugin-firebase_app_distribution'
