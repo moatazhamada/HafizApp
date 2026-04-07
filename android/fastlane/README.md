@@ -103,6 +103,14 @@ Full CI/CD pipeline: Test, Build, Deploy to Internal
 
 Full CI/CD pipeline: Test, Build, Deploy to Production
 
+### android deploy_firebase_app_distribution
+
+```sh
+[bundle exec] fastlane android deploy_firebase_app_distribution
+```
+
+Deploy to Firebase App Distribution for testing
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

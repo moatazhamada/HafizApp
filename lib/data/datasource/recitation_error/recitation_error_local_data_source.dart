@@ -6,6 +6,7 @@ abstract class RecitationErrorLocalDataSource {
   Future<List<RecitationErrorModel>> getRecitationErrors();
   Future<void> addRecitationError(RecitationErrorModel error);
   Future<void> removeRecitationError(int surahId, int verseId);
+  Future<void> clearAll();
 }
 
 class RecitationErrorLocalDataSourceImpl
@@ -70,6 +71,15 @@ class RecitationErrorLocalDataSourceImpl
     try {
       final key = '${surahId}_$verseId';
       await box.delete(key);
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> clearAll() async {
+    try {
+      await box.clear();
     } catch (e) {
       throw CacheException();
     }

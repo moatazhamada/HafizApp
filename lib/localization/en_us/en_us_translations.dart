@@ -159,6 +159,20 @@ final Map<String, String> enUs = {
   'msg_error_prefix': '', // Removed prefix for cleaner errors
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
+
+  // Cloud Sync
+  'lbl_cloud_sync': 'Cloud Sync',
+  'msg_synced_to_cloud': 'Synced to cloud',
+  'msg_synced_from_cloud': 'Synced from cloud',
+  'msg_sync_bidirectional_complete': 'Bidirectional sync complete',
+  'msg_cloud_sync_error': 'Cloud sync error',
+  'msg_cloud_sync_success': 'Cloud sync successful',
+  'msg_authenticating': 'Authenticating...',
+  'msg_signed_in': 'Signed in',
+  'msg_signed_out': 'Signed out',
+  'msg_syncing': 'Syncing...',
+  'msg_checking_auth': 'Checking authentication...',
+
   // Musali Teaser
   'musali_app_name': 'Musali',
   'musali_status': 'Coming Soon',
