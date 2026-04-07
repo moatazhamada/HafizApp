@@ -186,6 +186,14 @@ class CloudSyncRepositoryImpl implements CloudSyncRepository {
             'Synced ${localBookmarks.length} bookmarks to remote',
             feature: 'CloudSync',
           );
+
+          final localErrors = await recitationErrorLocalDataSource
+              .getRecitationErrors();
+          await remoteDataSource.saveRecitationErrors(userId, localErrors);
+          Logger.info(
+            'Synced ${localErrors.length} recitation errors to remote',
+            feature: 'CloudSync',
+          );
           break;
 
         case SyncDirection.remoteToLocal:
@@ -307,7 +315,6 @@ class CloudSyncRepositoryImpl implements CloudSyncRepository {
         merged[key] = e;
       } else {
         final existing = merged[key]!;
-        final mergedCount = e.count + existing.count;
         merged[key] = RecitationErrorModel(
           surahId: e.surahId,
           surahName: e.surahName,
@@ -315,7 +322,7 @@ class CloudSyncRepositoryImpl implements CloudSyncRepository {
           createdAt: e.createdAt.isAfter(existing.createdAt)
               ? e.createdAt
               : existing.createdAt,
-          count: mergedCount,
+          count: e.count > existing.count ? e.count : existing.count,
         );
       }
     }
