@@ -32,6 +32,15 @@ android {
         versionName = flutter.versionName
         multiDexEnabled = true
     }
+    
+    // Fix for firebase_app_distribution_android flavor ambiguity
+    flavorDimensions.add("default")
+    
+    productFlavors {
+        create("production") {
+            dimension = "default"
+        }
+    }
 
     signingConfigs {
         create("release") {
@@ -75,6 +84,11 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
             }
         }
+    }
+    
+    // Exclude firebase_app_distribution if not used
+    configurations.all {
+        exclude("dev.fluttercommunity:firebase_app_distribution_android")
     }
     
     // Support 16 KB page sizes for Android 15+
