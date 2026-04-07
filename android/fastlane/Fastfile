@@ -1,8 +1,8 @@
 # Fastlane Fastfile for Hafiz App
 # Documentation: https://docs.fastlane.tools
 
-# Hardcoded project path - parent of android folder
-PROJECT_ROOT = "/Users/mm/Main/Projects/Android/HafizApp"
+# Use environment variable or dynamically compute from fastlane directory
+PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
 
 default_platform(:android)
 
