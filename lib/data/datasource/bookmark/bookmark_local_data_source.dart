@@ -6,6 +6,7 @@ abstract class BookmarkLocalDataSource {
   Future<bool> addBookmark(BookmarkModel bookmark);
   Future<bool> removeBookmark(int surahId, int verseNumber);
   Future<bool> isBookmarked(int surahId, int verseNumber);
+  Future<bool> clearAll();
 }
 
 class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
@@ -21,9 +22,7 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
     for (final e in raw) {
       if (e is! Map) continue;
       try {
-        bookmarks.add(
-          BookmarkModel.fromJson(Map<String, dynamic>.from(e)),
-        );
+        bookmarks.add(BookmarkModel.fromJson(Map<String, dynamic>.from(e)));
       } catch (_) {
         // Skip malformed entries instead of failing the entire read.
         continue;
@@ -51,5 +50,11 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
   Future<bool> isBookmarked(int surahId, int verseNumber) async {
     final key = '${surahId}_$verseNumber';
     return box.containsKey(key);
+  }
+
+  @override
+  Future<bool> clearAll() async {
+    await box.clear();
+    return true;
   }
 }
