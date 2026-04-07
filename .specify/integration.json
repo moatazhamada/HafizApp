@@ -1,0 +1,7 @@
+{
+  "integration": "kilocode",
+  "version": "0.5.1.dev0",
+  "scripts": {
+    "update-context": ".specify/integrations/kilocode/scripts/update-context.sh"
+  }
+}
