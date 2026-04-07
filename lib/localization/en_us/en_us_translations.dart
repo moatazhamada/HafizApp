@@ -159,6 +159,7 @@ final Map<String, String> enUs = {
   'msg_error_prefix': '', // Removed prefix for cleaner errors
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
+
   // Cloud Sync
   'lbl_cloud_sync': 'Cloud Sync',
   'msg_synced_to_cloud': 'Synced to cloud',
@@ -171,4 +172,25 @@ final Map<String, String> enUs = {
   'msg_signed_out': 'Signed out',
   'msg_syncing': 'Syncing...',
   'msg_checking_auth': 'Checking authentication...',
+
+  // Musali Teaser
+  'musali_app_name': 'Musali',
+  'musali_status': 'Coming Soon',
+  'musali_teaser_desc':
+      'What starts with something familiar ends up somewhere completely unexpected.',
+  'musali_watch_now': 'Watch Now',
+  'lbl_skip': 'Skip',
+  'lbl_next': 'Next',
+  'lbl_continue': 'Continue',
+  // Musali Teaser Slides
+  'musali_teaser_slide1_title': 'The name misled you. That\'s the point.',
+  'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',
+  'musali_teaser_slide2_title': "It's not what you think.",
+  'musali_teaser_slide2_title_ar': 'ليس كما تتخيل.',
+  'musali_teaser_slide3_title':
+      'The name promised one thing. You\'re about to get something entirely different.',
+  'musali_teaser_slide3_title_ar':
+      'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
+  'musali_teaser_slide4_sub': 'Think again.',
+  'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 };

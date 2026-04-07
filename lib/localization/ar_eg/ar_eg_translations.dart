@@ -158,6 +158,7 @@ final Map<String, String> arEg = {
   'msg_error_prefix': 'حدث خطأ: ',
   'msg_could_not_open': 'تعذر فتح الرابط: ',
   'lbl_search_surah': 'البحث عن سورة...',
+
   // Cloud Sync
   'lbl_cloud_sync': 'النسخ السحابي',
   'msg_synced_to_cloud': 'تمت المزامنة مع السحابة',
@@ -170,4 +171,25 @@ final Map<String, String> arEg = {
   'msg_signed_out': 'تم تسجيل الخروج',
   'msg_syncing': 'جاري المزامنة...',
   'msg_checking_auth': 'جاري التحقق من المصادقة...',
+
+  // Musali Teaser
+  'musali_app_name': 'مُصَالي',
+  'musali_status': 'قريباً',
+  'musali_teaser_desc': 'ما يبدأ بشيء مألوف ينتهي في مكان تماماً غير متوقع.',
+  'musali_watch_now': 'شاهد الآن',
+  'lbl_skip': 'تخطي',
+  'lbl_next': 'التالي',
+  'lbl_continue': 'متابعة',
+  // Musali Teaser Slides
+  'musali_teaser_slide1_title': 'الاسم خدعك. وهذا هو السر.',
+  'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',
+  'musali_teaser_slide2_title': 'ليس كما تتخيل.',
+  'musali_teaser_slide2_title_ar': 'ليس كما تتخيل.',
+  'musali_teaser_slide3_title':
+      'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
+  'musali_teaser_slide3_title_ar':
+      'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
+  'musali_teaser_slide4_sub': 'فكر مجدداً.',
+  'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
+
 };
