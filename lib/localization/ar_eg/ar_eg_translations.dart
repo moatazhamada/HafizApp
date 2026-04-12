@@ -180,6 +180,14 @@ final Map<String, String> arEg = {
   'lbl_skip': 'تخطي',
   'lbl_next': 'التالي',
   'lbl_continue': 'متابعة',
+  'lbl_next_surah': 'السورة التالية',
+  'lbl_previous_surah': 'السورة السابقة',
+  'lbl_session_history': 'سجل الجلسات',
+  'lbl_total_verses': 'الآيات',
+  'lbl_today': 'اليوم',
+  'lbl_yesterday': 'أمس',
+  'msg_no_sessions':
+      'لا توجد جلسات تلاوة بعد. أكمل التحقق الصوتي لرؤية سجلك هنا.',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'الاسم خدعك. وهذا هو السر.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',
@@ -191,5 +199,4 @@ final Map<String, String> arEg = {
       'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
-
 };

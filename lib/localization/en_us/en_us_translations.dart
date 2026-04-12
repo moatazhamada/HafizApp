@@ -182,6 +182,14 @@ final Map<String, String> enUs = {
   'lbl_skip': 'Skip',
   'lbl_next': 'Next',
   'lbl_continue': 'Continue',
+  'lbl_next_surah': 'Next Surah',
+  'lbl_previous_surah': 'Previous Surah',
+  'lbl_session_history': 'Session History',
+  'lbl_total_verses': 'Verses',
+  'lbl_today': 'Today',
+  'lbl_yesterday': 'Yesterday',
+  'msg_no_sessions':
+      'No recitation sessions yet. Complete a voice verification to see your history here.',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'The name misled you. That\'s the point.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',

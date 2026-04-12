@@ -8,6 +8,7 @@ import '../presentation/home_screen/home_screen.dart';
 import '../presentation/onboarding_screen/onboarding_screen.dart';
 import '../presentation/about_screen/about_screen.dart';
 import '../presentation/recitation_error/recitation_error_screen.dart';
+import '../presentation/recitation_session/recitation_session_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
 import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String aboutPage = '/about_screen';
   static const String helpScreen = '/help';
   static const String recitationErrorsPage = '/recitation_errors';
+  static const String recitationSessionsPage = '/recitation_sessions';
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
 
@@ -36,6 +38,7 @@ class AppRoutes {
         const AboutScreen(), // Kept existing aboutPage route
     helpScreen: (context) => const HelpScreen(),
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
+    recitationSessionsPage: (context) => const RecitationSessionScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: (context) => const MusaliTeaserScreen(),
   };
