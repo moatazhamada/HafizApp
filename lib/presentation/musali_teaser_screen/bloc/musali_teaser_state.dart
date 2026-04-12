@@ -1,6 +1,4 @@
-part of 'musali_teaser_bloc';
-
-import 'package:equatable/equatable.dart';
+part of 'musali_teaser_bloc.dart';
 
 enum TeaserSlide { initial, slide0, slide1, slide2, slide3, completed }
 

@@ -15,9 +15,10 @@ void main() {
 
   final testVerses = [
     const Verse(
-      chapterId: 1,
+      chapterNumber: 1,
       verseNumber: 1,
-      text: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+      arabicText: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+      audioTimestampMs: 0,
     ),
   ];
 
@@ -44,23 +45,22 @@ void main() {
     blocTest<SearchBloc, SearchState>(
       'emits [SearchLoading, SearchLoaded] when searching for surah name',
       build: () {
-        when(() => mockRepository.searchVerses(any()))
-            .thenAnswer((_) async => const Right([]));
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => const Right([]));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Fatiha')),
       wait: const Duration(milliseconds: 600),
-      expect: () => [
-        isA<SearchLoading>(),
-        isA<SearchLoaded>(),
-      ],
+      expect: () => [isA<SearchLoading>(), isA<SearchLoaded>()],
     );
 
     blocTest<SearchBloc, SearchState>(
       'emits [SearchLoading, SearchLoaded] with verse results',
       build: () {
-        when(() => mockRepository.searchVerses(any()))
-            .thenAnswer((_) async => Right(testVerses));
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => Right(testVerses));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('الله')),
@@ -82,23 +82,22 @@ void main() {
     blocTest<SearchBloc, SearchState>(
       'emits [SearchLoading, SearchEmpty] when no results found',
       build: () {
-        when(() => mockRepository.searchVerses(any()))
-            .thenAnswer((_) async => const Right([]));
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => const Right([]));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('xyz123')),
       wait: const Duration(milliseconds: 600),
-      expect: () => [
-        isA<SearchLoading>(),
-        isA<SearchEmpty>(),
-      ],
+      expect: () => [isA<SearchLoading>(), isA<SearchEmpty>()],
     );
 
     blocTest<SearchBloc, SearchState>(
       'emits [SearchLoading, SearchLoaded] even when repository fails (graceful fallback)',
       build: () {
-        when(() => mockRepository.searchVerses(any()))
-            .thenAnswer((_) async => Left(CacheFailure('Search failed')));
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => Left(CacheFailure('Search failed')));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Fatiha')),
@@ -112,16 +111,14 @@ void main() {
     blocTest<SearchBloc, SearchState>(
       'does not search verses when query is 2 chars or less',
       build: () {
-        when(() => mockRepository.searchVerses(any()))
-            .thenAnswer((_) async => Right(testVerses));
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => Right(testVerses));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Al')),
       wait: const Duration(milliseconds: 600),
-      expect: () => [
-        isA<SearchLoading>(),
-        isA<SearchLoaded>(),
-      ],
+      expect: () => [isA<SearchLoading>(), isA<SearchLoaded>()],
       verify: (_) {
         verifyNever(() => mockRepository.searchVerses(any()));
       },

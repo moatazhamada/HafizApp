@@ -139,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         final verse = state.verseResults[index];
                         // Find surah info for display
                         final surah = QuranIndex.quranSurahs.firstWhere(
-                          (s) => s.id == verse.chapterId,
+                          (s) => s.id == verse.chapterNumber,
                           orElse: () => QuranIndex.quranSurahs[0], // fallback
                         );
 
@@ -164,7 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             },
                             title: _buildHighlightedText(
                               context,
-                              verse.text, // Full Uthmani Text
+                              verse.arabicText, // Full Uthmani Text
                               _searchActionTextForHighlighting(
                                 _searchController.text,
                               ),

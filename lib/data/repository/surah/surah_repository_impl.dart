@@ -109,9 +109,9 @@ class SurahRepositoryImpl implements SurahRepository {
       'chapter': resp.chapters
           .map(
             (c) => {
-              'chapter': c.chapterId,
+              'chapter': c.chapterNumber,
               'verse': c.verseNumber,
-              'text': c.text,
+              'text': c.arabicText,
             },
           )
           .toList(),
@@ -146,7 +146,7 @@ class SurahRepositoryImpl implements SurahRepository {
             try {
               final response = ChapterResponse.fromJson(data);
               for (final verse in response.chapters) {
-                if (verse.text.contains(query)) {
+                if (verse.arabicText.contains(query)) {
                   allMatches.add(verse);
                 }
               }
