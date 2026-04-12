@@ -73,7 +73,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
   ) async {
     emit(CloudSyncLoading());
     final result = await performCloudSync(
-      ParamsCloudSync(direction: SyncDirection.localToRemote),
+      const ParamsCloudSync(direction: SyncDirection.localToRemote),
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
@@ -87,7 +87,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
   ) async {
     emit(CloudSyncLoading());
     final result = await performCloudSync(
-      ParamsCloudSync(direction: SyncDirection.remoteToLocal),
+      const ParamsCloudSync(direction: SyncDirection.remoteToLocal),
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
@@ -101,7 +101,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
   ) async {
     emit(CloudSyncLoading());
     final result = await performCloudSync(
-      ParamsCloudSync(direction: SyncDirection.bidirectional),
+      const ParamsCloudSync(direction: SyncDirection.bidirectional),
     );
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
