@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
@@ -22,8 +23,8 @@ class MusaliTeaserBloc extends Bloc<MusaliTeaserEvent, MusaliTeaserState> {
   ) {
     if (_currentSlide < 3) {
       _currentSlide++;
-      emit(TeaserSlideUpdated(currentSlideIndex: _currentSlide));
-      _startAutoSlide();
+      emit(TeaserSlideUpdated(slideIndex: _currentSlide));
+      startAutoSlide();
     } else {
       emit(TeaserCompleted());
     }
@@ -43,21 +44,22 @@ class MusaliTeaserBloc extends Bloc<MusaliTeaserEvent, MusaliTeaserState> {
   ) {
     if (event.shouldAdvance && _currentSlide < 3) {
       _currentSlide++;
-      emit(TeaserSlideUpdated(currentSlideIndex: _currentSlide));
+      emit(TeaserSlideUpdated(slideIndex: _currentSlide));
     }
   }
 
-  void _startAutoSlide() {
+  void startAutoSlide() {
     _autoSlideTimer?.cancel();
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (context.mounted) {
+      if (!isClosed) {
         add(AutoAdvanceTick(shouldAdvance: true));
       }
     });
   }
 
-  void dispose() {
+  @override
+  Future<void> close() {
     _autoSlideTimer?.cancel();
-    super.dispose();
+    return super.close();
   }
 }

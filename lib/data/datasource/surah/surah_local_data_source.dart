@@ -34,14 +34,11 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
         return [];
       }
 
-      final rawMatches = await compute(
-        _searchWorker,
-        <String, Object?>{
-          'token': token,
-          'basePath': basePath,
-          'query': query,
-        },
-      );
+      final rawMatches = await compute(_searchWorker, <String, Object?>{
+        'token': token,
+        'basePath': basePath,
+        'query': query,
+      });
 
       return rawMatches.map(VerseModel.fromJson).toList();
     } catch (e) {
@@ -72,9 +69,7 @@ Future<List<Map<String, dynamic>>> _searchWorker(
 
   for (int i = 1; i <= 114; i++) {
     try {
-      final jsonStr = await rootBundle.loadString(
-        '$basePath/surah_$i.json',
-      );
+      final jsonStr = await rootBundle.loadString('$basePath/surah_$i.json');
 
       // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
       final normalizedJson = _removeTashkeel(jsonStr);
@@ -85,10 +80,10 @@ Future<List<Map<String, dynamic>>> _searchWorker(
       final response = ChapterResponse.fromJson(data);
 
       for (final verse in response.chapters) {
-        String textToCheck = verse.text;
+        String textToCheck = verse.arabicText;
 
         // Exclude Bismillah from search for all Surahs except Al-Fatiha (1)
-        if (verse.chapterId != 1 && verse.verseNumber == 1) {
+        if (verse.chapterNumber != 1 && verse.verseNumber == 1) {
           const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
           if (textToCheck.startsWith(bismillahPrefix)) {
             textToCheck = textToCheck.substring(bismillahPrefix.length).trim();
@@ -106,9 +101,9 @@ Future<List<Map<String, dynamic>>> _searchWorker(
         final normalizedVerse = _removeTashkeel(textToCheck);
         if (normalizedVerse.contains(normalizedQuery)) {
           allMatches.add({
-            'chapter': verse.chapterId,
+            'chapter': verse.chapterNumber,
             'verse': verse.verseNumber,
-            'text': verse.text,
+            'text': verse.arabicText,
           });
         }
       }

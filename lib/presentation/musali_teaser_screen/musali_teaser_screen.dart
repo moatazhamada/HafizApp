@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'bloc/musali_teaser_bloc.dart';
 
@@ -30,7 +28,7 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    context.read<MusaliTeaserBloc>()._startAutoSlide();
+    context.read<MusaliTeaserBloc>().startAutoSlide();
   }
 
   void _setupAnimations() {
@@ -56,7 +54,6 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
   void dispose() {
     _animationController.dispose();
     _autoSlideTimer?.cancel();
-    context.read<MusaliTeaserBloc>().dispose();
     super.dispose();
   }
 
@@ -150,7 +147,6 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
 
   void _finishTeaser(BuildContext context) {
     context.read<MusaliTeaserBloc>().add(Dismissed());
-    context.read<MusaliTeaserBloc>()._autoSlideTimer?.cancel();
 
     NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
   }
