@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _showJuzSelector(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -140,10 +140,13 @@ class _HomeScreenState extends State<HomeScreen>
                   itemBuilder: (context, index) {
                     final juz = JuzIndex.getJuz(index + 1);
                     if (juz == null) return const SizedBox.shrink();
-                    
+
                     return Semantics(
                       button: true,
-                      label: JuzIndex.getJuzName(juz.juzNumber, isArabic: isArabic),
+                      label: JuzIndex.getJuzName(
+                        juz.juzNumber,
+                        isArabic: isArabic,
+                      ),
                       child: InkWell(
                         onTap: () {
                           Navigator.pop(context);
@@ -187,7 +190,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isArabic ? juz.startSurahNameAr : juz.startSurahNameEn,
+                                isArabic
+                                    ? juz.startSurahNameAr
+                                    : juz.startSurahNameEn,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -290,6 +295,11 @@ class _HomeScreenState extends State<HomeScreen>
                         AppRoutes.recitationErrorsPage,
                       );
                       break;
+                    case 'sessions':
+                      NavigatorService.pushNamed(
+                        AppRoutes.recitationSessionsPage,
+                      );
+                      break;
                     case 'settings':
                       NavigatorService.pushNamed(AppRoutes.settingsScreen);
                       break;
@@ -309,6 +319,16 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         const SizedBox(width: 12),
                         Text('lbl_practice_list'.tr),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'sessions',
+                    child: Row(
+                      children: [
+                        Icon(Icons.history, color: theme.iconTheme.color),
+                        const SizedBox(width: 12),
+                        Text('lbl_session_history'.tr),
                       ],
                     ),
                   ),
