@@ -1,7 +1,5 @@
 part of 'musali_teaser_bloc.dart';
 
-import 'package:equatable/equatable.dart';
-
 abstract class MusaliTeaserEvent extends Equatable {
   const MusaliTeaserEvent();
 

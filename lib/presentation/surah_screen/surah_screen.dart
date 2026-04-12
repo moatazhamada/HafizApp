@@ -770,7 +770,7 @@ class _SurahScreenState extends State<SurahScreen> {
     }
 
     if (!mounted) return;
-    
+
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -793,22 +793,22 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Future<String> resolveExpectedText(Verse aya) async {
-    if (surah == null) return aya.text;
+    if (surah == null) return aya.arabicText;
     final edition = PrefUtils().getQiraatEdition();
     if (edition == 'quran-uthmani' || edition.isEmpty) {
-      return aya.text;
+      return aya.arabicText;
     }
     final remoteText = await _qiraatService.fetchAyahText(
       surahId: surah!.id,
       verseNumber: aya.verseNumber,
       edition: edition,
     );
-    return remoteText ?? aya.text;
+    return remoteText ?? aya.arabicText;
   }
 
   void _onRecitationCorrect(Verse currentVerse) {
     if (!mounted) return;
-    
+
     _sessionCorrectCount++;
     _sessionTotalCount++;
 
@@ -904,7 +904,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   void _showCompletionDialog() {
     if (!mounted) return;
-    
+
     double percentage = 0;
     if (_sessionTotalCount > 0) {
       percentage = (_sessionCorrectCount / _sessionTotalCount) * 100;
@@ -1055,7 +1055,7 @@ class _SurahScreenState extends State<SurahScreen> {
           ? [Shadow(color: textColor, blurRadius: 20.0, offset: Offset.zero)]
           : null;
 
-      String verseText = '${aya.text} ';
+      String verseText = '${aya.arabicText} ';
 
       // Strip Bismillah if it's the first verse of a Surah that isn't Al-Fatiha
       if (aya.verseNumber == 1 && surah?.id != 1) {
@@ -1311,7 +1311,7 @@ class _SurahScreenState extends State<SurahScreen> {
               : const Color(0xFFE8F5E9);
         }
 
-        String verseText = aya.text;
+        String verseText = aya.arabicText;
         if (aya.verseNumber == 1 && surah?.id != 1) {
           const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
           if (verseText.startsWith(bismillahPrefix)) {
