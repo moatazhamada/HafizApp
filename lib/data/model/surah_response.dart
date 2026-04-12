@@ -25,15 +25,9 @@ class VerseModel extends Verse {
     required int chapter,
     required int verse,
     required String text,
-    String? translationText,
-    int audioTimestampMs = 0,
-  }) : super(
-         chapterNumber: chapter,
-         verseNumber: verse,
-         arabicText: text,
-         translationText: translationText,
-         audioTimestampMs: audioTimestampMs,
-       );
+    super.translationText,
+    super.audioTimestampMs = 0,
+  }) : super(chapterNumber: chapter, verseNumber: verse, arabicText: text);
 
   factory VerseModel.fromJson(Map<String, dynamic> json) {
     final dynamic chapterRaw = json['chapter'] ?? json['chapter_id'];
