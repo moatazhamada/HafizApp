@@ -19,6 +19,9 @@ import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
+import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 
@@ -347,6 +350,32 @@ class _SurahScreenState extends State<SurahScreen> {
     super.dispose();
   }
 
+  void _navigateToSurah(int surahId) {
+    if (surahId < 1 || surahId > 114) return;
+    final targetSurah = QuranIndex.quranSurahs.firstWhere(
+      (s) => s.id == surahId,
+    );
+    NavigatorService.popAndPushNamed(
+      AppRoutes.surahPage,
+      arguments: {'surah': targetSurah},
+    );
+  }
+
+  void _saveSession(double percentage) {
+    if (surah == null || _sessionTotalCount == 0) return;
+    final session = RecitationSession(
+      id: '${surah!.id}_${DateTime.now().millisecondsSinceEpoch}',
+      surahId: surah!.id,
+      surahName: surah!.localizedName(context),
+      totalVerses: _sessionTotalCount,
+      correctCount: _sessionCorrectCount,
+      totalCount: _sessionTotalCount,
+      score: percentage,
+      createdAt: DateTime.now(),
+    );
+    sl<RecitationSessionBloc>().add(SaveSession(session));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = PrefUtils().getIsDarkMode();
@@ -474,6 +503,24 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
+        if (surah != null && surah!.id > 1)
+          Semantics(
+            button: true,
+            label: 'lbl_previous_surah'.tr,
+            child: IconButton(
+              icon: const Icon(Icons.skip_previous, color: Colors.white),
+              onPressed: () => _navigateToSurah(surah!.id - 1),
+            ),
+          ),
+        if (surah != null && surah!.id < 114)
+          Semantics(
+            button: true,
+            label: 'lbl_next_surah'.tr,
+            child: IconButton(
+              icon: const Icon(Icons.skip_next, color: Colors.white),
+              onPressed: () => _navigateToSurah(surah!.id + 1),
+            ),
+          ),
         Semantics(
           button: true,
           label: 'lbl_help'.tr,
@@ -552,7 +599,7 @@ class _SurahScreenState extends State<SurahScreen> {
           fit: BoxFit.scaleDown,
           child: Padding(
             // Increased padding to prevent overlap with action icons (3 icons * 48 = 144 + margin)
-            padding: const EdgeInsets.symmetric(horizontal: 146.0),
+            padding: const EdgeInsets.symmetric(horizontal: 200.0),
             child: Semantics(
               header: true,
               child: Text(
@@ -909,6 +956,8 @@ class _SurahScreenState extends State<SurahScreen> {
     if (_sessionTotalCount > 0) {
       percentage = (_sessionCorrectCount / _sessionTotalCount) * 100;
     }
+
+    _saveSession(percentage);
 
     if (percentage >= 50 && mounted) {
       showDialog(

@@ -13,6 +13,10 @@ import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/presentation/search/bloc/search_bloc.dart';
 import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
+import 'package:hafiz_app/data/datasource/recitation_session/recitation_session_local_data_source.dart';
+import 'package:hafiz_app/data/repository/recitation_session/recitation_session_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/recitation_session_repository.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/recitation_error/recitation_error_local_data_source.dart';
@@ -54,6 +58,7 @@ Future<void> init() async {
       signOutCloudSync: sl(),
     ),
   );
+  sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
@@ -90,6 +95,10 @@ Future<void> init() async {
     ),
   );
 
+  sl.registerLazySingleton<RecitationSessionRepository>(
+    () => RecitationSessionRepositoryImpl(localDataSource: sl()),
+  );
+
   // Data Source
   sl.registerLazySingleton<SurahRemoteDataSource>(
     () => SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())),
@@ -105,6 +114,12 @@ Future<void> init() async {
   sl.registerLazySingleton<RecitationErrorLocalDataSource>(
     () =>
         RecitationErrorLocalDataSourceImpl(box: Hive.box('recitation_errors')),
+  );
+
+  sl.registerLazySingleton<RecitationSessionLocalDataSource>(
+    () => RecitationSessionLocalDataSourceImpl(
+      box: Hive.box('recitation_sessions'),
+    ),
   );
 
   sl.registerLazySingleton<CloudSyncRemoteDataSource>(
