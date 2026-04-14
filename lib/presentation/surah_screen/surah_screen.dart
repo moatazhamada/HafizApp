@@ -461,7 +461,10 @@ class _SurahScreenState extends State<SurahScreen> {
                           controller: scrollController,
                           padding: const EdgeInsets.all(16),
                           child: snapshot.data!.fold(
-                            (failure) => Text(failure.toString()),
+                            (failure) => Text(
+                              'msg_tafsir_error'.tr,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
                             (tafsir) => Text(
                               _stripHtmlTags(tafsir.text),
                               style: TextStyle(
