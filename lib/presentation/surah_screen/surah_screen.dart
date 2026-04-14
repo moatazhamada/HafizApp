@@ -1034,6 +1034,26 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
+  ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseLookups(
+    BookmarkState bookmarkState,
+    RecitationErrorState errorState,
+  ) {
+    final int surahId = surah?.id ?? -1;
+    final Set<int> bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+            .where((b) => b.surahId == surahId)
+            .map((b) => b.verseNumber)
+            .toSet()
+        : {};
+    final Set<int> errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+            .where((m) => m.surahId == surahId)
+            .map((m) => m.verseId)
+            .toSet()
+        : {};
+    return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+  }
+
   Widget _buildRichTextContent(
     BuildContext context,
     List<Verse> chapters,
@@ -1064,19 +1084,9 @@ class _SurahScreenState extends State<SurahScreen> {
     // Actually we should assign at end, or use the local list and assign to member.
     // Let's rely on local list then assign.
 
-    final int surahId = surah?.id ?? -1;
-    final Set<int> bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-            .where((b) => b.surahId == surahId)
-            .map((b) => b.verseNumber)
-            .toSet()
-        : {};
-    final Set<int> errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-            .where((m) => m.surahId == surahId)
-            .map((m) => m.verseId)
-            .toSet()
-        : {};
+    final lookups = _getVerseLookups(bookmarkState, errorState);
+    final bookmarkedVerses = lookups.bookmarkedVerses;
+    final errorVerses = lookups.errorVerses;
 
     for (var aya in chapters) {
       final bool isBookmarked = bookmarkedVerses.contains(aya.verseNumber);
@@ -1324,19 +1334,9 @@ class _SurahScreenState extends State<SurahScreen> {
         ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
 
-    final int surahId = surah?.id ?? -1;
-    final Set<int> bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-            .where((b) => b.surahId == surahId)
-            .map((b) => b.verseNumber)
-            .toSet()
-        : {};
-    final Set<int> errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-            .where((m) => m.surahId == surahId)
-            .map((m) => m.verseId)
-            .toSet()
-        : {};
+    final lookups = _getVerseLookups(bookmarkState, errorState);
+    final bookmarkedVerses = lookups.bookmarkedVerses;
+    final errorVerses = lookups.errorVerses;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
