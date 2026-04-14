@@ -50,7 +50,7 @@ class BookmarksScreen extends StatelessWidget {
           } else if (state is BookmarkError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('${"msg_error_prefix".tr}${state.message}'),
+                content: Text('${"msg_error_prefix".tr}${state.message.tr}'),
               ),
             );
           }
@@ -244,7 +244,7 @@ class BookmarksScreen extends StatelessWidget {
               child: Semantics(
                 liveRegion: true,
                 child: Text(
-                  '${'lbl_error'.tr}: ${state.message}',
+                  '${'lbl_error'.tr}: ${state.message.tr}',
                   style: TextStyle(
                     color: isDark ? Colors.redAccent : Colors.red,
                   ),
