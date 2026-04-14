@@ -38,6 +38,9 @@ import 'package:hafiz_app/data/repository/cloud_sync/cloud_sync_repository_impl.
 import 'package:hafiz_app/domain/repository/bookmark_repository.dart';
 import 'package:hafiz_app/domain/repository/recitation_error_repository.dart';
 import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
+import 'package:hafiz_app/data/datasource/qrc/qrc_remote_datasource.dart';
+import 'package:hafiz_app/data/repository/qrc/qrc_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/qrc/qrc_repository.dart';
 
 import 'core/network/network_manager.dart';
 import 'core/network/qf_auth.dart';
@@ -165,6 +168,14 @@ Future<void> init() async {
 
   sl.registerLazySingleton<CloudSyncRemoteDataSource>(
     () => CloudSyncRemoteDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<QrcRemoteDataSource>(
+    () => QrcRemoteDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<QrcRepository>(
+    () => QrcRepositoryImpl(remoteDataSource: sl()),
   );
 
   sl.registerLazySingleton(() => NetworkInfo(Connectivity()));
