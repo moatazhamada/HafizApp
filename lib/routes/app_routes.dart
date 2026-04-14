@@ -44,9 +44,9 @@ class AppRoutes {
         const AboutScreen(), // Kept existing aboutPage route
     helpScreen: (context) => const HelpScreen(),
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
-    recitationSessionsPage: (context) => const RecitationSessionScreen(),
-    memorizationPage: (context) => const MemorizationScreen(),
-    khatmahPage: (context) => const KhatmahScreen(),
+    recitationSessionsPage: RecitationSessionScreen.builder,
+    memorizationPage: MemorizationScreen.builder,
+    khatmahPage: KhatmahScreen.builder,
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: (context) => const MusaliTeaserScreen(),
     cloudSyncPage: (context) => const CloudSyncScreen(),
