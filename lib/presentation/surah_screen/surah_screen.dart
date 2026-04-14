@@ -22,6 +22,11 @@ import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
+import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 
@@ -374,6 +379,116 @@ class _SurahScreenState extends State<SurahScreen> {
       createdAt: DateTime.now(),
     );
     sl<RecitationSessionBloc>().add(SaveSession(session));
+    sl<MemorizationBloc>().add(
+      RecordReview(surahId: surah!.id, score: percentage),
+    );
+    sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
+  }
+
+  void _showTafsirSheet(Verse aya) async {
+    if (surah == null) return;
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) => FutureBuilder(
+          future: sl<TafsirRepository>().getTafsir(surah!.id, aya.verseNumber),
+          builder: (context, snapshot) {
+            final isDark = PrefUtils().getIsDarkMode() == true;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${'lbl_tafsir'.tr}: ${surah?.localizedName(context)} - ${'lbl_ayah'.tr} ${aya.verseNumber.toLocalizedNumber(context)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: snapshot.connectionState == ConnectionState.waiting
+                      ? const Center(child: CircularProgressIndicator())
+                      : snapshot.hasError || snapshot.data?.isLeft() == true
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'msg_tafsir_error'.tr,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          child: snapshot.data!.fold(
+                            (failure) => Text(
+                              'msg_tafsir_error'.tr,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            (tafsir) => Text(
+                              _stripHtmlTags(tafsir.text),
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.8,
+                                color: isDark
+                                    ? Colors.grey[300]
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _stripHtmlTags(String htmlText) {
+    final regExp = RegExp(r'<[^>]*>', multiLine: true);
+    return htmlText.replaceAll(regExp, '').trim();
   }
 
   @override
@@ -764,6 +879,18 @@ class _SurahScreenState extends State<SurahScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   _showVoiceDialog(aya);
+                },
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: 'lbl_tafsir'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.menu_book, color: Colors.teal),
+                title: Text('lbl_tafsir'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showTafsirSheet(aya);
                 },
               ),
             ),

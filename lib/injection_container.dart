@@ -16,6 +16,17 @@ import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/data/datasource/recitation_session/recitation_session_local_data_source.dart';
 import 'package:hafiz_app/data/repository/recitation_session/recitation_session_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/recitation_session_repository.dart';
+import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/data/datasource/tafsir/tafsir_remote_data_source.dart';
+import 'package:hafiz_app/data/repository/tafsir/tafsir_repository_impl.dart';
+import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_source.dart';
+import 'package:hafiz_app/data/repository/memorization/memorization_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/memorization_repository.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/data/datasource/khatmah/khatmah_local_data_source.dart';
+import 'package:hafiz_app/data/repository/khatmah/khatmah_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
@@ -59,6 +70,8 @@ Future<void> init() async {
     ),
   );
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
+  sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
+  sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
@@ -99,6 +112,18 @@ Future<void> init() async {
     () => RecitationSessionRepositoryImpl(localDataSource: sl()),
   );
 
+  sl.registerLazySingleton<TafsirRepository>(
+    () => TafsirRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<MemorizationRepository>(
+    () => MemorizationRepositoryImpl(localDataSource: sl()),
+  );
+
+  sl.registerLazySingleton<KhatmahRepository>(
+    () => KhatmahRepositoryImpl(localDataSource: sl()),
+  );
+
   // Data Source
   sl.registerLazySingleton<SurahRemoteDataSource>(
     () => SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())),
@@ -119,6 +144,22 @@ Future<void> init() async {
   sl.registerLazySingleton<RecitationSessionLocalDataSource>(
     () => RecitationSessionLocalDataSourceImpl(
       box: Hive.box('recitation_sessions'),
+    ),
+  );
+
+  sl.registerLazySingleton<TafsirRemoteDataSource>(
+    () => TafsirRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<MemorizationLocalDataSource>(
+    () =>
+        MemorizationLocalDataSourceImpl(box: Hive.box('memorization_progress')),
+  );
+
+  sl.registerLazySingleton<KhatmahLocalDataSource>(
+    () => KhatmahLocalDataSourceImpl(
+      logBox: Hive.box('reading_logs'),
+      goalBox: Hive.box('reading_goal'),
     ),
   );
 
