@@ -227,4 +227,8 @@ final Map<String, String> arEg = {
       'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
+
+  // QRC Errors
+  'msg_qrc_error': 'خطأ في التحقق من التلاوة',
+  'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
 };
