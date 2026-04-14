@@ -86,24 +86,32 @@ class LocalAudioManager {
   /// Check if audio file exists locally
   Future<bool> fileExists(String filename) async {
     if (!_isInitialized) return false;
-    final dir = await downloadDirectory;
-    final safe = _sanitizeFilename(filename);
-    final filePath = '$dir/$safe';
-    final file = File(filePath);
-    return await file.exists();
+    try {
+      final dir = await downloadDirectory;
+      final safe = _sanitizeFilename(filename);
+      final filePath = p.join(dir, safe);
+      final file = File(filePath);
+      return await file.exists();
+    } on ArgumentError {
+      return false;
+    }
   }
 
   /// Get local file path
   Future<String?> getLocalPath(String filename) async {
     if (!_isInitialized) return null;
-    final dir = await downloadDirectory;
-    final safe = _sanitizeFilename(filename);
-    final filePath = '$dir/$safe';
-    final file = File(filePath);
-    if (await file.exists()) {
-      return filePath;
+    try {
+      final dir = await downloadDirectory;
+      final safe = _sanitizeFilename(filename);
+      final filePath = p.join(dir, safe);
+      final file = File(filePath);
+      if (await file.exists()) {
+        return filePath;
+      }
+      return null;
+    } on ArgumentError {
+      return null;
     }
-    return null;
   }
 
   /// Delete audio file from local storage

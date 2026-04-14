@@ -15,8 +15,15 @@ class CloudSyncScreen extends StatelessWidget {
   }
 }
 
-class _CloudSyncView extends StatelessWidget {
+class _CloudSyncView extends StatefulWidget {
   const _CloudSyncView();
+
+  @override
+  State<_CloudSyncView> createState() => _CloudSyncViewState();
+}
+
+class _CloudSyncViewState extends State<_CloudSyncView> {
+  bool _isAuthenticated = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +31,9 @@ class _CloudSyncView extends StatelessWidget {
       appBar: AppBar(title: Text('lbl_cloud_sync'.tr)),
       body: BlocConsumer<CloudSyncBloc, CloudSyncState>(
         listener: (context, state) {
-          if (state is CloudSyncSuccess) {
+          if (state is CloudSyncAuthenticated) {
+            _isAuthenticated = state.isAuthenticated;
+          } else if (state is CloudSyncSuccess) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
@@ -51,7 +60,9 @@ class _CloudSyncView extends StatelessWidget {
   }
 
   Widget _buildAuthStatus(BuildContext context, CloudSyncState state) {
-    final isAuth = state is CloudSyncAuthenticated && state.isAuthenticated;
+    final isAuth = state is CloudSyncAuthenticated
+        ? state.isAuthenticated
+        : _isAuthenticated;
     return Card(
       child: ListTile(
         leading: Icon(
@@ -73,7 +84,9 @@ class _CloudSyncView extends StatelessWidget {
   }
 
   Widget _buildAuthActions(BuildContext context, CloudSyncState state) {
-    final isAuth = state is CloudSyncAuthenticated && state.isAuthenticated;
+    final isAuth = state is CloudSyncAuthenticated
+        ? state.isAuthenticated
+        : _isAuthenticated;
     final isLoading = state is CloudSyncLoading;
 
     if (isAuth) {
@@ -95,7 +108,9 @@ class _CloudSyncView extends StatelessWidget {
   }
 
   Widget _buildSyncActions(BuildContext context, CloudSyncState state) {
-    final isAuth = state is CloudSyncAuthenticated && state.isAuthenticated;
+    final isAuth = state is CloudSyncAuthenticated
+        ? state.isAuthenticated
+        : _isAuthenticated;
     final isLoading = state is CloudSyncLoading;
 
     return Column(

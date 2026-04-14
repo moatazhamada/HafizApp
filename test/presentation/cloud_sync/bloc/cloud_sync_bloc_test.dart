@@ -99,6 +99,6 @@ void main() {
     },
     build: createBloc,
     act: (bloc) => bloc.add(CheckAuthStatusEvent()),
-    errors: () => [isA<Error>()],
+    expect: () => [CloudSyncLoading(), isA<CloudSyncError>()],
   );
 }
