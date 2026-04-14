@@ -300,6 +300,9 @@ class _HomeScreenState extends State<HomeScreen>
                         AppRoutes.recitationSessionsPage,
                       );
                       break;
+                    case 'memorization':
+                      NavigatorService.pushNamed(AppRoutes.memorizationPage);
+                      break;
                     case 'settings':
                       NavigatorService.pushNamed(AppRoutes.settingsScreen);
                       break;
@@ -310,25 +313,22 @@ class _HomeScreenState extends State<HomeScreen>
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    value: 'mistakes',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.playlist_add_check,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text('lbl_practice_list'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
                     value: 'sessions',
                     child: Row(
                       children: [
                         Icon(Icons.history, color: theme.iconTheme.color),
                         const SizedBox(width: 12),
                         Text('lbl_session_history'.tr),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'memorization',
+                    child: Row(
+                      children: [
+                        Icon(Icons.school, color: theme.iconTheme.color),
+                        const SizedBox(width: 12),
+                        Text('lbl_memorization'.tr),
                       ],
                     ),
                   ),

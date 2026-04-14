@@ -193,6 +193,15 @@ final Map<String, String> enUs = {
   'lbl_tafsir': 'Tafsir',
   'msg_tafsir_error':
       'Could not load tafsir. Please check your internet connection.',
+  'lbl_memorization': 'Memorization',
+  'lbl_quran_progress': 'Quran Progress',
+  'lbl_memorized': 'Memorized',
+  'lbl_in_progress': 'In Progress',
+  'lbl_not_started': 'Not Started',
+  'lbl_needs_review': 'Needs Review',
+  'lbl_due_for_review': 'Due for Review',
+  'lbl_all_surahs': 'All Surahs',
+  'lbl_best_score': 'Best',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'The name misled you. That\'s the point.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',

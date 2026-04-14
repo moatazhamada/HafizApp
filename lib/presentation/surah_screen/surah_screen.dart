@@ -23,6 +23,8 @@ import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_sessio
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 
@@ -375,6 +377,9 @@ class _SurahScreenState extends State<SurahScreen> {
       createdAt: DateTime.now(),
     );
     sl<RecitationSessionBloc>().add(SaveSession(session));
+    sl<MemorizationBloc>().add(
+      RecordReview(surahId: surah!.id, score: percentage),
+    );
   }
 
   void _showTafsirSheet(Verse aya) async {
