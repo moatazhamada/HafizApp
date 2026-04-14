@@ -109,10 +109,11 @@ class QrcRecitationService {
       return false;
     }
 
-    final uri = Uri.parse(
-      '${ApiConfig.qrcWsBase}?api_key=${ApiConfig.qrcApiKey}',
+    final uri = Uri.parse(ApiConfig.qrcWsBase);
+    _channel = WebSocketChannel.connect(
+      uri,
+      protocols: ['x-api-key', ApiConfig.qrcApiKey],
     );
-    _channel = WebSocketChannel.connect(uri);
     _socketSub = _channel!.stream.listen(
       _handleSocketMessage,
       onError: (e) => _events.add(QrcErrorEvent(e.toString())),
