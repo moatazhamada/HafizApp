@@ -551,7 +551,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     return Center(
                       child: Semantics(
                         liveRegion: true,
-                        child: Text(state.errorMessage),
+                        child: Text(state.errorMessage.tr),
                       ),
                     );
                   } else {

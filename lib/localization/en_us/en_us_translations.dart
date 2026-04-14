@@ -239,6 +239,12 @@ final Map<String, String> enUs = {
   'musali_teaser_slide4_sub': 'Think again.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Failure Messages
+  'msg_server_error': 'Server error occurred',
+  'msg_cache_error': 'Local data error',
+  'msg_connection_error': 'No Internet connection',
+  'msg_unexpected_error': 'Unexpected error',
+
   // QRC Errors
   'msg_qrc_error': 'Recitation verification error',
   'msg_qrc_invalid_message': 'Invalid recitation verification message',

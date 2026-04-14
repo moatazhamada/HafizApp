@@ -210,7 +210,9 @@ class RecitationErrorScreen extends StatelessWidget {
               },
             );
           } else if (state is RecitationErrorError) {
-            return Center(child: Text('Error: ${state.message}'));
+            return Center(
+              child: Text('${"lbl_error".tr}: ${state.message.tr}'),
+            );
           }
           return const SizedBox();
         },
