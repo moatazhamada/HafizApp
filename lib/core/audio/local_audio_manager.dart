@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
@@ -25,6 +26,14 @@ class LocalAudioManager {
     _statusBox = await Hive.openBox(_statusBoxName);
     _playbackStateBox = await Hive.openBox(_playbackStateBoxName);
     _isInitialized = true;
+  }
+
+  String _sanitizeFilename(String filename) {
+    final sanitized = p.basename(filename);
+    if (sanitized != filename) {
+      throw ArgumentError('Invalid filename: path traversal detected');
+    }
+    return sanitized;
   }
 
   /// Get application documents directory
@@ -55,7 +64,8 @@ class LocalAudioManager {
       }
 
       final dir = await downloadDirectory;
-      final filePath = '$dir/$filename';
+      final safe = _sanitizeFilename(filename);
+      final filePath = '$dir/$safe';
 
       final dio = Dio();
       await dio.download(
@@ -76,22 +86,32 @@ class LocalAudioManager {
   /// Check if audio file exists locally
   Future<bool> fileExists(String filename) async {
     if (!_isInitialized) return false;
-    final dir = await downloadDirectory;
-    final filePath = '$dir/$filename';
-    final file = File(filePath);
-    return await file.exists();
+    try {
+      final dir = await downloadDirectory;
+      final safe = _sanitizeFilename(filename);
+      final filePath = p.join(dir, safe);
+      final file = File(filePath);
+      return await file.exists();
+    } on ArgumentError {
+      return false;
+    }
   }
 
   /// Get local file path
   Future<String?> getLocalPath(String filename) async {
     if (!_isInitialized) return null;
-    final dir = await downloadDirectory;
-    final filePath = '$dir/$filename';
-    final file = File(filePath);
-    if (await file.exists()) {
-      return filePath;
+    try {
+      final dir = await downloadDirectory;
+      final safe = _sanitizeFilename(filename);
+      final filePath = p.join(dir, safe);
+      final file = File(filePath);
+      if (await file.exists()) {
+        return filePath;
+      }
+      return null;
+    } on ArgumentError {
+      return null;
     }
-    return null;
   }
 
   /// Delete audio file from local storage
