@@ -1064,21 +1064,22 @@ class _SurahScreenState extends State<SurahScreen> {
     // Actually we should assign at end, or use the local list and assign to member.
     // Let's rely on local list then assign.
 
+    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+            .where((b) => b.surahId == (surah?.id ?? -1))
+            .map((b) => b.verseNumber)
+            .toSet()
+        : {};
+    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
+        ? errorState.errors
+            .where((m) => m.surahId == (surah?.id ?? -1))
+            .map((m) => m.verseId)
+            .toSet()
+        : {};
+
     for (var aya in chapters) {
-      bool isBookmarked = false;
-      if (bookmarkState is BookmarkLoaded) {
-        isBookmarked = bookmarkState.bookmarks.any(
-          (b) =>
-              b.surahId == (surah?.id ?? -1) &&
-              b.verseNumber == aya.verseNumber,
-        );
-      }
-      bool isRecitationError = false;
-      if (errorState is RecitationErrorLoaded) {
-        isRecitationError = errorState.errors.any(
-          (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verseNumber,
-        );
-      }
+      bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
+      bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
       bool isBlurred =
           _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
@@ -1322,24 +1323,24 @@ class _SurahScreenState extends State<SurahScreen> {
         ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
         : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
 
+    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+            .where((b) => b.surahId == (surah?.id ?? -1))
+            .map((b) => b.verseNumber)
+            .toSet()
+        : {};
+    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
+        ? errorState.errors
+            .where((m) => m.surahId == (surah?.id ?? -1))
+            .map((m) => m.verseId)
+            .toSet()
+        : {};
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: chapters.map((aya) {
-        bool isBookmarked = false;
-        if (bookmarkState is BookmarkLoaded) {
-          isBookmarked = bookmarkState.bookmarks.any(
-            (b) =>
-                b.surahId == (surah?.id ?? -1) &&
-                b.verseNumber == aya.verseNumber,
-          );
-        }
-        bool isRecitationError = false;
-        if (errorState is RecitationErrorLoaded) {
-          isRecitationError = errorState.errors.any(
-            (m) =>
-                m.surahId == (surah?.id ?? -1) && m.verseId == aya.verseNumber,
-          );
-        }
+        bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
+        bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
         bool isBlurred =
             _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
