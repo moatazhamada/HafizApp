@@ -1,8 +1,5 @@
 /// Checks if string is email.
-bool isValidEmail(
-  String? inputString, {
-  bool isRequired = false,
-}) {
+bool isValidEmail(String? inputString, {bool isRequired = false}) {
   bool isInputStringValid = false;
 
   if (!isRequired && (inputString == null ? true : inputString.isEmpty)) {
@@ -26,12 +23,9 @@ bool isValidEmail(
 ///  at least a lower case letter
 ///  at least a digit
 ///  at least a special character [@#$%^&+=]
-///  length of at least 4
+///  length of at least 8
 /// no white space allowed
-bool isValidPassword(
-  String? inputString, {
-  bool isRequired = false,
-}) {
+bool isValidPassword(String? inputString, {bool isRequired = false}) {
   bool isInputStringValid = false;
 
   if (!isRequired && (inputString == null ? true : inputString.isEmpty)) {
@@ -51,10 +45,7 @@ bool isValidPassword(
 }
 
 /// Checks if string consist only Alphabet. (No Whitespace)
-bool isText(
-  String? inputString, {
-  bool isRequired = false,
-}) {
+bool isText(String? inputString, {bool isRequired = false}) {
   bool isInputStringValid = false;
 
   if (!isRequired && (inputString == null ? true : inputString.isEmpty)) {
@@ -73,10 +64,7 @@ bool isText(
 }
 
 /// Checks if string consist only numeric.
-bool isNumeric(
-  String? inputString, {
-  bool isRequired = false,
-}) {
+bool isNumeric(String? inputString, {bool isRequired = false}) {
   bool isInputStringValid = false;
 
   if (!isRequired && (inputString == null ? true : inputString.isEmpty)) {
@@ -95,10 +83,7 @@ bool isNumeric(
 }
 
 /// Checks if string is phone number
-bool isValidPhone(
-  String? inputString, {
-  bool isRequired = false,
-}) {
+bool isValidPhone(String? inputString, {bool isRequired = false}) {
   bool isInputStringValid = false;
 
   if (!isRequired && (inputString == null ? true : inputString.isEmpty)) {
