@@ -61,13 +61,6 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
   }
 
   String _mapFailureToMessage(Failure failure) {
-    if (failure is ServerFailure) {
-      return failure.errorMessage;
-    } else if (failure is CacheFailure) {
-      return failure.errorMessage;
-    } else if (failure is ConnectionFailure) {
-      return failure.errorMessage;
-    }
-    return 'Unexpected Error';
+    return failure.errorMessage;
   }
 }

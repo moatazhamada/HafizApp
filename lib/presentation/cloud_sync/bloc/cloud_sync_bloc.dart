@@ -109,14 +109,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
   }
 
-  String _mapFailureToMessage(Failure failure) {
-    if (failure is ServerFailure) {
-      return 'msg_cloud_sync_error'.tr;
-    } else if (failure is CacheFailure) {
-      return 'msg_cloud_sync_error'.tr;
-    } else if (failure is ConnectionFailure) {
-      return 'msg_cloud_sync_error'.tr;
-    }
+  String _mapFailureToMessage(Failure _) {
     return 'msg_cloud_sync_error'.tr;
   }
 }
