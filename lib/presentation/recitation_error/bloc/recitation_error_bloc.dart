@@ -62,9 +62,6 @@ class RecitationErrorBloc
   }
 
   String _mapFailureToMessage(Failure failure) {
-    if (failure is CacheFailure) {
-      return failure.errorMessage;
-    }
-    return 'Unexpected Error';
+    return failure.errorMessage;
   }
 }
