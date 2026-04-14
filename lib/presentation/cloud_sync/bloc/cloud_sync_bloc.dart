@@ -3,8 +3,6 @@ import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/usecase/usecase.dart';
 import 'package:hafiz_app/localization/app_localization.dart';
-import 'package:hafiz_app/localization/app_localization.dart'
-    as app_localization;
 import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/cloud_sync_usecase.dart';
 
