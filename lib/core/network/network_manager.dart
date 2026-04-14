@@ -21,7 +21,7 @@ class NetworkManagerImpl extends NetworkManagerI {
         PrettyDioLogger(
           requestHeader: false,
           requestBody: false,
-          responseBody: true,
+          responseBody: false,
           responseHeader: false,
           error: true,
           compact: true,

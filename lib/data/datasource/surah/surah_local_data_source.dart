@@ -71,11 +71,11 @@ Future<List<Map<String, dynamic>>> _searchWorker(
     try {
       final jsonStr = await rootBundle.loadString('$basePath/surah_$i.json');
 
-      // Optimization: Pre-check on normalized raw JSON to skip parsing entirely
-      final normalizedJson = _removeTashkeel(jsonStr);
-      if (!normalizedJson.contains(normalizedQuery)) continue;
+      if (!jsonStr.contains(query)) {
+        final normalizedJson = _removeTashkeel(jsonStr);
+        if (!normalizedJson.contains(normalizedQuery)) continue;
+      }
 
-      // Parse only if we have a potential match
       final Map<String, dynamic> data = json.decode(jsonStr);
       final response = ChapterResponse.fromJson(data);
 

@@ -29,6 +29,7 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../core/theme/app_colors.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -495,9 +496,11 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget build(BuildContext context) {
     final isDark = PrefUtils().getIsDarkMode();
 
+    final colors = AppColors.of(context);
+
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Color(isDark == true ? 0xFF000000 : 0xFFFFFFFF),
+        backgroundColor: colors.scaffoldBackground,
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
@@ -608,7 +611,7 @@ class _SurahScreenState extends State<SurahScreen> {
       expandedHeight: 180.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF006754),
+      backgroundColor: AppColors.of(context).appBarBackground,
       leading: Semantics(
         button: true,
         label: 'lbl_back'.tr,
@@ -746,9 +749,9 @@ class _SurahScreenState extends State<SurahScreen> {
               ),
             ),
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF006754), Color(0xDB87D1A4)],
+                  colors: AppColors.of(context).appBarGradient,
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -777,7 +780,7 @@ class _SurahScreenState extends State<SurahScreen> {
             fontFamily: 'Amiri',
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40),
+            color: AppColors.of(context).bismillahColor,
           ),
         ),
       ),
@@ -1168,44 +1171,35 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    final Color textColor = isDark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF004B40);
-    final Color badgeBorder = isDark
-        ? const Color(0xFF87D1A4)
-        : const Color(0xFF006754);
-    final Color badgeText = isDark
-        ? const Color(0xFFFAF6EB)
-        : const Color(0xFF004B40);
-    final List<Color> badgeGradient = isDark
-        ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
-        : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
+    final colors = AppColors.of(context);
+    final textColor = colors.textColor;
+    final badgeBorder = colors.badgeBorder;
+    final badgeText = colors.badgeText;
+    final badgeGradient = colors.badgeGradient;
+
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == surahId)
+              .map((b) => b.verseNumber)
+              .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == surahId)
+              .map((m) => m.verseId)
+              .toSet()
+        : <int>{};
 
     List<InlineSpan> spans = [];
     final List<_VerseRange> verseRanges = [];
     int currentOffset = 0;
 
-    // Reset current ranges for scroll logic
-    _currentVerseRanges =
-        verseRanges; // Will be populated by reference or re-assigned?
-    // Actually we should assign at end, or use the local list and assign to member.
-    // Let's rely on local list then assign.
+    _currentVerseRanges = verseRanges;
 
     for (var aya in chapters) {
-      bool isBookmarked = false;
-      if (bookmarkState is BookmarkLoaded) {
-        isBookmarked = bookmarkState.bookmarks.any(
-          (b) =>
-              b.surahId == (surah?.id ?? -1) &&
-              b.verseNumber == aya.verseNumber,
-        );
-      }
-      bool isRecitationError = false;
-      if (errorState is RecitationErrorLoaded) {
-        isRecitationError = errorState.errors.any(
-          (m) => m.surahId == (surah?.id ?? -1) && m.verseId == aya.verseNumber,
-        );
-      }
+      bool isBookmarked = bookmarkedVerses.contains(aya.verseNumber);
+      bool isRecitationError = errorVerses.contains(aya.verseNumber);
 
       bool isBlurred =
           _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
@@ -1213,17 +1207,11 @@ class _SurahScreenState extends State<SurahScreen> {
 
       Color? backgroundColor;
       if (isHighlighted) {
-        backgroundColor = isDark
-            ? const Color(0xFF2A4A42)
-            : const Color(0xFFB2DFDB);
+        backgroundColor = colors.highlightBackground;
       } else if (isRecitationError) {
-        backgroundColor = isDark
-            ? const Color(0xFF5C1B1B)
-            : const Color(0xFFFFEBEE);
+        backgroundColor = colors.errorBackground;
       } else if (isBookmarked) {
-        backgroundColor = isDark
-            ? const Color(0xFF1E3A35)
-            : const Color(0xFFE8F5E9);
+        backgroundColor = colors.bookmarkBackground;
       }
 
       final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
@@ -1436,37 +1424,31 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    final Color textColor = isDark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF004B40);
-    final Color badgeBorder = isDark
-        ? const Color(0xFF87D1A4)
-        : const Color(0xFF006754);
-    final Color badgeText = isDark
-        ? const Color(0xFFFAF6EB)
-        : const Color(0xFF004B40);
-    final List<Color> badgeGradient = isDark
-        ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
-        : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
+    final colors = AppColors.of(context);
+    final textColor = colors.textColor;
+    final badgeBorder = colors.badgeBorder;
+    final badgeText = colors.badgeText;
+    final badgeGradient = colors.badgeGradient;
+
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == surahId)
+              .map((b) => b.verseNumber)
+              .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == surahId)
+              .map((m) => m.verseId)
+              .toSet()
+        : <int>{};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: chapters.map((aya) {
-        bool isBookmarked = false;
-        if (bookmarkState is BookmarkLoaded) {
-          isBookmarked = bookmarkState.bookmarks.any(
-            (b) =>
-                b.surahId == (surah?.id ?? -1) &&
-                b.verseNumber == aya.verseNumber,
-          );
-        }
-        bool isRecitationError = false;
-        if (errorState is RecitationErrorLoaded) {
-          isRecitationError = errorState.errors.any(
-            (m) =>
-                m.surahId == (surah?.id ?? -1) && m.verseId == aya.verseNumber,
-          );
-        }
+        bool isBookmarked = bookmarkedVerses.contains(aya.verseNumber);
+        bool isRecitationError = errorVerses.contains(aya.verseNumber);
 
         bool isBlurred =
             _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
@@ -1474,17 +1456,11 @@ class _SurahScreenState extends State<SurahScreen> {
 
         Color? backgroundColor;
         if (isHighlighted) {
-          backgroundColor = isDark
-              ? const Color(0xFF2A4A42)
-              : const Color(0xFFB2DFDB);
+          backgroundColor = colors.highlightBackground;
         } else if (isRecitationError) {
-          backgroundColor = isDark
-              ? const Color(0xFF5C1B1B)
-              : const Color(0xFFFFEBEE);
+          backgroundColor = colors.errorBackground;
         } else if (isBookmarked) {
-          backgroundColor = isDark
-              ? const Color(0xFF1E3A35)
-              : const Color(0xFFE8F5E9);
+          backgroundColor = colors.bookmarkBackground;
         }
 
         String verseText = aya.arabicText;
