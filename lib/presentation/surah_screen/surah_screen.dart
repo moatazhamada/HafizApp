@@ -1197,9 +1197,22 @@ class _SurahScreenState extends State<SurahScreen> {
 
     _currentVerseRanges = verseRanges;
 
+    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == (surah?.id ?? -1))
+              .map((b) => b.verseNumber)
+              .toSet()
+        : {};
+    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == (surah?.id ?? -1))
+              .map((m) => m.verseId)
+              .toSet()
+        : {};
+
     for (var aya in chapters) {
-      bool isBookmarked = bookmarkedVerses.contains(aya.verseNumber);
-      bool isRecitationError = errorVerses.contains(aya.verseNumber);
+      bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
+      bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
       bool isBlurred =
           _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
@@ -1444,11 +1457,24 @@ class _SurahScreenState extends State<SurahScreen> {
               .toSet()
         : <int>{};
 
+    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == (surah?.id ?? -1))
+              .map((b) => b.verseNumber)
+              .toSet()
+        : {};
+    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == (surah?.id ?? -1))
+              .map((m) => m.verseId)
+              .toSet()
+        : {};
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: chapters.map((aya) {
-        bool isBookmarked = bookmarkedVerses.contains(aya.verseNumber);
-        bool isRecitationError = errorVerses.contains(aya.verseNumber);
+        bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
+        bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
         bool isBlurred =
             _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
