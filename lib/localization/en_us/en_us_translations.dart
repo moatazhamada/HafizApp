@@ -173,6 +173,14 @@ final Map<String, String> enUs = {
   'msg_syncing': 'Syncing...',
   'msg_checking_auth': 'Checking authentication...',
 
+  'lbl_sync_to_cloud': 'Sync to Cloud',
+  'lbl_sync_from_cloud': 'Sync from Cloud',
+  'lbl_sync_bidirectional': 'Bidirectional Sync',
+  'lbl_sign_in': 'Sign In',
+  'lbl_sign_out': 'Sign Out',
+  'lbl_not_authenticated': 'Not authenticated',
+  'lbl_authenticated': 'Authenticated',
+
   // Musali Teaser
   'musali_app_name': 'Musali',
   'musali_status': 'Coming Soon',
@@ -190,6 +198,35 @@ final Map<String, String> enUs = {
   'lbl_yesterday': 'Yesterday',
   'msg_no_sessions':
       'No recitation sessions yet. Complete a voice verification to see your history here.',
+  'lbl_tafsir': 'Tafsir',
+  'msg_tafsir_error':
+      'Could not load tafsir. Please check your internet connection.',
+  'lbl_memorization': 'Memorization',
+  'lbl_quran_progress': 'Quran Progress',
+  'lbl_memorized': 'Memorized',
+  'lbl_in_progress': 'In Progress',
+  'lbl_not_started': 'Not Started',
+  'lbl_needs_review': 'Needs Review',
+  'lbl_due_for_review': 'Due for Review',
+  'lbl_all_surahs': 'All Surahs',
+  'lbl_best_score': 'Best',
+  'lbl_khatmah_tracker': 'Khatmah Tracker',
+  'lbl_today_reading': "Today's Reading",
+  'lbl_verses': 'verses',
+  'lbl_daily_goal': 'Daily Goal',
+  'lbl_current_goal': 'Current',
+  'msg_goal_achieved': 'Goal achieved!',
+  'msg_verses_remaining': '{count} verses remaining',
+  'lbl_day_streak': 'day streak',
+  'lbl_keep_going': 'Keep going!',
+  'lbl_last_7_days': 'Last 7 Days',
+  'lbl_mon': 'Mon',
+  'lbl_tue': 'Tue',
+  'lbl_wed': 'Wed',
+  'lbl_thu': 'Thu',
+  'lbl_fri': 'Fri',
+  'lbl_sat': 'Sat',
+  'lbl_sun': 'Sun',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'The name misled you. That\'s the point.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',
@@ -201,4 +238,8 @@ final Map<String, String> enUs = {
       'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
   'musali_teaser_slide4_sub': 'Think again.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
+
+  // QRC Errors
+  'msg_qrc_error': 'Recitation verification error',
+  'msg_qrc_invalid_message': 'Invalid recitation verification message',
 };

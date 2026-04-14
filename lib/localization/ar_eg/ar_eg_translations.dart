@@ -172,6 +172,14 @@ final Map<String, String> arEg = {
   'msg_syncing': 'جاري المزامنة...',
   'msg_checking_auth': 'جاري التحقق من المصادقة...',
 
+  'lbl_sync_to_cloud': 'مزامنة إلى السحابة',
+  'lbl_sync_from_cloud': 'مزامنة من السحابة',
+  'lbl_sync_bidirectional': 'مزامنة ثنائية الاتجاه',
+  'lbl_sign_in': 'تسجيل الدخول',
+  'lbl_sign_out': 'تسجيل الخروج',
+  'lbl_not_authenticated': 'غير مصادق',
+  'lbl_authenticated': 'مصادق',
+
   // Musali Teaser
   'musali_app_name': 'مُصَالي',
   'musali_status': 'قريباً',
@@ -188,6 +196,34 @@ final Map<String, String> arEg = {
   'lbl_yesterday': 'أمس',
   'msg_no_sessions':
       'لا توجد جلسات تلاوة بعد. أكمل التحقق الصوتي لرؤية سجلك هنا.',
+  'lbl_tafsir': 'تفسير',
+  'msg_tafsir_error': 'تعذر تحميل التفسير. يرجى التحقق من اتصال الإنترنت.',
+  'lbl_memorization': 'الحفظ',
+  'lbl_quran_progress': 'تقدم حفظ القرآن',
+  'lbl_memorized': 'محفوظ',
+  'lbl_in_progress': 'قيد التعلم',
+  'lbl_not_started': 'لم يبدأ',
+  'lbl_needs_review': 'يحتاج مراجعة',
+  'lbl_due_for_review': 'مستحقة للمراجعة',
+  'lbl_all_surahs': 'جميع السور',
+  'lbl_best_score': 'الأفضل',
+  'lbl_khatmah_tracker': 'متتبع الختمة',
+  'lbl_today_reading': 'قراءة اليوم',
+  'lbl_verses': 'آية',
+  'lbl_daily_goal': 'الهدف اليومي',
+  'lbl_current_goal': 'الحالي',
+  'msg_goal_achieved': 'تم تحقيق الهدف!',
+  'msg_verses_remaining': 'باقي {count} آية',
+  'lbl_day_streak': 'يوم متتالي',
+  'lbl_keep_going': 'استمر!',
+  'lbl_last_7_days': 'آخر ٧ أيام',
+  'lbl_mon': 'إث',
+  'lbl_tue': 'ثل',
+  'lbl_wed': 'أر',
+  'lbl_thu': 'خم',
+  'lbl_fri': 'جم',
+  'lbl_sat': 'سب',
+  'lbl_sun': 'أح',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'الاسم خدعك. وهذا هو السر.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',
@@ -199,4 +235,8 @@ final Map<String, String> arEg = {
       'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
+
+  // QRC Errors
+  'msg_qrc_error': 'خطأ في التحقق من التلاوة',
+  'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
 };

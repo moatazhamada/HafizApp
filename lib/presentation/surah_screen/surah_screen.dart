@@ -22,8 +22,14 @@ import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
+import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../core/theme/app_colors.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -374,15 +380,127 @@ class _SurahScreenState extends State<SurahScreen> {
       createdAt: DateTime.now(),
     );
     sl<RecitationSessionBloc>().add(SaveSession(session));
+    sl<MemorizationBloc>().add(
+      RecordReview(surahId: surah!.id, score: percentage),
+    );
+    sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
+  }
+
+  void _showTafsirSheet(Verse aya) async {
+    if (surah == null) return;
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) => FutureBuilder(
+          future: sl<TafsirRepository>().getTafsir(surah!.id, aya.verseNumber),
+          builder: (context, snapshot) {
+            final isDark = PrefUtils().getIsDarkMode() == true;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${'lbl_tafsir'.tr}: ${surah?.localizedName(context)} - ${'lbl_ayah'.tr} ${aya.verseNumber.toLocalizedNumber(context)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: snapshot.connectionState == ConnectionState.waiting
+                      ? const Center(child: CircularProgressIndicator())
+                      : snapshot.hasError || snapshot.data?.isLeft() == true
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'msg_tafsir_error'.tr,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          child: snapshot.data!.fold(
+                            (failure) => Text(
+                              'msg_tafsir_error'.tr,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            (tafsir) => Text(
+                              _stripHtmlTags(tafsir.text),
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.8,
+                                color: isDark
+                                    ? Colors.grey[300]
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _stripHtmlTags(String htmlText) {
+    final regExp = RegExp(r'<[^>]*>', multiLine: true);
+    return htmlText.replaceAll(regExp, '').trim();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = PrefUtils().getIsDarkMode();
 
+    final colors = AppColors.of(context);
+
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Color(isDark == true ? 0xFF000000 : 0xFFFFFFFF),
+        backgroundColor: colors.scaffoldBackground,
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
@@ -493,7 +611,7 @@ class _SurahScreenState extends State<SurahScreen> {
       expandedHeight: 180.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF006754),
+      backgroundColor: AppColors.of(context).appBarBackground,
       leading: Semantics(
         button: true,
         label: 'lbl_back'.tr,
@@ -631,9 +749,9 @@ class _SurahScreenState extends State<SurahScreen> {
               ),
             ),
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF006754), Color(0xDB87D1A4)],
+                  colors: AppColors.of(context).appBarGradient,
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -662,7 +780,7 @@ class _SurahScreenState extends State<SurahScreen> {
             fontFamily: 'Amiri',
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF004B40),
+            color: AppColors.of(context).bismillahColor,
           ),
         ),
       ),
@@ -764,6 +882,18 @@ class _SurahScreenState extends State<SurahScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   _showVoiceDialog(aya);
+                },
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: 'lbl_tafsir'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.menu_book, color: Colors.teal),
+                title: Text('lbl_tafsir'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showTafsirSheet(aya);
                 },
               ),
             ),
@@ -1041,40 +1171,43 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    final Color textColor = isDark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF004B40);
-    final Color badgeBorder = isDark
-        ? const Color(0xFF87D1A4)
-        : const Color(0xFF006754);
-    final Color badgeText = isDark
-        ? const Color(0xFFFAF6EB)
-        : const Color(0xFF004B40);
-    final List<Color> badgeGradient = isDark
-        ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
-        : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
+    final colors = AppColors.of(context);
+    final textColor = colors.textColor;
+    final badgeBorder = colors.badgeBorder;
+    final badgeText = colors.badgeText;
+    final badgeGradient = colors.badgeGradient;
+
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == surahId)
+              .map((b) => b.verseNumber)
+              .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == surahId)
+              .map((m) => m.verseId)
+              .toSet()
+        : <int>{};
 
     List<InlineSpan> spans = [];
     final List<_VerseRange> verseRanges = [];
     int currentOffset = 0;
 
-    // Reset current ranges for scroll logic
-    _currentVerseRanges =
-        verseRanges; // Will be populated by reference or re-assigned?
-    // Actually we should assign at end, or use the local list and assign to member.
-    // Let's rely on local list then assign.
+    _currentVerseRanges = verseRanges;
 
     final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
         ? bookmarkState.bookmarks
-            .where((b) => b.surahId == (surah?.id ?? -1))
-            .map((b) => b.verseNumber)
-            .toSet()
+              .where((b) => b.surahId == (surah?.id ?? -1))
+              .map((b) => b.verseNumber)
+              .toSet()
         : {};
     final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
         ? errorState.errors
-            .where((m) => m.surahId == (surah?.id ?? -1))
-            .map((m) => m.verseId)
-            .toSet()
+              .where((m) => m.surahId == (surah?.id ?? -1))
+              .map((m) => m.verseId)
+              .toSet()
         : {};
 
     for (var aya in chapters) {
@@ -1087,17 +1220,11 @@ class _SurahScreenState extends State<SurahScreen> {
 
       Color? backgroundColor;
       if (isHighlighted) {
-        backgroundColor = isDark
-            ? const Color(0xFF2A4A42)
-            : const Color(0xFFB2DFDB);
+        backgroundColor = colors.highlightBackground;
       } else if (isRecitationError) {
-        backgroundColor = isDark
-            ? const Color(0xFF5C1B1B)
-            : const Color(0xFFFFEBEE);
+        backgroundColor = colors.errorBackground;
       } else if (isBookmarked) {
-        backgroundColor = isDark
-            ? const Color(0xFF1E3A35)
-            : const Color(0xFFE8F5E9);
+        backgroundColor = colors.bookmarkBackground;
       }
 
       final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
@@ -1310,30 +1437,37 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    final Color textColor = isDark
-        ? const Color(0xFFFFFFFF)
-        : const Color(0xFF004B40);
-    final Color badgeBorder = isDark
-        ? const Color(0xFF87D1A4)
-        : const Color(0xFF006754);
-    final Color badgeText = isDark
-        ? const Color(0xFFFAF6EB)
-        : const Color(0xFF004B40);
-    final List<Color> badgeGradient = isDark
-        ? [const Color(0xFF113C35), const Color(0xFF0B2D28)]
-        : [const Color(0xFFFAF6EB), const Color(0xFFEDE6D6)];
+    final colors = AppColors.of(context);
+    final textColor = colors.textColor;
+    final badgeBorder = colors.badgeBorder;
+    final badgeText = colors.badgeText;
+    final badgeGradient = colors.badgeGradient;
+
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+              .where((b) => b.surahId == surahId)
+              .map((b) => b.verseNumber)
+              .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+              .where((m) => m.surahId == surahId)
+              .map((m) => m.verseId)
+              .toSet()
+        : <int>{};
 
     final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
         ? bookmarkState.bookmarks
-            .where((b) => b.surahId == (surah?.id ?? -1))
-            .map((b) => b.verseNumber)
-            .toSet()
+              .where((b) => b.surahId == (surah?.id ?? -1))
+              .map((b) => b.verseNumber)
+              .toSet()
         : {};
     final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
         ? errorState.errors
-            .where((m) => m.surahId == (surah?.id ?? -1))
-            .map((m) => m.verseId)
-            .toSet()
+              .where((m) => m.surahId == (surah?.id ?? -1))
+              .map((m) => m.verseId)
+              .toSet()
         : {};
 
     return Column(
@@ -1348,17 +1482,11 @@ class _SurahScreenState extends State<SurahScreen> {
 
         Color? backgroundColor;
         if (isHighlighted) {
-          backgroundColor = isDark
-              ? const Color(0xFF2A4A42)
-              : const Color(0xFFB2DFDB);
+          backgroundColor = colors.highlightBackground;
         } else if (isRecitationError) {
-          backgroundColor = isDark
-              ? const Color(0xFF5C1B1B)
-              : const Color(0xFFFFEBEE);
+          backgroundColor = colors.errorBackground;
         } else if (isBookmarked) {
-          backgroundColor = isDark
-              ? const Color(0xFF1E3A35)
-              : const Color(0xFFE8F5E9);
+          backgroundColor = colors.bookmarkBackground;
         }
 
         String verseText = aya.arabicText;

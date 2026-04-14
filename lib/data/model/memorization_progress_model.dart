@@ -1,0 +1,43 @@
+import '../../domain/entities/memorization_progress.dart';
+
+class MemorizationProgressModel extends MemorizationProgress {
+  const MemorizationProgressModel({
+    required super.surahId,
+    required super.surahName,
+    super.status,
+    super.easeFactor,
+    super.interval,
+    super.repetition,
+    required super.nextReviewDate,
+    required super.lastReviewDate,
+    super.bestScore,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'surahId': surahId,
+      'surahName': surahName,
+      'status': status.index,
+      'easeFactor': easeFactor,
+      'interval': interval,
+      'repetition': repetition,
+      'nextReviewDate': nextReviewDate.toIso8601String(),
+      'lastReviewDate': lastReviewDate.toIso8601String(),
+      'bestScore': bestScore,
+    };
+  }
+
+  factory MemorizationProgressModel.fromJson(Map<dynamic, dynamic> json) {
+    return MemorizationProgressModel(
+      surahId: (json['surahId'] as num).toInt(),
+      surahName: json['surahName'] as String,
+      status: MemorizationStatus.values[(json['status'] as num?)?.toInt() ?? 0],
+      easeFactor: (json['easeFactor'] as num?)?.toInt() ?? 2500,
+      interval: (json['interval'] as num?)?.toInt() ?? 0,
+      repetition: (json['repetition'] as num?)?.toInt() ?? 0,
+      nextReviewDate: DateTime.parse(json['nextReviewDate'] as String),
+      lastReviewDate: DateTime.parse(json['lastReviewDate'] as String),
+      bestScore: (json['bestScore'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
