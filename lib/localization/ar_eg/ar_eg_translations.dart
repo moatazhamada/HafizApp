@@ -236,6 +236,12 @@ final Map<String, String> arEg = {
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Failure Messages
+  'msg_server_error': 'حدث خطأ في الخادم',
+  'msg_cache_error': 'خطأ في البيانات المحلية',
+  'msg_connection_error': 'لا يوجد اتصال بالإنترنت',
+  'msg_unexpected_error': 'خطأ غير متوقع',
+
   // QRC Errors
   'msg_qrc_error': 'خطأ في التحقق من التلاوة',
   'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
