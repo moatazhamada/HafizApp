@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-
+import 'package:get_it/get_it.dart';
+import '../../core/app_export.dart';
 import '../../core/config/api_config.dart';
+import '../../data/datasource/qrc/qrc_remote_datasource.dart';
+import '../../data/repository/qrc/qrc_repository_impl.dart';
+import '../../domain/repository/qrc/qrc_repository.dart';
 
 class QrcTajweedMistake {
   final String? name;
@@ -94,33 +97,45 @@ class QrcErrorEvent extends QrcEvent {
 
 class QrcRecitationService {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
-  WebSocketChannel? _channel;
-  StreamSubscription? _socketSub;
+  final QrcRepository _repository;
+  StreamSubscription? _repoSub;
   final StreamController<QrcEvent> _events =
       StreamController<QrcEvent>.broadcast();
   StreamController<Uint8List>? _audioStreamController;
   StreamSubscription<Uint8List>? _audioSub;
 
+  QrcRecitationService({QrcRepository? repository})
+    : _repository = repository ?? _defaultRepository();
+
+  static QrcRepository _defaultRepository() {
+    try {
+      final sl = GetIt.instance;
+      if (sl.isRegistered<QrcRepository>()) return sl<QrcRepository>();
+    } catch (_) {}
+    return QrcRepositoryImpl(remoteDataSource: QrcRemoteDataSourceImpl());
+  }
+
   Stream<QrcEvent> get events => _events.stream;
 
   Future<bool> connect() async {
     if (ApiConfig.qrcApiKey.isEmpty) {
-      _events.add(QrcErrorEvent('Missing QRC API key'));
+      _events.add(QrcErrorEvent('msg_qrc_missing_key'.tr));
       return false;
     }
 
-    final uri = Uri.parse(
-      '${ApiConfig.qrcWsBase}?api_key=${ApiConfig.qrcApiKey}',
-    );
-    _channel = WebSocketChannel.connect(uri);
-    _socketSub = _channel!.stream.listen(
-      _handleSocketMessage,
-      onError: (e) => _events.add(QrcErrorEvent(e.toString())),
-      onDone: () => _events.add(QrcStatusEvent('closed')),
-    );
-    _channel!.sink.add(jsonEncode({'method': 'SubscribeCheckTilawa'}));
-    _events.add(QrcStatusEvent('connected'));
-    return true;
+    try {
+      _repoSub = _repository.events.listen(
+        _handleRepositoryMessage,
+        onError: (e) => _events.add(QrcErrorEvent(e.toString())),
+      );
+      await _repository.connect();
+      _repository.subscribeCheckTilawa();
+      _events.add(QrcStatusEvent('connected'));
+      return true;
+    } catch (e) {
+      _events.add(QrcErrorEvent('msg_qrc_error'.tr));
+      return false;
+    }
   }
 
   Future<void> startTilawaSession({
@@ -130,15 +145,13 @@ class QrcRecitationService {
     int hafzLevel = 1,
     int tajweedLevel = 3,
   }) async {
-    final payload = {
-      'method': 'StartTilawaSession',
-      'chapter_index': surahIndex,
-      'verse_index': verseIndex,
-      'word_index': wordIndex,
-      'hafz_level': hafzLevel,
-      'tajweed_level': tajweedLevel,
-    };
-    _channel?.sink.add(jsonEncode(payload));
+    _repository.startTilawaSession(
+      surahIndex: surahIndex,
+      verseIndex: verseIndex,
+      wordIndex: wordIndex,
+      hafzLevel: hafzLevel,
+      tajweedLevel: tajweedLevel,
+    );
   }
 
   Future<void> startRecording() async {
@@ -146,7 +159,7 @@ class QrcRecitationService {
     _audioStreamController = StreamController<Uint8List>();
     _audioSub = _audioStreamController!.stream.listen((data) {
       if (data.isNotEmpty) {
-        _channel?.sink.add(data);
+        _repository.sendAudio(data);
       }
     });
 
@@ -167,31 +180,38 @@ class QrcRecitationService {
     _audioStreamController = null;
   }
 
-  void _handleSocketMessage(dynamic message) {
+  void _handleRepositoryMessage(dynamic message) {
+    if (message is QrcWsClosedEvent) {
+      _events.add(QrcStatusEvent('closed'));
+      return;
+    }
+
     try {
       if (message is String) {
         final json = jsonDecode(message);
         if (json is Map<String, dynamic>) {
           final event = json['event']?.toString();
-      if (event == 'check_tilawa' || event == 'CheckTilawaResponse') {
+          if (event == 'check_tilawa' || event == 'CheckTilawaResponse') {
             _events.add(QrcCheckEvent(QrcCheckTilawa.fromJson(json)));
           } else if (event == 'error') {
-            _events.add(QrcErrorEvent(json['message']?.toString() ?? 'QRC error'));
+            _events.add(
+              QrcErrorEvent(json['message']?.toString() ?? 'msg_qrc_error'.tr),
+            );
           } else if (event != null) {
             _events.add(QrcStatusEvent(event));
           }
         }
       }
     } catch (e) {
-      _events.add(QrcErrorEvent('Invalid QRC message: $e'));
+      _events.add(QrcErrorEvent('msg_qrc_invalid_message'.tr));
     }
   }
 
   Future<void> dispose() async {
     await stopRecording();
     await _recorder.closeRecorder();
-    await _socketSub?.cancel();
+    await _repoSub?.cancel();
     await _events.close();
-    await _channel?.sink.close();
+    await _repository.dispose();
   }
 }
