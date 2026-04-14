@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:get_it/get_it.dart';
+import '../../core/app_export.dart';
 import '../../core/config/api_config.dart';
-import '../../domain/repository/qrc/qrc_repository.dart';
 import '../../data/datasource/qrc/qrc_remote_datasource.dart';
+import '../../data/repository/qrc/qrc_repository_impl.dart';
+import '../../domain/repository/qrc/qrc_repository.dart';
 
 class QrcTajweedMistake {
   final String? name;
@@ -102,27 +105,35 @@ class QrcRecitationService {
   StreamSubscription<Uint8List>? _audioSub;
 
   QrcRecitationService({QrcRepository? repository})
-      : _repository = repository ?? QrcRepositoryImpl(remoteDataSource: QrcRemoteDataSourceImpl());
+    : _repository = repository ?? _defaultRepository();
+
+  static QrcRepository _defaultRepository() {
+    try {
+      final sl = GetIt.instance;
+      if (sl.isRegistered<QrcRepository>()) return sl<QrcRepository>();
+    } catch (_) {}
+    return QrcRepositoryImpl(remoteDataSource: QrcRemoteDataSourceImpl());
+  }
 
   Stream<QrcEvent> get events => _events.stream;
 
   Future<bool> connect() async {
     if (ApiConfig.qrcApiKey.isEmpty) {
-      _events.add(QrcErrorEvent('Missing QRC API key'));
+      _events.add(QrcErrorEvent('msg_qrc_missing_key'.tr));
       return false;
     }
 
     try {
-      await _repository.connect();
       _repoSub = _repository.events.listen(
         _handleRepositoryMessage,
         onError: (e) => _events.add(QrcErrorEvent(e.toString())),
       );
+      await _repository.connect();
       _repository.subscribeCheckTilawa();
       _events.add(QrcStatusEvent('connected'));
       return true;
     } catch (e) {
-      _events.add(QrcErrorEvent(e.toString()));
+      _events.add(QrcErrorEvent('msg_qrc_error'.tr));
       return false;
     }
   }
@@ -170,7 +181,7 @@ class QrcRecitationService {
   }
 
   void _handleRepositoryMessage(dynamic message) {
-    if (message == 'closed') {
+    if (message is QrcWsClosedEvent) {
       _events.add(QrcStatusEvent('closed'));
       return;
     }
@@ -183,14 +194,16 @@ class QrcRecitationService {
           if (event == 'check_tilawa' || event == 'CheckTilawaResponse') {
             _events.add(QrcCheckEvent(QrcCheckTilawa.fromJson(json)));
           } else if (event == 'error') {
-            _events.add(QrcErrorEvent(json['message']?.toString() ?? 'QRC error'));
+            _events.add(
+              QrcErrorEvent(json['message']?.toString() ?? 'msg_qrc_error'.tr),
+            );
           } else if (event != null) {
             _events.add(QrcStatusEvent(event));
           }
         }
       }
     } catch (e) {
-      _events.add(QrcErrorEvent('Invalid QRC message: $e'));
+      _events.add(QrcErrorEvent('msg_qrc_invalid_message'.tr));
     }
   }
 

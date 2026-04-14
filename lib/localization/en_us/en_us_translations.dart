@@ -201,4 +201,8 @@ final Map<String, String> enUs = {
       'الاسم وعد بشيء، لكنك ستحصل على شيء كلياً مختلف.',
   'musali_teaser_slide4_sub': 'Think again.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
+
+  // QRC Errors
+  'msg_qrc_error': 'Recitation verification error',
+  'msg_qrc_invalid_message': 'Invalid recitation verification message',
 };
