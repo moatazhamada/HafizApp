@@ -303,6 +303,9 @@ class _HomeScreenState extends State<HomeScreen>
                     case 'memorization':
                       NavigatorService.pushNamed(AppRoutes.memorizationPage);
                       break;
+                    case 'khatmah':
+                      NavigatorService.pushNamed(AppRoutes.khatmahPage);
+                      break;
                     case 'settings':
                       NavigatorService.pushNamed(AppRoutes.settingsScreen);
                       break;
@@ -329,6 +332,16 @@ class _HomeScreenState extends State<HomeScreen>
                         Icon(Icons.school, color: theme.iconTheme.color),
                         const SizedBox(width: 12),
                         Text('lbl_memorization'.tr),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'khatmah',
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_stories, color: theme.iconTheme.color),
+                        const SizedBox(width: 12),
+                        Text('lbl_khatmah_tracker'.tr),
                       ],
                     ),
                   ),

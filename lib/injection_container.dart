@@ -23,6 +23,10 @@ import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_s
 import 'package:hafiz_app/data/repository/memorization/memorization_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/memorization_repository.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/data/datasource/khatmah/khatmah_local_data_source.dart';
+import 'package:hafiz_app/data/repository/khatmah/khatmah_repository_impl.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
@@ -67,6 +71,7 @@ Future<void> init() async {
   );
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
   sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
+  sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
   // Defer Analytics creation until Firebase initializes; resolve inside observer when needed
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
@@ -115,6 +120,10 @@ Future<void> init() async {
     () => MemorizationRepositoryImpl(localDataSource: sl()),
   );
 
+  sl.registerLazySingleton<KhatmahRepository>(
+    () => KhatmahRepositoryImpl(localDataSource: sl()),
+  );
+
   // Data Source
   sl.registerLazySingleton<SurahRemoteDataSource>(
     () => SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())),
@@ -145,6 +154,13 @@ Future<void> init() async {
   sl.registerLazySingleton<MemorizationLocalDataSource>(
     () =>
         MemorizationLocalDataSourceImpl(box: Hive.box('memorization_progress')),
+  );
+
+  sl.registerLazySingleton<KhatmahLocalDataSource>(
+    () => KhatmahLocalDataSourceImpl(
+      logBox: Hive.box('reading_logs'),
+      goalBox: Hive.box('reading_goal'),
+    ),
   );
 
   sl.registerLazySingleton<CloudSyncRemoteDataSource>(

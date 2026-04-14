@@ -10,6 +10,7 @@ import '../presentation/about_screen/about_screen.dart';
 import '../presentation/recitation_error/recitation_error_screen.dart';
 import '../presentation/recitation_session/recitation_session_screen.dart';
 import '../presentation/memorization/memorization_screen.dart';
+import '../presentation/khatmah/khatmah_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
 import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String recitationErrorsPage = '/recitation_errors';
   static const String recitationSessionsPage = '/recitation_sessions';
   static const String memorizationPage = '/memorization';
+  static const String khatmahPage = '/khatmah';
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
 
@@ -42,6 +44,7 @@ class AppRoutes {
     recitationErrorsPage: (context) => const RecitationErrorScreen(),
     recitationSessionsPage: (context) => const RecitationSessionScreen(),
     memorizationPage: (context) => const MemorizationScreen(),
+    khatmahPage: (context) => const KhatmahScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: (context) => const MusaliTeaserScreen(),
   };

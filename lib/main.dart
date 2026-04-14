@@ -166,6 +166,8 @@ class _BootstrapAppState extends State<BootstrapApp> {
       await Hive.openBox('recitation_errors');
       await Hive.openBox('recitation_sessions');
       await Hive.openBox('memorization_progress');
+      await Hive.openBox('reading_logs');
+      await Hive.openBox('reading_goal');
 
       await di.init();
 
@@ -211,6 +213,8 @@ class _BootstrapAppState extends State<BootstrapApp> {
       await Hive.openBox('recitation_errors');
       await Hive.openBox('recitation_sessions');
       await Hive.openBox('memorization_progress');
+      await Hive.openBox('reading_logs');
+      await Hive.openBox('reading_goal');
       await Hive.openBox('qiraat_cache');
       await Hive.openBox('audio_cache');
 
