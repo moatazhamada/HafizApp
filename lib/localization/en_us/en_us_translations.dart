@@ -190,6 +190,9 @@ final Map<String, String> enUs = {
   'lbl_yesterday': 'Yesterday',
   'msg_no_sessions':
       'No recitation sessions yet. Complete a voice verification to see your history here.',
+  'lbl_tafsir': 'Tafsir',
+  'msg_tafsir_error':
+      'Could not load tafsir. Please check your internet connection.',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'The name misled you. That\'s the point.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',

@@ -188,6 +188,8 @@ final Map<String, String> arEg = {
   'lbl_yesterday': 'أمس',
   'msg_no_sessions':
       'لا توجد جلسات تلاوة بعد. أكمل التحقق الصوتي لرؤية سجلك هنا.',
+  'lbl_tafsir': 'تفسير',
+  'msg_tafsir_error': 'تعذر تحميل التفسير. يرجى التحقق من اتصال الإنترنت.',
   // Musali Teaser Slides
   'musali_teaser_slide1_title': 'الاسم خدعك. وهذا هو السر.',
   'musali_teaser_slide1_title_ar': 'الاسم خدعك. وهذا هو السر.',

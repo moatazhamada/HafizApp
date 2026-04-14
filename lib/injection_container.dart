@@ -16,6 +16,9 @@ import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/data/datasource/recitation_session/recitation_session_local_data_source.dart';
 import 'package:hafiz_app/data/repository/recitation_session/recitation_session_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/recitation_session_repository.dart';
+import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/data/datasource/tafsir/tafsir_remote_data_source.dart';
+import 'package:hafiz_app/data/repository/tafsir/tafsir_repository_impl.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
@@ -99,6 +102,10 @@ Future<void> init() async {
     () => RecitationSessionRepositoryImpl(localDataSource: sl()),
   );
 
+  sl.registerLazySingleton<TafsirRepository>(
+    () => TafsirRepositoryImpl(remoteDataSource: sl()),
+  );
+
   // Data Source
   sl.registerLazySingleton<SurahRemoteDataSource>(
     () => SurahRemoteDataSourceImpl(networkManager: NetworkManagerImpl(sl())),
@@ -120,6 +127,10 @@ Future<void> init() async {
     () => RecitationSessionLocalDataSourceImpl(
       box: Hive.box('recitation_sessions'),
     ),
+  );
+
+  sl.registerLazySingleton<TafsirRemoteDataSource>(
+    () => TafsirRemoteDataSourceImpl(dio: sl()),
   );
 
   sl.registerLazySingleton<CloudSyncRemoteDataSource>(
