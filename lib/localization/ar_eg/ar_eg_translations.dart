@@ -172,6 +172,14 @@ final Map<String, String> arEg = {
   'msg_syncing': 'جاري المزامنة...',
   'msg_checking_auth': 'جاري التحقق من المصادقة...',
 
+  'lbl_sync_to_cloud': 'مزامنة إلى السحابة',
+  'lbl_sync_from_cloud': 'مزامنة من السحابة',
+  'lbl_sync_bidirectional': 'مزامنة ثنائية الاتجاه',
+  'lbl_sign_in': 'تسجيل الدخول',
+  'lbl_sign_out': 'تسجيل الخروج',
+  'lbl_not_authenticated': 'غير مصادق',
+  'lbl_authenticated': 'مصادق',
+
   // Musali Teaser
   'musali_app_name': 'مُصَالي',
   'musali_status': 'قريباً',

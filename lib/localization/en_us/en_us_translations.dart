@@ -173,6 +173,14 @@ final Map<String, String> enUs = {
   'msg_syncing': 'Syncing...',
   'msg_checking_auth': 'Checking authentication...',
 
+  'lbl_sync_to_cloud': 'Sync to Cloud',
+  'lbl_sync_from_cloud': 'Sync from Cloud',
+  'lbl_sync_bidirectional': 'Bidirectional Sync',
+  'lbl_sign_in': 'Sign In',
+  'lbl_sign_out': 'Sign Out',
+  'lbl_not_authenticated': 'Not authenticated',
+  'lbl_authenticated': 'Authenticated',
+
   // Musali Teaser
   'musali_app_name': 'Musali',
   'musali_status': 'Coming Soon',

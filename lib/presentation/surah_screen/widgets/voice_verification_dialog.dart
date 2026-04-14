@@ -61,6 +61,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   bool _qrcConnecting = false;
   int _qrcWordIndex = 0;
   List<QrcTajweedMistake> _qrcMistakes = [];
+  Set<int> _qrcMistakeIndices = {};
   List<String> _qrcMistakeLines = [];
   String _repeatLabel = '';
   String _repeatWord = '';
@@ -251,6 +252,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     setState(() {
       _qrcWordIndex = data.wordIndex ?? _qrcWordIndex;
       _qrcMistakes = data.tajweedMistakes;
+      _qrcMistakeIndices = _qrcMistakes.map((m) => m.wordIndex ?? -1).toSet();
       _qrcMistakeLines = _qrcMistakes
           .map((m) => '${m.name ?? 'Tajweed'} (${m.wordIndex ?? '-'})')
           .toList();
@@ -516,9 +518,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                     final idx = entry.key + 1;
                     final word = entry.value;
                     final isCorrect = _qrcWordIndex >= idx;
-                    final isMistake = _qrcMistakes.any(
-                      (m) => m.wordIndex == idx,
-                    );
+                    final isMistake = _qrcMistakeIndices.contains(idx);
                     Color color = Colors.black87;
                     if (isCorrect) color = Colors.green;
                     if (isMistake) color = Colors.redAccent;
