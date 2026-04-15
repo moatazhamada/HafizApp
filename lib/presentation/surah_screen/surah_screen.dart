@@ -1129,6 +1129,26 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates(
+    BookmarkState bookmarkState,
+    RecitationErrorState errorState,
+  ) {
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+            .where((b) => b.surahId == surahId)
+            .map((b) => b.verseNumber)
+            .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+            .where((m) => m.surahId == surahId)
+            .map((m) => m.verseId)
+            .toSet()
+        : <int>{};
+    return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+  }
+
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
@@ -1177,38 +1197,15 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final surahId = surah?.id ?? -1;
-    final bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == surahId)
-              .map((b) => b.verseNumber)
-              .toSet()
-        : <int>{};
-    final errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == surahId)
-              .map((m) => m.verseId)
-              .toSet()
-        : <int>{};
+    final verseStates = _getVerseStates(bookmarkState, errorState);
+    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
+    final errorVerseIds = verseStates.errorVerses;
 
     List<InlineSpan> spans = [];
     final List<_VerseRange> verseRanges = [];
     int currentOffset = 0;
 
     _currentVerseRanges = verseRanges;
-
-    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == (surah?.id ?? -1))
-              .map((b) => b.verseNumber)
-              .toSet()
-        : {};
-    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == (surah?.id ?? -1))
-              .map((m) => m.verseId)
-              .toSet()
-        : {};
 
     for (var aya in chapters) {
       bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
@@ -1443,32 +1440,9 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final surahId = surah?.id ?? -1;
-    final bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == surahId)
-              .map((b) => b.verseNumber)
-              .toSet()
-        : <int>{};
-    final errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == surahId)
-              .map((m) => m.verseId)
-              .toSet()
-        : <int>{};
-
-    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == (surah?.id ?? -1))
-              .map((b) => b.verseNumber)
-              .toSet()
-        : {};
-    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == (surah?.id ?? -1))
-              .map((m) => m.verseId)
-              .toSet()
-        : {};
+    final verseStates = _getVerseStates(bookmarkState, errorState);
+    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
+    final errorVerseIds = verseStates.errorVerses;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
