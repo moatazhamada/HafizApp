@@ -64,6 +64,11 @@ class _SurahScreenState extends State<SurahScreen> {
   final VoiceVerificationService _voiceService = VoiceVerificationService();
   final QiraatService _qiraatService = QiraatService();
 
+  // Auto-scroll
+  bool _isAutoScrolling = false;
+  Timer? _autoScrollTimer;
+  double _autoScrollSpeed = 0.5;
+
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
 
@@ -351,10 +356,38 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void dispose() {
     _offsetSaveDebounce?.cancel();
+    _autoScrollTimer?.cancel();
     _voiceService.stop();
 
     _scrollControllerForInit?.dispose();
     super.dispose();
+  }
+
+  void _toggleAutoScroll() {
+    setState(() {
+      _isAutoScrolling = !_isAutoScrolling;
+    });
+    if (_isAutoScrolling) {
+      _startAutoScroll();
+    } else {
+      _autoScrollTimer?.cancel();
+    }
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (_scrollController.hasClients && _isAutoScrolling) {
+        final max = _scrollController.position.maxScrollExtent;
+        final current = _scrollController.offset;
+        if (current < max) {
+          _scrollController.jumpTo(current + _autoScrollSpeed);
+        } else {
+          _autoScrollTimer?.cancel();
+          setState(() => _isAutoScrolling = false);
+        }
+      }
+    });
   }
 
   void _navigateToSurah(int surahId) {
@@ -703,6 +736,19 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
+        Semantics(
+          button: true,
+          label: _isAutoScrolling
+              ? 'lbl_stop_autoscroll'.tr
+              : 'lbl_start_autoscroll'.tr,
+          child: IconButton(
+            icon: Icon(
+              _isAutoScrolling ? Icons.pause_circle : Icons.play_circle_outline,
+              color: _isAutoScrolling ? Colors.amber : Colors.white,
+            ),
+            onPressed: _toggleAutoScroll,
+          ),
+        ),
         Semantics(
           button: true,
           label: 'lbl_help'.tr,

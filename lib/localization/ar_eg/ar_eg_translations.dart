@@ -268,6 +268,10 @@ final Map<String, String> arEg = {
   'lbl_page': 'صفحة',
   'lbl_go': 'اذهب',
 
+  // Auto-scroll
+  'lbl_start_autoscroll': 'بدء التمرير التلقائي',
+  'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
+  
   // Settings Enhancements
   'lbl_quran_font': 'حجم خط القرآن',
   'lbl_orientation': 'اتجاه الشاشة',

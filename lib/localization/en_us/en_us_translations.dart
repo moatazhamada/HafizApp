@@ -271,6 +271,10 @@ final Map<String, String> enUs = {
   'lbl_page': 'Page',
   'lbl_go': 'Go',
 
+  // Auto-scroll
+  'lbl_start_autoscroll': 'Start Auto-scroll',
+  'lbl_stop_autoscroll': 'Stop Auto-scroll',
+  
   // Settings Enhancements
   'lbl_quran_font': 'Quran Font Size',
   'lbl_orientation': 'Screen Orientation',
