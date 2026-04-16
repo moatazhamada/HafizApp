@@ -254,17 +254,29 @@ final Map<String, String> arEg = {
   'msg_copy_text_desc': 'نسخ نص الآية فقط',
   'msg_text_copied': 'تم نسخ النص',
   'msg_via_app': 'عبر حافظ',
-  
+
   // Audio Player
   'lbl_sleep_timer': 'مؤقت النوم',
   'lbl_cancel_timer': 'إلغاء المؤقت',
   'lbl_minutes': 'دقيقة',
   'lbl_loop_verses': 'تكرار',
   'msg_audio_load_error': 'فشل تحميل الصوت',
-  
+
   // Mushaf Screen
   'lbl_mushaf': 'المصحف',
   'lbl_jump_to_page': 'الانتقال لصفحة',
   'lbl_page': 'صفحة',
   'lbl_go': 'اذهب',
+
+  // Settings Enhancements
+  'lbl_quran_font': 'حجم خط القرآن',
+  'lbl_orientation': 'اتجاه الشاشة',
+  'lbl_portrait': 'عمودي',
+  'lbl_landscape': 'أفقي',
+  'lbl_default_quran_view': 'عرض القرآن الافتراضي',
+  'lbl_surah_view': 'عرض السور',
+  'lbl_mushaf_view': 'عرض المصحف',
+  'lbl_reading_navigation': 'التنقل أثناء القراءة',
+  'lbl_scroll_mode': 'وضع التمرير',
+  'lbl_page_mode': 'وضع الصفحات',
 };
