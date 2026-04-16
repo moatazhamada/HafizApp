@@ -115,3 +115,64 @@ void main() {
   // tests...
 }
 ```
+
+## Product Flavors
+
+The project uses product flavors. Always use `--flavor production`:
+```bash
+flutter run --flavor production
+flutter build apk --debug --flavor production
+flutter build apk --release --flavor production
+```
+
+## Features Map
+
+### Navigation Drawer (from Home screen)
+| Index | Destination | Route |
+|-------|------------|-------|
+| 0 | Bookmarks | `/bookmarks` |
+| 1 | Practice Verses (Recitation Errors) | `/recitation_errors` |
+| 2 | Session History | `/recitation_sessions` |
+| 3 | Memorization Tracker | `/memorization` |
+| 4 | Khatmah Tracker | `/khatmah` |
+| 5 | Statistics | `/statistics` |
+| 6 | Mushaf View | `/mushaf_screen` |
+| 7 | Settings | `/settings` |
+| 8 | About | `/about_screen` |
+
+### Surah Screen Features
+- **Audio Player** — Headphones icon in app bar, navigates to `/audio_player` with surah args
+- **Auto-scroll** — Play/pause icon, configurable speed (long-press for speed picker)
+- **Hifz Mode** — Hides verse text for memorization practice (in overflow menu)
+- **Bookmark** — Per-surah bookmark toggle (in overflow menu)
+- **Tafsir** — Per-verse bottom sheet from verse context menu
+- **Verse Sharing** — Share/copy from verse context menu
+- **Voice Verification** — Per-verse recitation check from context menu
+- **Surah Navigation** — Previous/next surah buttons at bottom
+
+### Settings
+- Language (English/Arabic/System)
+- View Mode (Single Line vs Continuous/RichText)
+- Theme (Light/Dark/System)
+- Quran Font Size slider (16-40)
+- Orientation (System/Portrait/Landscape) — wired to SystemChrome
+- Default Quran View (Surah/Mushaf) — wired to home screen navigation
+- Reading Navigation Mode (Scroll/Page) — saved but not yet consumed
+- Cloud Sync
+- Recitation Coach settings (Provider, Qiraat edition, Reciter, Whisper model)
+
+### Onboarding Flow
+Onboarding → MushafTypeOnboarding (Madani/Egyptian/Indo-Pak/Warsh) → Home
+
+### Key Files
+- `lib/routes/app_routes.dart` — All routes
+- `lib/injection_container.dart` — DI with GetIt
+- `lib/core/utils/pref_utils.dart` — SharedPreferences wrapper (all settings)
+- `lib/core/quran_index/quran_surah.dart` — Surah class and QuranIndex
+- `lib/core/quran_index/mushaf_page_index.dart` — Page-to-surah mapping (604 pages)
+- `lib/core/audio/audio_player_handler.dart` — Singleton audio handler (just_audio)
+- `lib/core/theme/app_colors.dart` — AppColors with theme-aware colors
+
+### Known Warnings (Acceptable)
+- `unnecessary_non_null_assertion` in `surah_screen.dart` lines ~428/433/455/460 — the `!` is required for compilation, Dart can't promote `Surah?` through indirect boolean guards
+- Java "Duplicate root element android" from stale `.kilo/worktrees/` — do not delete these worktrees
