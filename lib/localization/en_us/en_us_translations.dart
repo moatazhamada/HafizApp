@@ -248,4 +248,11 @@ final Map<String, String> enUs = {
   // QRC Errors
   'msg_qrc_error': 'Recitation verification error',
   'msg_qrc_invalid_message': 'Invalid recitation verification message',
+
+  // Audio Player
+  'lbl_sleep_timer': 'Sleep Timer',
+  'lbl_cancel_timer': 'Cancel Timer',
+  'lbl_minutes': 'minutes',
+  'lbl_loop_verses': 'Loop',
+  'msg_audio_load_error': 'Failed to load audio',
 };
