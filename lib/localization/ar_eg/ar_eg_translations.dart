@@ -245,4 +245,10 @@ final Map<String, String> arEg = {
   // QRC Errors
   'msg_qrc_error': 'خطأ في التحقق من التلاوة',
   'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
+
+  // Mushaf Screen
+  'lbl_mushaf': 'المصحف',
+  'lbl_jump_to_page': 'الانتقال لصفحة',
+  'lbl_page': 'صفحة',
+  'lbl_go': 'اذهب',
 };
