@@ -121,70 +121,32 @@ See `android/fastlane/README.md` for detailed documentation.
 
 ---
 
-## 🚧 Upcoming Features (Roadmap)
+## 🚧 Feature Status
 
-### 🎯 In Progress (Current Branch)
-- ✅ **Crash Fixes**: BuildContext stability improvements in voice verification
-- ✅ **Juz (Para) Index**: Quick navigation to any of the 30 Juz
-- ✅ **UI Polish**: Edge-to-edge support for Android 15+
+### ✅ Implemented
+- **Mushaf View** — 604-page horizontal RTL PageView with jump-to-page, surah info overlay
+- **Audio Player** — Verse-by-verse playback (Alafasy), speed control (0.5x-2x), sleep timer, loop
+- **Verse Sharing** — Share/copy any verse with attribution via share_plus
+- **Auto-scroll** — Configurable speed scroll in surah view (long-press for speed picker)
+- **Hifz Mode** — Hide verse text for memorization practice
+- **Statistics Screen** — Bookmark count, practice verse count, empty state
+- **Khatmah Tracker** — Daily reading goals and progress
+- **Memorization Tracker** — Per-surah memorization status tracking
+- **Tafsir Integration** — Ibn Kathir via Quran.com API, bottom sheet per verse
+- **Juz Index** — 30 Juz grid for quick navigation
+- **Navigation Drawer** — Full side menu replacing popup menu
+- **Mushaf Type Onboarding** — First-run selector (Madani/Egyptian/Indo-Pak/Warsh)
+- **Settings** — Font size, orientation, default view, theme, language, recitation coach
+- **Cloud Sync** — Firebase-based bookmark/settings sync
+- **Search** — Full-text verse search
+- **Voice Verification** — Per-verse recitation checking (local whisper or API)
 
-### 🌟 Planned Features
-
-#### 1. **Full Quran Mushaf View** (Next Major Feature)
-A seamless, continuous Mushaf experience that mimics reading from a physical Quran:
-- All 114 Surahs in one continuous scrollable view
-- Exact Mushaf page numbers (Madani/Uthmani script pagination)
-- Page flip animations with realistic curl effect
-- Visual Surah dividers with ornate Islamic headers
-- Bookmarking specific "pages" rather than just verses
-- Jump to any Mushaf page number (1-604)
-
-#### 2. **Audio Recitation Player**
-- Full Surah audio playback with verse highlighting
-- Background audio support with notification controls  
-- Download audio for offline listening
-- Variable playback speed (0.5x - 2x)
-- Loop specific verse ranges for memorization
-- Sleep timer for bedtime listening
-
-#### 3. **Deep Linking & Sharing**
-- Share any verse with a unique link (e.g., `hafiz.app/surah/2/verse/255`)
-- Links open directly to the specific verse in the app
-- Generate beautiful verse images for social sharing
-- Copy verse text with proper attribution
-
-#### 4. **Daily Reading Goals (Khatmah Tracker)**
-- Set daily pages/verses targets
-- Track progress toward completing the Quran
-- Reading streak calendar with reminders
-- Multiple simultaneous Khatmah tracking
-- Group reading challenges
-
-#### 5. **Tafsir Integration**
-- Multiple Tafsir sources (Ibn Kathir, Jalalayn, etc.)
-- Side-by-side or bottom sheet display
-- Download Tafsir for offline reading
-- Bookmark Tafsir explanations
-
-#### 6. **Advanced Memorization Tools**
-- Recording comparison: Record yourself vs. reciter
-- Spaced repetition system for verse review
-- Memorization planner with scheduling
-- Difficulty tracking per verse
-- Audio repeat with customizable delays
-
-#### 7. **Widgets & Quick Actions**
-- Home screen widget: Daily verse
-- Progress widget: Reading streak and goals
-- Quick action: Jump to last read position
-
-#### 8. **Search Enhancements**
-- Search by topic/keyword across all verses
-- Advanced search filters (Surah range, Juz, etc.)
-- Search history and suggestions
-- Voice search
-
----
-
-*Want to contribute? Pick a feature from the roadmap and open a PR!*
+### 🔜 Planned / In Progress
+- **Deep Linking** — `hafiz://verse/{surahId}/{verseNum}` URL scheme
+- **Verse Image Sharing** — Beautiful image generation for social media
+- **Full Quran Mushaf Pages** — Actual page images/text rendering (currently shows surah placeholder)
+- **Background Audio** — System notification controls during playback
+- **Reading Navigation Mode** — Page-by-page vs continuous scroll (setting saved but not consumed)
+- **Home Screen Widgets** — Daily verse and progress widgets
+- **Advanced Search** — Topic/keyword filters, search history
 
