@@ -271,4 +271,16 @@ final Map<String, String> arEg = {
   // Auto-scroll
   'lbl_start_autoscroll': 'بدء التمرير التلقائي',
   'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
+  
+  // Settings Enhancements
+  'lbl_quran_font': 'حجم خط القرآن',
+  'lbl_orientation': 'اتجاه الشاشة',
+  'lbl_portrait': 'عمودي',
+  'lbl_landscape': 'أفقي',
+  'lbl_default_quran_view': 'عرض القرآن الافتراضي',
+  'lbl_surah_view': 'عرض السور',
+  'lbl_mushaf_view': 'عرض المصحف',
+  'lbl_reading_navigation': 'التنقل أثناء القراءة',
+  'lbl_scroll_mode': 'وضع التمرير',
+  'lbl_page_mode': 'وضع الصفحات',
 };

@@ -26,6 +26,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _qiraatEdition;
   late int _reciterId;
   late String _whisperModel;
+  late double _quranFontSize;
+  late String _orientationMode;
+  late String _defaultQuranView;
+  late String _readingNavMode;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -45,6 +49,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _qiraatEdition = PrefUtils().getQiraatEdition();
     _reciterId = PrefUtils().getReciterId();
     _whisperModel = PrefUtils().getWhisperModel();
+    _quranFontSize = PrefUtils().getQuranFontSize();
+    _orientationMode = PrefUtils().getOrientationMode();
+    _defaultQuranView = PrefUtils().getDefaultQuranView();
+    _readingNavMode = PrefUtils().getReadingNavMode();
     _loadRecitationResources();
   }
 
@@ -120,6 +128,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildThemeOption('lbl_system_default'.tr, 'system'),
           _buildThemeOption('lbl_theme_light'.tr, 'light'),
           _buildThemeOption('lbl_theme_dark'.tr, 'dark'),
+          const Divider(),
+          _buildSectionHeader('lbl_quran_font'.tr),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  'بِسْمِ اللَّهِ',
+                  style: TextStyle(
+                    fontFamily: 'Amiri',
+                    fontSize: _quranFontSize,
+                  ),
+                ),
+                const Spacer(),
+                Slider(
+                  value: _quranFontSize,
+                  min: 16,
+                  max: 40,
+                  divisions: 24,
+                  label: _quranFontSize.round().toString(),
+                  onChanged: (val) {
+                    setState(() {
+                      _quranFontSize = val;
+                      PrefUtils().setQuranFontSize(val);
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(),
+          _buildSectionHeader('lbl_orientation'.tr),
+          _buildOrientationOption('lbl_system_default'.tr, 'system'),
+          _buildOrientationOption('lbl_portrait'.tr, 'portrait'),
+          _buildOrientationOption('lbl_landscape'.tr, 'landscape'),
+          const Divider(),
+          _buildSectionHeader('lbl_default_quran_view'.tr),
+          _buildQuranViewOption('lbl_surah_view'.tr, 'surah'),
+          _buildQuranViewOption('lbl_mushaf_view'.tr, 'mushaf'),
+          const Divider(),
+          _buildSectionHeader('lbl_reading_navigation'.tr),
+          _buildNavModeOption('lbl_scroll_mode'.tr, 'scroll'),
+          _buildNavModeOption('lbl_page_mode'.tr, 'page'),
           const Divider(),
           _buildSectionHeader('lbl_cloud_sync'.tr),
           ListTile(
@@ -223,6 +274,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() {
             _themeMode = mode;
           });
+        }
+      },
+    );
+  }
+
+  Widget _buildOrientationOption(String label, String mode) {
+    final bool isSelected = _orientationMode == mode;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () {
+        if (!isSelected) {
+          PrefUtils().setOrientationMode(mode);
+          setState(() => _orientationMode = mode);
+        }
+      },
+    );
+  }
+
+  Widget _buildQuranViewOption(String label, String view) {
+    final bool isSelected = _defaultQuranView == view;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () {
+        if (!isSelected) {
+          PrefUtils().setDefaultQuranView(view);
+          setState(() => _defaultQuranView = view);
+        }
+      },
+    );
+  }
+
+  Widget _buildNavModeOption(String label, String mode) {
+    final bool isSelected = _readingNavMode == mode;
+    return ListTile(
+      title: Text(label),
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
+      onTap: () {
+        if (!isSelected) {
+          PrefUtils().setReadingNavMode(mode);
+          setState(() => _readingNavMode = mode);
         }
       },
     );
