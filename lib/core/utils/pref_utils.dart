@@ -293,4 +293,56 @@ class PrefUtils {
       return 'bidirectional';
     }
   }
+
+  // Quran Font Size
+  double getQuranFontSize() {
+    try {
+      return _sharedPreferences?.getDouble('quranFontSize') ?? 24.0;
+    } catch (e) {
+      return 24.0;
+    }
+  }
+
+  Future<void> setQuranFontSize(double size) async {
+    await _sharedPreferences!.setDouble('quranFontSize', size);
+  }
+
+  // Orientation Mode: 'system', 'portrait', 'landscape'
+  String getOrientationMode() {
+    try {
+      return _sharedPreferences?.getString('orientationMode') ?? 'system';
+    } catch (e) {
+      return 'system';
+    }
+  }
+
+  Future<void> setOrientationMode(String mode) async {
+    await _sharedPreferences!.setString('orientationMode', mode);
+  }
+
+  // Default Quran View: 'surah', 'mushaf'
+  String getDefaultQuranView() {
+    try {
+      return _sharedPreferences?.getString('defaultQuranView') ?? 'surah';
+    } catch (e) {
+      return 'surah';
+    }
+  }
+
+  Future<void> setDefaultQuranView(String view) async {
+    await _sharedPreferences!.setString('defaultQuranView', view);
+  }
+
+  // Reading Navigation Mode: 'scroll', 'page'
+  String getReadingNavMode() {
+    try {
+      return _sharedPreferences?.getString('readingNavMode') ?? 'scroll';
+    } catch (e) {
+      return 'scroll';
+    }
+  }
+
+  Future<void> setReadingNavMode(String mode) async {
+    await _sharedPreferences!.setString('readingNavMode', mode);
+  }
 }
