@@ -48,7 +48,7 @@ class AppRoutes {
     memorizationPage: MemorizationScreen.builder,
     khatmahPage: KhatmahScreen.builder,
     settingsScreen: (context) => const SettingsScreen(),
-    musaliTeaserScreen: (context) => const MusaliTeaserScreen(),
+    musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),
   };
 }
