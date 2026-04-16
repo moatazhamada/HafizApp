@@ -271,6 +271,13 @@ final Map<String, String> enUs = {
   'lbl_page': 'Page',
   'lbl_go': 'Go',
 
+  // Statistics
+  'stats_title': 'My Progress',
+  'stats_bookmarks': 'Bookmarks',
+  'stats_practice_verses': 'Practice Verses',
+  'stats_surahs_completed': 'Surahs Completed',
+  'stats_no_activity': 'Start reading to track your progress!',
+  
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
   'lbl_stop_autoscroll': 'Stop Auto-scroll',
