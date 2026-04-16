@@ -271,6 +271,10 @@ final Map<String, String> enUs = {
   'lbl_page': 'Page',
   'lbl_go': 'Go',
 
+  // Mushaf Type Onboarding
+  'lbl_select_mushaf_type': 'Choose Mushaf Type',
+  'msg_mushaf_type_desc': 'Select your preferred Quran script style',
+  
   // Statistics
   'stats_title': 'My Progress',
   'stats_bookmarks': 'Bookmarks',

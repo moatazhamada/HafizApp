@@ -268,6 +268,10 @@ final Map<String, String> arEg = {
   'lbl_page': 'صفحة',
   'lbl_go': 'اذهب',
 
+  // Mushaf Type Onboarding
+  'lbl_select_mushaf_type': 'اختر نوع المصحف',
+  'msg_mushaf_type_desc': 'اختر نمط الخط المفضل لديك',
+  
   // Statistics
   'stats_title': 'تقدمي',
   'stats_bookmarks': 'الفواصل',
