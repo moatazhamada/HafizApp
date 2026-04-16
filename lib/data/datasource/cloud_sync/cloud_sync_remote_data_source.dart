@@ -122,8 +122,9 @@ class CloudSyncRemoteDataSourceImpl implements CloudSyncRemoteDataSource {
       final snapshot = await _bookmarksCollection(userId).get();
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        if (data is! Map<String, dynamic>)
+        if (data is! Map<String, dynamic>) {
           return BookmarkModel.fromJson(const {});
+        }
         return BookmarkModel.fromJson(data);
       }).toList();
     } catch (e) {

@@ -3,7 +3,6 @@ import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 class KhatmahScreen extends StatelessWidget {

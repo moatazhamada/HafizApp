@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hafiz_app/core/utils/navigator_service.dart';
@@ -20,7 +22,7 @@ void main() {
         ),
       );
 
-      NavigatorService.pushNamed('/test');
+      unawaited(NavigatorService.pushNamed('/test'));
       await tester.pumpAndSettle();
 
       expect(find.text('Test Route'), findsOneWidget);
@@ -38,7 +40,7 @@ void main() {
         ),
       );
 
-      NavigatorService.pushNamed('/second');
+      unawaited(NavigatorService.pushNamed('/second'));
       await tester.pumpAndSettle();
       expect(find.text('Second'), findsOneWidget);
 
