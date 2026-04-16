@@ -16,6 +16,7 @@ import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 import '../presentation/cloud_sync/cloud_sync_screen.dart';
 import '../presentation/audio_player/audio_player_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
+import '../presentation/statistics_screen/statistics_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -35,6 +36,7 @@ class AppRoutes {
   static const String cloudSyncPage = '/cloud_sync';
   static const String audioPlayerScreen = '/audio_player';
   static const String mushafScreen = '/mushaf_screen';
+  static const String statisticsScreen = '/statistics';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -65,5 +67,6 @@ class AppRoutes {
       );
     },
     mushafScreen: (context) => const MushafScreen(),
+    statisticsScreen: (context) => const StatisticsScreen(),
   };
 }
