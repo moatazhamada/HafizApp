@@ -248,4 +248,10 @@ final Map<String, String> enUs = {
   // QRC Errors
   'msg_qrc_error': 'Recitation verification error',
   'msg_qrc_invalid_message': 'Invalid recitation verification message',
+
+  // Mushaf Screen
+  'lbl_mushaf': 'Mushaf',
+  'lbl_jump_to_page': 'Jump to Page',
+  'lbl_page': 'Page',
+  'lbl_go': 'Go',
 };
