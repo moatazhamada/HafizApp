@@ -534,12 +534,17 @@ class _SurahScreenState extends State<SurahScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                      Semantics(
+                        button: true,
+                        label: 'lbl_close'.tr,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          tooltip: 'lbl_close'.tr,
                         ),
-                        onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
@@ -733,6 +738,7 @@ class _SurahScreenState extends State<SurahScreen> {
         child: IconButton(
           icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
           onPressed: () => NavigatorService.goBack(),
+          tooltip: 'lbl_back'.tr,
         ),
       ),
       actions: [
@@ -747,6 +753,9 @@ class _SurahScreenState extends State<SurahScreen> {
               color: _isAutoScrolling ? Colors.amber : Colors.white,
             ),
             onPressed: _toggleAutoScroll,
+            tooltip: _isAutoScrolling
+                ? 'lbl_stop_autoscroll'.tr
+                : 'lbl_start_autoscroll'.tr,
           ),
         ),
         Semantics(
@@ -796,6 +805,9 @@ class _SurahScreenState extends State<SurahScreen> {
                   isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
                   color: Colors.white,
                 ),
+                tooltip: isBookmarked
+                    ? 'lbl_remove_bookmark'.tr
+                    : 'lbl_add_bookmark'.tr,
                 onPressed: () {
                   if (surah == null) return;
                   if (isBookmarked) {
