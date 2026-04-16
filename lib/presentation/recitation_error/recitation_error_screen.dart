@@ -163,6 +163,7 @@ class RecitationErrorScreen extends StatelessWidget {
                                                 QuranIndex.quranSurahs[0],
                                           )
                                           .localizedName(context),
+                                      textDirection: TextDirection.rtl,
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontWeight: FontWeight.w600,
