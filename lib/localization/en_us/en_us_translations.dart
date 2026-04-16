@@ -296,4 +296,8 @@ final Map<String, String> enUs = {
   'lbl_scroll_mode': 'Scroll Mode',
   'lbl_page_mode': 'Page Mode',
   'lbl_audio_player': 'Audio Player',
+  'lbl_scroll_speed': 'Scroll Speed',
+  'lbl_slow': 'Slow',
+  'lbl_normal': 'Normal',
+  'lbl_fast': 'Fast',
 };
