@@ -245,4 +245,13 @@ final Map<String, String> arEg = {
   // QRC Errors
   'msg_qrc_error': 'خطأ في التحقق من التلاوة',
   'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
+
+  // Sharing
+  'lbl_share_verse': 'مشاركة الآية',
+  'lbl_share_text': 'مشاركة كنص',
+  'msg_share_text_desc': 'شارك الآية مع الإسناد',
+  'lbl_copy_text': 'نسخ النص',
+  'msg_copy_text_desc': 'نسخ نص الآية فقط',
+  'msg_text_copied': 'تم نسخ النص',
+  'msg_via_app': 'عبر حافظ',
 };

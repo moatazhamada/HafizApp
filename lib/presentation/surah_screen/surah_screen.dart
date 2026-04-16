@@ -13,6 +13,7 @@ import '../../core/qiraat/qiraat_service.dart';
 import '../../core/quran_index/quran_surah.dart';
 
 import '../../domain/entities/verse.dart';
+import '../../widgets/verse_share_sheet.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -945,6 +946,24 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
             Semantics(
               button: true,
+              label: 'lbl_share_verse'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.share, color: Colors.teal),
+                title: Text('lbl_share_verse'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  VerseShareSheet.show(
+                    context: context,
+                    verseText: aya.arabicText,
+                    surahId: surah!.id,
+                    verseNumber: aya.verseNumber,
+                    surahName: surah!.nameEnglish,
+                  );
+                },
+              ),
+            ),
+            Semantics(
+              button: true,
               label: 'lbl_tafsir'.tr,
               child: ListTile(
                 leading: const Icon(Icons.menu_book, color: Colors.teal),
@@ -1194,15 +1213,15 @@ class _SurahScreenState extends State<SurahScreen> {
     final surahId = surah?.id ?? -1;
     final bookmarkedVerses = bookmarkState is BookmarkLoaded
         ? bookmarkState.bookmarks
-            .where((b) => b.surahId == surahId)
-            .map((b) => b.verseNumber)
-            .toSet()
+              .where((b) => b.surahId == surahId)
+              .map((b) => b.verseNumber)
+              .toSet()
         : <int>{};
     final errorVerses = errorState is RecitationErrorLoaded
         ? errorState.errors
-            .where((m) => m.surahId == surahId)
-            .map((m) => m.verseId)
-            .toSet()
+              .where((m) => m.surahId == surahId)
+              .map((m) => m.verseId)
+              .toSet()
         : <int>{};
     return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
   }

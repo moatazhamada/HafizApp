@@ -248,4 +248,13 @@ final Map<String, String> enUs = {
   // QRC Errors
   'msg_qrc_error': 'Recitation verification error',
   'msg_qrc_invalid_message': 'Invalid recitation verification message',
+
+  // Sharing
+  'lbl_share_verse': 'Share Verse',
+  'lbl_share_text': 'Share as Text',
+  'msg_share_text_desc': 'Share verse with attribution',
+  'lbl_copy_text': 'Copy Text',
+  'msg_copy_text_desc': 'Copy verse text only',
+  'msg_text_copied': 'Text copied to clipboard',
+  'msg_via_app': 'via Hafiz',
 };
