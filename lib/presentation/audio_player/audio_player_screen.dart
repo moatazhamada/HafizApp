@@ -267,6 +267,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       appBar: AppBar(
         title: Text(
           surah.nameArabic,
+          textDirection: TextDirection.rtl,
           style: const TextStyle(fontFamily: 'Amiri'),
         ),
         centerTitle: true,
@@ -278,6 +279,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
             const Spacer(flex: 2),
             Text(
               surah.nameArabic,
+              textDirection: TextDirection.rtl,
               style: const TextStyle(
                 fontFamily: 'Amiri',
                 fontSize: 36,
