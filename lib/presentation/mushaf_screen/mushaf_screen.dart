@@ -15,7 +15,6 @@ class MushafScreen extends StatefulWidget {
 class _MushafScreenState extends State<MushafScreen> {
   late PageController _pageController;
   late int _currentPage;
-  bool _showPageInput = false;
   final TextEditingController _pageInputController = TextEditingController();
 
   @override

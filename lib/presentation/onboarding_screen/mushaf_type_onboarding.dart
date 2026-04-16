@@ -78,7 +78,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
               child: Text(
                 'msg_mushaf_type_desc'.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -104,7 +104,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? type.color.withOpacity(0.1)
+                            ? type.color.withValues(alpha: 0.1)
                             : theme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
@@ -121,7 +121,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: type.color.withOpacity(0.15),
+                                color: type.color.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -142,8 +142,8 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                             Text(
                               type.description,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.5,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
                                 ),
                               ),
                               textAlign: TextAlign.center,

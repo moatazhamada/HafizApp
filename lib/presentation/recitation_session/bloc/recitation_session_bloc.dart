@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/domain/repository/recitation_session_repository.dart';
 import 'recitation_session_event.dart';
 import 'recitation_session_state.dart';

@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 
 abstract class MemorizationEvent extends Equatable {
   const MemorizationEvent();
