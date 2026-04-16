@@ -4,7 +4,6 @@ import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 

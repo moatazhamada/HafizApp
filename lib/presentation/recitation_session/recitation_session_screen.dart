@@ -4,7 +4,6 @@ import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 class RecitationSessionScreen extends StatelessWidget {

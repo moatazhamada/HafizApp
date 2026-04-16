@@ -27,9 +27,11 @@ class SurahBloc extends Bloc<SurahEvent, SurahState> {
       emit(
         response.fold((failure) {
           if (failure is ServerFailure) {
-            return FailureSurahState(errorMessage: 'msg_server_error');
+            return const FailureSurahState(errorMessage: 'msg_server_error');
           } else if (failure is ConnectionFailure) {
-            return FailureSurahState(errorMessage: 'msg_connection_error');
+            return const FailureSurahState(
+              errorMessage: 'msg_connection_error',
+            );
           } else {
             return InitialSurahState();
           }

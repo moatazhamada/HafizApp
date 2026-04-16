@@ -24,7 +24,7 @@ class LocalSurahDataSource {
   /// Save a Surah to local storage
   Future<void> saveSurah(Surah surah) async {
     final model = SurahModel.fromEntity(surah);
-    surahBox.put('surah_${surah.chapterNumber}', model);
+    await surahBox.put('surah_${surah.chapterNumber}', model);
   }
 
   /// Check if a Surah is downloaded
@@ -45,12 +45,12 @@ class LocalSurahDataSource {
         isDownloaded: isDownloaded,
         lastDownloadedAt: lastDownloadedAt,
       );
-      surahBox.put('surah_$chapterNumber', updatedModel);
+      await surahBox.put('surah_$chapterNumber', updatedModel);
     }
   }
 
   /// Delete a Surah from local storage
   Future<void> deleteSurah(int chapterNumber) async {
-    surahBox.delete('surah_$chapterNumber');
+    await surahBox.delete('surah_$chapterNumber');
   }
 }
