@@ -738,6 +738,27 @@ class _SurahScreenState extends State<SurahScreen> {
       actions: [
         Semantics(
           button: true,
+          label: 'lbl_audio_player'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.headphones, color: Colors.white),
+            onPressed: () {
+              if (surah == null) return;
+              final isArabic =
+                  Localizations.localeOf(context).languageCode == 'ar';
+              NavigatorService.pushNamed(
+                AppRoutes.audioPlayerScreen,
+                arguments: {
+                  'surahId': surah!.id,
+                  'surahName': isArabic
+                      ? surah!.nameArabic
+                      : surah!.nameEnglish,
+                },
+              );
+            },
+          ),
+        ),
+        Semantics(
+          button: true,
           label: _isAutoScrolling
               ? 'lbl_stop_autoscroll'.tr
               : 'lbl_start_autoscroll'.tr,

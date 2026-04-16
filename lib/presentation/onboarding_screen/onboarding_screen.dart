@@ -214,7 +214,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   key: const ValueKey('get_started_key'),
                                   onPressed: () {
                                     NavigatorService.pushNamedAndRemoveUntil(
-                                      AppRoutes.musaliTeaserScreen,
+                                      AppRoutes.mushafTypeOnboarding,
                                     );
                                   },
                                   text: 'lbl_get_started'.tr,

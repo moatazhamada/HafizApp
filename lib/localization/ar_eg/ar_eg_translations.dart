@@ -292,4 +292,5 @@ final Map<String, String> arEg = {
   'lbl_reading_navigation': 'التنقل أثناء القراءة',
   'lbl_scroll_mode': 'وضع التمرير',
   'lbl_page_mode': 'وضع الصفحات',
+  'lbl_audio_player': 'مشغل الصوت',
 };
