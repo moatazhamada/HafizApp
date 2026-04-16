@@ -7,7 +7,7 @@ part 'musali_teaser_event.dart';
 part 'musali_teaser_state.dart';
 
 class MusaliTeaserBloc extends Bloc<MusaliTeaserEvent, MusaliTeaserState> {
-  MusaliTeaserBloc() : super(MusaliTeaserInitial()) {
+  MusaliTeaserBloc() : super(const MusaliTeaserInitial()) {
     on<NextSlidePressed>(_onNextSlidePressed);
     on<SkipPressed>(_onSkipPressed);
     on<Dismissed>(_onDismissed);
@@ -26,16 +26,16 @@ class MusaliTeaserBloc extends Bloc<MusaliTeaserEvent, MusaliTeaserState> {
       emit(TeaserSlideUpdated(slideIndex: _currentSlide));
       startAutoSlide();
     } else {
-      emit(TeaserCompleted());
+      emit(const TeaserCompleted());
     }
   }
 
   void _onSkipPressed(SkipPressed event, Emitter<MusaliTeaserState> emit) {
-    emit(TeaserCompleted());
+    emit(const TeaserCompleted());
   }
 
   void _onDismissed(Dismissed event, Emitter<MusaliTeaserState> emit) {
-    emit(TeaserCompleted());
+    emit(const TeaserCompleted());
   }
 
   void _onAutoAdvanceTick(
@@ -52,7 +52,7 @@ class MusaliTeaserBloc extends Bloc<MusaliTeaserEvent, MusaliTeaserState> {
     _autoSlideTimer?.cancel();
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (!isClosed) {
-        add(AutoAdvanceTick(shouldAdvance: true));
+        add(const AutoAdvanceTick(shouldAdvance: true));
       }
     });
   }
