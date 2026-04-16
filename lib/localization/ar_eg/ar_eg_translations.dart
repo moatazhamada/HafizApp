@@ -254,4 +254,17 @@ final Map<String, String> arEg = {
   'msg_copy_text_desc': 'نسخ نص الآية فقط',
   'msg_text_copied': 'تم نسخ النص',
   'msg_via_app': 'عبر حافظ',
+  
+  // Audio Player
+  'lbl_sleep_timer': 'مؤقت النوم',
+  'lbl_cancel_timer': 'إلغاء المؤقت',
+  'lbl_minutes': 'دقيقة',
+  'lbl_loop_verses': 'تكرار',
+  'msg_audio_load_error': 'فشل تحميل الصوت',
+  
+  // Mushaf Screen
+  'lbl_mushaf': 'المصحف',
+  'lbl_jump_to_page': 'الانتقال لصفحة',
+  'lbl_page': 'صفحة',
+  'lbl_go': 'اذهب',
 };
