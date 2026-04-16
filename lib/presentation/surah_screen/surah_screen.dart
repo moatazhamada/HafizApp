@@ -67,7 +67,7 @@ class _SurahScreenState extends State<SurahScreen> {
   // Auto-scroll
   bool _isAutoScrolling = false;
   Timer? _autoScrollTimer;
-  double _autoScrollSpeed = 0.5;
+  final double _autoScrollSpeed = 0.5;
 
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;

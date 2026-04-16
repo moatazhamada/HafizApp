@@ -411,8 +411,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildDrawer(BuildContext context, ThemeData theme) {
-    final isDarkMode = theme.brightness == Brightness.dark;
-
     return NavigationDrawer(
       selectedIndex: null,
       onDestinationSelected: (index) {

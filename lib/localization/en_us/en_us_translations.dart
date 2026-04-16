@@ -189,7 +189,6 @@ final Map<String, String> enUs = {
   'musali_watch_now': 'Watch Now',
   'lbl_skip': 'Skip',
   'lbl_next': 'Next',
-  'lbl_continue': 'Continue',
   'lbl_next_surah': 'Next Surah',
   'lbl_previous_surah': 'Previous Surah',
   'lbl_session_history': 'Session History',
@@ -212,7 +211,6 @@ final Map<String, String> enUs = {
   'lbl_best_score': 'Best',
   'lbl_khatmah_tracker': 'Khatmah Tracker',
   'lbl_today_reading': "Today's Reading",
-  'lbl_verses': 'verses',
   'lbl_daily_goal': 'Daily Goal',
   'lbl_current_goal': 'Current',
   'msg_goal_achieved': 'Goal achieved!',
@@ -274,18 +272,18 @@ final Map<String, String> enUs = {
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'Choose Mushaf Type',
   'msg_mushaf_type_desc': 'Select your preferred Quran script style',
-  
+
   // Statistics
   'stats_title': 'My Progress',
   'stats_bookmarks': 'Bookmarks',
   'stats_practice_verses': 'Practice Verses',
   'stats_surahs_completed': 'Surahs Completed',
   'stats_no_activity': 'Start reading to track your progress!',
-  
+
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
   'lbl_stop_autoscroll': 'Stop Auto-scroll',
-  
+
   // Settings Enhancements
   'lbl_quran_font': 'Quran Font Size',
   'lbl_orientation': 'Screen Orientation',
