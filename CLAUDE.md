@@ -142,13 +142,12 @@ flutter build apk --release --flavor production
 
 ### Surah Screen Features
 - **Audio Player** — Headphones icon in app bar, navigates to `/audio_player` with surah args
-- **Auto-scroll** — Play/pause icon, configurable speed (long-press for speed picker)
-- **Hifz Mode** — Hides verse text for memorization practice (in overflow menu)
-- **Bookmark** — Per-surah bookmark toggle (in overflow menu)
+- **Auto-scroll** — Play/pause icon, configurable speed 0.25x–3.0x (long-press for speed picker, badge shows non-default speed)
+- **Overflow Menu (⋮)** — Contains Help, Hifz Mode (hide verses for memorization), Bookmark (per-surah toggle)
 - **Tafsir** — Per-verse bottom sheet from verse context menu
 - **Verse Sharing** — Share/copy from verse context menu
 - **Voice Verification** — Per-verse recitation check from context menu
-- **Surah Navigation** — Previous/next surah buttons at bottom
+- **Surah Navigation** — RTL-aware prev/next surah buttons at bottom (next=◁ left, prev=▷ right)
 
 ### Settings
 - Language (English/Arabic/System)
@@ -176,3 +175,28 @@ Onboarding → MushafTypeOnboarding (Madani/Egyptian/Indo-Pak/Warsh) → Home
 ### Known Warnings (Acceptable)
 - `unnecessary_non_null_assertion` in `surah_screen.dart` lines ~428/433/455/460 — the `!` is required for compilation, Dart can't promote `Surah?` through indirect boolean guards
 - Java "Duplicate root element android" from stale `.kilo/worktrees/` — do not delete these worktrees
+
+### RTL Text Direction Convention
+
+**All Quran/Arabic text must always use `textDirection: TextDirection.rtl`**, regardless of the app's current locale. This includes:
+- Verse text (arabicText)
+- Surah Arabic names (nameArabic)
+- Bismillah
+- Tafsir text
+- Voice verification text (spoken, expected, hint, repeat words)
+
+The surah navigation arrows follow RTL semantics:
+- **Next surah** → `Icons.skip_previous` ◁ (left arrow = forward in RTL reading)
+- **Previous surah** → `Icons.skip_next` ▷ (right arrow = backward in RTL reading)
+
+When adding any new widget that displays Arabic/Quran content, always include `textDirection: TextDirection.rtl`.
+
+### Pull Request History (Recent)
+
+| PR | Description |
+|----|-------------|
+| #45 | Fix all analyzer warnings and syntax error |
+| #46 | Wire up orphaned screens (Statistics, Mushaf, Audio Player, MushafTypeOnboarding) |
+| #47 | Resolve remaining lint warnings across 8 files |
+| #48 | UX improvements (auto-scroll speed, appBar overflow, mushaf data, docs) |
+| #49 | RTL text direction for all Quran content and navigation arrows |
