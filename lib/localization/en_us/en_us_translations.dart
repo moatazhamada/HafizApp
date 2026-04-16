@@ -257,17 +257,29 @@ final Map<String, String> enUs = {
   'msg_copy_text_desc': 'Copy verse text only',
   'msg_text_copied': 'Text copied to clipboard',
   'msg_via_app': 'via Hafiz',
-  
+
   // Audio Player
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_minutes': 'minutes',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
-  
+
   // Mushaf Screen
   'lbl_mushaf': 'Mushaf',
   'lbl_jump_to_page': 'Jump to Page',
   'lbl_page': 'Page',
   'lbl_go': 'Go',
+
+  // Settings Enhancements
+  'lbl_quran_font': 'Quran Font Size',
+  'lbl_orientation': 'Screen Orientation',
+  'lbl_portrait': 'Portrait',
+  'lbl_landscape': 'Landscape',
+  'lbl_default_quran_view': 'Default Quran View',
+  'lbl_surah_view': 'Surah View',
+  'lbl_mushaf_view': 'Mushaf View',
+  'lbl_reading_navigation': 'Reading Navigation',
+  'lbl_scroll_mode': 'Scroll Mode',
+  'lbl_page_mode': 'Page Mode',
 };
