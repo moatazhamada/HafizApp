@@ -265,10 +265,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          surah.nameArabic,
-          textDirection: TextDirection.rtl,
-          style: const TextStyle(fontFamily: 'Amiri'),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            surah.nameArabic,
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(fontFamily: 'Amiri'),
+          ),
         ),
         centerTitle: true,
       ),

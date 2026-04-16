@@ -788,27 +788,6 @@ class _SurahScreenState extends State<SurahScreen> {
       actions: [
         Semantics(
           button: true,
-          label: 'lbl_audio_player'.tr,
-          child: IconButton(
-            icon: const Icon(Icons.headphones, color: Colors.white),
-            onPressed: () {
-              if (surah == null) return;
-              final isArabic =
-                  Localizations.localeOf(context).languageCode == 'ar';
-              NavigatorService.pushNamed(
-                AppRoutes.audioPlayerScreen,
-                arguments: {
-                  'surahId': surah!.id,
-                  'surahName': isArabic
-                      ? surah!.nameArabic
-                      : surah!.nameEnglish,
-                },
-              );
-            },
-          ),
-        ),
-        Semantics(
-          button: true,
           label: _isAutoScrolling
               ? 'lbl_stop_autoscroll'.tr
               : 'lbl_start_autoscroll'.tr,
@@ -837,6 +816,20 @@ class _SurahScreenState extends State<SurahScreen> {
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
               switch (value) {
+                case 'audio':
+                  if (surah == null) return;
+                  final isArabic =
+                      Localizations.localeOf(context).languageCode == 'ar';
+                  NavigatorService.pushNamed(
+                    AppRoutes.audioPlayerScreen,
+                    arguments: {
+                      'surahId': surah!.id,
+                      'surahName': isArabic
+                          ? surah!.nameArabic
+                          : surah!.nameEnglish,
+                    },
+                  );
+                  break;
                 case 'help':
                   NavigatorService.pushNamed(AppRoutes.helpScreen);
                   break;
@@ -877,6 +870,16 @@ class _SurahScreenState extends State<SurahScreen> {
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'audio',
+                child: Row(
+                  children: [
+                    const Icon(Icons.headphones),
+                    const SizedBox(width: 12),
+                    Text('lbl_audio_player'.tr),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'help',
                 child: Row(
