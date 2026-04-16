@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/quran_index/quran_surah.dart';
 import '../bookmarks/bloc/bookmark_bloc.dart';
 import '../recitation_error/bloc/recitation_error_bloc.dart';
 
@@ -71,13 +70,17 @@ class StatisticsScreen extends StatelessWidget {
                         Icon(
                           Icons.trending_up,
                           size: 64,
-                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'stats_no_activity'.tr,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -104,7 +107,7 @@ class StatisticsScreen extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withOpacity(0.2)),
+        side: BorderSide(color: color.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -114,7 +117,7 @@ class StatisticsScreen extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -127,7 +130,7 @@ class StatisticsScreen extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 4),

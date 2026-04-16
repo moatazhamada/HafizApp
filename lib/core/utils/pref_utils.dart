@@ -316,7 +316,8 @@ class PrefUtils {
 
   Future<void> setOnboardingCompleted(bool value) async {
     await _sharedPreferences!.setBool('onboardingCompleted', value);
-    
+  }
+
   // Quran Font Size
   double getQuranFontSize() {
     try {

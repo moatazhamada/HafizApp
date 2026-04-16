@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart' show Share;
 import '../core/app_export.dart';
 
@@ -25,6 +26,7 @@ class VerseShareSheet extends StatelessWidget {
 
   void _copyText(BuildContext context) {
     final text = '$verseText\n— $surahName, ${'lbl_ayah'.tr} $verseNumber';
+    Clipboard.setData(ClipboardData(text: text));
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
