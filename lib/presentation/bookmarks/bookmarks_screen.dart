@@ -188,6 +188,7 @@ class BookmarksScreen extends StatelessWidget {
                                     children: [
                                       Text(
                                         surah.localizedName(context),
+                                        textDirection: TextDirection.rtl,
                                         style: TextStyle(
                                           fontFamily: 'Poppins',
                                           fontWeight: FontWeight.w600,

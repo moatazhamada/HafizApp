@@ -628,6 +628,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               Text(
                                 lastReadSurah.nameArabic,
+                                textDirection: TextDirection.rtl,
                                 style: theme.textTheme.headlineMedium?.copyWith(
                                   fontFamily: 'Amiri',
                                   color: Colors.white.withValues(alpha: 0.9),
