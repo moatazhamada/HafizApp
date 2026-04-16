@@ -383,10 +383,18 @@ class _HomeScreenState extends State<HomeScreen>
                                   onTap: () {
                                     PrefUtils().saveLastReadSurah(surah);
                                     homeBloc.add(HomeShowLastSurahEvent());
-                                    NavigatorService.pushNamed(
-                                      AppRoutes.surahPage,
-                                      arguments: surah,
-                                    );
+                                    final defaultView = PrefUtils()
+                                        .getDefaultQuranView();
+                                    if (defaultView == 'mushaf') {
+                                      NavigatorService.pushNamed(
+                                        AppRoutes.mushafScreen,
+                                      );
+                                    } else {
+                                      NavigatorService.pushNamed(
+                                        AppRoutes.surahPage,
+                                        arguments: surah,
+                                      );
+                                    }
                                   },
                                   child: SurahListItem(
                                     surahId: surah.id,
@@ -432,9 +440,15 @@ class _HomeScreenState extends State<HomeScreen>
             NavigatorService.pushNamed(AppRoutes.khatmahPage);
             break;
           case 5:
-            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
             break;
           case 6:
+            NavigatorService.pushNamed(AppRoutes.mushafScreen);
+            break;
+          case 7:
+            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            break;
+          case 8:
             NavigatorService.pushNamed(AppRoutes.aboutPage);
             break;
         }
@@ -492,6 +506,16 @@ class _HomeScreenState extends State<HomeScreen>
           icon: const Icon(Icons.auto_stories_outlined),
           selectedIcon: const Icon(Icons.auto_stories_rounded),
           label: Text('lbl_khatmah_tracker'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.trending_up_outlined),
+          selectedIcon: const Icon(Icons.trending_up_rounded),
+          label: Text('stats_title'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.auto_stories_outlined),
+          selectedIcon: const Icon(Icons.auto_stories_rounded),
+          label: Text('lbl_mushaf'.tr),
         ),
         const Divider(height: 24),
         NavigationDrawerDestination(
@@ -657,15 +681,23 @@ class _HomeScreenState extends State<HomeScreen>
                               offset ?? 0.0,
                             );
 
-                            NavigatorService.pushNamed(
-                              AppRoutes.surahPage,
-                              arguments: {
-                                'surah': lastReadSurah,
-                                'offset': ?offset,
-                                'resume': true,
-                                'verseIndex': ?lastVerseIndex,
-                              },
-                            );
+                            final defaultView = PrefUtils()
+                                .getDefaultQuranView();
+                            if (defaultView == 'mushaf') {
+                              NavigatorService.pushNamed(
+                                AppRoutes.mushafScreen,
+                              );
+                            } else {
+                              NavigatorService.pushNamed(
+                                AppRoutes.surahPage,
+                                arguments: {
+                                  'surah': lastReadSurah,
+                                  'offset': ?offset,
+                                  'resume': true,
+                                  'verseIndex': ?lastVerseIndex,
+                                },
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

@@ -147,7 +147,6 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
   Future<void> _init() async {
     // 1. Critical functional initialization (fast)
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -170,6 +169,28 @@ class _BootstrapAppState extends State<BootstrapApp> {
       await Hive.openBox('reading_goal');
 
       await di.init();
+
+      final orientationMode = PrefUtils().getOrientationMode();
+      List<DeviceOrientation> orientations;
+      switch (orientationMode) {
+        case 'portrait':
+          orientations = [DeviceOrientation.portraitUp];
+          break;
+        case 'landscape':
+          orientations = [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ];
+          break;
+        default:
+          orientations = [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ];
+      }
+      await SystemChrome.setPreferredOrientations(orientations);
 
       final storage = await HydratedStorage.build(
         storageDirectory: HydratedStorageDirectory(
