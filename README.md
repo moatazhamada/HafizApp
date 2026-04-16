@@ -127,7 +127,7 @@ See `android/fastlane/README.md` for detailed documentation.
 - **Mushaf View** — 604-page horizontal RTL PageView with jump-to-page, surah info overlay
 - **Audio Player** — Verse-by-verse playback (Alafasy), speed control (0.5x-2x), sleep timer, loop
 - **Verse Sharing** — Share/copy any verse with attribution via share_plus
-- **Auto-scroll** — Configurable speed scroll in surah view (long-press for speed picker)
+- **Auto-scroll** — Configurable speed (0.25x–3.0x) scroll in surah view (long-press for speed picker)
 - **Hifz Mode** — Hide verse text for memorization practice
 - **Statistics Screen** — Bookmark count, practice verse count, empty state
 - **Khatmah Tracker** — Daily reading goals and progress
@@ -140,13 +140,15 @@ See `android/fastlane/README.md` for detailed documentation.
 - **Cloud Sync** — Firebase-based bookmark/settings sync
 - **Search** — Full-text verse search
 - **Voice Verification** — Per-verse recitation checking (local whisper or API)
+- **RTL Text Direction** — All Quran/Arabic text always renders RTL regardless of app locale; surah navigation arrows follow RTL reading direction
 
 ### 🔜 Planned / In Progress
 - **Deep Linking** — `hafiz://verse/{surahId}/{verseNum}` URL scheme
 - **Verse Image Sharing** — Beautiful image generation for social media
-- **Full Quran Mushaf Pages** — Actual page images/text rendering (currently shows surah placeholder)
+- **Full Quran Mushaf Pages** — Actual page images/text rendering (currently shows surah name placeholder)
 - **Background Audio** — System notification controls during playback
 - **Reading Navigation Mode** — Page-by-page vs continuous scroll (setting saved but not consumed)
 - **Home Screen Widgets** — Daily verse and progress widgets
 - **Advanced Search** — Topic/keyword filters, search history
+- **Musali Teaser Refactor** — Ad/teaser screen needs design overhaul (Spec #001, deferred)
 
