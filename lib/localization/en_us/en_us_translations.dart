@@ -255,4 +255,10 @@ final Map<String, String> enUs = {
   'lbl_minutes': 'minutes',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
+  
+  // Mushaf Screen
+  'lbl_mushaf': 'Mushaf',
+  'lbl_jump_to_page': 'Jump to Page',
+  'lbl_page': 'Page',
+  'lbl_go': 'Go',
 };

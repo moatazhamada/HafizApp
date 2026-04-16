@@ -252,4 +252,10 @@ final Map<String, String> arEg = {
   'lbl_minutes': 'دقيقة',
   'lbl_loop_verses': 'تكرار',
   'msg_audio_load_error': 'فشل تحميل الصوت',
+  
+  // Mushaf Screen
+  'lbl_mushaf': 'المصحف',
+  'lbl_jump_to_page': 'الانتقال لصفحة',
+  'lbl_page': 'صفحة',
+  'lbl_go': 'اذهب',
 };
