@@ -226,9 +226,8 @@ class _HomeScreenState extends State<HomeScreen>
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
+        drawer: _buildDrawer(context, theme),
         appBar: CustomAppBar(
-          // leading: Removed to allow title to center properly
-          // leadingWidth: Removed
           title: Semantics(
             header: true,
             child: Text(
@@ -239,139 +238,60 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
-          leading: Semantics(
-            button: true,
-            label: 'lbl_toggle_theme'.tr,
-            child: IconButton(
-              icon: Icon(
-                isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+          leading: Builder(
+            builder: (scaffoldContext) => Semantics(
+              button: true,
+              label: 'Open navigation menu',
+              child: IconButton(
+                icon: Icon(
+                  Icons.menu,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
+                onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+                tooltip: 'Open navigation menu',
               ),
-              onPressed: () {
-                themeBloc.add(ToggleThemeEvent());
-                sl<AnalyticsService>().logThemeChange(!isDarkMode);
-              },
-              tooltip: 'lbl_toggle_theme'.tr,
             ),
           ),
           centerTitle: true,
           actions: [
             Semantics(
               button: true,
-              label: 'lbl_search_tooltip'.tr,
+              label: 'lbl_toggle_theme'.tr,
               child: IconButton(
-                icon: const Icon(Icons.search_rounded),
-                onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.searchPage),
-                tooltip: 'lbl_search_tooltip'.tr,
+                icon: Icon(
+                  isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
+                onPressed: () {
+                  themeBloc.add(ToggleThemeEvent());
+                  sl<AnalyticsService>().logThemeChange(!isDarkMode);
+                },
+                tooltip: 'lbl_toggle_theme'.tr,
               ),
             ),
             Semantics(
               button: true,
               label: 'lbl_juz_index'.tr,
               child: IconButton(
-                icon: const Icon(Icons.menu_book_rounded),
+                icon: Icon(
+                  Icons.menu_book_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () => _showJuzSelector(context),
                 tooltip: 'lbl_juz_index'.tr,
               ),
             ),
             Semantics(
               button: true,
-              label: 'lbl_bookmarks'.tr,
+              label: 'lbl_search_tooltip'.tr,
               child: IconButton(
-                icon: const Icon(Icons.bookmark_border_rounded),
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                ),
                 onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.bookmarksPage),
-                tooltip: 'lbl_bookmarks'.tr,
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_more_options'.tr,
-              child: PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'mistakes':
-                      NavigatorService.pushNamed(
-                        AppRoutes.recitationErrorsPage,
-                      );
-                      break;
-                    case 'sessions':
-                      NavigatorService.pushNamed(
-                        AppRoutes.recitationSessionsPage,
-                      );
-                      break;
-                    case 'memorization':
-                      NavigatorService.pushNamed(AppRoutes.memorizationPage);
-                      break;
-                    case 'khatmah':
-                      NavigatorService.pushNamed(AppRoutes.khatmahPage);
-                      break;
-                    case 'settings':
-                      NavigatorService.pushNamed(AppRoutes.settingsScreen);
-                      break;
-                    case 'about':
-                      NavigatorService.pushNamed(AppRoutes.aboutPage);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'sessions',
-                    child: Row(
-                      children: [
-                        Icon(Icons.history, color: theme.iconTheme.color),
-                        const SizedBox(width: 12),
-                        Text('lbl_session_history'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'memorization',
-                    child: Row(
-                      children: [
-                        Icon(Icons.school, color: theme.iconTheme.color),
-                        const SizedBox(width: 12),
-                        Text('lbl_memorization'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'khatmah',
-                    child: Row(
-                      children: [
-                        Icon(Icons.auto_stories, color: theme.iconTheme.color),
-                        const SizedBox(width: 12),
-                        Text('lbl_khatmah_tracker'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, color: theme.iconTheme.color),
-                        const SizedBox(width: 12),
-                        Text('lbl_settings'.tr),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'about',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: theme.iconTheme.color,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'about_title'.tr,
-                        ), // Assuming 'about_title' key exists or use 'About'
-                      ],
-                    ),
-                  ),
-                ],
-                icon: const Icon(Icons.more_vert),
+                    NavigatorService.pushNamed(AppRoutes.searchPage),
+                tooltip: 'lbl_search_tooltip'.tr,
               ),
             ),
           ],
@@ -487,6 +407,106 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, ThemeData theme) {
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    return NavigationDrawer(
+      selectedIndex: null,
+      onDestinationSelected: (index) {
+        Navigator.of(context).pop();
+        switch (index) {
+          case 0:
+            NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+            break;
+          case 1:
+            NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+            break;
+          case 2:
+            NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
+            break;
+          case 3:
+            NavigatorService.pushNamed(AppRoutes.memorizationPage);
+            break;
+          case 4:
+            NavigatorService.pushNamed(AppRoutes.khatmahPage);
+            break;
+          case 5:
+            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            break;
+          case 6:
+            NavigatorService.pushNamed(AppRoutes.aboutPage);
+            break;
+        }
+      },
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Text(
+                  'app_name'.tr[0],
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'app_name'.tr,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        const SizedBox(height: 12),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.bookmark_outline_rounded),
+          selectedIcon: const Icon(Icons.bookmark_rounded),
+          label: Text('lbl_bookmarks'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.playlist_add_check_outlined),
+          selectedIcon: const Icon(Icons.playlist_add_check_rounded),
+          label: Text('lbl_practice_list'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.history_outlined),
+          selectedIcon: const Icon(Icons.history_rounded),
+          label: Text('lbl_session_history'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.school_outlined),
+          selectedIcon: const Icon(Icons.school_rounded),
+          label: Text('lbl_memorization'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.auto_stories_outlined),
+          selectedIcon: const Icon(Icons.auto_stories_rounded),
+          label: Text('lbl_khatmah_tracker'.tr),
+        ),
+        const Divider(height: 24),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings_rounded),
+          label: Text('lbl_settings'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.info_outline_rounded),
+          selectedIcon: const Icon(Icons.info_rounded),
+          label: Text('about_title'.tr),
+        ),
+      ],
     );
   }
 
