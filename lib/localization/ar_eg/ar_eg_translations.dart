@@ -12,7 +12,6 @@ final Map<String, String> arEg = {
   'about_ack_heading': 'شكر وتقدير',
   'about_ack_idea_by': 'صاحب الفكرة والأساس:',
   'about_repo_prefix': 'الشيفرة المصدرية:',
-  'about_maintainer_note': 'تم التطوير والتحسين بواسطة الفريق الحالي.',
   'about_integrity_heading': 'موثوقية النص',
   'about_integrity_body':
       'نص القرآن الكريم مدمج محلياً من مصادر موثوقة (Tanzil) لضمان الدقة والعمل دون إنترنت. يُرجى الإبلاغ عن أي ملاحظات فوراً.',
@@ -30,7 +29,6 @@ final Map<String, String> arEg = {
   'lbl_copied': 'تم النسخ للحافظة',
   'lbl_practice_list': 'قائمة تثبيت الحفظ',
   'msg_no_practice_items': 'لا توجد آيات لتثبيت الحفظ',
-  'msg_added_practice': 'تمت الإضافة لتثبيت الحفظ',
   'msg_removed_practice': 'تم الحذف من قائمة تثبيت الحفظ',
   'lbl_verify_recitation': 'التحقق من التلاوة (تجريبي)',
   'lbl_listening': 'جاري الاستماع...',
@@ -39,7 +37,6 @@ final Map<String, String> arEg = {
   'lbl_close': 'إغلاق',
   'msg_unmark_practice': 'إزالة من تثبيت الحفظ',
   'msg_mark_practice': 'تحديد لتثبيت الحفظ',
-  'lbl_practices': 'تثبيت الحفظ',
   'lbl_settings': 'الإعدادات',
   'lbl_recitation_coach': 'مدرب التلاوة',
   'lbl_recitation_provider': 'محرك التلاوة',
@@ -68,7 +65,6 @@ final Map<String, String> arEg = {
   'lbl_theme_light': 'الوضع الفاتح',
   'lbl_theme_dark': 'الوضع الداكن',
   'lbl_toggle_theme': 'تبديل المظهر',
-  'lbl_search': 'البحث',
   'lbl_bookmarks': 'المفضلة',
   // Help Screen
   'lbl_app_guide': 'دليل التطبيق',
@@ -99,7 +95,6 @@ final Map<String, String> arEg = {
   'lbl_delete': 'حذف',
   'msg_swipe_delete': 'اسحب للحذف',
   // Surah
-  'lbl_listening_active': 'جاري الاستماع...',
   // About
   'about_maintained_by': 'القائم بالصيانة',
   'about_current_repo': 'المستودع الحالي',
@@ -123,7 +118,6 @@ final Map<String, String> arEg = {
   'lbl_repeat_word': 'كرر الكلمة',
   'lbl_connecting': 'جاري الاتصال...',
   'msg_transcribing': 'جاري التفريغ محلياً...',
-  'msg_session_complete': 'اكتملت الجلسة',
   'msg_session_score': 'لقد تلوت الآيات بشكل صحيح.',
   'lbl_try_again': 'حاول مرة أخرى',
   'lbl_save_practice': 'تحديد لتثبيت الحفظ والتالي',
@@ -133,7 +127,6 @@ final Map<String, String> arEg = {
   'lbl_search_tooltip': 'بحث في القرآن',
   // Offline
   'msg_offline': 'أنت غير متصل بالإنترنت',
-  'msg_offline_data': 'عرض البيانات المحفوظة',
   // Voice Dialog
   'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
   'msg_tap_to_resume': 'اضغط للمتابعة',
@@ -161,16 +154,8 @@ final Map<String, String> arEg = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'النسخ السحابي',
-  'msg_synced_to_cloud': 'تمت المزامنة مع السحابة',
-  'msg_synced_from_cloud': 'تم استرجاع البيانات من السحابة',
   'msg_sync_bidirectional_complete': 'اكتملت المزامنة ثنائية الاتجاه',
   'msg_cloud_sync_error': 'خطأ في النسخ السحابي',
-  'msg_cloud_sync_success': 'نجحت المزامنة السحابية',
-  'msg_authenticating': 'جاري المصادقة...',
-  'msg_signed_in': 'تم تسجيل الدخول',
-  'msg_signed_out': 'تم تسجيل الخروج',
-  'msg_syncing': 'جاري المزامنة...',
-  'msg_checking_auth': 'جاري التحقق من المصادقة...',
 
   'lbl_sync_to_cloud': 'مزامنة إلى السحابة',
   'lbl_sync_from_cloud': 'مزامنة من السحابة',

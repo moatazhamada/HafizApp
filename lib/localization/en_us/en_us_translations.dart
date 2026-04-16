@@ -12,7 +12,6 @@ final Map<String, String> enUs = {
   'about_ack_heading': 'Acknowledgements',
   'about_ack_idea_by': 'Original Concept & Foundation:',
   'about_repo_prefix': 'Source Code:',
-  'about_maintainer_note': 'Maintained and enhanced by the current team.',
   'about_integrity_heading': 'Text Integrity',
   'about_integrity_body':
       'The Quranic text is sourced from verified repositories to ensure accuracy and offline availability. Please report any discrepancies immediately.',
@@ -30,7 +29,6 @@ final Map<String, String> enUs = {
   'lbl_copied': 'Copied to clipboard',
   'lbl_practice_list': 'Practice List',
   'msg_no_practice_items': 'No verses marked for practice',
-  'msg_added_practice': 'Added to Practice List',
   'msg_removed_practice': 'Removed from Practice List',
   'lbl_verify_recitation': 'Verify Recitation (Beta)',
   'lbl_listening': 'Listening...',
@@ -39,7 +37,6 @@ final Map<String, String> enUs = {
   'lbl_close': 'Close',
   'msg_unmark_practice': 'Unmark',
   'msg_mark_practice': 'Mark for Practice',
-  'lbl_practices': 'Practice',
   'lbl_settings': 'Settings',
   'lbl_recitation_coach': 'Recitation Coach',
   'lbl_recitation_provider': 'Recitation Engine',
@@ -68,7 +65,6 @@ final Map<String, String> enUs = {
   'lbl_theme_light': 'Light Mode',
   'lbl_theme_dark': 'Dark Mode',
   'lbl_toggle_theme': 'Toggle Theme',
-  'lbl_search': 'Search',
   'lbl_bookmarks': 'Bookmarks',
   // Help Screen
   'lbl_app_guide': 'App Guide',
@@ -99,7 +95,6 @@ final Map<String, String> enUs = {
   'lbl_delete': 'Delete',
   'msg_swipe_delete': 'Swipe to delete',
   // Surah
-  'lbl_listening_active': 'Listening...',
   // About
   'about_maintained_by': 'Maintained by',
   'about_current_repo': 'Current Repository',
@@ -123,7 +118,6 @@ final Map<String, String> enUs = {
   'lbl_repeat_word': 'Repeat word',
   'lbl_connecting': 'Connecting...',
   'msg_transcribing': 'Transcribing on device...',
-  'msg_session_complete': 'Session Complete',
   'msg_session_score': 'Recitation Accuracy: {score}%',
   'lbl_try_again': 'Try Again',
   'lbl_save_practice': 'Mark for Practice',
@@ -134,7 +128,6 @@ final Map<String, String> enUs = {
   'lbl_search_tooltip': 'Search Quran',
   // Offline
   'msg_offline': 'You are offline',
-  'msg_offline_data': 'Showing offline data',
   // Voice Dialog
   'msg_mic_permission': 'Microphone Access',
   'msg_tap_to_resume': 'Tap to resume',
@@ -162,16 +155,8 @@ final Map<String, String> enUs = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'Cloud Sync',
-  'msg_synced_to_cloud': 'Synced to cloud',
-  'msg_synced_from_cloud': 'Synced from cloud',
   'msg_sync_bidirectional_complete': 'Bidirectional sync complete',
   'msg_cloud_sync_error': 'Cloud sync error',
-  'msg_cloud_sync_success': 'Cloud sync successful',
-  'msg_authenticating': 'Authenticating...',
-  'msg_signed_in': 'Signed in',
-  'msg_signed_out': 'Signed out',
-  'msg_syncing': 'Syncing...',
-  'msg_checking_auth': 'Checking authentication...',
 
   'lbl_sync_to_cloud': 'Sync to Cloud',
   'lbl_sync_from_cloud': 'Sync from Cloud',
