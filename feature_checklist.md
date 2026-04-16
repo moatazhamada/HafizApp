@@ -18,26 +18,23 @@ Use this checklist to verify all implemented features before the V2 release.
     - [x]  Supports Light Mode, Dark Mode, and System Default.
     - [x]  Fix inconsistent mode on first launch. 
     - [x]  Colors contrast is accessible in both modes.
+- [x]  **Mushaf Type Onboarding**: First-run selector for Madani/Egyptian/Indo-Pak/Warsh script style
 
 ## 2. Home Screen
 
-- [ ]  **AppBar**:
-    - [x]  Title displays "Hafiz" (or app name).
-    - [x]  **Theme Toggle**: Clicking the Sun/Moon icon toggles the theme instantly.
+- [x]  **Navigation Drawer**:
+    - [x]  Full side drawer with icons for all screens (replacing old popup menu).
+    - [x]  Drawer items: Bookmarks, Practice Verses, Session History, Memorization, Khatmah, Statistics, Mushaf View, Settings, About.
+    - [x]  **Theme Toggle**: Sun/Moon icon in app bar toggles the theme instantly.
     - [x]  **Search Icon**: Navigates to Search Screen.
-    - [x]  Localize search and use clearer naming. 
-    - [x]  **Bookmark Icon**: Navigates to Bookmarks Screen.
-    - [x]  **Menu (Three dots)**:
-        - [x]  "Practice List" → Navigates to Recitation Error Screen.
-        - [x]  "Settings" → Navigates to Settings Screen.
-        - [x]  "About" → Navigates to About Screen.
-        - [x]  Enhance localization and correct attribution (Mohamed Sayed). 
+    - [x]  Localize search and use clearer naming.
 - [x]  **Last Read Card**:
     - [x]  Appears if a Surah has been visited.
     - [x]  Shows Surah Name (English/Arabic) and Verse Number.
     - [x]  Fix Last Read verse number visibility.
     - [x]  "Continue Reading" button navigates to the exact scroll position in the Surah.
     - [x]  Fix "Continue Reading" button navigation logic. 
+    - [x]  Respects Default Quran View setting (navigates to Surah or Mushaf screen).
 - [x]  **Surah List**:
     - [x]  Lists all 114 Surahs.
     - [x]  Shows English Name, Arabic Name, and Surah Number.
@@ -46,18 +43,22 @@ Use this checklist to verify all implemented features before the V2 release.
 
 ## 3. Surah Screen (Reading)
 
-- [ ]  **Display**:
-    - [x]  Shows Surah Name in AppBar.
-    - [x]  Fix AppBar title overlap with icons in English. 
-    - [x]  Displays Bismillah at the top (unless handled within verse 1 logic).
+- [x]  **Display**:
+    - [x]  Shows Surah Name in AppBar (RTL text direction).
+    - [x]  Fix AppBar title overlap with icons — consolidated to overflow menu (⋮).
+    - [x]  Displays Bismillah at the top (RTL text direction).
     - [x]  **View Mode**:
-        - [x]  **Continuous**: Verses flow as a paragraph with end-of-verse badges.
-        - [x]  **Single Line**: verses are stacked vertically (one per row).
+        - [x]  **Continuous**: Verses flow as a paragraph with end-of-verse badges (RTL).
+        - [x]  **Single Line**: Verses are stacked vertically, one per row (RTL).
         - [x]  Mode respects the setting from Settings Screen.
+- [x]  **AppBar Actions**:
+    - [x]  **Headphones Icon**: Opens Audio Player for current surah.
+    - [x]  **Auto-scroll**: Play/pause toggle, configurable speed (long-press for 0.25x–3.0x picker).
+    - [x]  **Overflow Menu (⋮)**: Help, Hifz Mode toggle, Bookmark toggle.
 - [x]  **Interaction**:
     - [x]  **Tap Verse**: Opens the Verse Action Menu (in Standard Mode).
     - [x]  **Long Press Verse**: Opens the Verse Action Menu (in Hifz Mode).
-- [ ]  **Verse Action Menu**:
+- [x]  **Verse Action Menu**:
     - [x]  **Bookmark**:
         - [x]  Add Bookmark: Icon changes, toast appears.
         - [x]  Localize bookmark toast messages.
@@ -65,9 +66,17 @@ Use this checklist to verify all implemented features before the V2 release.
     - [x]  **Practice (Mistakes)**:
         - [x]  Mark for Practice: Adds to Recitation Error list, toast appears.
         - [x]  Localize practice toast messages.
-        - [x]  Unmark: Removes from list. 
+        - [x]  Unmark: Removes from list.
+    - [x]  **Share**: Share/copy verse text with attribution.
+    - [x]  **Tafsir**: Bottom sheet with Ibn Kathir translation.
     - [x]  **Verify Recitation**: Opens the Voice Verification Dialog.
-    - [x]  Fix partial recitation issues (e.g. Alif Lam Mim) and wrong recitation dialog actions. 
+    - [x]  Fix partial recitation issues (e.g. Alif Lam Mim) and wrong recitation dialog actions.
+- [x]  **Navigation**:
+    - [x]  RTL-aware prev/next surah buttons at bottom.
+    - [x]  Next surah = left arrow (◁), Previous surah = right arrow (▷).
+- [x]  **RTL Text Direction**:
+    - [x]  All verse text renders RTL regardless of app locale.
+    - [x]  Surah names, bismillah, tafsir all use `textDirection: TextDirection.rtl`.
 
 ## 4. Memorization Tools (Hifz & Voice)
 
@@ -134,3 +143,17 @@ Use this checklist to verify all implemented features before the V2 release.
     - [x]  **Integrity Note**: Disclaimer about Quran text sources.
 - [x]  **Help Screen**:
     - [x]  Displays static guide for icons/features.
+- [x]  **Settings Enhancements**:
+    - [x]  **Quran Font Size**: Live preview slider (16–40px) with Bismillah sample.
+    - [x]  **Orientation Mode**: System/Portrait/Landscape (wired to SystemChrome).
+    - [x]  **Default Quran View**: Surah/Mushaf preference (wired to home screen navigation).
+    - [x]  **Reading Navigation Mode**: Scroll/Page toggle (saved, not yet consumed by surah screen).
+    - [x]  **Cloud Sync**: Firebase-based sync option.
+    - [x]  **Recitation Coach**: Provider, Qiraat edition, Reciter, Whisper model settings.
+- [x]  **Additional Screens**:
+    - [x]  **Mushaf View**: 604-page horizontal RTL PageView, jump-to-page, surah info overlay.
+    - [x]  **Audio Player**: Verse-by-verse playback, speed control, sleep timer, loop.
+    - [x]  **Statistics**: Bookmark count, practice verse count, reading progress.
+    - [x]  **Memorization Tracker**: Per-surah memorization status.
+    - [x]  **Khatmah Tracker**: Daily reading goals and progress tracking.
+    - [x]  **Session History**: Past recitation sessions log.
