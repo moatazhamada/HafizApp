@@ -367,6 +367,84 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
+  Widget _buildSurahNavigation(BuildContext context, AppColors colors) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final hasPrev = surah != null && surah!.id > 1;
+    final hasNext = surah != null && surah!.id < 114;
+    final prevSurah = hasPrev ? QuranIndex.quranSurahs[surah!.id - 2] : null;
+    final nextSurah = hasNext ? QuranIndex.quranSurahs[surah!.id] : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            if (hasPrev)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label:
+                      '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
+                  child: TextButton.icon(
+                    onPressed: () => _navigateToSurah(surah!.id - 1),
+                    icon: const Icon(Icons.skip_previous, size: 18),
+                    label: Text(
+                      isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish,
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              const Expanded(child: SizedBox.shrink()),
+            const SizedBox(width: 8),
+            if (hasNext)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label:
+                      '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
+                  child: TextButton.icon(
+                    onPressed: () => _navigateToSurah(surah!.id + 1),
+                    icon: const Icon(Icons.skip_next, size: 18),
+                    label: Text(
+                      isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish,
+                      style: const TextStyle(fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _saveSession(double percentage) {
     if (surah == null || _sessionTotalCount == 0) return;
     final session = RecitationSession(
@@ -501,6 +579,9 @@ class _SurahScreenState extends State<SurahScreen> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: colors.scaffoldBackground,
+        bottomNavigationBar: surah != null
+            ? _buildSurahNavigation(context, colors)
+            : null,
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
@@ -621,24 +702,6 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
-        if (surah != null && surah!.id > 1)
-          Semantics(
-            button: true,
-            label: 'lbl_previous_surah'.tr,
-            child: IconButton(
-              icon: const Icon(Icons.skip_previous, color: Colors.white),
-              onPressed: () => _navigateToSurah(surah!.id - 1),
-            ),
-          ),
-        if (surah != null && surah!.id < 114)
-          Semantics(
-            button: true,
-            label: 'lbl_next_surah'.tr,
-            child: IconButton(
-              icon: const Icon(Icons.skip_next, color: Colors.white),
-              onPressed: () => _navigateToSurah(surah!.id + 1),
-            ),
-          ),
         Semantics(
           button: true,
           label: 'lbl_help'.tr,
@@ -660,7 +723,6 @@ class _SurahScreenState extends State<SurahScreen> {
                 _isHifzMode = !_isHifzMode;
                 _revealedVerses.clear();
               });
-              // Announce mode change for accessibility
               // ignore: deprecated_member_use
               SemanticsService.announce(
                 _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
@@ -715,22 +777,18 @@ class _SurahScreenState extends State<SurahScreen> {
         centerTitle: true,
         title: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Padding(
-            // Increased padding to prevent overlap with action icons (3 icons * 48 = 144 + margin)
-            padding: const EdgeInsets.symmetric(horizontal: 200.0),
-            child: Semantics(
-              header: true,
-              child: Text(
-                surah?.localizedName(context) ?? '',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  fontFamily: 'Amiri',
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+          child: Semantics(
+            header: true,
+            child: Text(
+              surah?.localizedName(context) ?? '',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontFamily: 'Amiri',
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ),
@@ -1129,6 +1187,26 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates(
+    BookmarkState bookmarkState,
+    RecitationErrorState errorState,
+  ) {
+    final surahId = surah?.id ?? -1;
+    final bookmarkedVerses = bookmarkState is BookmarkLoaded
+        ? bookmarkState.bookmarks
+            .where((b) => b.surahId == surahId)
+            .map((b) => b.verseNumber)
+            .toSet()
+        : <int>{};
+    final errorVerses = errorState is RecitationErrorLoaded
+        ? errorState.errors
+            .where((m) => m.surahId == surahId)
+            .map((m) => m.verseId)
+            .toSet()
+        : <int>{};
+    return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+  }
+
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
@@ -1177,38 +1255,15 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final surahId = surah?.id ?? -1;
-    final bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == surahId)
-              .map((b) => b.verseNumber)
-              .toSet()
-        : <int>{};
-    final errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == surahId)
-              .map((m) => m.verseId)
-              .toSet()
-        : <int>{};
+    final verseStates = _getVerseStates(bookmarkState, errorState);
+    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
+    final errorVerseIds = verseStates.errorVerses;
 
     List<InlineSpan> spans = [];
     final List<_VerseRange> verseRanges = [];
     int currentOffset = 0;
 
     _currentVerseRanges = verseRanges;
-
-    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == (surah?.id ?? -1))
-              .map((b) => b.verseNumber)
-              .toSet()
-        : {};
-    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == (surah?.id ?? -1))
-              .map((m) => m.verseId)
-              .toSet()
-        : {};
 
     for (var aya in chapters) {
       bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
@@ -1443,32 +1498,9 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final surahId = surah?.id ?? -1;
-    final bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == surahId)
-              .map((b) => b.verseNumber)
-              .toSet()
-        : <int>{};
-    final errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == surahId)
-              .map((m) => m.verseId)
-              .toSet()
-        : <int>{};
-
-    final Set<int> bookmarkedVerseNumbers = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == (surah?.id ?? -1))
-              .map((b) => b.verseNumber)
-              .toSet()
-        : {};
-    final Set<int> errorVerseIds = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == (surah?.id ?? -1))
-              .map((m) => m.verseId)
-              .toSet()
-        : {};
+    final verseStates = _getVerseStates(bookmarkState, errorState);
+    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
+    final errorVerseIds = verseStates.errorVerses;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

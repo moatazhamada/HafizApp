@@ -1,0 +1,3 @@
+## 2024-05-24 - [Avoid Duplicate O(N) Set Computations in Build Methods]
+**Learning:** Pre-calculating `Set.contains()` is important for rendering loops to avoid O(N*M) lookups. However, computing these sets redundantly within different build methods (like rich text vs single line modes) duplicates O(N) filtering operations on state arrays. The codebase convention uses Dart Records to group these lookups via private helper methods.
+**Action:** Extract multiple O(N) state-to-Set conversions into a single helper method returning a Dart Record to maintain performance and maintainability across different view modes.
