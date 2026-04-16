@@ -294,6 +294,29 @@ class PrefUtils {
     }
   }
 
+  String? getMushafType() {
+    try {
+      return _sharedPreferences?.getString('mushafType');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setMushafType(String type) async {
+    await _sharedPreferences!.setString('mushafType', type);
+  }
+
+  bool getOnboardingCompleted() {
+    try {
+      return _sharedPreferences?.getBool('onboardingCompleted') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> setOnboardingCompleted(bool value) async {
+    await _sharedPreferences!.setBool('onboardingCompleted', value);
+    
   // Quran Font Size
   double getQuranFontSize() {
     try {
