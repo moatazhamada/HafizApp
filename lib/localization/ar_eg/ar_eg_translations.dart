@@ -271,4 +271,27 @@ final Map<String, String> arEg = {
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'اختر نوع المصحف',
   'msg_mushaf_type_desc': 'اختر نمط الخط المفضل لديك',
+  
+  // Statistics
+  'stats_title': 'تقدمي',
+  'stats_bookmarks': 'الفواصل',
+  'stats_practice_verses': 'آيات التثبيت',
+  'stats_surahs_completed': 'السور المكتملة',
+  'stats_no_activity': 'ابدأ القراءة لتتبع تقدمك!',
+  
+  // Auto-scroll
+  'lbl_start_autoscroll': 'بدء التمرير التلقائي',
+  'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
+  
+  // Settings Enhancements
+  'lbl_quran_font': 'حجم خط القرآن',
+  'lbl_orientation': 'اتجاه الشاشة',
+  'lbl_portrait': 'عمودي',
+  'lbl_landscape': 'أفقي',
+  'lbl_default_quran_view': 'عرض القرآن الافتراضي',
+  'lbl_surah_view': 'عرض السور',
+  'lbl_mushaf_view': 'عرض المصحف',
+  'lbl_reading_navigation': 'التنقل أثناء القراءة',
+  'lbl_scroll_mode': 'وضع التمرير',
+  'lbl_page_mode': 'وضع الصفحات',
 };
