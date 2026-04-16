@@ -277,4 +277,20 @@ final Map<String, String> enUs = {
   'stats_practice_verses': 'Practice Verses',
   'stats_surahs_completed': 'Surahs Completed',
   'stats_no_activity': 'Start reading to track your progress!',
+  
+  // Auto-scroll
+  'lbl_start_autoscroll': 'Start Auto-scroll',
+  'lbl_stop_autoscroll': 'Stop Auto-scroll',
+  
+  // Settings Enhancements
+  'lbl_quran_font': 'Quran Font Size',
+  'lbl_orientation': 'Screen Orientation',
+  'lbl_portrait': 'Portrait',
+  'lbl_landscape': 'Landscape',
+  'lbl_default_quran_view': 'Default Quran View',
+  'lbl_surah_view': 'Surah View',
+  'lbl_mushaf_view': 'Mushaf View',
+  'lbl_reading_navigation': 'Reading Navigation',
+  'lbl_scroll_mode': 'Scroll Mode',
+  'lbl_page_mode': 'Page Mode',
 };
