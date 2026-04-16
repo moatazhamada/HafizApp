@@ -655,10 +655,14 @@ class _SurahScreenState extends State<SurahScreen> {
                           RecitationErrorState
                         >(
                           builder: (context, errorState) {
+                            // ⚡ Bolt: Hoisted O(N) Set computations here to prevent
+                            // redundant calculations during rendering loops (e.g. per-verse).
+                            // This reduces O(N*M) lookup times to O(N).
+                            final verseStates = _getVerseStates(bookmarkState, errorState);
                             return CustomScrollView(
                               controller: _scrollController,
                               slivers: [
-                                _buildSliverAppBar(isDark),
+                                _buildSliverAppBar(isDark, verseStates.bookmarkedVerses.isNotEmpty),
                                 SliverPadding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.0,
@@ -667,8 +671,7 @@ class _SurahScreenState extends State<SurahScreen> {
                                   sliver: _buildSurahList(
                                     context,
                                     chapters,
-                                    bookmarkState,
-                                    errorState,
+                                    verseStates,
                                     isDark,
                                   ),
                                 ),
@@ -688,7 +691,7 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(bool isDark) {
+  Widget _buildSliverAppBar(bool isDark, bool isBookmarked) {
     return SliverAppBar(
       expandedHeight: 180.0,
       floating: false,
@@ -732,46 +735,36 @@ class _SurahScreenState extends State<SurahScreen> {
             },
           ),
         ),
-        BlocBuilder<BookmarkBloc, BookmarkState>(
-          builder: (context, state) {
-            bool isBookmarked = false;
-            if (state is BookmarkLoaded) {
-              isBookmarked = state.bookmarks.any(
-                (element) => element.surahId == (surah?.id ?? -1),
-              );
-            }
-            return Semantics(
-              button: true,
-              label: isBookmarked
-                  ? 'lbl_remove_bookmark'.tr
-                  : 'lbl_add_bookmark'.tr,
-              child: IconButton(
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  if (surah == null) return;
-                  if (isBookmarked) {
-                    context.read<BookmarkBloc>().add(
-                      RemoveBookmarkEvent(surah!.id, 1),
-                    );
-                  } else {
-                    context.read<BookmarkBloc>().add(
-                      AddBookmarkEvent(
-                        BookmarkModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseNumber: 1,
-                          createdAt: DateTime.now(),
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            );
-          },
+        Semantics(
+          button: true,
+          label: isBookmarked
+              ? 'lbl_remove_bookmark'.tr
+              : 'lbl_add_bookmark'.tr,
+          child: IconButton(
+            icon: Icon(
+              isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              if (surah == null) return;
+              if (isBookmarked) {
+                context.read<BookmarkBloc>().add(
+                  RemoveBookmarkEvent(surah!.id, 1),
+                );
+              } else {
+                context.read<BookmarkBloc>().add(
+                  AddBookmarkEvent(
+                    BookmarkModel(
+                      surahId: surah!.id,
+                      surahName: surah!.nameEnglish,
+                      verseNumber: 1,
+                      createdAt: DateTime.now(),
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -1229,8 +1222,7 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    ({Set<int> bookmarkedVerses, Set<int> errorVerses}) verseStates,
     bool isDark,
   ) {
     return SliverToBoxAdapter(
@@ -1244,15 +1236,13 @@ class _SurahScreenState extends State<SurahScreen> {
                 ? _buildSingleLineContent(
                     context,
                     chapters,
-                    bookmarkState,
-                    errorState,
+                    verseStates,
                     isDark,
                   )
                 : _buildRichTextContent(
                     context,
                     chapters,
-                    bookmarkState,
-                    errorState,
+                    verseStates,
                     isDark,
                   ),
           ),
@@ -1264,8 +1254,7 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildRichTextContent(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    ({Set<int> bookmarkedVerses, Set<int> errorVerses}) verseStates,
     bool isDark,
   ) {
     final colors = AppColors.of(context);
@@ -1274,7 +1263,6 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final verseStates = _getVerseStates(bookmarkState, errorState);
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
     final errorVerseIds = verseStates.errorVerses;
 
@@ -1507,8 +1495,7 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildSingleLineContent(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    ({Set<int> bookmarkedVerses, Set<int> errorVerses}) verseStates,
     bool isDark,
   ) {
     final colors = AppColors.of(context);
@@ -1517,7 +1504,6 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
 
-    final verseStates = _getVerseStates(bookmarkState, errorState);
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
     final errorVerseIds = verseStates.errorVerses;
 
