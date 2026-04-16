@@ -159,6 +159,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 children: [
                   Text(
                     surah.nameArabic,
+                    textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontFamily: 'Amiri',
                       fontSize: 28,
@@ -169,6 +170,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   const SizedBox(height: 8),
                   Text(
                     isArabic ? surah.nameArabic : surah.nameEnglish,
+                    textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -226,6 +228,7 @@ class _MushafScreenState extends State<MushafScreen> {
           children: [
             Text(
               isArabic ? surah.nameArabic : surah.nameEnglish,
+              textDirection: TextDirection.rtl,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),

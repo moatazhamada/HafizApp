@@ -136,6 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   'بِسْمِ اللَّهِ',
+                  textDirection: TextDirection.rtl,
                   style: TextStyle(
                     fontFamily: 'Amiri',
                     fontSize: _quranFontSize,

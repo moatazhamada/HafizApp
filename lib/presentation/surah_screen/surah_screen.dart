@@ -470,9 +470,10 @@ class _SurahScreenState extends State<SurahScreen> {
                       '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
                   child: TextButton.icon(
                     onPressed: () => _navigateToSurah(surah!.id - 1),
-                    icon: const Icon(Icons.skip_previous, size: 18),
+                    icon: const Icon(Icons.skip_next, size: 18),
                     label: Text(
                       isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish,
+                      textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -497,9 +498,10 @@ class _SurahScreenState extends State<SurahScreen> {
                       '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
                   child: TextButton.icon(
                     onPressed: () => _navigateToSurah(surah!.id + 1),
-                    icon: const Icon(Icons.skip_next, size: 18),
+                    icon: const Icon(Icons.skip_previous, size: 18),
                     label: Text(
                       isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish,
+                      textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -626,6 +628,7 @@ class _SurahScreenState extends State<SurahScreen> {
                               ),
                               (tafsir) => Text(
                                 _stripHtmlTags(tafsir.text),
+                                textDirection: TextDirection.rtl,
                                 style: TextStyle(
                                   fontSize: 16,
                                   height: 1.8,
@@ -934,6 +937,7 @@ class _SurahScreenState extends State<SurahScreen> {
             header: true,
             child: Text(
               surah?.localizedName(context) ?? '',
+              textDirection: TextDirection.rtl,
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,

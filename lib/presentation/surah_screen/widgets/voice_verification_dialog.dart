@@ -479,6 +479,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               child: Text(
                 _spokenText,
                 textAlign: TextAlign.center,
+                textDirection: TextDirection.rtl,
                 style: TextStyle(
                   fontSize: 18,
                   fontFamily: 'Amiri',
@@ -505,36 +506,39 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _expectedText
-                  .split(RegExp(r'\s+'))
-                  .where((t) => t.isNotEmpty)
-                  .toList()
-                  .asMap()
-                  .entries
-                  .map((entry) {
-                    final idx = entry.key + 1;
-                    final word = entry.value;
-                    final isCorrect = _qrcWordIndex >= idx;
-                    final isMistake = _qrcMistakeIndices.contains(idx);
-                    Color color = Colors.black87;
-                    if (isCorrect) color = Colors.green;
-                    if (isMistake) color = Colors.redAccent;
-                    return Text(
-                      word,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontFamily: 'Amiri',
-                        color: color,
-                        fontWeight: isCorrect
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    );
-                  })
-                  .toList(),
+            Directionality(
+              textDirection: TextDirection.rtl,
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _expectedText
+                    .split(RegExp(r'\s+'))
+                    .where((t) => t.isNotEmpty)
+                    .toList()
+                    .asMap()
+                    .entries
+                    .map((entry) {
+                      final idx = entry.key + 1;
+                      final word = entry.value;
+                      final isCorrect = _qrcWordIndex >= idx;
+                      final isMistake = _qrcMistakeIndices.contains(idx);
+                      Color color = Colors.black87;
+                      if (isCorrect) color = Colors.green;
+                      if (isMistake) color = Colors.redAccent;
+                      return Text(
+                        word,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: 'Amiri',
+                          color: color,
+                          fontWeight: isCorrect
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      );
+                    })
+                    .toList(),
+              ),
             ),
             if (_qrcMistakeLines.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -577,6 +581,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               ),
               Text(
                 _hintWord,
+                textDirection: TextDirection.rtl,
                 style: const TextStyle(fontSize: 14, fontFamily: 'Amiri'),
               ),
             ],
@@ -588,6 +593,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               ),
               Text(
                 _repeatWord,
+                textDirection: TextDirection.rtl,
                 style: const TextStyle(
                   fontSize: 16,
                   fontFamily: 'Amiri',
@@ -611,6 +617,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           Text(
             _expectedText,
             textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
             style: const TextStyle(fontSize: 18, fontFamily: 'Amiri'),
           ),
         ],
