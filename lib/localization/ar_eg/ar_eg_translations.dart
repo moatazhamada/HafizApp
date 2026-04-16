@@ -246,6 +246,13 @@ final Map<String, String> arEg = {
   'msg_qrc_error': 'خطأ في التحقق من التلاوة',
   'msg_qrc_invalid_message': 'رسالة تحقق غير صالحة',
 
+  // Audio Player
+  'lbl_sleep_timer': 'مؤقت النوم',
+  'lbl_cancel_timer': 'إلغاء المؤقت',
+  'lbl_minutes': 'دقيقة',
+  'lbl_loop_verses': 'تكرار',
+  'msg_audio_load_error': 'فشل تحميل الصوت',
+  
   // Mushaf Screen
   'lbl_mushaf': 'المصحف',
   'lbl_jump_to_page': 'الانتقال لصفحة',

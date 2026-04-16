@@ -14,6 +14,7 @@ import '../presentation/khatmah/khatmah_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
 import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 import '../presentation/cloud_sync/cloud_sync_screen.dart';
+import '../presentation/audio_player/audio_player_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
 
 class AppRoutes {
@@ -32,6 +33,7 @@ class AppRoutes {
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
   static const String cloudSyncPage = '/cloud_sync';
+  static const String audioPlayerScreen = '/audio_player';
   static const String mushafScreen = '/mushaf_screen';
 
   static Map<String, WidgetBuilder> routes = {
@@ -52,6 +54,16 @@ class AppRoutes {
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),
+    audioPlayerScreen: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+          {};
+      return AudioPlayerScreen(
+        surahId: args['surahId'] as int? ?? 1,
+        surahName: args['surahName'] as String? ?? '',
+        startVerse: args['startVerse'] as int?,
+      );
+    },
     mushafScreen: (context) => const MushafScreen(),
   };
 }
