@@ -67,7 +67,7 @@ class _SurahScreenState extends State<SurahScreen> {
   // Auto-scroll
   bool _isAutoScrolling = false;
   Timer? _autoScrollTimer;
-  final double _autoScrollSpeed = 0.5;
+  double _autoScrollSpeed = 0.5;
 
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
@@ -388,6 +388,48 @@ class _SurahScreenState extends State<SurahScreen> {
         }
       }
     });
+  }
+
+  void _showAutoScrollSpeedDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'lbl_scroll_speed'.tr,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            ...[0.25, 0.5, 1.0, 1.5, 2.0, 3.0].map(
+              (speed) => ListTile(
+                title: Text(
+                  speed < 1
+                      ? '${(speed * 100).round()}% (${'lbl_slow'.tr})'
+                      : speed == 1.0
+                      ? '1.0x (${'lbl_normal'.tr})'
+                      : '${speed}x (${'lbl_fast'.tr})',
+                ),
+                trailing: _autoScrollSpeed == speed
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  setState(() => _autoScrollSpeed = speed);
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   void _navigateToSurah(int surahId) {
@@ -767,63 +809,51 @@ class _SurahScreenState extends State<SurahScreen> {
           label: _isAutoScrolling
               ? 'lbl_stop_autoscroll'.tr
               : 'lbl_start_autoscroll'.tr,
-          child: IconButton(
-            icon: Icon(
-              _isAutoScrolling ? Icons.pause_circle : Icons.play_circle_outline,
-              color: _isAutoScrolling ? Colors.amber : Colors.white,
-            ),
-            onPressed: _toggleAutoScroll,
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: 'lbl_help'.tr,
-          child: IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () => NavigatorService.pushNamed(AppRoutes.helpScreen),
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: _isHifzMode ? 'lbl_exit_hifz_mode'.tr : 'lbl_hifz_mode'.tr,
-          child: IconButton(
-            icon: Icon(
-              _isHifzMode ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _isHifzMode = !_isHifzMode;
-                _revealedVerses.clear();
-              });
-              // ignore: deprecated_member_use
-              SemanticsService.announce(
-                _isHifzMode ? 'lbl_hifz_mode_on'.tr : 'lbl_hifz_mode_off'.tr,
-                TextDirection.ltr,
-              );
-            },
-          ),
-        ),
-        BlocBuilder<BookmarkBloc, BookmarkState>(
-          builder: (context, state) {
-            bool isBookmarked = false;
-            if (state is BookmarkLoaded) {
-              isBookmarked = state.bookmarks.any(
-                (element) => element.surahId == (surah?.id ?? -1),
-              );
-            }
-            return Semantics(
-              button: true,
-              label: isBookmarked
-                  ? 'lbl_remove_bookmark'.tr
-                  : 'lbl_add_bookmark'.tr,
-              child: IconButton(
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-                  color: Colors.white,
+          child: GestureDetector(
+            onLongPress: _showAutoScrollSpeedDialog,
+            child: IconButton(
+              icon: Badge(
+                isLabelVisible: _autoScrollSpeed != 0.5,
+                label: Text('${_autoScrollSpeed}x'),
+                child: Icon(
+                  _isAutoScrolling
+                      ? Icons.pause_circle
+                      : Icons.play_circle_outline,
+                  color: _isAutoScrolling ? Colors.amber : Colors.white,
                 ),
-                onPressed: () {
-                  if (surah == null) return;
+              ),
+              onPressed: _toggleAutoScroll,
+              tooltip: 'lbl_scroll_speed'.tr,
+            ),
+          ),
+        ),
+        Semantics(
+          button: true,
+          label: 'lbl_more_options'.tr,
+          child: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              switch (value) {
+                case 'help':
+                  NavigatorService.pushNamed(AppRoutes.helpScreen);
+                  break;
+                case 'hifz':
+                  setState(() {
+                    _isHifzMode = !_isHifzMode;
+                    _revealedVerses.clear();
+                  });
+                  SemanticsService.announce(
+                    _isHifzMode
+                        ? 'lbl_hifz_mode_on'.tr
+                        : 'lbl_hifz_mode_off'.tr,
+                    TextDirection.ltr,
+                  );
+                  break;
+                case 'bookmark':
+                  final blocState = context.read<BookmarkBloc>().state;
+                  final isBookmarked =
+                      blocState is BookmarkLoaded &&
+                      blocState.bookmarks.any((b) => b.surahId == surah?.id);
                   if (isBookmarked) {
                     context.read<BookmarkBloc>().add(
                       RemoveBookmarkEvent(surah!.id, 1),
@@ -840,10 +870,60 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     );
                   }
-                },
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    const Icon(Icons.help_outline),
+                    const SizedBox(width: 12),
+                    Text('lbl_help'.tr),
+                  ],
+                ),
               ),
-            );
-          },
+              PopupMenuItem(
+                value: 'hifz',
+                child: Row(
+                  children: [
+                    Icon(_isHifzMode ? Icons.visibility : Icons.visibility_off),
+                    const SizedBox(width: 12),
+                    Text(
+                      _isHifzMode
+                          ? 'lbl_exit_hifz_mode'.tr
+                          : 'lbl_hifz_mode'.tr,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'bookmark',
+                child: Builder(
+                  builder: (context) {
+                    final state = context.read<BookmarkBloc>().state;
+                    final isBookmarked =
+                        state is BookmarkLoaded &&
+                        state.bookmarks.any((b) => b.surahId == surah?.id);
+                    return Row(
+                      children: [
+                        Icon(
+                          isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          isBookmarked
+                              ? 'lbl_remove_bookmark'.tr
+                              : 'lbl_add_bookmark'.tr,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
