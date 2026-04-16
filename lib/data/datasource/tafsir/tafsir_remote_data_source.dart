@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/config/api_config.dart';
 
 abstract class TafsirRemoteDataSource {
   Future<String> getTafsir(int surahNumber, int verseNumber);

@@ -187,7 +187,6 @@ final Map<String, String> arEg = {
   'musali_watch_now': 'شاهد الآن',
   'lbl_skip': 'تخطي',
   'lbl_next': 'التالي',
-  'lbl_continue': 'متابعة',
   'lbl_next_surah': 'السورة التالية',
   'lbl_previous_surah': 'السورة السابقة',
   'lbl_session_history': 'سجل الجلسات',
@@ -209,7 +208,6 @@ final Map<String, String> arEg = {
   'lbl_best_score': 'الأفضل',
   'lbl_khatmah_tracker': 'متتبع الختمة',
   'lbl_today_reading': 'قراءة اليوم',
-  'lbl_verses': 'آية',
   'lbl_daily_goal': 'الهدف اليومي',
   'lbl_current_goal': 'الحالي',
   'msg_goal_achieved': 'تم تحقيق الهدف!',
@@ -271,18 +269,18 @@ final Map<String, String> arEg = {
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'اختر نوع المصحف',
   'msg_mushaf_type_desc': 'اختر نمط الخط المفضل لديك',
-  
+
   // Statistics
   'stats_title': 'تقدمي',
   'stats_bookmarks': 'الفواصل',
   'stats_practice_verses': 'آيات التثبيت',
   'stats_surahs_completed': 'السور المكتملة',
   'stats_no_activity': 'ابدأ القراءة لتتبع تقدمك!',
-  
+
   // Auto-scroll
   'lbl_start_autoscroll': 'بدء التمرير التلقائي',
   'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
-  
+
   // Settings Enhancements
   'lbl_quran_font': 'حجم خط القرآن',
   'lbl_orientation': 'اتجاه الشاشة',
