@@ -14,6 +14,7 @@ import '../presentation/khatmah/khatmah_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
 import '../presentation/musali_teaser_screen/musali_teaser_screen.dart';
 import '../presentation/cloud_sync/cloud_sync_screen.dart';
+import '../presentation/mushaf_screen/mushaf_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -31,6 +32,7 @@ class AppRoutes {
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
   static const String cloudSyncPage = '/cloud_sync';
+  static const String mushafScreen = '/mushaf_screen';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -50,5 +52,6 @@ class AppRoutes {
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),
+    mushafScreen: (context) => const MushafScreen(),
   };
 }
