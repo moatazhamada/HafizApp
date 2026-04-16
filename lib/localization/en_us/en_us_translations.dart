@@ -257,17 +257,21 @@ final Map<String, String> enUs = {
   'msg_copy_text_desc': 'Copy verse text only',
   'msg_text_copied': 'Text copied to clipboard',
   'msg_via_app': 'via Hafiz',
-  
+
   // Audio Player
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_minutes': 'minutes',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
-  
+
   // Mushaf Screen
   'lbl_mushaf': 'Mushaf',
   'lbl_jump_to_page': 'Jump to Page',
   'lbl_page': 'Page',
   'lbl_go': 'Go',
+
+  // Auto-scroll
+  'lbl_start_autoscroll': 'Start Auto-scroll',
+  'lbl_stop_autoscroll': 'Stop Auto-scroll',
 };
