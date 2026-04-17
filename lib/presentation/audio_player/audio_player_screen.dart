@@ -24,6 +24,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   bool _isLoading = false;
   double _speed = 1.0;
   String? _errorMessage;
+  int _currentVerse = -1;
 
   static const List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
@@ -31,7 +32,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void initState() {
     super.initState();
     _handler.currentVerseStream.listen((verseIndex) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          _currentVerse = verseIndex;
+        });
+      }
     });
   }
 
@@ -315,6 +320,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
               ),
             ),
             const SizedBox(height: 32),
+            _buildVerseProgress(theme),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -330,6 +336,42 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVerseProgress(ThemeData theme) {
+    final totalVerses = _getVerseCount(widget.surahId);
+    final isPlaying =
+        _handler.currentSurahId == widget.surahId && _currentVerse >= 0;
+    if (!isPlaying) return const SizedBox.shrink();
+
+    final displayVerse = _currentVerse + 1;
+    final progress = displayVerse / totalVerses;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${'lbl_verse_num'.tr} $displayVerse / $totalVerses',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
