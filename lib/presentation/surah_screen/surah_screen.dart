@@ -838,7 +838,8 @@ class _SurahScreenState extends State<SurahScreen> {
                     _isHifzMode = !_isHifzMode;
                     _revealedVerses.clear();
                   });
-                  SemanticsService.announce(
+                  SemanticsService.sendAnnouncement(
+                    View.of(context),
                     _isHifzMode
                         ? 'lbl_hifz_mode_on'.tr
                         : 'lbl_hifz_mode_off'.tr,
