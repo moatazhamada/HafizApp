@@ -30,7 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late double _quranFontSize;
   late String _orientationMode;
   late String _defaultQuranView;
-  late String _readingNavMode;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -53,7 +52,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _quranFontSize = PrefUtils().getQuranFontSize();
     _orientationMode = PrefUtils().getOrientationMode();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
-    _readingNavMode = PrefUtils().getReadingNavMode();
     _loadRecitationResources();
   }
 
@@ -169,10 +167,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader('lbl_default_quran_view'.tr),
           _buildQuranViewOption('lbl_surah_view'.tr, 'surah'),
           _buildQuranViewOption('lbl_mushaf_view'.tr, 'mushaf'),
-          const Divider(),
-          _buildSectionHeader('lbl_reading_navigation'.tr),
-          _buildNavModeOption('lbl_scroll_mode'.tr, 'scroll'),
-          _buildNavModeOption('lbl_page_mode'.tr, 'page'),
           const Divider(),
           _buildSectionHeader('lbl_cloud_sync'.tr),
           ListTile(
@@ -319,20 +313,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (!isSelected) {
           PrefUtils().setDefaultQuranView(view);
           setState(() => _defaultQuranView = view);
-        }
-      },
-    );
-  }
-
-  Widget _buildNavModeOption(String label, String mode) {
-    final bool isSelected = _readingNavMode == mode;
-    return ListTile(
-      title: Text(label),
-      trailing: isSelected ? const Icon(Icons.check, color: Colors.teal) : null,
-      onTap: () {
-        if (!isSelected) {
-          PrefUtils().setReadingNavMode(mode);
-          setState(() => _readingNavMode = mode);
         }
       },
     );
