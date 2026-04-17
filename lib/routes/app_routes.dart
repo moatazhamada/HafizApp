@@ -75,6 +75,6 @@ class AppRoutes {
       return MushafScreen(initialPage: args['initialPage'] as int? ?? 1);
     },
     mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
-    statisticsScreen: (context) => const StatisticsScreen(),
+    statisticsScreen: (context) => StatisticsScreen.builder(context),
   };
 }
