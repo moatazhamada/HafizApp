@@ -20,13 +20,9 @@ class MemorizationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = PrefUtils().getIsDarkMode() == true;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('lbl_memorization'.tr),
-        backgroundColor: const Color(0xFF006754),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: Text('lbl_memorization'.tr)),
       body: BlocBuilder<MemorizationBloc, MemorizationState>(
         builder: (context, state) {
           if (state is MemorizationLoading) {
