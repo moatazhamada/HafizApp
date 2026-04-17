@@ -156,7 +156,7 @@ flutter build apk --release --flavor production
 - Quran Font Size slider (16-40)
 - Orientation (System/Portrait/Landscape) — wired to SystemChrome
 - Default Quran View (Surah/Mushaf) — wired to home screen navigation
-- Reading Navigation Mode (Scroll/Page) — saved but not yet consumed
+- Reading Navigation Mode — **removed from UI** (PrefUtils methods kept for future)
 - Cloud Sync
 - Recitation Coach settings (Provider, Qiraat edition, Reciter, Whisper model)
 
@@ -168,12 +168,12 @@ Onboarding → MushafTypeOnboarding (Madani/Egyptian/Indo-Pak/Warsh) → Home
 - `lib/injection_container.dart` — DI with GetIt
 - `lib/core/utils/pref_utils.dart` — SharedPreferences wrapper (all settings)
 - `lib/core/quran_index/quran_surah.dart` — Surah class and QuranIndex
-- `lib/core/quran_index/mushaf_page_index.dart` — Page-to-surah mapping (604 pages)
+- `lib/core/quran_index/mushaf_page_index.dart` — Page-to-surah mapping (604 pages), verse ranges per page, surah verse counts
 - `lib/core/audio/audio_player_handler.dart` — Singleton audio handler (just_audio)
 - `lib/core/theme/app_colors.dart` — AppColors with theme-aware colors
 
 ### Known Warnings (Acceptable)
-- `unnecessary_non_null_assertion` in `surah_screen.dart` lines ~428/433/455/460 — the `!` is required for compilation, Dart can't promote `Surah?` through indirect boolean guards
+- `unnecessary_non_null_assertion` in `surah_screen.dart` lines ~475/503 — the `!` is required for compilation, Dart can't promote `Surah?` through indirect boolean guards
 - Java "Duplicate root element android" from stale `.kilo/worktrees/` — do not delete these worktrees
 
 ### RTL Text Direction Convention
@@ -200,3 +200,13 @@ When adding any new widget that displays Arabic/Quran content, always include `t
 | #47 | Resolve remaining lint warnings across 8 files |
 | #48 | UX improvements (auto-scroll speed, appBar overflow, mushaf data, docs) |
 | #49 | RTL text direction for all Quran content and navigation arrows |
+| #50 | Update all 5 documentation files |
+| #51 | Permanent toolbar overflow fix + codebase cleanup (17 dead files, unused assets) |
+| #52 | Critical bugs (onboarding loop, font size, mushaf args, audio seek) |
+| #53 | Orientation setting applies immediately without restart + deprecated API fix |
+| #54 | Wire reciter setting to audio player URL builder |
+| #55 | Statistics screen uses real memorization data |
+| #56 | Replace PrefUtils dark mode with Theme.of(context) + remove hardcoded AppBar colors |
+| #57 | Audio player verse progress display |
+| #58 | Render Quran verse text on mushaf pages |
+| #59 | Remove unconsumed Reading Navigation Mode setting from Settings UI |

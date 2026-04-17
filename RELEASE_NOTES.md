@@ -4,13 +4,13 @@
 
 ### New Features
 - **Navigation Drawer** — Full side menu replacing the old popup menu, with access to all screens
-- **Mushaf View** — 604-page horizontal RTL PageView with jump-to-page dialog and surah info overlay
-- **Audio Player** — Verse-by-verse playback (Mishary Alafasy), speed control (0.5x–2x), sleep timer, loop mode
+- **Mushaf View** — 604-page horizontal RTL PageView with actual Quran verse text, jump-to-page dialog, and surah info overlay
+- **Audio Player** — Verse-by-verse playback with configurable reciter, speed control (0.5x–2x), sleep timer, loop mode, and verse progress display
 - **Auto-scroll** — Continuous scroll in surah view with configurable speed (0.25x–3.0x)
 - **Verse Sharing** — Share or copy any verse with attribution via the system share sheet
-- **Statistics Screen** — Reading progress overview with bookmark and practice verse counts
+- **Statistics Screen** — Reading progress overview with bookmark count, practice verse count, and real memorization data
 - **Mushaf Type Onboarding** — First-run selector for Madani, Egyptian, Indo-Pak, or Warsh script
-- **Settings Enhancements** — Quran font size slider, orientation lock, default Quran view, reading navigation mode
+- **Settings Enhancements** — Quran font size slider, orientation lock (applies immediately), default Quran view, configurable reciter
 - **Cloud Sync** — Firebase-based bookmark and settings synchronization
 
 ### RTL & Accessibility
@@ -20,7 +20,7 @@
 
 ### Settings Now Active
 - **Default Quran View** — Home screen respects surah vs mushaf preference
-- **Orientation Mode** — Controls device orientation (system/portrait/landscape)
+- **Orientation Mode** — Controls device orientation, applies immediately without restart
 - **Quran Font Size** — Live preview slider (16–40px)
 
 ### Onboarding Flow
@@ -33,6 +33,11 @@
 - Fixed app bar icon/title overlap by consolidating actions into overflow menu
 - Resolved all analyzer warnings and deprecated API usage
 - Fixed missing clipboard copy action in verse share sheet
+- Theme changes now apply immediately across all screens (no restart needed)
+- Audio player now uses the selected reciter from Settings
+- Statistics screen shows actual memorization progress instead of hardcoded 0
+- Removed hardcoded AppBar colors — theme now controls styling on all screens
+- Removed dead "Reading Navigation Mode" setting that had no effect
 
 ---
 
