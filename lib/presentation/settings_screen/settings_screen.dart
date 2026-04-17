@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
 import '../../core/i18n/locale_controller.dart';
@@ -280,6 +281,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  List<DeviceOrientation> _getOrientations(String mode) {
+    switch (mode) {
+      case 'portrait':
+        return [DeviceOrientation.portraitUp];
+      case 'landscape':
+        return [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ];
+      default:
+        return DeviceOrientation.values;
+    }
+  }
+
   Widget _buildOrientationOption(String label, String mode) {
     final bool isSelected = _orientationMode == mode;
     return ListTile(
@@ -288,6 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         if (!isSelected) {
           PrefUtils().setOrientationMode(mode);
+          SystemChrome.setPreferredOrientations(_getOrientations(mode));
           setState(() => _orientationMode = mode);
         }
       },
