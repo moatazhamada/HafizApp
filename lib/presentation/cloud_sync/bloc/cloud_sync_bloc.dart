@@ -108,6 +108,10 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
   }
 
   String _mapFailureToMessage(Failure _) {
-    return 'msg_cloud_sync_error'.tr;
+    try {
+      return 'msg_cloud_sync_error'.tr;
+    } catch (_) {
+      return 'Cloud sync error';
+    }
   }
 }
