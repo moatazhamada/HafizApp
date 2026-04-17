@@ -41,11 +41,29 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     super.dispose();
   }
 
+  static const Map<int, String> _reciterCdnIds = {
+    7: 'ar.alafasy',
+    1: 'ar.abdulbasitmurattal',
+    2: 'ar.husary',
+    3: 'ar.minshawi',
+    4: 'ar.abdurrahmaansudais',
+    5: 'ar.hudhaify',
+    6: 'ar.saaborimuneer',
+    8: 'ar.ahmedajamy',
+    9: 'ar.alijabir',
+  };
+
+  String _getReciterCdnId() {
+    final id = PrefUtils().getReciterId();
+    return _reciterCdnIds[id] ?? 'ar.alafasy';
+  }
+
   List<String> _buildVerseUrls(int surahId, int verseCount) {
+    final reciter = _getReciterCdnId();
     return List.generate(
       verseCount,
       (i) =>
-          'https://cdn.islamic.network/quran/audio/128/ar.alafasy/${(surahId * 1000 + i + 1)}.mp3',
+          'https://cdn.islamic.network/quran/audio/128/$reciter/${(surahId * 1000 + i + 1)}.mp3',
     );
   }
 
