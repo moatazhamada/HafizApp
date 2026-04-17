@@ -13,17 +13,13 @@ class BookmarksScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF9F9F9),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF006754),
         elevation: 0,
         leading: Semantics(
           button: true,
           label: 'lbl_back'.tr,
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => NavigatorService.goBack(),
           ),
         ),
@@ -33,7 +29,6 @@ class BookmarksScreen extends StatelessWidget {
           child: Text(
             'lbl_bookmarks'.tr,
             style: const TextStyle(
-              color: Colors.white,
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
               fontSize: 20,

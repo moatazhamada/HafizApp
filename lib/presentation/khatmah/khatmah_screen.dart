@@ -17,13 +17,9 @@ class KhatmahScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = PrefUtils().getIsDarkMode() == true;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('lbl_khatmah_tracker'.tr),
-        backgroundColor: const Color(0xFF006754),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: Text('lbl_khatmah_tracker'.tr)),
       body: BlocBuilder<KhatmahBloc, KhatmahState>(
         builder: (context, state) {
           if (state is KhatmahLoading) {
