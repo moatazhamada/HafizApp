@@ -40,7 +40,7 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = PrefUtils().getIsDarkMode();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final linkStyle = theme.textTheme.bodyMedium?.copyWith(
       color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
       decoration: TextDecoration.underline,
@@ -310,7 +310,7 @@ class MusaliComingSoonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = PrefUtils().getIsDarkMode();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       child: Column(

@@ -18,13 +18,9 @@ class RecitationSessionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = PrefUtils().getIsDarkMode();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('lbl_session_history'.tr),
-        backgroundColor: const Color(0xFF006754),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: Text('lbl_session_history'.tr)),
       body: BlocBuilder<RecitationSessionBloc, RecitationSessionState>(
         builder: (context, state) {
           if (state is RecitationSessionLoading) {

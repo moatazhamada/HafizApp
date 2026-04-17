@@ -7,17 +7,11 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: PrefUtils().getIsDarkMode()
-          ? Colors.black
-          : Colors.white,
       appBar: AppBar(
         title: Text('lbl_app_guide'.tr),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: PrefUtils().getIsDarkMode()
-            ? Colors.white
-            : Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -57,7 +51,7 @@ class HelpScreen extends StatelessWidget {
     required String description,
     required Color color,
   }) {
-    final isDark = PrefUtils().getIsDarkMode();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
