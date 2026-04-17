@@ -564,7 +564,7 @@ class _SurahScreenState extends State<SurahScreen> {
               aya.verseNumber,
             ),
             builder: (context, snapshot) {
-              final isDark = PrefUtils().getIsDarkMode() == true;
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               return Column(
                 children: [
                   Padding(
@@ -656,8 +656,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = PrefUtils().getIsDarkMode();
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = AppColors.of(context);
 
     return SafeArea(

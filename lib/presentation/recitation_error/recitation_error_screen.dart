@@ -13,21 +13,16 @@ class RecitationErrorScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF9F9F9),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF006754),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => NavigatorService.goBack(),
         ),
         centerTitle: true,
         title: Text(
           'lbl_practice_list'.tr,
           style: const TextStyle(
-            color: Colors.white,
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
             fontSize: 20,
