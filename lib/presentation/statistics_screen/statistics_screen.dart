@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../injection_container.dart';
 import '../bookmarks/bloc/bookmark_bloc.dart';
+import '../memorization/bloc/memorization_bloc.dart';
+import '../memorization/bloc/memorization_event.dart';
+import '../memorization/bloc/memorization_state.dart';
 import '../recitation_error/bloc/recitation_error_bloc.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
+
+  static Widget builder(BuildContext context) {
+    return BlocProvider(
+      create: (context) =>
+          sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
+      child: const StatisticsScreen(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +28,12 @@ class StatisticsScreen extends StatelessWidget {
         blocs: [
           context.read<BookmarkBloc>(),
           context.read<RecitationErrorBloc>(),
+          context.read<MemorizationBloc>(),
         ],
         builders: (context) {
           int bookmarkCount = 0;
           int practiceCount = 0;
+          int memorizedCount = 0;
 
           final bookmarkState = context.read<BookmarkBloc>().state;
           if (bookmarkState is BookmarkLoaded) {
@@ -29,6 +43,11 @@ class StatisticsScreen extends StatelessWidget {
           final errorState = context.read<RecitationErrorBloc>().state;
           if (errorState is RecitationErrorLoaded) {
             practiceCount = errorState.errors.length;
+          }
+
+          final memState = context.read<MemorizationBloc>().state;
+          if (memState is MemorizationLoaded) {
+            memorizedCount = memState.totalMemorized;
           }
 
           return ListView(
@@ -57,11 +76,13 @@ class StatisticsScreen extends StatelessWidget {
                 theme,
                 icon: Icons.menu_book_rounded,
                 label: 'stats_surahs_completed'.tr,
-                value: 0,
+                value: memorizedCount,
                 color: Colors.blueAccent,
               ),
               const SizedBox(height: 24),
-              if (bookmarkCount == 0 && practiceCount == 0)
+              if (bookmarkCount == 0 &&
+                  practiceCount == 0 &&
+                  memorizedCount == 0)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
