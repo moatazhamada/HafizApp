@@ -119,7 +119,9 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: const [Locale('en', 'US'), Locale('ar', 'EG')],
-              initialRoute: AppRoutes.onboardingScreen,
+              initialRoute: PrefUtils().getOnboardingCompleted()
+                  ? AppRoutes.homeScreen
+                  : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
             ),
           );

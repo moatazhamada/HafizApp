@@ -68,7 +68,12 @@ class AppRoutes {
         startVerse: args['startVerse'] as int?,
       );
     },
-    mushafScreen: (context) => const MushafScreen(),
+    mushafScreen: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+          {};
+      return MushafScreen(initialPage: args['initialPage'] as int? ?? 1);
+    },
     mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
     statisticsScreen: (context) => const StatisticsScreen(),
   };
