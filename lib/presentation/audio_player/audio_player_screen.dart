@@ -321,7 +321,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       children: [
         IconButton(
           icon: const Icon(Icons.replay_10, size: 32),
-          onPressed: () {},
+          onPressed: () {
+            _handler.seekRelative(const Duration(seconds: -10));
+            setState(() {});
+          },
         ),
         const SizedBox(width: 24),
         Container(
@@ -360,7 +363,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         const SizedBox(width: 24),
         IconButton(
           icon: const Icon(Icons.forward_10, size: 32),
-          onPressed: () {},
+          onPressed: () {
+            _handler.seekRelative(const Duration(seconds: 10));
+            setState(() {});
+          },
         ),
       ],
     );

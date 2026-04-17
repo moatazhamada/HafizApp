@@ -1520,7 +1520,7 @@ class _SurahScreenState extends State<SurahScreen> {
           text: verseText,
           style: TextStyle(
             fontFamily: 'Amiri',
-            fontSize: 24, // Increased for better readability
+            fontSize: PrefUtils().getQuranFontSize(),
             fontWeight: FontWeight
                 .normal, // Regular weight preserves tashkil/ligatures better
             color: effectiveColor,
@@ -1775,7 +1775,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontFamily: 'Amiri',
-                      fontSize: 24, // Increased
+                      fontSize: PrefUtils().getQuranFontSize(),
                       fontWeight: FontWeight.normal, // Regular weight
                       color: isBlurred ? Colors.transparent : textColor,
                       height: 2.2, // Taller line height
