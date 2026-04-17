@@ -105,6 +105,10 @@ class AudioPlayerHandler {
     _sleepTimer?.cancel();
   }
 
+  void seekRelative(Duration offset) {
+    _player.seek(_player.position + offset);
+  }
+
   Future<void> setSpeed(double speed) async {
     await _player.setSpeed(speed);
   }
