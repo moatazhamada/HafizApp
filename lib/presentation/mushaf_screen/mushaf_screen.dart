@@ -215,63 +215,49 @@ class _MushafScreenState extends State<MushafScreen> {
                 }
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 32,
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 28,
+                    bottom: 20,
                   ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    itemCount: verses.length,
-                    itemBuilder: (context, index) {
-                      final entry = verses[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (entry.showBismillah) ...[
-                              Center(
-                                child: Text(
-                                  'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ',
-                                  textDirection: TextDirection.rtl,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: 20,
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            Text(
-                              entry.text,
-                              textDirection: TextDirection.rtl,
-                              textAlign: TextAlign.justify,
-                              style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: PrefUtils().getQuranFontSize() - 4,
-                                height: 1.8,
-                                color: isDark ? Colors.white70 : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPageHeader(isDark, verses),
+                      const SizedBox(height: 12),
+                      Expanded(child: _buildVerseContent(isDark, verses)),
+                    ],
                   ),
                 );
               },
             ),
             Positioned(
-              top: 8,
-              right: 12,
-              child: Text(
-                pageNumber.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white38 : Colors.black38,
+              bottom: 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        (isDark
+                                ? const Color(0xFF1A1A2E)
+                                : const Color(0xFFFFFBF0))
+                            .withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$pageNumber',
+                    style: TextStyle(
+                      fontFamily: 'Amiri',
+                      fontSize: 14,
+                      color: isDark ? Colors.white38 : Colors.black38,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -279,6 +265,125 @@ class _MushafScreenState extends State<MushafScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildPageHeader(bool isDark, List<_VerseEntry> verses) {
+    final surah = QuranIndex.quranSurahs[verses.first.surahId - 1];
+    final isFirstVerseOfSurah = verses.first.verseNumber == 1;
+
+    return Column(
+      children: [
+        if (isFirstVerseOfSurah) ...[
+          Text(
+            surah.nameArabic,
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (verses.first.showBismillah) ...[
+          Text(
+            'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ',
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 22,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+          const Divider(height: 20, thickness: 0.5),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVerseContent(bool isDark, List<_VerseEntry> verses) {
+    final fontSize = PrefUtils().getQuranFontSize();
+    final textColor = isDark
+        ? const Color(0xFFE8D5B7)
+        : const Color(0xFF1A1A1A);
+    final verseNumColor = isDark ? Colors.white38 : Colors.black38;
+
+    final List<InlineSpan> spans = [];
+    final arabicVerseNum = TextStyle(
+      fontFamily: 'Amiri',
+      fontSize: fontSize - 4,
+      color: verseNumColor,
+      fontWeight: FontWeight.bold,
+    );
+
+    for (int i = 0; i < verses.length; i++) {
+      final entry = verses[i];
+
+      if (i > 0 && entry.surahId != verses[i - 1].surahId) {
+        final nextSurah = QuranIndex.quranSurahs[entry.surahId - 1];
+        spans.add(
+          TextSpan(
+            text: '\n${nextSurah.nameArabic}\n',
+            style: TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+            ),
+          ),
+        );
+        if (entry.showBismillah) {
+          spans.add(
+            TextSpan(
+              text: 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ\n',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: fontSize - 2,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+          );
+        }
+      }
+
+      spans.add(
+        TextSpan(
+          text: '${entry.text} ',
+          style: TextStyle(
+            fontFamily: 'Amiri',
+            fontSize: fontSize,
+            height: 1.9,
+            color: textColor,
+          ),
+        ),
+      );
+
+      spans.add(
+        TextSpan(
+          text: ' \u06DD${_toArabicNumeral(entry.verseNumber)} ',
+          style: arabicVerseNum,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: RichText(
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.justify,
+        text: TextSpan(children: spans),
+      ),
+    );
+  }
+
+  String _toArabicNumeral(int number) {
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return number.toString().split('').map((d) {
+      final n = int.tryParse(d);
+      return n != null ? arabicDigits[n] : d;
+    }).join();
   }
 
   Widget _buildPlaceholder(bool isDark, int pageNumber, Surah surah) {
