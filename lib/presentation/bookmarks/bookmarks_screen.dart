@@ -19,6 +19,7 @@ class BookmarksScreen extends StatelessWidget {
           button: true,
           label: 'lbl_back'.tr,
           child: IconButton(
+            tooltip: 'lbl_back'.tr,
             icon: const Icon(Icons.arrow_back),
             onPressed: () => NavigatorService.goBack(),
           ),
@@ -211,6 +212,7 @@ class BookmarksScreen extends StatelessWidget {
                                   button: true,
                                   label: 'lbl_delete'.tr,
                                   child: IconButton(
+                                    tooltip: 'lbl_delete'.tr,
                                     icon: const Icon(
                                       Icons.delete_outline,
                                       color: Colors.redAccent,
