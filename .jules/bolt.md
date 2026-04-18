@@ -1,0 +1,3 @@
+## 2025-02-28 - [List Virtualization with CustomScrollView]
+**Learning:** Using `ListView.builder` with `shrinkWrap: true` inside a `SingleChildScrollView` breaks lazy-loading and causes O(N) layout time, rendering the entire list at once. This is particularly problematic for long lists (e.g. 114 surahs) leading to noticeable UI thread blocks on mobile.
+**Action:** Always prefer using `CustomScrollView` with `SliverList.builder` instead of `SingleChildScrollView` + `ListView(shrinkWrap: true)` to preserve list virtualization when combining a scrollable list with other scrollable or static headers/footers.
