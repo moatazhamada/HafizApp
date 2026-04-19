@@ -587,6 +587,7 @@ class _SurahScreenState extends State<SurahScreen> {
                             Icons.close,
                             color: isDark ? Colors.white70 : Colors.black54,
                           ),
+                          tooltip: 'lbl_close'.tr,
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
