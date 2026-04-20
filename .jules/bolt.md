@@ -1,0 +1,3 @@
+## 2024-05-19 - [O(N) Layout Bottleneck in Flutter Lists]
+**Learning:** Using `ListView.builder` with `shrinkWrap: true` inside a `SingleChildScrollView` completely breaks Flutter's list virtualization. It forces all items to be rendered synchronously, causing O(N) layout time, which is especially noticeable and detrimental on large lists (e.g. rendering 114 Surahs).
+**Action:** Always prefer using `CustomScrollView` with `SliverList.builder` instead. This preserves lazy-loading and virtualization while keeping the scrolling behavior contiguous with other elements (wrapped in `SliverToBoxAdapter`s).
