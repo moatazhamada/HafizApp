@@ -588,6 +588,7 @@ class _SurahScreenState extends State<SurahScreen> {
                             color: isDark ? Colors.white70 : Colors.black54,
                           ),
                           onPressed: () => Navigator.pop(context),
+                          tooltip: 'lbl_close'.tr,
                         ),
                       ],
                     ),
@@ -782,6 +783,7 @@ class _SurahScreenState extends State<SurahScreen> {
         child: IconButton(
           icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
           onPressed: () => NavigatorService.goBack(),
+          tooltip: 'lbl_back'.tr,
         ),
       ),
       actions: [

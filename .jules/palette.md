@@ -1,0 +1,3 @@
+## 2024-05-17 - Always pair Semantics with tooltips on IconButtons
+**Learning:** Adding `Semantics(label: ...)` to an `IconButton` correctly exposes the action to screen readers, but it leaves sighted users (especially on desktop/web, or those using mice) without visual feedback on what the icon-only button does. We discovered a pattern in this app where `Semantics` was used exclusively, omitting the native `tooltip` property.
+**Action:** Always map localized `Semantics` labels to the corresponding `tooltip` property on `IconButton` widgets. This ensures an inclusive user experience for both screen reader users and sighted users relying on hover or long-press interactions.
