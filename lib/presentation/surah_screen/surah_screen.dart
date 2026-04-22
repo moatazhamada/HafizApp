@@ -737,6 +737,10 @@ class _SurahScreenState extends State<SurahScreen> {
                           RecitationErrorState
                         >(
                           builder: (context, errorState) {
+                            final verseStates = _getVerseStates(bookmarkState, errorState);
+                            final bookmarkedVerses = verseStates.bookmarkedVerses;
+                            final errorVerses = verseStates.errorVerses;
+
                             return CustomScrollView(
                               controller: _scrollController,
                               slivers: [
@@ -749,8 +753,8 @@ class _SurahScreenState extends State<SurahScreen> {
                                   sliver: _buildSurahList(
                                     context,
                                     chapters,
-                                    bookmarkState,
-                                    errorState,
+                                    bookmarkedVerses,
+                                    errorVerses,
                                     isDark,
                                   ),
                                 ),
@@ -1388,8 +1392,8 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildSurahList(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    Set<int> bookmarkedVerses,
+    Set<int> errorVerses,
     bool isDark,
   ) {
     return SliverToBoxAdapter(
@@ -1403,15 +1407,15 @@ class _SurahScreenState extends State<SurahScreen> {
                 ? _buildSingleLineContent(
                     context,
                     chapters,
-                    bookmarkState,
-                    errorState,
+                    bookmarkedVerses,
+                    errorVerses,
                     isDark,
                   )
                 : _buildRichTextContent(
                     context,
                     chapters,
-                    bookmarkState,
-                    errorState,
+                    bookmarkedVerses,
+                    errorVerses,
                     isDark,
                   ),
           ),
@@ -1423,8 +1427,8 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildRichTextContent(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    Set<int> bookmarkedVerseNumbers,
+    Set<int> errorVerseIds,
     bool isDark,
   ) {
     final colors = AppColors.of(context);
@@ -1432,10 +1436,6 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeBorder = colors.badgeBorder;
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
-
-    final verseStates = _getVerseStates(bookmarkState, errorState);
-    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
-    final errorVerseIds = verseStates.errorVerses;
 
     List<InlineSpan> spans = [];
     final List<_VerseRange> verseRanges = [];
@@ -1666,8 +1666,8 @@ class _SurahScreenState extends State<SurahScreen> {
   Widget _buildSingleLineContent(
     BuildContext context,
     List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
+    Set<int> bookmarkedVerseNumbers,
+    Set<int> errorVerseIds,
     bool isDark,
   ) {
     final colors = AppColors.of(context);
@@ -1675,10 +1675,6 @@ class _SurahScreenState extends State<SurahScreen> {
     final badgeBorder = colors.badgeBorder;
     final badgeText = colors.badgeText;
     final badgeGradient = colors.badgeGradient;
-
-    final verseStates = _getVerseStates(bookmarkState, errorState);
-    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
-    final errorVerseIds = verseStates.errorVerses;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
