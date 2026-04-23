@@ -285,4 +285,6 @@ final Map<String, String> enUs = {
   'lbl_slow': 'Slow',
   'lbl_normal': 'Normal',
   'lbl_fast': 'Fast',
+  'lbl_rewind_10': 'Rewind 10 seconds',
+  'lbl_forward_10': 'Forward 10 seconds',
 };

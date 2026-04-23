@@ -381,6 +381,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       children: [
         IconButton(
           icon: const Icon(Icons.replay_10, size: 32),
+          tooltip: 'lbl_rewind_10'.tr,
           onPressed: () {
             _handler.seekRelative(const Duration(seconds: -10));
             setState(() {});
@@ -408,6 +409,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     color: Colors.white,
                     size: 36,
                   ),
+                  tooltip: _handler.isPlaying ? 'lbl_pause'.tr : 'lbl_play'.tr,
                   onPressed: () {
                     if (_handler.isPlaying) {
                       _handler.pause();
@@ -423,6 +425,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         const SizedBox(width: 24),
         IconButton(
           icon: const Icon(Icons.forward_10, size: 32),
+          tooltip: 'lbl_forward_10'.tr,
           onPressed: () {
             _handler.seekRelative(const Duration(seconds: 10));
             setState(() {});

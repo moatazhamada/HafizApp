@@ -1,0 +1,3 @@
+## 2024-05-18 - [Accessibility Tooltips on IconButtons]
+**Learning:** Flutter `IconButton` components must include `tooltip` arguments when no explicit textual labels are present, so that accessibility systems (like screen readers) and hover actions accurately inform users of their functionality. Relying purely on surrounding `Semantics` elements can be insufficient or cause nested announcements, while a tooltip directly sets the underlying semantic label on the button correctly and consistently.
+**Action:** When creating or fixing `IconButton`s containing solely an icon, ensure the `tooltip` property is defined with localized strings to satisfy both hover and semantic requirements.
