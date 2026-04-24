@@ -18,6 +18,7 @@ import '../presentation/audio_player/audio_player_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
 import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
 import '../presentation/statistics_screen/statistics_screen.dart';
+import '../presentation/verse_study/verse_study_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String mushafScreen = '/mushaf_screen';
   static const String mushafTypeOnboarding = '/mushaf_type_onboarding';
   static const String statisticsScreen = '/statistics';
+  static const String verseStudyScreen = '/verse_study';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -76,5 +78,11 @@ class AppRoutes {
     },
     mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
     statisticsScreen: (context) => StatisticsScreen.builder(context),
+    verseStudyScreen: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+          {};
+      return VerseStudyScreen(verseKey: args['verseKey'] as String? ?? '1:1');
+    },
   };
 }

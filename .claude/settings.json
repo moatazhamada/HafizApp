@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "quran-mcp": {
+      "type": "sse",
+      "url": "https://mcp.quran.ai/sse"
+    }
+  }
+}

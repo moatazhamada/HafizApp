@@ -29,6 +29,10 @@ class MushafPageData {
 class MushafPageIndex {
   static const int totalPages = 604;
 
+  static int getVerseCount(int surahId) => _surahVerseCounts[surahId - 1];
+
+  static List<int> get surahVerseCounts => _surahVerseCounts;
+
   static const List<int> _surahStartPages = [
     1, // 1. Al-Fatihah
     2, // 2. Al-Baqarah

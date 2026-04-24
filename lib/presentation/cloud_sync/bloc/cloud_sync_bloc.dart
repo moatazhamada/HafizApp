@@ -5,6 +5,7 @@ import 'package:hafiz_app/core/usecase/usecase.dart';
 import 'package:hafiz_app/localization/app_localization.dart';
 import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/cloud_sync_usecase.dart';
+import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
 
 part 'cloud_sync_event.dart';
 part 'cloud_sync_state.dart';
@@ -14,12 +15,14 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
   final CheckCloudSyncAuth checkCloudSyncAuth;
   final SignInCloudSync signInCloudSync;
   final SignOutCloudSync signOutCloudSync;
+  final SyncWithQf? syncWithQf;
 
   CloudSyncBloc({
     required this.performCloudSync,
     required this.checkCloudSyncAuth,
     required this.signInCloudSync,
     required this.signOutCloudSync,
+    this.syncWithQf,
   }) : super(CloudSyncInitial()) {
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
     on<SignInEvent>(_onSignIn);
@@ -27,6 +30,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     on<SyncToCloudEvent>(_onSyncToCloud);
     on<SyncFromCloudEvent>(_onSyncFromCloud);
     on<SyncBidirectionalEvent>(_onSyncBidirectional);
+    on<SyncWithQfEvent>(_onSyncWithQf);
   }
 
   Future<void> _onCheckAuthStatus(
@@ -104,6 +108,22 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     result.fold(
       (failure) => emit(CloudSyncError(_mapFailureToMessage(failure))),
       (_) => emit(CloudSyncSuccess('msg_sync_bidirectional_complete'.tr)),
+    );
+  }
+
+  Future<void> _onSyncWithQf(
+    SyncWithQfEvent event,
+    Emitter<CloudSyncState> emit,
+  ) async {
+    if (syncWithQf == null) {
+      emit(const QfSyncError('Quran.com sync is not configured'));
+      return;
+    }
+    emit(QfSyncLoading());
+    final result = await syncWithQf!(NoParams());
+    result.fold(
+      (failure) => emit(QfSyncError(_mapFailureToMessage(failure))),
+      (count) => emit(QfSyncSuccess(count)),
     );
   }
 

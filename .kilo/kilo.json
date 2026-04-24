@@ -1,0 +1,9 @@
+{
+  "mcp": {
+    "quran-mcp": {
+      "type": "remote",
+      "url": "https://mcp.quran.ai/sse",
+      "enabled": true
+    }
+  }
+}

@@ -74,6 +74,9 @@ dependencies:
   pretty_dio_logger: ^1.4.0
   rxdart: ^0.28.0
   share_plus: ^10.1.4
+  flutter_appauth: ^12.0.0
+  jwt_decoder: ^2.0.1
+  flutter_secure_storage: ^10.0.0
 
 flutter_icons:
   android: true
