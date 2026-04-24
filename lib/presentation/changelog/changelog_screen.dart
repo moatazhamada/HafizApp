@@ -6,7 +6,6 @@ class ChangelogScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text('lbl_whats_new'.tr)),
       body: ListView(
@@ -15,33 +14,33 @@ class ChangelogScreen extends StatelessWidget {
           const _VersionCard(
             version: '3.1.0',
             isLatest: true,
-            items: [
-              'Complete migration to Uthmani Rasm script — matching the standard Mushaf writing.',
-              'New Noto Naskh Arabic font for accurate rendering of superscript characters.',
-              'Improved line height to prevent clipping of diacritical marks.',
-              'Verse Study screen — explore Arabic text, translation, and tafsir together.',
-              'Quran Foundation Content API integration for tafsir and verse data.',
-              'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
-              'Force update mechanism for critical text accuracy fixes.',
+            itemKeys: [
+              'changelog_3_1_0_1',
+              'changelog_3_1_0_2',
+              'changelog_3_1_0_3',
+              'changelog_3_1_0_4',
+              'changelog_3_1_0_5',
+              'changelog_3_1_0_6',
+              'changelog_3_1_0_7',
             ],
           ),
           const SizedBox(height: 16),
           const _VersionCard(
             version: '3.0.0',
             isLatest: false,
-            items: [
-              'Complete app redesign with Material 3.',
-              'Cloud sync with Firebase.',
-              'Audio player with reciter support.',
-              'Mushaf page view with verse rendering.',
-              'Voice verification for recitation practice.',
-              'Memorization and Khatmah tracking.',
-              'Statistics dashboard.',
-              'Auto-scroll with configurable speed.',
+            itemKeys: [
+              'changelog_3_0_0_1',
+              'changelog_3_0_0_2',
+              'changelog_3_0_0_3',
+              'changelog_3_0_0_4',
+              'changelog_3_0_0_5',
+              'changelog_3_0_0_6',
+              'changelog_3_0_0_7',
+              'changelog_3_0_0_8',
             ],
           ),
           const SizedBox(height: 24),
-          _SpecialThanksCard(theme: theme),
+          const _SpecialThanksCard(),
           const SizedBox(height: 16),
         ],
       ),
@@ -52,12 +51,12 @@ class ChangelogScreen extends StatelessWidget {
 class _VersionCard extends StatelessWidget {
   final String version;
   final bool isLatest;
-  final List<String> items;
+  final List<String> itemKeys;
 
   const _VersionCard({
     required this.version,
     required this.isLatest,
-    required this.items,
+    required this.itemKeys,
   });
 
   @override
@@ -79,7 +78,7 @@ class _VersionCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Version $version',
+                  '${'lbl_version'.tr} $version',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -96,7 +95,7 @@ class _VersionCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Latest',
+                      'lbl_latest'.tr,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
@@ -107,7 +106,7 @@ class _VersionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            for (final item in items)
+            for (final key in itemKeys)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -124,7 +123,7 @@ class _VersionCard extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      child: Text(item, style: theme.textTheme.bodyMedium),
+                      child: Text(key.tr, style: theme.textTheme.bodyMedium),
                     ),
                   ],
                 ),
@@ -137,12 +136,11 @@ class _VersionCard extends StatelessWidget {
 }
 
 class _SpecialThanksCard extends StatelessWidget {
-  final ThemeData theme;
-
-  const _SpecialThanksCard({required this.theme});
+  const _SpecialThanksCard();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -156,7 +154,7 @@ class _SpecialThanksCard extends StatelessWidget {
                 Icon(Icons.star, color: Colors.amber.shade700, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Special Thanks',
+                  'lbl_special_thanks'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.amber.shade900,
@@ -169,20 +167,15 @@ class _SpecialThanksCard extends StatelessWidget {
               text: TextSpan(
                 style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                 children: [
-                  const TextSpan(text: 'Special thanks to our user '),
+                  TextSpan(text: 'changelog_3_1_0_intro'.tr),
                   TextSpan(
-                    text: 'HASBUL HSB',
+                    text: 'changelog_3_1_0_user'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
                     ),
                   ),
-                  const TextSpan(
-                    text:
-                        ' for his precise feedback on Surah Yasin (36:26), '
-                        'which led to this Uthmani Rasm script improvement. '
-                        'May Allah reward him.',
-                  ),
+                  TextSpan(text: 'changelog_3_1_0_outro'.tr),
                 ],
               ),
             ),

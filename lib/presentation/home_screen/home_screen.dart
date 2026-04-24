@@ -302,15 +302,14 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, state) {
               return SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
+                child: CustomScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      // Offline indicator banner
-                      if (_isOffline)
-                        Semantics(
+                  slivers: [
+                    // Offline indicator banner
+                    if (_isOffline)
+                      SliverToBoxAdapter(
+                        child: Semantics(
                           liveRegion: true,
                           child: Container(
                             width: double.infinity,
@@ -339,16 +338,19 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
+                      ),
 
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        _buildCardLastRead(state.surah, theme),
+                    if (state is UpdateLastReadSurah && state.surah != null)
+                      SliverToBoxAdapter(
+                        child: _buildCardLastRead(state.surah, theme),
+                      ),
 
-                      Semantics(
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      sliver: Semantics(
                         label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
+                        child: SliverList.builder(
                           key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
                           itemCount: QuranIndex.quranSurahs.length,
                           itemBuilder: (context, index) {
                             final surah = QuranIndex.quranSurahs[index];
@@ -407,8 +409,8 @@ class _HomeScreenState extends State<HomeScreen>
                           },
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },

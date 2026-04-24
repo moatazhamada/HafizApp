@@ -588,6 +588,7 @@ class _SurahScreenState extends State<SurahScreen> {
                             color: isDark ? Colors.white70 : Colors.black54,
                           ),
                           onPressed: () => Navigator.pop(context),
+                          tooltip: 'lbl_close'.tr,
                         ),
                       ],
                     ),
@@ -782,6 +783,7 @@ class _SurahScreenState extends State<SurahScreen> {
         child: IconButton(
           icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
           onPressed: () => NavigatorService.goBack(),
+          tooltip: 'lbl_back'.tr,
         ),
       ),
       actions: [
@@ -1407,32 +1409,48 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildBismillah(isDark),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: PrefUtils().getVerseViewMode()
-                ? _buildSingleLineContent(
-                    context,
-                    chapters,
-                    bookmarkState,
-                    errorState,
-                    isDark,
-                  )
-                : _buildRichTextContent(
-                    context,
-                    chapters,
-                    bookmarkState,
-                    errorState,
-                    isDark,
-                  ),
+    if (PrefUtils().getVerseViewMode()) {
+      return SliverMainAxisGroup(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [_buildBismillah(isDark), const SizedBox(height: 16.0)],
+            ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            sliver: _buildSingleLineContentSliver(
+              context,
+              chapters,
+              bookmarkState,
+              errorState,
+              isDark,
+            ),
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16.0)),
         ],
-      ),
-    );
+      );
+    } else {
+      return SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildBismillah(isDark),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildRichTextContent(
+                context,
+                chapters,
+                bookmarkState,
+                errorState,
+                isDark,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildRichTextContent(
@@ -1678,7 +1696,7 @@ class _SurahScreenState extends State<SurahScreen> {
     return null;
   }
 
-  Widget _buildSingleLineContent(
+  Widget _buildSingleLineContentSliver(
     BuildContext context,
     List<Verse> chapters,
     BookmarkState bookmarkState,
@@ -1695,9 +1713,10 @@ class _SurahScreenState extends State<SurahScreen> {
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
     final errorVerseIds = verseStates.errorVerses;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: chapters.map((aya) {
+    return SliverList.builder(
+      itemCount: chapters.length,
+      itemBuilder: (context, index) {
+        final aya = chapters[index];
         bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
         bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
@@ -1837,7 +1856,7 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 }
