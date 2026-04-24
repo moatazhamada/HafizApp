@@ -18,3 +18,5 @@ class SyncToCloudEvent extends CloudSyncEvent {}
 class SyncFromCloudEvent extends CloudSyncEvent {}
 
 class SyncBidirectionalEvent extends CloudSyncEvent {}
+
+class SyncWithQfEvent extends CloudSyncEvent {}

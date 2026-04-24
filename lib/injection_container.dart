@@ -41,10 +41,17 @@ import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
 import 'package:hafiz_app/data/datasource/qrc/qrc_remote_datasource.dart';
 import 'package:hafiz_app/data/repository/qrc/qrc_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/qrc/qrc_repository.dart';
+import 'package:hafiz_app/data/datasource/tafsir/qf_tafsir_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
+import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
 
 import 'core/network/network_manager.dart';
 import 'core/network/qf_auth.dart';
 import 'core/config/api_config.dart';
+import 'data/datasource/auth/qf_auth_remote_data_source.dart';
+import 'data/datasource/qf_user_api_remote_data_source.dart';
+import 'presentation/auth/bloc/qf_auth_bloc.dart';
+import 'core/network/qf_api_interceptor.dart';
 import 'core/scroll/scroll_position_cubit.dart';
 import 'core/analytics/analytics_service.dart';
 import 'core/analytics/analytics_route_observer.dart';
@@ -63,6 +70,7 @@ Future<void> init() async {
   sl.registerFactory(() => HomeBloc());
   sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
   sl.registerLazySingleton(() => ThemeBloc());
+  sl.registerLazySingleton(() => QfAuthBloc(authRemoteDataSource: sl()));
   sl.registerLazySingleton(() => ScrollPositionCubit());
   sl.registerLazySingleton(
     () => CloudSyncBloc(
@@ -70,6 +78,7 @@ Future<void> init() async {
       checkCloudSyncAuth: sl(),
       signInCloudSync: sl(),
       signOutCloudSync: sl(),
+      syncWithQf: sl(),
     ),
   );
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
@@ -85,6 +94,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CheckCloudSyncAuth(repository: sl()));
   sl.registerLazySingleton(() => SignInCloudSync(repository: sl()));
   sl.registerLazySingleton(() => SignOutCloudSync(repository: sl()));
+  sl.registerLazySingleton(
+    () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl()),
+  );
 
   // Repository
   sl.registerLazySingleton<SurahRepository>(
@@ -116,7 +128,10 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton<TafsirRepository>(
-    () => TafsirRepositoryImpl(remoteDataSource: sl()),
+    () => TafsirRepositoryImpl(
+      remoteDataSource: sl(),
+      qfTafsirRemoteDataSource: sl(),
+    ),
   );
 
   sl.registerLazySingleton<MemorizationRepository>(
@@ -154,6 +169,10 @@ Future<void> init() async {
     () => TafsirRemoteDataSourceImpl(dio: sl()),
   );
 
+  sl.registerLazySingleton<QfTafsirRemoteDataSource>(
+    () => QfTafsirRemoteDataSourceImpl(dio: sl()),
+  );
+
   sl.registerLazySingleton<MemorizationLocalDataSource>(
     () =>
         MemorizationLocalDataSourceImpl(box: Hive.box('memorization_progress')),
@@ -170,8 +189,20 @@ Future<void> init() async {
     () => CloudSyncRemoteDataSourceImpl(),
   );
 
+  sl.registerLazySingleton<QfAuthRemoteDataSource>(
+    () => QfAuthRemoteDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<QfUserApiRemoteDataSource>(
+    () => QfUserApiRemoteDataSourceImpl(dio: sl()),
+  );
+
   sl.registerLazySingleton<QrcRemoteDataSource>(
     () => QrcRemoteDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<QfVerseStudyRemoteDataSource>(
+    () => QfVerseStudyRemoteDataSourceImpl(dio: sl()),
   );
 
   sl.registerLazySingleton<QrcRepository>(
@@ -199,6 +230,10 @@ Future<void> init() async {
       final auth = QfAuthService();
       dio.interceptors.add(QfAuthInterceptor(auth));
     }
+
+    // Attach QF User APIs interceptor
+    dio.interceptors.add(QfApiInterceptor(sl<QfAuthRemoteDataSource>(), dio));
+
     return dio;
   });
 }

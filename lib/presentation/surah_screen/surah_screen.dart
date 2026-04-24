@@ -1133,6 +1133,21 @@ class _SurahScreenState extends State<SurahScreen> {
                 },
               ),
             ),
+            Semantics(
+              button: true,
+              label: 'Study',
+              child: ListTile(
+                leading: const Icon(Icons.school, color: Colors.deepPurple),
+                title: const Text('Study'),
+                onTap: () {
+                  Navigator.pop(context);
+                  NavigatorService.pushNamed(
+                    AppRoutes.verseStudyScreen,
+                    arguments: {'verseKey': '${surah!.id}:${aya.verseNumber}'},
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

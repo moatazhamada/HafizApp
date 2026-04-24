@@ -37,3 +37,23 @@ class CloudSyncError extends CloudSyncState {
   @override
   List<Object> get props => [message];
 }
+
+class QfSyncLoading extends CloudSyncState {}
+
+class QfSyncSuccess extends CloudSyncState {
+  final int bookmarkCount;
+
+  const QfSyncSuccess(this.bookmarkCount);
+
+  @override
+  List<Object> get props => [bookmarkCount];
+}
+
+class QfSyncError extends CloudSyncState {
+  final String message;
+
+  const QfSyncError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
