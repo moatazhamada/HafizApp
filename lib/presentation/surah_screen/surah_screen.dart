@@ -945,7 +945,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
-                fontFamily: 'Amiri',
+                fontFamily: 'NotoNaskhArabic',
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
@@ -995,7 +995,7 @@ class _SurahScreenState extends State<SurahScreen> {
           'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
           textDirection: TextDirection.rtl,
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'NotoNaskhArabic',
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: AppColors.of(context).bismillahColor,
@@ -1534,7 +1534,7 @@ class _SurahScreenState extends State<SurahScreen> {
         TextSpan(
           text: verseText,
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'NotoNaskhArabic',
             fontSize: PrefUtils().getQuranFontSize(),
             fontWeight: FontWeight
                 .normal, // Regular weight preserves tashkil/ligatures better
@@ -1581,7 +1581,7 @@ class _SurahScreenState extends State<SurahScreen> {
               child: Text(
                 aya.verseNumber.toLocalizedNumber(context),
                 style: TextStyle(
-                  fontFamily: 'Amiri',
+                  fontFamily: 'NotoNaskhArabic',
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: badgeText,
@@ -1789,7 +1789,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     textAlign: TextAlign.justify,
                     textDirection: TextDirection.rtl,
                     style: TextStyle(
-                      fontFamily: 'Amiri',
+                      fontFamily: 'NotoNaskhArabic',
                       fontSize: PrefUtils().getQuranFontSize(),
                       fontWeight: FontWeight.normal, // Regular weight
                       color: isBlurred ? Colors.transparent : textColor,
@@ -1824,7 +1824,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       child: Text(
                         aya.verseNumber.toLocalizedNumber(context),
                         style: TextStyle(
-                          fontFamily: 'Amiri',
+                          fontFamily: 'NotoNaskhArabic',
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: badgeText,

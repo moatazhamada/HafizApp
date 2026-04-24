@@ -253,7 +253,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   child: Text(
                     '$pageNumber',
                     style: TextStyle(
-                      fontFamily: 'Amiri',
+                      fontFamily: 'NotoNaskhArabic',
                       fontSize: 14,
                       color: isDark ? Colors.white38 : Colors.black38,
                     ),
@@ -279,7 +279,7 @@ class _MushafScreenState extends State<MushafScreen> {
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Amiri',
+              fontFamily: 'NotoNaskhArabic',
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
@@ -293,7 +293,7 @@ class _MushafScreenState extends State<MushafScreen> {
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Amiri',
+              fontFamily: 'NotoNaskhArabic',
               fontSize: 22,
               color: isDark ? Colors.white60 : Colors.black54,
             ),
@@ -313,7 +313,7 @@ class _MushafScreenState extends State<MushafScreen> {
 
     final List<InlineSpan> spans = [];
     final arabicVerseNum = TextStyle(
-      fontFamily: 'Amiri',
+      fontFamily: 'NotoNaskhArabic',
       fontSize: fontSize - 4,
       color: verseNumColor,
       fontWeight: FontWeight.bold,
@@ -328,7 +328,7 @@ class _MushafScreenState extends State<MushafScreen> {
           TextSpan(
             text: '\n${nextSurah.nameArabic}\n',
             style: TextStyle(
-              fontFamily: 'Amiri',
+              fontFamily: 'NotoNaskhArabic',
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
@@ -340,7 +340,7 @@ class _MushafScreenState extends State<MushafScreen> {
             TextSpan(
               text: 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ\n',
               style: TextStyle(
-                fontFamily: 'Amiri',
+                fontFamily: 'NotoNaskhArabic',
                 fontSize: fontSize - 2,
                 color: isDark ? Colors.white60 : Colors.black54,
               ),
@@ -353,9 +353,9 @@ class _MushafScreenState extends State<MushafScreen> {
         TextSpan(
           text: '${entry.text} ',
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'NotoNaskhArabic',
             fontSize: fontSize,
-            height: 1.9,
+            height: 2.0,
             color: textColor,
           ),
         ),
@@ -395,7 +395,7 @@ class _MushafScreenState extends State<MushafScreen> {
             surah.nameArabic,
             textDirection: TextDirection.rtl,
             style: TextStyle(
-              fontFamily: 'Amiri',
+              fontFamily: 'NotoNaskhArabic',
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white70 : Colors.black87,
