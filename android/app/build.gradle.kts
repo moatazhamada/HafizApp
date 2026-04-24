@@ -31,11 +31,12 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "hafizapp")
     }
-    
+
     // Fix for firebase_app_distribution_android flavor ambiguity
     flavorDimensions.add("default")
-    
+
     productFlavors {
         create("production") {
             dimension = "default"

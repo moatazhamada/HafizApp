@@ -281,9 +281,40 @@ final Map<String, String> enUs = {
   'lbl_scroll_mode': 'Scroll Mode',
   'lbl_page_mode': 'Page Mode',
   'lbl_audio_player': 'Audio Player',
+  'lbl_rewind_10': 'Rewind 10 seconds',
+  'lbl_forward_10': 'Forward 10 seconds',
   'lbl_scroll_speed': 'Scroll Speed',
   'lbl_slow': 'Slow',
   'lbl_normal': 'Normal',
   'lbl_fast': 'Fast',
   'lbl_whats_new': "What's New",
+  'lbl_version': 'Version',
+  'lbl_latest': 'Latest',
+  'lbl_special_thanks': 'Special Thanks',
+  'changelog_3_1_0_intro': 'Special thanks to our user ',
+  'changelog_3_1_0_user': 'HASBUL HSB',
+  'changelog_3_1_0_outro':
+      ' for his precise feedback on Surah Yasin (36:26), which led to this Uthmani Rasm script improvement. May Allah reward him.',
+  'changelog_3_1_0_1':
+      'Complete migration to Uthmani Rasm script — matching the standard Mushaf writing.',
+  'changelog_3_1_0_2':
+      'New Noto Naskh Arabic font for accurate rendering of superscript characters.',
+  'changelog_3_1_0_3':
+      'Improved line height to prevent clipping of diacritical marks.',
+  'changelog_3_1_0_4':
+      'Verse Study screen — explore Arabic text, translation, and tafsir together.',
+  'changelog_3_1_0_5':
+      'Quran Foundation Content API integration for tafsir and verse data.',
+  'changelog_3_1_0_6':
+      'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
+  'changelog_3_1_0_7':
+      'Force update mechanism for critical text accuracy fixes.',
+  'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
+  'changelog_3_0_0_2': 'Cloud sync with Firebase.',
+  'changelog_3_0_0_3': 'Audio player with reciter support.',
+  'changelog_3_0_0_4': 'Mushaf page view with verse rendering.',
+  'changelog_3_0_0_5': 'Voice verification for recitation practice.',
+  'changelog_3_0_0_6': 'Memorization and Khatmah tracking.',
+  'changelog_3_0_0_7': 'Statistics dashboard.',
+  'changelog_3_0_0_8': 'Auto-scroll with configurable speed.',
 };

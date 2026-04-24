@@ -379,12 +379,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          icon: const Icon(Icons.replay_10, size: 32),
-          onPressed: () {
-            _handler.seekRelative(const Duration(seconds: -10));
-            setState(() {});
-          },
+        Semantics(
+          button: true,
+          label: 'lbl_rewind_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.replay_10, size: 32),
+            tooltip: 'lbl_rewind_10'.tr,
+            onPressed: () {
+              _handler.seekRelative(const Duration(seconds: -10));
+              setState(() {});
+            },
+          ),
         ),
         const SizedBox(width: 24),
         Container(
@@ -402,31 +407,43 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     strokeWidth: 2,
                   ),
                 )
-              : IconButton(
-                  icon: Icon(
-                    _handler.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 36,
+              : Semantics(
+                  button: true,
+                  label: _handler.isPlaying ? 'lbl_pause'.tr : 'lbl_play'.tr,
+                  child: IconButton(
+                    icon: Icon(
+                      _handler.isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                    tooltip: _handler.isPlaying
+                        ? 'lbl_pause'.tr
+                        : 'lbl_play'.tr,
+                    onPressed: () {
+                      if (_handler.isPlaying) {
+                        _handler.pause();
+                      } else if (_handler.currentSurahId == widget.surahId) {
+                        _handler.resume();
+                      } else {
+                        _play();
+                      }
+                      setState(() {});
+                    },
                   ),
-                  onPressed: () {
-                    if (_handler.isPlaying) {
-                      _handler.pause();
-                    } else if (_handler.currentSurahId == widget.surahId) {
-                      _handler.resume();
-                    } else {
-                      _play();
-                    }
-                    setState(() {});
-                  },
                 ),
         ),
         const SizedBox(width: 24),
-        IconButton(
-          icon: const Icon(Icons.forward_10, size: 32),
-          onPressed: () {
-            _handler.seekRelative(const Duration(seconds: 10));
-            setState(() {});
-          },
+        Semantics(
+          button: true,
+          label: 'lbl_forward_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.forward_10, size: 32),
+            tooltip: 'lbl_forward_10'.tr,
+            onPressed: () {
+              _handler.seekRelative(const Duration(seconds: 10));
+              setState(() {});
+            },
+          ),
         ),
       ],
     );

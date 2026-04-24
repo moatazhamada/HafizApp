@@ -328,7 +328,8 @@ class _ReadyAppState extends State<_ReadyApp> {
   }
 
   Future<void> _maybeShowChangelog() async {
-    const key = 'changelog_seen_3_1_0';
+    final version = (await PackageInfo.fromPlatform()).version;
+    final key = 'changelog_seen_${version.replaceAll('.', '_')}';
     final prefs = await SharedPreferences.getInstance();
     final seen = prefs.getBool(key) ?? false;
     if (!seen) {
