@@ -281,6 +281,8 @@ final Map<String, String> enUs = {
   'lbl_scroll_mode': 'Scroll Mode',
   'lbl_page_mode': 'Page Mode',
   'lbl_audio_player': 'Audio Player',
+  'lbl_rewind_10': 'Rewind 10 seconds',
+  'lbl_forward_10': 'Forward 10 seconds',
   'lbl_scroll_speed': 'Scroll Speed',
   'lbl_slow': 'Slow',
   'lbl_normal': 'Normal',

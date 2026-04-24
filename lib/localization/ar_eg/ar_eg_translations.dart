@@ -278,6 +278,8 @@ final Map<String, String> arEg = {
   'lbl_scroll_mode': 'وضع التمرير',
   'lbl_page_mode': 'وضع الصفحات',
   'lbl_audio_player': 'مشغل الصوت',
+  'lbl_rewind_10': 'إرجاع 10 ثواني',
+  'lbl_forward_10': 'تقديم 10 ثواني',
   'lbl_scroll_speed': 'سرعة التمرير',
   'lbl_slow': 'بطيء',
   'lbl_normal': 'عادي',
