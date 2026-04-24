@@ -137,7 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'بِسْمِ اللَّهِ',
                   textDirection: TextDirection.rtl,
                   style: TextStyle(
-                    fontFamily: 'Amiri',
+                    fontFamily: 'NotoNaskhArabic',
                     fontSize: _quranFontSize,
                   ),
                 ),
@@ -212,6 +212,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _whisperDownloading ? null : _selectWhisperModel,
             ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.new_releases, color: Colors.teal),
+            title: Text('lbl_whats_new'.tr),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () =>
+                Navigator.pushNamed(context, AppRoutes.changelogScreen),
+          ),
         ],
       ),
     );

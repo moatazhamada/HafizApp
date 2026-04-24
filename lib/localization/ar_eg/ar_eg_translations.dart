@@ -282,4 +282,5 @@ final Map<String, String> arEg = {
   'lbl_slow': 'بطيء',
   'lbl_normal': 'عادي',
   'lbl_fast': 'سريع',
+  'lbl_whats_new': 'الجديد',
 };

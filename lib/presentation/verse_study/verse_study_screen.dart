@@ -83,7 +83,7 @@ class _VerseStudyView extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 26,
                         height: 2.0,
-                        fontFamily: 'Uthmani',
+                        fontFamily: 'NotoNaskhArabic',
                       ),
                     ),
                   ),

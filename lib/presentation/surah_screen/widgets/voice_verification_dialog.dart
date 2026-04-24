@@ -482,7 +482,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 textDirection: TextDirection.rtl,
                 style: TextStyle(
                   fontSize: 18,
-                  fontFamily: 'Amiri',
+                  fontFamily: 'NotoNaskhArabic',
                   color: _statusColor,
                 ),
               ),
@@ -529,7 +529,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                         word,
                         style: TextStyle(
                           fontSize: 18,
-                          fontFamily: 'Amiri',
+                          fontFamily: 'NotoNaskhArabic',
                           color: color,
                           fontWeight: isCorrect
                               ? FontWeight.bold
@@ -582,7 +582,10 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               Text(
                 _hintWord,
                 textDirection: TextDirection.rtl,
-                style: const TextStyle(fontSize: 14, fontFamily: 'Amiri'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'NotoNaskhArabic',
+                ),
               ),
             ],
             if (_repeatLabel.isNotEmpty) ...[
@@ -596,7 +599,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 textDirection: TextDirection.rtl,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontFamily: 'Amiri',
+                  fontFamily: 'NotoNaskhArabic',
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -618,7 +621,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             _expectedText,
             textAlign: TextAlign.center,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(fontSize: 18, fontFamily: 'Amiri'),
+            style: const TextStyle(fontSize: 18, fontFamily: 'NotoNaskhArabic'),
           ),
         ],
       ),

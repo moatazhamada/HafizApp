@@ -293,7 +293,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           child: Text(
             surah.nameArabic,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(fontFamily: 'Amiri'),
+            style: const TextStyle(fontFamily: 'NotoNaskhArabic'),
           ),
         ),
         centerTitle: true,
@@ -307,7 +307,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
               surah.nameArabic,
               textDirection: TextDirection.rtl,
               style: const TextStyle(
-                fontFamily: 'Amiri',
+                fontFamily: 'NotoNaskhArabic',
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
               ),
