@@ -302,15 +302,14 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, state) {
               return SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
+                child: CustomScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      // Offline indicator banner
-                      if (_isOffline)
-                        Semantics(
+                  slivers: [
+                    // Offline indicator banner
+                    if (_isOffline)
+                      SliverToBoxAdapter(
+                        child: Semantics(
                           liveRegion: true,
                           child: Container(
                             width: double.infinity,
@@ -339,76 +338,87 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
+                      ),
 
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        _buildCardLastRead(state.surah, theme),
+                    if (state is UpdateLastReadSurah && state.surah != null)
+                      SliverToBoxAdapter(
+                        child: _buildCardLastRead(state.surah, theme),
+                      ),
 
-                      Semantics(
-                        label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
-                          key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
-
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
-
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    final defaultView = PrefUtils()
-                                        .getDefaultQuranView();
-                                    if (defaultView == 'mushaf') {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.mushafScreen,
-                                      );
-                                    } else {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.surahPage,
-                                        arguments: surah,
-                                      );
-                                    }
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      sliver: SliverToBoxAdapter(
+                        child: Semantics(
+                          label: 'lbl_surah_list'.tr,
+                          child:
+                              const SizedBox.shrink(), // Ensure semantics exists, but the list follows
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      sliver: SliverList.builder(
+                        key: const PageStorageKey('home-list'),
+                        itemCount: QuranIndex.quranSurahs.length,
+                        itemBuilder: (context, index) {
+                          final surah = QuranIndex.quranSurahs[index];
+
+                          // Simple staggered animation logic
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutQuad,
+                            // Delay based on index, capped to prevent long waits for bottom items
+                            builder: (context, value, child) {
+                              // Only animate the first 10 items to save performance/time
+                              final shouldAnimate = index < 10;
+                              final opacity = shouldAnimate ? value : 1.0;
+                              final offset = shouldAnimate
+                                  ? Offset(0, 50 * (1 - value))
+                                  : Offset.zero;
+
+                              return Opacity(
+                                opacity: opacity,
+                                child: Transform.translate(
+                                  offset: offset,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Semantics(
+                              button: true,
+                              label:
+                                  '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                              child: InkWell(
+                                onTap: () {
+                                  PrefUtils().saveLastReadSurah(surah);
+                                  homeBloc.add(HomeShowLastSurahEvent());
+                                  final defaultView = PrefUtils()
+                                      .getDefaultQuranView();
+                                  if (defaultView == 'mushaf') {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.mushafScreen,
+                                    );
+                                  } else {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.surahPage,
+                                      arguments: surah,
+                                    );
+                                  }
+                                },
+                                child: SurahListItem(
+                                  surahId: surah.id,
+                                  nameEnglish: surah.nameEnglish,
+                                  nameArabic: surah.nameArabic,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
