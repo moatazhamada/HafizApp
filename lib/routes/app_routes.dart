@@ -76,7 +76,7 @@ class AppRoutes {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
           {};
-      return MushafScreen(initialPage: args['initialPage'] as int? ?? 1);
+      return MushafScreen(initialPage: args['initialPage'] as int?);
     },
     mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
     statisticsScreen: (context) => StatisticsScreen.builder(context),

@@ -6,9 +6,9 @@ import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
 
 class MushafScreen extends StatefulWidget {
-  final int initialPage;
+  final int? initialPage;
 
-  const MushafScreen({super.key, this.initialPage = 1});
+  const MushafScreen({super.key, this.initialPage});
 
   @override
   State<MushafScreen> createState() => _MushafScreenState();
@@ -23,7 +23,8 @@ class _MushafScreenState extends State<MushafScreen> {
   @override
   void initState() {
     super.initState();
-    _currentPage = widget.initialPage.clamp(1, MushafPageIndex.totalPages);
+    final resolved = widget.initialPage ?? PrefUtils().getMushafLastPage();
+    _currentPage = resolved.clamp(1, MushafPageIndex.totalPages);
     _pageController = PageController(initialPage: _currentPage - 1);
   }
 
@@ -164,6 +165,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 setState(() {
                   _currentPage = index + 1;
                 });
+                PrefUtils().setMushafLastPage(index + 1);
               },
               itemBuilder: (context, index) {
                 final pageNumber = index + 1;
