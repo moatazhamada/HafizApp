@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
 import '../../core/i18n/locale_controller.dart';
@@ -31,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late double _quranFontSize;
   late String _orientationMode;
   late String _defaultQuranView;
+  late String _mushafType;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -53,6 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _quranFontSize = PrefUtils().getQuranFontSize();
     _orientationMode = PrefUtils().getOrientationMode();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
+    _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _loadRecitationResources();
   }
 
@@ -101,6 +104,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildOrientationTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildDefaultViewTile(),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildMushafTypeTile(),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildClearMushafCacheTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),
@@ -464,6 +471,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
     );
+  }
+
+  Widget _buildMushafTypeTile() {
+    return ListTile(
+      leading: const Icon(Icons.menu_book_outlined),
+      title: Text('lbl_mushaf_type'.tr),
+      subtitle: Text(_mushafTypeLabel(_mushafType)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        await Navigator.pushNamed(context, AppRoutes.mushafTypeOnboarding);
+        final newType = PrefUtils().getMushafType() ?? 'madani';
+        if (newType != _mushafType) {
+          setState(() => _mushafType = newType);
+        }
+      },
+    );
+  }
+
+  Widget _buildClearMushafCacheTile() {
+    return ListTile(
+      leading: const Icon(Icons.cleaning_services_outlined),
+      title: Text('lbl_clear_mushaf_cache'.tr),
+      subtitle: Text('msg_clear_mushaf_cache_desc'.tr),
+      onTap: () {
+        DefaultCacheManager().emptyCache();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('msg_cache_cleared'.tr)),
+        );
+      },
+    );
+  }
+
+  String _mushafTypeLabel(String type) {
+    switch (type) {
+      case 'madani':
+        return 'Madani (Hafs)';
+      case 'egyptian':
+        return 'Egyptian (Hafs)';
+      case 'indopak':
+        return 'Indo-Pak (Nastaleeq)';
+      case 'warsh':
+        return 'Warsh (North Africa)';
+      default:
+        return type;
+    }
   }
 
   List<DeviceOrientation> _getOrientations(String mode) {

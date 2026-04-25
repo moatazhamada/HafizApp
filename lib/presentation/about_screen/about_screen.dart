@@ -5,7 +5,6 @@ import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
 import 'package:hafiz_app/main.dart' show globalMessengerKey;
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/utils/platform_info.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
@@ -110,24 +109,31 @@ class _AboutScreenState extends State<AboutScreen> {
 
                         setState(() => isSending = true);
                         try {
-                          await FirebaseFirestore.instance
-                              .collection('feedback')
-                              .add({
-                                'message': msg,
-                                'timestamp': FieldValue.serverTimestamp(),
-                                'platform': getPlatformLabel(),
-                                'version': _version.isNotEmpty
-                                    ? _version
-                                    : 'Unknown',
-                              });
+                          final body = Uri.encodeComponent(
+                            '$msg\n\n---\n'
+                            'Platform: ${getPlatformLabel()}\n'
+                            'Version: ${_version.isNotEmpty ? _version : 'Unknown'}',
+                          );
+                          final launched = await launchUrlString(
+                            'mailto:support@hafizapp.com?subject=Hafiz%20App%20Feedback&body=$body',
+                          );
 
                           if (context.mounted) {
                             Navigator.of(ctx).pop();
-                            globalMessengerKey.currentState?.showSnackBar(
-                              SnackBar(content: Text('about_feedback_sent'.tr)),
-                            );
+                            if (launched) {
+                              globalMessengerKey.currentState?.showSnackBar(
+                                SnackBar(content: Text('about_feedback_sent'.tr)),
+                              );
+                            } else {
+                              await Clipboard.setData(ClipboardData(text: msg));
+                              globalMessengerKey.currentState?.showSnackBar(
+                                const SnackBar(
+                                  content: Text('Feedback copied to clipboard'),
+                                ),
+                              );
+                            }
                             await sl<AnalyticsService>().logFeedbackSubmitted(
-                              method: 'firestore',
+                              method: 'email',
                             );
                           }
                         } catch (e) {

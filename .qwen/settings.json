@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(cdn.islamic.network)"
+    ]
+  },
+  "$version": 3
+}
