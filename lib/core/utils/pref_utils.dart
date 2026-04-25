@@ -306,6 +306,11 @@ class PrefUtils {
     await _sharedPreferences!.setString('mushafType', type);
   }
 
+  int getMushafLastPage() => _sharedPreferences?.getInt('mushafLastPage') ?? 1;
+
+  Future<void> setMushafLastPage(int page) async =>
+      _sharedPreferences!.setInt('mushafLastPage', page);
+
   bool getOnboardingCompleted() {
     try {
       return _sharedPreferences?.getBool('onboardingCompleted') ?? false;

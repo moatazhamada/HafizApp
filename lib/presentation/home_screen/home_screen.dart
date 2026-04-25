@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
@@ -347,67 +348,70 @@ class _HomeScreenState extends State<HomeScreen>
 
                     SliverPadding(
                       padding: const EdgeInsets.only(bottom: 20),
-                      sliver: Semantics(
-                        label: 'lbl_surah_list'.tr,
-                        child: SliverList.builder(
-                          key: const PageStorageKey('home-list'),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
+                      sliver: SliverList.builder(
+                        key: const PageStorageKey('home-list'),
+                        itemCount: QuranIndex.quranSurahs.length,
+                        itemBuilder: (context, index) {
+                          final surah = QuranIndex.quranSurahs[index];
 
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
+                          // Simple staggered animation logic
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutQuad,
+                            // Delay based on index, capped to prevent long waits for bottom items
+                            builder: (context, value, child) {
+                              // Only animate the first 10 items to save performance/time
+                              final shouldAnimate = index < 10;
+                              final opacity = shouldAnimate ? value : 1.0;
+                              final offset = shouldAnimate
+                                  ? Offset(0, 50 * (1 - value))
+                                  : Offset.zero;
 
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    final defaultView = PrefUtils()
-                                        .getDefaultQuranView();
-                                    if (defaultView == 'mushaf') {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.mushafScreen,
-                                      );
-                                    } else {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.surahPage,
-                                        arguments: surah,
-                                      );
-                                    }
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
-                                  ),
+                              return Opacity(
+                                opacity: opacity,
+                                child: Transform.translate(
+                                  offset: offset,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Semantics(
+                              button: true,
+                              label:
+                                  '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                              child: InkWell(
+                                onTap: () {
+                                  PrefUtils().saveLastReadSurah(surah);
+                                  homeBloc.add(HomeShowLastSurahEvent());
+                                  final defaultView = PrefUtils()
+                                      .getDefaultQuranView();
+                                  if (defaultView == 'mushaf') {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.mushafScreen,
+                                      arguments: {
+                                        'initialPage':
+                                            MushafPageIndex.getPageForSurah(
+                                              surah.id,
+                                            ),
+                                      },
+                                    );
+                                  } else {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.surahPage,
+                                      arguments: surah,
+                                    );
+                                  }
+                                },
+                                child: SurahListItem(
+                                  surahId: surah.id,
+                                  nameEnglish: surah.nameEnglish,
+                                  nameArabic: surah.nameArabic,
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -689,6 +693,12 @@ class _HomeScreenState extends State<HomeScreen>
                             if (defaultView == 'mushaf') {
                               NavigatorService.pushNamed(
                                 AppRoutes.mushafScreen,
+                                arguments: {
+                                  'initialPage':
+                                      MushafPageIndex.getPageForSurah(
+                                        lastReadSurah.id,
+                                      ),
+                                },
                               );
                             } else {
                               NavigatorService.pushNamed(
