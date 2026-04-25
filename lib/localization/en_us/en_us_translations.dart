@@ -331,4 +331,39 @@ final Map<String, String> enUs = {
   'changelog_3_0_0_6': 'Memorization and Khatmah tracking.',
   'changelog_3_0_0_7': 'Statistics dashboard.',
   'changelog_3_0_0_8': 'Auto-scroll with configurable speed.',
+
+  // Relative time
+  'lbl_just_now': 'just now',
+  'lbl_minutes_ago': '{count}m ago',
+  'lbl_hours_ago': '{count}h ago',
+
+  // QF Account
+  'msg_qf_account': 'Quran.com account',
+
+  // Navigation
+  'lbl_open_nav_menu': 'Open navigation menu',
+
+  // About
+  'msg_feedback_copied': 'Feedback copied to clipboard',
+
+  // Mushaf type labels (settings + onboarding)
+  'lbl_mushaf_madani': 'Madani (Hafs)',
+  'lbl_mushaf_egyptian': 'Egyptian (Hafs)',
+  'lbl_mushaf_indopak': 'Indo-Pak (Nastaleeq)',
+  'lbl_mushaf_warsh': 'Warsh (North Africa)',
+  'lbl_mushaf_madani_desc': 'Hafs from Madinah',
+  'lbl_mushaf_egyptian_desc': 'Hafs from Egypt',
+  'lbl_mushaf_indopak_desc': 'Nastaleeq script',
+  'lbl_mushaf_warsh_desc': 'Warsh from North Africa',
+
+  // Connectivity
+  'msg_no_internet_connection': 'No Internet Connection',
+
+  // Verse Study
+  'lbl_verse_study_title': 'Verse Study: {key}',
+  'lbl_retry': 'Retry',
+  'lbl_arabic': 'Arabic',
+  'lbl_translation': 'Translation',
+  'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
+  'lbl_study': 'Study',
 };

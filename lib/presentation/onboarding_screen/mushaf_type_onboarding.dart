@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 
 enum MushafType {
-  madani('Madani', 'مدني', 'Hafs from Madinah', Colors.teal),
-  egyptian('Egyptian', 'مصري', 'Hafs from Egypt', Colors.blueAccent),
-  indopak('Indo-Pak', 'هندي/باكستاني', 'Nastaleeq script', Colors.orange),
-  warsh('Warsh', 'ورش', 'Warsh from North Africa', Colors.purple);
+  madani('Madani', 'مدني', 'lbl_mushaf_madani_desc', Colors.teal),
+  egyptian('Egyptian', 'مصري', 'lbl_mushaf_egyptian_desc', Colors.blueAccent),
+  indopak('Indo-Pak', 'هندي/باكستاني', 'lbl_mushaf_indopak_desc', Colors.orange),
+  warsh('Warsh', 'ورش', 'lbl_mushaf_warsh_desc', Colors.purple);
 
-  const MushafType(this.nameEn, this.nameAr, this.description, this.color);
+  const MushafType(this.nameEn, this.nameAr, this.descriptionKey, this.color);
   final String nameEn;
   final String nameAr;
-  final String description;
+  final String descriptionKey;
   final Color color;
 }
 
@@ -140,7 +140,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              type.description,
+                              type.descriptionKey.tr,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.5,

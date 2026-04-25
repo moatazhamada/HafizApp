@@ -1137,10 +1137,10 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
             Semantics(
               button: true,
-              label: 'Study',
+              label: 'lbl_study'.tr,
               child: ListTile(
                 leading: const Icon(Icons.school, color: Colors.deepPurple),
-                title: const Text('Study'),
+                title: Text('lbl_study'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   NavigatorService.pushNamed(

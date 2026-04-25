@@ -4,7 +4,7 @@ abstract class Failure extends Equatable {
   String get errorMessage;
 }
 
-const String messageConnectionFailure = 'No Internet connection';
+const String messageConnectionFailure = 'msg_connection_error';
 
 class ServerFailure extends Failure {
   @override

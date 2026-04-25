@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : const Icon(Icons.account_circle, color: Colors.white, size: 28),
           );
-          title = 'Quran.com account';
+          title = 'msg_qf_account'.tr;
           subtitle = state.userId ?? '';
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(
@@ -506,13 +506,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _mushafTypeLabel(String type) {
     switch (type) {
       case 'madani':
-        return 'Madani (Hafs)';
+        return 'lbl_mushaf_madani'.tr;
       case 'egyptian':
-        return 'Egyptian (Hafs)';
+        return 'lbl_mushaf_egyptian'.tr;
       case 'indopak':
-        return 'Indo-Pak (Nastaleeq)';
+        return 'lbl_mushaf_indopak'.tr;
       case 'warsh':
-        return 'Warsh (North Africa)';
+        return 'lbl_mushaf_warsh'.tr;
       default:
         return type;
     }
