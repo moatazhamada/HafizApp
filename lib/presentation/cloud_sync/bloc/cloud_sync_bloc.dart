@@ -1,9 +1,8 @@
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/usecase/usecase.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
-import 'package:hafiz_app/core/utils/pref_utils.dart';
 
 part 'cloud_sync_event.dart';
 part 'cloud_sync_state.dart';
@@ -30,5 +29,5 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
   }
 
-  String _mapFailureToMessage(Failure _) => 'Failed to sync with Quran.com';
+  String _mapFailureToMessage(Failure _) => 'msg_sync_failed'.tr;
 }

@@ -52,10 +52,14 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
         Logger.info('Successfully logged in via QF OAuth', feature: 'QfAuth');
         return true;
       }
+      Logger.warning('Login returned null response — user may have cancelled', feature: 'QfAuth');
+      return false;
+    } on FlutterAppAuthUserCancelledException {
+      Logger.info('User cancelled login', feature: 'QfAuth');
       return false;
     } catch (e) {
       Logger.error('Login failed: $e', feature: 'QfAuth');
-      return false;
+      rethrow;
     }
   }
 
