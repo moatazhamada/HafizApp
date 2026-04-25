@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
+import '../../core/mushaf/mushaf_image_config.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
 
@@ -185,6 +187,87 @@ class _MushafScreenState extends State<MushafScreen> {
     bool isDark,
     int pageNumber,
   ) {
+    final mushafType = PrefUtils().getMushafType() ?? 'madani';
+    final imageUrl = MushafImageConfig.pageImageUrl(mushafType, pageNumber);
+
+    if (imageUrl != null) {
+      return _buildImagePage(context, theme, isDark, pageNumber, imageUrl);
+    }
+    return _buildTextPage(context, theme, isDark, pageNumber);
+  }
+
+  Widget _buildImagePage(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    int pageNumber,
+    String imageUrl,
+  ) {
+    Widget image = CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.contain,
+      placeholder: (context, url) => const Center(
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      errorWidget: (context, url, error) =>
+          _buildTextPage(context, theme, isDark, pageNumber),
+    );
+
+    if (isDark) {
+      // Invert black-on-white to warm cream-on-dark, matching the app's dark theme palette
+      image = ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          -1, 0, 0, 0, 255,
+           0,-1, 0, 0, 255,
+           0, 0,-1, 0, 230,
+           0, 0, 0, 1,   0,
+        ]),
+        child: image,
+      );
+    }
+
+    return GestureDetector(
+      onDoubleTap: _showJumpDialog,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          image,
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (isDark
+                          ? const Color(0xFF1A1A2E)
+                          : const Color(0xFFFFFBF0))
+                      .withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$pageNumber',
+                  style: TextStyle(
+                    fontFamily: 'NotoNaskhArabic',
+                    fontSize: 14,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextPage(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    int pageNumber,
+  ) {
     return GestureDetector(
       onDoubleTap: _showJumpDialog,
       child: Container(
@@ -245,11 +328,10 @@ class _MushafScreenState extends State<MushafScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        (isDark
-                                ? const Color(0xFF1A1A2E)
-                                : const Color(0xFFFFFBF0))
-                            .withValues(alpha: 0.8),
+                    color: (isDark
+                            ? const Color(0xFF1A1A2E)
+                            : const Color(0xFFFFFBF0))
+                        .withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -365,18 +447,16 @@ class _MushafScreenState extends State<MushafScreen> {
 
       spans.add(
         TextSpan(
-          text: ' \u06DD${_toArabicNumeral(entry.verseNumber)} ',
+          text: ' ۝${_toArabicNumeral(entry.verseNumber)} ',
           style: arabicVerseNum,
         ),
       );
     }
 
-    return SingleChildScrollView(
-      child: RichText(
-        textDirection: TextDirection.rtl,
-        textAlign: TextAlign.justify,
-        text: TextSpan(children: spans),
-      ),
+    return RichText(
+      textDirection: TextDirection.rtl,
+      textAlign: TextAlign.justify,
+      text: TextSpan(children: spans),
     );
   }
 

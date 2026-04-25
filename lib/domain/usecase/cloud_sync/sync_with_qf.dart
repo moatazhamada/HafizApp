@@ -8,14 +8,21 @@ import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.da
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
-class SyncWithQf implements UseCase<int, NoParams> {
+class QfSyncResult {
+  final int pushed;
+  final int pulled;
+
+  const QfSyncResult({required this.pushed, required this.pulled});
+}
+
+class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   final QfUserApiRemoteDataSource qfUserApi;
   final BookmarkLocalDataSource bookmarkLocalDataSource;
 
   SyncWithQf({required this.qfUserApi, required this.bookmarkLocalDataSource});
 
   @override
-  Future<Either<Failure, int>> call(NoParams params) async {
+  Future<Either<Failure, QfSyncResult>> call(NoParams params) async {
     try {
       final localBookmarks = await bookmarkLocalDataSource.getBookmarks();
 
@@ -80,7 +87,7 @@ class SyncWithQf implements UseCase<int, NoParams> {
         'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}',
         feature: 'SyncWithQf',
       );
-      return Right(localBookmarks.length + toPull.length);
+      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length));
     } catch (e) {
       Logger.error('QF sync failed: $e', feature: 'SyncWithQf');
       return Left(ServerFailure('Failed to sync with Quran.com: $e'));

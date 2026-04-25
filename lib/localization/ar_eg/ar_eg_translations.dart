@@ -154,21 +154,10 @@ final Map<String, String> arEg = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'النسخ السحابي',
-  'msg_sync_bidirectional_complete': 'اكتملت المزامنة ثنائية الاتجاه',
-  'msg_cloud_sync_error': 'خطأ في النسخ السحابي',
-
-  'lbl_sync_to_cloud': 'مزامنة إلى السحابة',
-  'lbl_sync_from_cloud': 'مزامنة من السحابة',
-  'lbl_sync_bidirectional': 'مزامنة ثنائية الاتجاه',
-  'lbl_sign_in': 'تسجيل الدخول',
-  'lbl_sign_out': 'تسجيل الخروج',
-  'lbl_not_signed_in': 'غير مسجّل الدخول',
-  'lbl_tap_to_sign_in': 'اضغط لتسجيل الدخول',
+  'lbl_last_synced': 'آخر مزامنة',
   'lbl_appearance': 'المظهر',
   'lbl_reading': 'القراءة',
   'lbl_about': 'حول',
-  'lbl_not_authenticated': 'غير مصادق',
-  'lbl_authenticated': 'مصادق',
 
   // Musali Teaser
   'musali_app_name': 'مُصَالي',
@@ -259,6 +248,12 @@ final Map<String, String> arEg = {
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'اختر نوع المصحف',
   'msg_mushaf_type_desc': 'اختر نمط الخط المفضل لديك',
+
+  // Mushaf Settings
+  'lbl_mushaf_type': 'نوع المصحف',
+  'lbl_clear_mushaf_cache': 'مسح ذاكرة صور المصحف',
+  'msg_clear_mushaf_cache_desc': 'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
+  'msg_cache_cleared': 'تم مسح ذاكرة الصور',
 
   // Statistics
   'stats_title': 'تقدمي',

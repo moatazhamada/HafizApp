@@ -261,37 +261,20 @@ class PrefUtils {
     }
   }
 
-  Future<void> setCloudSyncEnabled(bool enabled) async {
-    await _sharedPreferences!.setBool('cloud_sync_enabled', enabled);
-  }
-
-  bool getCloudSyncEnabled() {
+  DateTime? getQfLastSyncAt() {
     try {
-      return _sharedPreferences!.getBool('cloud_sync_enabled') ?? false;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get cloud sync enabled: $e',
-        feature: 'Preferences',
-      );
-      return false;
+      final s = _sharedPreferences?.getString('qf_last_sync_at');
+      return s != null ? DateTime.tryParse(s) : null;
+    } catch (_) {
+      return null;
     }
   }
 
-  Future<void> setCloudSyncDirection(String direction) async {
-    await _sharedPreferences!.setString('cloud_sync_direction', direction);
-  }
-
-  String getCloudSyncDirection() {
-    try {
-      return _sharedPreferences!.getString('cloud_sync_direction') ??
-          'bidirectional';
-    } catch (e) {
-      Logger.warning(
-        'Failed to get cloud sync direction: $e',
-        feature: 'Preferences',
-      );
-      return 'bidirectional';
-    }
+  Future<void> setQfLastSyncAt(DateTime dt) async {
+    await _sharedPreferences!.setString(
+      'qf_last_sync_at',
+      dt.toIso8601String(),
+    );
   }
 
   String? getMushafType() {

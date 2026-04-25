@@ -155,21 +155,10 @@ final Map<String, String> enUs = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'Cloud Sync',
-  'msg_sync_bidirectional_complete': 'Bidirectional sync complete',
-  'msg_cloud_sync_error': 'Cloud sync error',
-
-  'lbl_sync_to_cloud': 'Sync to Cloud',
-  'lbl_sync_from_cloud': 'Sync from Cloud',
-  'lbl_sync_bidirectional': 'Bidirectional Sync',
-  'lbl_sign_in': 'Sign In',
-  'lbl_sign_out': 'Sign Out',
-  'lbl_not_signed_in': 'Not signed in',
-  'lbl_tap_to_sign_in': 'Tap to sign in',
+  'lbl_last_synced': 'Last synced',
   'lbl_appearance': 'Appearance',
   'lbl_reading': 'Reading',
   'lbl_about': 'About',
-  'lbl_not_authenticated': 'Not authenticated',
-  'lbl_authenticated': 'Authenticated',
 
   // Musali Teaser
   'musali_app_name': 'Musali',
@@ -262,6 +251,12 @@ final Map<String, String> enUs = {
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'Choose Mushaf Type',
   'msg_mushaf_type_desc': 'Select your preferred Quran script style',
+
+  // Mushaf Settings
+  'lbl_mushaf_type': 'Mushaf Type',
+  'lbl_clear_mushaf_cache': 'Clear Mushaf Image Cache',
+  'msg_clear_mushaf_cache_desc': 'Remove cached page images to free space or fix display issues',
+  'msg_cache_cleared': 'Image cache cleared',
 
   // Statistics
   'stats_title': 'My Progress',
