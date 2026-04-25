@@ -15,6 +15,7 @@ import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
+import '../auth/bloc/qf_auth_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -460,32 +461,7 @@ class _HomeScreenState extends State<HomeScreen>
         }
       },
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  'app_name'.tr[0],
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'app_name'.tr,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildDrawerAuthHeader(context, theme),
         const Divider(height: 1),
         const SizedBox(height: 12),
         NavigationDrawerDestination(
@@ -535,6 +511,109 @@ class _HomeScreenState extends State<HomeScreen>
           label: Text('about_title'.tr),
         ),
       ],
+    );
+  }
+
+  Widget _buildDrawerAuthHeader(BuildContext context, ThemeData theme) {
+    return BlocBuilder<QfAuthBloc, QfAuthState>(
+      builder: (context, state) {
+        final Widget avatar;
+        final String title;
+        final String subtitle;
+
+        if (state is QfAuthAuthenticated) {
+          final initial = state.userId?.isNotEmpty == true
+              ? state.userId![0].toUpperCase()
+              : null;
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.primary,
+            child: initial != null
+                ? Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  )
+                : const Icon(Icons.account_circle, color: Colors.white, size: 24),
+          );
+          title = 'Quran.com account';
+          subtitle = state.userId ?? '';
+        } else if (state is QfAuthLoading || state is QfAuthInitial) {
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          );
+          title = 'lbl_not_signed_in'.tr;
+          subtitle = 'lbl_tap_to_sign_in'.tr;
+        } else {
+          // QfAuthUnauthenticated, QfAuthError, or any other state
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: Icon(
+              Icons.account_circle_outlined,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: 24,
+            ),
+          );
+          title = 'lbl_not_signed_in'.tr;
+          subtitle = 'lbl_tap_to_sign_in'.tr;
+        }
+
+        return InkWell(
+          onTap: () {
+            Navigator.of(context).pop();
+            NavigatorService.pushNamed(AppRoutes.cloudSyncPage);
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            child: Row(
+              children: [
+                avatar,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
