@@ -158,6 +158,20 @@ final Map<String, String> arEg = {
   'lbl_appearance': 'المظهر',
   'lbl_reading': 'القراءة',
   'lbl_about': 'حول',
+  'msg_qf_logged_in': 'تم تسجيل الدخول عبر Quran.com',
+  'msg_qf_not_logged_in': 'غير مسجل الدخول',
+  'msg_qf_login': 'تسجيل الدخول عبر Quran.com',
+  'lbl_sign_out': 'تسجيل الخروج',
+  'lbl_user': 'المستخدم',
+  'lbl_bookmarks_sync': 'مزامنة المفضلة مع Quran.com',
+  'msg_last_synced': 'آخر مزامنة: {time}',
+  'msg_login_to_sync': 'سجّل الدخول عبر Quran.com أعلاه لتفعيل المزامنة',
+  'msg_recitation_progress': 'تقدم التلاوة',
+  'msg_local_data_note':
+      'تقدم التلاوة وبيانات الحفظ محفوظة محلياً على هذا الجهاز. النسخ السحابي قريباً.',
+  'msg_sync_complete': 'تمت المزامنة — تم إرسال {pushed}، واستقبال {pulled}',
+  'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
+  'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
 
   // Musali Teaser
   'musali_app_name': 'مُصَالي',

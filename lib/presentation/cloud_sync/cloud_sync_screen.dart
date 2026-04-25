@@ -26,12 +26,12 @@ class _CloudSyncView extends StatelessWidget {
       body: BlocListener<CloudSyncBloc, CloudSyncState>(
         listener: (context, state) {
           if (state is QfSyncSuccess) {
+            final msg = 'msg_sync_complete'
+                .tr
+                .replaceAll('{pushed}', '${state.pushed}')
+                .replaceAll('{pulled}', '${state.pulled}');
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Sync complete — pushed ${state.pushed}, pulled ${state.pulled}',
-                ),
-              ),
+              SnackBar(content: Text(msg)),
             );
           } else if (state is QfSyncError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -63,6 +63,8 @@ class _AuthCard extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is QfAuthLoading || state is QfAuthInitial;
         final isAuth = state is QfAuthAuthenticated;
+        final errorMsg =
+            state is QfAuthError ? state.message : null;
 
         return Card(
           child: Padding(
@@ -73,8 +75,14 @@ class _AuthCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      isAuth ? Icons.verified_user : Icons.no_accounts,
-                      color: isAuth ? Colors.teal : Colors.grey,
+                      isAuth
+                          ? Icons.verified_user
+                          : (errorMsg != null
+                              ? Icons.error_outline
+                              : Icons.no_accounts),
+                      color: isAuth
+                          ? Colors.teal
+                          : (errorMsg != null ? Colors.redAccent : Colors.grey),
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -84,17 +92,25 @@ class _AuthCard extends StatelessWidget {
                         children: [
                           Text(
                             isAuth
-                                ? 'Logged in to Quran.com'
-                                : 'Not logged in',
+                                ? 'msg_qf_logged_in'.tr
+                                : 'msg_qf_not_logged_in'.tr,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           if (isAuth && state.userId != null)
                             Text(
-                              'User: ${state.userId}',
+                              '${'lbl_user'.tr}: ${state.userId}',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(color: Colors.grey),
+                            ),
+                          if (errorMsg != null)
+                            Text(
+                              errorMsg,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: Colors.redAccent),
                             ),
                         ],
                       ),
@@ -116,7 +132,7 @@ class _AuthCard extends StatelessWidget {
                             .read<QfAuthBloc>()
                             .add(QfAuthLogoutRequested()),
                     icon: const Icon(Icons.logout),
-                    label: const Text('Sign out'),
+                    label: Text('lbl_sign_out'.tr),
                   )
                 else
                   FilledButton.icon(
@@ -126,7 +142,7 @@ class _AuthCard extends StatelessWidget {
                             .read<QfAuthBloc>()
                             .add(QfAuthLoginRequested()),
                     icon: const Icon(Icons.login),
-                    label: const Text('Login with Quran.com'),
+                    label: Text('msg_qf_login'.tr),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
@@ -159,7 +175,7 @@ class _SyncSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Bookmarks',
+                  'lbl_bookmarks'.tr,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
@@ -179,7 +195,7 @@ class _SyncSection extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.sync),
-                  label: const Text('Sync bookmarks with Quran.com'),
+                  label: Text('lbl_bookmarks_sync'.tr),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.teal,
                     foregroundColor: Colors.white,
@@ -188,7 +204,9 @@ class _SyncSection extends StatelessWidget {
                 if (lastSync != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Last synced: ${_formatDate(lastSync)}',
+                    'msg_last_synced'
+                        .tr
+                        .replaceAll('{time}', _formatDate(lastSync)),
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
@@ -199,7 +217,7 @@ class _SyncSection extends StatelessWidget {
                 if (!isAuth) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Login to Quran.com above to enable sync',
+                    'msg_login_to_sync'.tr,
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
@@ -230,13 +248,11 @@ class _LocalDataNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    return Card(
       child: ListTile(
-        leading: Icon(Icons.info_outline, color: Colors.grey),
-        title: Text('Recitation progress'),
-        subtitle: Text(
-          'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
-        ),
+        leading: const Icon(Icons.info_outline, color: Colors.grey),
+        title: Text('msg_recitation_progress'.tr),
+        subtitle: Text('msg_local_data_note'.tr),
       ),
     );
   }

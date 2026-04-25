@@ -159,6 +159,20 @@ final Map<String, String> enUs = {
   'lbl_appearance': 'Appearance',
   'lbl_reading': 'Reading',
   'lbl_about': 'About',
+  'msg_qf_logged_in': 'Logged in to Quran.com',
+  'msg_qf_not_logged_in': 'Not logged in',
+  'msg_qf_login': 'Login with Quran.com',
+  'lbl_sign_out': 'Sign out',
+  'lbl_user': 'User',
+  'lbl_bookmarks_sync': 'Sync bookmarks with Quran.com',
+  'msg_last_synced': 'Last synced: {time}',
+  'msg_login_to_sync': 'Login to Quran.com above to enable sync',
+  'msg_recitation_progress': 'Recitation progress',
+  'msg_local_data_note':
+      'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
+  'msg_sync_complete': 'Sync complete — pushed {pushed}, pulled {pulled}',
+  'msg_login_cancelled': 'Login was cancelled or failed.',
+  'msg_sync_failed': 'Failed to sync with Quran.com',
 
   // Musali Teaser
   'musali_app_name': 'Musali',
