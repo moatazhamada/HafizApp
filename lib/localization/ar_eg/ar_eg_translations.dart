@@ -162,6 +162,11 @@ final Map<String, String> arEg = {
   'lbl_sync_bidirectional': 'مزامنة ثنائية الاتجاه',
   'lbl_sign_in': 'تسجيل الدخول',
   'lbl_sign_out': 'تسجيل الخروج',
+  'lbl_not_signed_in': 'غير مسجّل الدخول',
+  'lbl_tap_to_sign_in': 'اضغط لتسجيل الدخول',
+  'lbl_appearance': 'المظهر',
+  'lbl_reading': 'القراءة',
+  'lbl_about': 'حول',
   'lbl_not_authenticated': 'غير مصادق',
   'lbl_authenticated': 'مصادق',
 

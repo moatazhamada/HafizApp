@@ -10,15 +10,8 @@ class CloudSyncScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => di.sl<CloudSyncBloc>()..add(CheckAuthStatusEvent()),
-        ),
-        BlocProvider(
-          create: (_) => di.sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
-        ),
-      ],
+    return BlocProvider(
+      create: (_) => di.sl<CloudSyncBloc>()..add(CheckAuthStatusEvent()),
       child: const _CloudSyncView(),
     );
   }

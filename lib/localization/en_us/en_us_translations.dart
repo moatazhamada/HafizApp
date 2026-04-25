@@ -163,6 +163,11 @@ final Map<String, String> enUs = {
   'lbl_sync_bidirectional': 'Bidirectional Sync',
   'lbl_sign_in': 'Sign In',
   'lbl_sign_out': 'Sign Out',
+  'lbl_not_signed_in': 'Not signed in',
+  'lbl_tap_to_sign_in': 'Tap to sign in',
+  'lbl_appearance': 'Appearance',
+  'lbl_reading': 'Reading',
+  'lbl_about': 'About',
   'lbl_not_authenticated': 'Not authenticated',
   'lbl_authenticated': 'Authenticated',
 

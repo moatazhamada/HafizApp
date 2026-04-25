@@ -8,6 +8,7 @@ import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -97,6 +98,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider.value(
           value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
+        ),
+        BlocProvider.value(
+          value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
         ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
