@@ -236,9 +236,13 @@ class _SyncSection extends StatelessWidget {
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    if (diff.inMinutes < 1) return 'lbl_just_now'.tr;
+    if (diff.inHours < 1) {
+      return 'lbl_minutes_ago'.tr.replaceAll('{count}', '${diff.inMinutes}');
+    }
+    if (diff.inDays < 1) {
+      return 'lbl_hours_ago'.tr.replaceAll('{count}', '${diff.inHours}');
+    }
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }

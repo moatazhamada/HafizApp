@@ -127,8 +127,8 @@ class _AboutScreenState extends State<AboutScreen> {
                             } else {
                               await Clipboard.setData(ClipboardData(text: msg));
                               globalMessengerKey.currentState?.showSnackBar(
-                                const SnackBar(
-                                  content: Text('Feedback copied to clipboard'),
+                                SnackBar(
+                                  content: Text('msg_feedback_copied'.tr),
                                 ),
                               );
                             }

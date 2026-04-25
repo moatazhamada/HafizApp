@@ -114,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         color: Colors.redAccent.withValues(alpha: 0.9),
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          'No Internet Connection',
+                          'msg_no_internet_connection'.tr,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white,

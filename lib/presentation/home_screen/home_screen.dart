@@ -243,14 +243,14 @@ class _HomeScreenState extends State<HomeScreen>
           leading: Builder(
             builder: (scaffoldContext) => Semantics(
               button: true,
-              label: 'Open navigation menu',
+              label: 'lbl_open_nav_menu'.tr,
               child: IconButton(
                 icon: Icon(
                   Icons.menu,
                   color: isDarkMode ? Colors.white : theme.colorScheme.primary,
                 ),
                 onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-                tooltip: 'Open navigation menu',
+                tooltip: 'lbl_open_nav_menu'.tr,
               ),
             ),
           ),
@@ -539,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen>
                   )
                 : const Icon(Icons.account_circle, color: Colors.white, size: 24),
           );
-          title = 'Quran.com account';
+          title = 'msg_qf_account'.tr;
           subtitle = state.userId ?? '';
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(

@@ -325,4 +325,39 @@ final Map<String, String> arEg = {
   'changelog_3_0_0_6': 'تتبع الحفظ والختمة.',
   'changelog_3_0_0_7': 'لوحة الإحصائيات.',
   'changelog_3_0_0_8': 'التمرير التلقائي مع سرعة قابلة للتعديل.',
+
+  // Relative time
+  'lbl_just_now': 'الآن',
+  'lbl_minutes_ago': 'منذ {count} دقيقة',
+  'lbl_hours_ago': 'منذ {count} ساعة',
+
+  // QF Account
+  'msg_qf_account': 'حساب Quran.com',
+
+  // Navigation
+  'lbl_open_nav_menu': 'فتح القائمة',
+
+  // About
+  'msg_feedback_copied': 'تم نسخ الملاحظة للحافظة',
+
+  // Mushaf type labels (settings + onboarding)
+  'lbl_mushaf_madani': 'مدني (حفص)',
+  'lbl_mushaf_egyptian': 'مصري (حفص)',
+  'lbl_mushaf_indopak': 'هندي/باكستاني (نستعليق)',
+  'lbl_mushaf_warsh': 'ورش (شمال أفريقيا)',
+  'lbl_mushaf_madani_desc': 'حفص من المدينة المنورة',
+  'lbl_mushaf_egyptian_desc': 'حفص من مصر',
+  'lbl_mushaf_indopak_desc': 'خط نستعليق',
+  'lbl_mushaf_warsh_desc': 'ورش من شمال أفريقيا',
+
+  // Connectivity
+  'msg_no_internet_connection': 'لا يوجد اتصال بالإنترنت',
+
+  // Verse Study
+  'lbl_verse_study_title': 'دراسة الآية: {key}',
+  'lbl_retry': 'إعادة المحاولة',
+  'lbl_arabic': 'العربية',
+  'lbl_translation': 'الترجمة',
+  'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
+  'lbl_study': 'دراسة',
 };
