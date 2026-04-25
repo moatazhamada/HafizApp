@@ -302,55 +302,53 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, state) {
               return SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
+                child: CustomScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      // Offline indicator banner
-                      if (_isOffline)
-                        Semantics(
-                          liveRegion: true,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            color: Colors.orange.shade700,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.wifi_off,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'msg_offline'.tr,
-                                  style: const TextStyle(
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        // Offline indicator banner
+                        if (_isOffline)
+                          Semantics(
+                            liveRegion: true,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              color: Colors.orange.shade700,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.wifi_off,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w500,
+                                    size: 18,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'msg_offline'.tr,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
 
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        _buildCardLastRead(state.surah, theme),
-
-                      Semantics(
-                        label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
-                          key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
+                        if (state is UpdateLastReadSurah && state.surah != null)
+                          _buildCardLastRead(state.surah, theme),
+                      ]),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
                             final surah = QuranIndex.quranSurahs[index];
 
                             // Simple staggered animation logic
@@ -405,10 +403,11 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             );
                           },
+                          childCount: QuranIndex.quranSurahs.length,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },

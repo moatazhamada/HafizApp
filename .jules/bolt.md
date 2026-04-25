@@ -1,0 +1,3 @@
+## 2025-02-28 - [List Rendering in SingleChildScrollView Anti-Pattern]
+**Learning:** Using `ListView.builder` with `shrinkWrap: true` inside a `SingleChildScrollView` breaks lazy-loading list virtualization, leading to O(N) layout times which degrade performance significantly as the list scales. This anti-pattern is especially prevalent in Flutter, where `shrinkWrap` forces the list to measure its complete bounds.
+**Action:** Always replace this structure with a `CustomScrollView` and use `SliverList.builder` (and `SliverToBoxAdapter` for any surrounding content) to ensure proper list virtualization and O(1) rendering time per visible item.
