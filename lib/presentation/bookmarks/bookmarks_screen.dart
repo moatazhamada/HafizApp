@@ -145,7 +145,6 @@ class BookmarksScreen extends StatelessWidget {
                               arguments: {
                                 'surah': surah,
                                 'verseIndex': bookmark.verseNumber - 1,
-                                'resume': true,
                               },
                             ).then((_) {
                               // Refresh list when returning from Surah page

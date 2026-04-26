@@ -360,4 +360,27 @@ final Map<String, String> arEg = {
   'lbl_translation': 'الترجمة',
   'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
   'lbl_study': 'دراسة',
+
+  // Recitation feedback
+  'lbl_keep_practicing': 'واصل التدريب',
+  'msg_keep_practicing': 'كل محاولة تُحسب. حاول مجدداً لتحسين نتيجتك!',
+
+  // Mushaf rendering modes
+  'lbl_mushaf_rendering': 'عرض المصحف',
+  'lbl_render_text': 'نص',
+  'msg_render_text_desc': 'عرض نص القرآن من الأصول المحلية (يعمل بدون إنترنت)',
+  'lbl_render_ayah_images': 'صور الآيات',
+  'msg_render_ayah_images_desc': 'تحميل صور الآيات من الشبكة (يتطلب إنترنت)',
+  'lbl_render_glyph': 'رسم QF للرسم البياني',
+  'msg_render_glyph_desc': 'استخدام بيانات code_v2 من مؤسسة القرآن لعرض الصفحات',
+
+  // Delete My Data
+  'lbl_delete_my_data': 'حذف بياناتي',
+  'lbl_delete_data': 'حذف',
+  'msg_delete_data_confirm': 'سيؤدي هذا إلى إلغاء صلاحية الوصول إلى مؤسسة القرآن، وإزالة إشاراتك المرجعية المتزامنة، وتسجيل الخروج. لا يمكن التراجع عن هذا.',
+
+  // General
+  'msg_operation_failed': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+  'lbl_loading_app': 'جاري تحميل حافظ...',
+  'lbl_qf_attribution': 'مؤسسة القرآن — code_v2',
 };

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
 
 import '../../core/i18n/locale_controller.dart';
 import '../../core/qiraat/qiraat_models.dart';
@@ -33,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _orientationMode;
   late String _defaultQuranView;
   late String _mushafType;
+  late String _mushafRenderingMode;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -56,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _orientationMode = PrefUtils().getOrientationMode();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
+    _mushafRenderingMode = PrefUtils().getMushafRenderingMode();
     _loadRecitationResources();
   }
 
@@ -106,6 +109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildDefaultViewTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildMushafTypeTile(),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildMushafRenderingModeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildClearMushafCacheTile(),
           ]),
@@ -486,6 +491,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() => _mushafType = newType);
         }
       },
+    );
+  }
+
+  Widget _buildMushafRenderingModeTile() {
+    return ListTile(
+      leading: const Icon(Icons.image_outlined),
+      title: Text('lbl_mushaf_rendering'.tr),
+      subtitle: Text(MushafRenderingConfig.labelKey(_mushafRenderingMode).tr),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _selectRenderingMode(),
+    );
+  }
+
+  void _selectRenderingMode() {
+    final modes = MushafRenderingConfig.modes;
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text('lbl_mushaf_rendering'.tr),
+        children: modes.map((mode) {
+          return SimpleDialogOption(
+            onPressed: () {
+              PrefUtils().setMushafRenderingMode(mode);
+              setState(() => _mushafRenderingMode = mode);
+              Navigator.pop(ctx);
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  MushafRenderingConfig.labelKey(mode).tr,
+                  style: TextStyle(
+                    fontWeight: mode == _mushafRenderingMode
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  MushafRenderingConfig.descriptionKey(mode).tr,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 

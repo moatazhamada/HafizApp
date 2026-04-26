@@ -26,7 +26,21 @@ class KhatmahScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is KhatmahError) {
-            return Center(child: Text(state.message));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(state.message.tr),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                    onPressed: () => context
+                        .read<KhatmahBloc>()
+                        .add(LoadKhatmahDashboard()),
+                    child: Text('lbl_retry'.tr),
+                  ),
+                ],
+              ),
+            );
           }
           if (state is KhatmahDashboardLoaded) {
             return RefreshIndicator(

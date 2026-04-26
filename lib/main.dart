@@ -236,14 +236,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
         crashlytics: crashlytics,
       );
 
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('recitation_sessions');
-      await Hive.openBox('memorization_progress');
-      await Hive.openBox('reading_logs');
-      await Hive.openBox('reading_goal');
+      // Additional boxes not opened in _init()
       await Hive.openBox('qiraat_cache');
       await Hive.openBox('audio_cache');
 
@@ -377,7 +370,7 @@ class _SplashScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Loading Hafiz...',
+                'lbl_loading_app'.tr,
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: isDark ? Colors.white70 : Colors.black54,

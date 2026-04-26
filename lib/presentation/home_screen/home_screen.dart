@@ -785,7 +785,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 arguments: {
                                   'surah': lastReadSurah,
                                   'offset': ?offset,
-                                  'resume': true,
                                   'verseIndex': ?lastVerseIndex,
                                 },
                               );

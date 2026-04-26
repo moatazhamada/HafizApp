@@ -472,7 +472,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     onPressed: () => _navigateToSurah(surah!.id - 1),
                     icon: const Icon(Icons.skip_next, size: 18),
                     label: Text(
-                      isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish,
+                      isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish,
                       textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
@@ -500,7 +500,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     onPressed: () => _navigateToSurah(surah!.id + 1),
                     icon: const Icon(Icons.skip_previous, size: 18),
                     label: Text(
-                      isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish,
+                      isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish,
                       textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
@@ -714,9 +714,26 @@ class _SurahScreenState extends State<SurahScreen> {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is FailureSurahState) {
                     return Center(
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Text(state.errorMessage.tr),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              state.errorMessage.tr,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () => context.read<SurahBloc>().add(
+                              LoadSurahEvent(surahId: '${surah!.id}'),
+                            ),
+                            icon: const Icon(Icons.refresh),
+                            label: Text('lbl_retry'.tr),
+                          ),
+                        ],
                       ),
                     );
                   } else {
@@ -1375,10 +1392,45 @@ class _SurahScreenState extends State<SurahScreen> {
           ],
         ),
       );
-    } else {
-      // Maybe just close quietly or show a "Good effort"
-      _sessionCorrectCount = 0;
-      _sessionTotalCount = 0;
+    } else if (mounted) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('lbl_keep_practicing'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ExcludeSemantics(
+                child: Icon(Icons.fitness_center, color: Colors.orange, size: 50),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'msg_session_score'.tr.replaceAll(
+                  '{score}',
+                  percentage.toStringAsFixed(1),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'msg_keep_practicing'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _sessionCorrectCount = 0;
+                _sessionTotalCount = 0;
+                Navigator.pop(dialogContext);
+              },
+              child: Text('lbl_close'.tr),
+            ),
+          ],
+        ),
+      );
     }
   }
 

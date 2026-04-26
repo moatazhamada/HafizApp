@@ -121,10 +121,40 @@ See `android/fastlane/README.md` for detailed documentation.
 
 ---
 
+## 🔌 Quran Foundation API Usage
+
+Hafiz App integrates with the **Quran Foundation Developer APIs** (api-docs.quran.foundation) for both content delivery and user data synchronization.
+
+### Content APIs
+
+| API | Endpoint | Usage |
+|-----|----------|-------|
+| **Quran Verses** | `api.quran.com/api/v4/verses/by_page/{page}` | Mushaf page rendering — fetches exact verse mappings, glyph codes (`code_v1`, `code_v2`), and line numbers (`line_v2`) for all 604 pages |
+| **Translations** | `api.quran.com/api/v4/quran/translations/{id}` | Verse-by-verse translation display in study mode |
+| **Tafsir** | `api.quran.com/api/v4/tafsirs/{id}/by_ayah/{key}` | Ibn Kathir and other tafsir per-ayah in study mode |
+| **Audio Recitations** | `api.quran.com/api/v4/resources/recitations` + `chapter_recitations` | Reciter listing and audio playback URLs |
+
+### User APIs (requires OAuth2 authentication)
+
+| API | Endpoint | Usage |
+|-----|----------|-------|
+| **Bookmarks** | `auth/v1/bookmarks` (GET/POST/DELETE) | Bidirectional sync — pushes local bookmarks to QF, pulls remote bookmarks to device |
+| **Collections** | `auth/v1/collections` (GET) | Reads user's bookmark collections from Quran Foundation account |
+
+### Authentication
+
+- **OAuth2/OpenID Connect** with PKCE via `flutter_appauth`
+- Client ID: `5cd47ccf-93e5-47d0-83b5-9bf538bb5759`
+- Redirect URI: `hafizapp://oauth/callback`
+- Scopes: `openid`, `offline_access`, `user`, `collection`
+- Token revocation and "Delete My Data" supported per QF Developer Terms
+
+---
+
 ## 🚧 Feature Status
 
 ### ✅ Implemented
-- **Mushaf View** — 604-page horizontal RTL PageView with jump-to-page, surah info overlay
+- **Mushaf View** — 604-page horizontal RTL PageView with 3 rendering modes (text, ayah images, QF glyph), jump-to-page, surah info overlay
 - **Audio Player** — Verse-by-verse playback (Alafasy), speed control (0.5x-2x), sleep timer, loop
 - **Verse Sharing** — Share/copy any verse with attribution via share_plus
 - **Auto-scroll** — Configurable speed (0.25x–3.0x) scroll in surah view (long-press for speed picker)
@@ -137,7 +167,7 @@ See `android/fastlane/README.md` for detailed documentation.
 - **Navigation Drawer** — Full side menu replacing popup menu
 - **Mushaf Type Onboarding** — First-run selector (Madani/Egyptian/Indo-Pak/Warsh)
 - **Settings** — Font size, orientation, default view, theme, language, recitation coach
-- **Cloud Sync** — Firebase-based bookmark/settings sync
+- **Cloud Sync** — Quran Foundation OAuth2 bookmark/settings sync
 - **Search** — Full-text verse search
 - **Voice Verification** — Per-verse recitation checking (local whisper or API)
 - **RTL Text Direction** — All Quran/Arabic text always renders RTL regardless of app locale; surah navigation arrows follow RTL reading direction
@@ -145,7 +175,6 @@ See `android/fastlane/README.md` for detailed documentation.
 ### 🔜 Planned / In Progress
 - **Deep Linking** — `hafiz://verse/{surahId}/{verseNum}` URL scheme
 - **Verse Image Sharing** — Beautiful image generation for social media
-- **Full Quran Mushaf Pages** — Actual page images/text rendering (currently shows surah name placeholder)
 - **Background Audio** — System notification controls during playback
 - **Reading Navigation Mode** — Page-by-page vs continuous scroll (setting saved but not consumed)
 - **Home Screen Widgets** — Daily verse and progress widgets

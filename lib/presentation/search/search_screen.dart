@@ -159,7 +159,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                 arguments: {
                                   'surah': surah,
                                   'verseIndex': verse.verseNumber - 1,
-                                  'resume': true,
                                 },
                               );
                             },

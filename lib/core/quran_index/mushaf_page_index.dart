@@ -10,14 +10,14 @@ class MushafPageRange {
   });
 }
 
-class MushafPageData {
+class MushafPageInfo {
   final int surahId;
   final String surahNameArabic;
   final String surahNameEnglish;
   final MushafPageRange? juzStart;
   final MushafPageRange? range;
 
-  const MushafPageData({
+  const MushafPageInfo({
     required this.surahId,
     required this.surahNameArabic,
     required this.surahNameEnglish,

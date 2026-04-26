@@ -97,7 +97,12 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: isSending ? null : () => Navigator.of(ctx).pop(),
+                onPressed: isSending
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        controller.dispose();
+                      },
                 child: Text('lbl_cancel'.tr),
               ),
               FilledButton(
@@ -120,6 +125,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
                           if (context.mounted) {
                             Navigator.of(ctx).pop();
+                            controller.dispose();
                             if (launched) {
                               globalMessengerKey.currentState?.showSnackBar(
                                 SnackBar(content: Text('about_feedback_sent'.tr)),

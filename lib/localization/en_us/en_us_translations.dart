@@ -366,4 +366,27 @@ final Map<String, String> enUs = {
   'lbl_translation': 'Translation',
   'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
   'lbl_study': 'Study',
+
+  // Recitation feedback
+  'lbl_keep_practicing': 'Keep Practicing',
+  'msg_keep_practicing': 'Every effort counts. Try again to improve your score!',
+
+  // Mushaf rendering modes
+  'lbl_mushaf_rendering': 'Mushaf Rendering',
+  'lbl_render_text': 'Text',
+  'msg_render_text_desc': 'Render Quran text from local assets (offline)',
+  'lbl_render_ayah_images': 'Ayah Images',
+  'msg_render_ayah_images_desc': 'Load ayah-level images from CDN (requires internet)',
+  'lbl_render_glyph': 'QF Glyph Rendering',
+  'msg_render_glyph_desc': 'Use Quran Foundation code_v2 glyph data for page rendering',
+
+  // Delete My Data
+  'lbl_delete_my_data': 'Delete My Data',
+  'lbl_delete_data': 'Delete',
+  'msg_delete_data_confirm': 'This will revoke your Quran Foundation access, remove your synced bookmarks, and sign you out. This cannot be undone.',
+
+  // General
+  'msg_operation_failed': 'Something went wrong. Please try again.',
+  'lbl_loading_app': 'Loading Hafiz...',
+  'lbl_qf_attribution': 'Quran Foundation — code_v2',
 };

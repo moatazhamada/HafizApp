@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -12,6 +13,7 @@ abstract class QfAuthRemoteDataSource {
   Future<String?> getUserId();
   Future<bool> refreshToken();
   Future<bool> isAuthenticated();
+  Future<void> revokeAndDeleteData();
 }
 
 class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
@@ -34,7 +36,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
   @override
   Future<bool> login() async {
     try {
-      final AuthorizationTokenResponse? result =
+      final AuthorizationTokenResponse result =
           await _appAuth.authorizeAndExchangeCode(
         AuthorizationTokenRequest(
           QfApiConfig.clientId,
@@ -47,8 +49,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
         ),
       );
 
-      if (result != null && result.accessToken != null) {
-        await _saveTokens(result);
+      if (result.accessToken != null) {        await _saveTokens(result);
         Logger.info('Successfully logged in via QF OAuth', feature: 'QfAuth');
         return true;
       }
@@ -97,7 +98,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
       final refreshToken = await getRefreshToken();
       if (refreshToken == null) return false;
 
-      final TokenResponse? result = await _appAuth.token(
+      final TokenResponse result = await _appAuth.token(
         TokenRequest(
           QfApiConfig.clientId,
           QfApiConfig.redirectUri,
@@ -110,8 +111,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
         ),
       );
 
-      if (result != null && result.accessToken != null) {
-        await _saveTokens(result);
+      if (result.accessToken != null) {        await _saveTokens(result);
         Logger.info('Successfully refreshed QF tokens', feature: 'QfAuth');
         return true;
       }
@@ -138,6 +138,31 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
       return await refreshToken();
     }
     return true;
+  }
+
+  @override
+  Future<void> revokeAndDeleteData() async {
+    // Attempt to revoke the refresh token with QF's revocation endpoint
+    try {
+      final token = await getRefreshToken();
+      if (token != null) {
+        await Dio().post(
+          '${_config.authBaseUrl}/oauth2/revoke',
+          data: 'token=$token&client_id=${QfApiConfig.clientId}',
+          options: Options(
+            contentType: Headers.formUrlEncodedContentType,
+          ),
+        );
+        Logger.info('QF token revoked', feature: 'QfAuth');
+      }
+    } catch (e) {
+      Logger.warning('Token revocation failed (continuing with local cleanup): $e',
+          feature: 'QfAuth');
+    }
+
+    // Clear all local tokens regardless of revocation result
+    await logout();
+    Logger.info('All QF data deleted', feature: 'QfAuth');
   }
 
   Future<void> _saveTokens(TokenResponse response) async {

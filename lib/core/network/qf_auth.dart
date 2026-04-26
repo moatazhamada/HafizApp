@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/api_config.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class QfAuthService {
   final Dio _dio; // a lightweight Dio for token calls
@@ -98,8 +99,8 @@ class QfAuthInterceptor extends Interceptor {
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
-      } catch (_) {
-        // Proceed without token if retrieval failed; server may still accept
+      } catch (e) {
+        Logger.warning('QF auth token injection failed: $e', feature: 'Auth');
       }
     }
     super.onRequest(options, handler);
@@ -115,7 +116,9 @@ class QfAuthInterceptor extends Interceptor {
           final clone = await _retryWithToken(err.requestOptions, token);
           return handler.resolve(clone);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('QF auth 401 retry failed: $e', feature: 'Auth');
+      }
     }
     super.onError(err, handler);
   }
