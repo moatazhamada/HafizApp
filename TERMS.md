@@ -24,7 +24,7 @@ If you choose to sign in using your Quran Foundation (Quran.com) account, your u
 
 ## 6. User Data
 
-User data (bookmarks, memorization progress, session history) is stored locally on your device. If you enable cloud sync, data is synced via Firebase or your Quran Foundation account. We do not sell or share your personal data with third parties. See our [Privacy Policy](https://hafiz-app-3e264.web.app/) for details.
+User data (bookmarks, memorization progress, session history) is stored locally on your device. If you enable cloud sync, data is synced via your Quran Foundation account using OAuth2. We do not sell or share your personal data with third parties. See our Privacy Policy for details.
 
 ## 7. Open Source
 

@@ -124,7 +124,7 @@ class _AuthCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                if (isAuth)
+                if (isAuth) ...[
                   OutlinedButton.icon(
                     onPressed: isLoading
                         ? null
@@ -133,8 +133,45 @@ class _AuthCard extends StatelessWidget {
                             .add(QfAuthLogoutRequested()),
                     icon: const Icon(Icons.logout),
                     label: Text('lbl_sign_out'.tr),
-                  )
-                else
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('lbl_delete_my_data'.tr),
+                                content: Text('msg_delete_data_confirm'.tr),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: Text('lbl_cancel'.tr),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      context.read<QfAuthBloc>().add(
+                                          QfAuthDeleteDataRequested());
+                                    },
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          Theme.of(context).colorScheme.error,
+                                    ),
+                                    child: Text('lbl_delete_data'.tr),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                    icon: Icon(Icons.delete_forever,
+                        color: Theme.of(context).colorScheme.error),
+                    label: Text('lbl_delete_my_data'.tr,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
+                  ),
+                ] else
                   FilledButton.icon(
                     onPressed: isLoading
                         ? null

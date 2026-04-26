@@ -27,7 +27,9 @@ class QfApiConfig {
 
   final bool isProduction;
 
-  const QfApiConfig({this.isProduction = false});
+  /// Defaults to [isProduction = true] for release builds.
+  /// Set [isProduction = false] to hit prelive endpoints during development.
+  const QfApiConfig({this.isProduction = true});
 
   String get authBaseUrl =>
       isProduction ? productionAuthBaseUrl : preliveAuthBaseUrl;

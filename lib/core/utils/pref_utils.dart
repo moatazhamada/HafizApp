@@ -357,4 +357,17 @@ class PrefUtils {
   Future<void> setReadingNavMode(String mode) async {
     await _sharedPreferences!.setString('readingNavMode', mode);
   }
+
+  // Mushaf Rendering Mode: 'text', 'ayah_images', 'glyph'
+  String getMushafRenderingMode() {
+    try {
+      return _sharedPreferences?.getString('mushafRenderingMode') ?? 'text';
+    } catch (e) {
+      return 'text';
+    }
+  }
+
+  Future<void> setMushafRenderingMode(String mode) async {
+    await _sharedPreferences!.setString('mushafRenderingMode', mode);
+  }
 }

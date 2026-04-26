@@ -39,6 +39,7 @@ import 'package:hafiz_app/data/repository/qrc/qrc_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/qrc/qrc_repository.dart';
 import 'package:hafiz_app/data/datasource/tafsir/qf_tafsir_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
 
 import 'core/network/network_manager.dart';
@@ -175,6 +176,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<QfVerseStudyRemoteDataSource>(
     () => QfVerseStudyRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<QfMushafPageDataSource>(
+    () => QfMushafPageDataSourceImpl(dio: sl()),
   );
 
   sl.registerLazySingleton<QrcRepository>(

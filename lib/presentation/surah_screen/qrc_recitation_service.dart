@@ -182,7 +182,11 @@ class QrcRecitationService {
 
   void _handleRepositoryMessage(dynamic message) {
     if (message is QrcWsClosedEvent) {
-      _events.add(QrcStatusEvent('closed'));
+      if (message.wasUnexpected) {
+        _events.add(QrcStatusEvent('reconnecting'));
+      } else {
+        _events.add(QrcStatusEvent('closed'));
+      }
       return;
     }
 

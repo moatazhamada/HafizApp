@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
@@ -25,13 +27,14 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   double _speed = 1.0;
   String? _errorMessage;
   int _currentVerse = -1;
+  StreamSubscription<int>? _verseSub;
 
   static const List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   @override
   void initState() {
     super.initState();
-    _handler.currentVerseStream.listen((verseIndex) {
+    _verseSub = _handler.currentVerseStream.listen((verseIndex) {
       if (mounted) {
         setState(() {
           _currentVerse = verseIndex;
@@ -42,6 +45,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   void dispose() {
+    _verseSub?.cancel();
     _handler.stop();
     super.dispose();
   }
