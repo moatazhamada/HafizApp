@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility and Tooltips on IconButtons
+**Learning:** For users relying on screen readers or those who need additional context via hover/long-press interactions, `IconButton`s without text labels can be ambiguous. Wrapping them in `Semantics` is good, but mapping that same semantic label to the `tooltip` property natively on the `IconButton` provides dual benefit: screen readers announce it, and visual users see it on hover or long press. This is a common pattern in the app that needed enforcement.
+**Action:** Always map localized `Semantics` labels to the corresponding `tooltip` property on `IconButton` widgets when they only contain an icon, ensuring an inclusive user experience.
