@@ -383,4 +383,8 @@ final Map<String, String> arEg = {
   'msg_operation_failed': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
   'lbl_loading_app': 'جاري تحميل حافظ...',
   'lbl_qf_attribution': 'مؤسسة القرآن — code_v2',
+
+  // Voice Verification
+  'msg_custom_asr_empty': 'لم يتم تكوين نقطة نهاية ASR المخصصة. يرجى تعيينها في الإعدادات.',
+  'lbl_tajweed': 'التجويد',
 };

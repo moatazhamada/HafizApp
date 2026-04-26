@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 
 import 'core/app_export.dart';
+import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -223,6 +224,10 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
     if (mounted) {
       setState(() => _ready = true);
+      // Trigger in-app review prompt after a brief delay
+      Future.delayed(const Duration(seconds: 2), () {
+        AppReviewService.maybeRequestReview();
+      });
     }
   }
 
