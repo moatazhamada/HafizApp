@@ -25,6 +25,13 @@ class PrefUtils {
     await _sharedPreferences!.clear();
   }
 
+  // Generic int access
+  Future<void> setInt(String key, int value) async {
+    await _sharedPreferences!.setInt(key, value);
+  }
+
+  int? getInt(String key) => _sharedPreferences?.getInt(key);
+
   // Theme Mode: 'system', 'light', 'dark'
   Future<void> setThemeMode(String mode) async {
     await _sharedPreferences!.setString('themeMode', mode);

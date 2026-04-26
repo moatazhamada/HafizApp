@@ -389,4 +389,8 @@ final Map<String, String> enUs = {
   'msg_operation_failed': 'Something went wrong. Please try again.',
   'lbl_loading_app': 'Loading Hafiz...',
   'lbl_qf_attribution': 'Quran Foundation — code_v2',
+
+  // Voice Verification
+  'msg_custom_asr_empty': 'Custom ASR endpoint is not configured. Please set it in Settings.',
+  'lbl_tajweed': 'Tajweed',
 };
