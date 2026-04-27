@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "003-qf-api-depth-expansion",
+  "branch": "003-qf-api-depth-expansion",
+  "selectedAt": "2026-04-27T22:10:20.808Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}

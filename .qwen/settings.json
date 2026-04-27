@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(cdn.islamic.network)"
+      "WebFetch(cdn.islamic.network)",
+      "Read(//Users/mm/Library/Application Support/Code/User/globalStorage/alfredoperez.speckit-companion/spec-editor/1777325298389-qa0oxyv/**)",
+      "Bash(git checkout *)"
     ]
   },
   "$version": 3

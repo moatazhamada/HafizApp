@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "004-ux-ui-consistency-fix",
+  "branch": "004-ux-ui-consistency-fix",
+  "selectedAt": "2026-04-28T01:13:00.000Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}
