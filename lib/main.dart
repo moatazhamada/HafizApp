@@ -28,8 +28,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'core/services/remote_config_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
 
-var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
-
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
@@ -115,7 +113,6 @@ class MyApp extends StatelessWidget {
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
-              scaffoldMessengerKey: globalMessengerKey,
               navigatorObservers: [sl<AnalyticsRouteObserver>()],
               debugShowCheckedModeBanner: false,
               localizationsDelegates: const [

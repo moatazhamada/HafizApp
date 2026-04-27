@@ -56,9 +56,7 @@ class _VerseStudyView extends StatelessWidget {
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () => context.read<VerseStudyBloc>().add(
-                      LoadVerseStudy(
-                        context.read<VerseStudyBloc>().state.toString(),
-                      ),
+                      LoadVerseStudy(state.verseKey!),
                     ),
                     icon: const Icon(Icons.refresh),
                     label: Text('lbl_retry'.tr),

@@ -1,0 +1,15 @@
+{
+  "workflow": "speckit",
+  "specName": "001-complete-audit-remediation",
+  "branch": "001-complete-audit-remediation",
+  "selectedAt": "2026-04-27T21:35:30.801Z",
+  "currentStep": "specify",
+  "status": "superseded",
+  "stepHistory": {
+    "specify": {
+      "startedAt": "2026-04-27T21:47:03.908Z",
+      "completedAt": "2026-04-28T01:00:00.000Z"
+    }
+  },
+  "transitions": []
+}

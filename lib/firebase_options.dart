@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '854811938553',
     projectId: 'hafiz-app-3e264',
     storageBucket: 'hafiz-app-3e264.appspot.com',
-    iosBundleId: 'com.learn.flutter.learningFlutter',
+    iosBundleId: 'com.hafiz.app.hafizapp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '854811938553',
     projectId: 'hafiz-app-3e264',
     storageBucket: 'hafiz-app-3e264.appspot.com',
-    iosBundleId: 'com.learn.flutter.learningFlutter.RunnerTests',
+    iosBundleId: 'com.hafiz.app.hafizapp.RunnerTests',
   );
 }

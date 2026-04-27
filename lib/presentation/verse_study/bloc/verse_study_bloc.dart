@@ -8,7 +8,8 @@ part 'verse_study_state.dart';
 class VerseStudyBloc extends Bloc<VerseStudyEvent, VerseStudyState> {
   final QfVerseStudyRemoteDataSource dataSource;
 
-  VerseStudyBloc({required this.dataSource}) : super(VerseStudyInitial()) {
+  VerseStudyBloc({required this.dataSource})
+    : super(const VerseStudyInitial()) {
     on<LoadVerseStudy>(_onLoadVerseStudy);
   }
 
@@ -16,7 +17,7 @@ class VerseStudyBloc extends Bloc<VerseStudyEvent, VerseStudyState> {
     LoadVerseStudy event,
     Emitter<VerseStudyState> emit,
   ) async {
-    emit(VerseStudyLoading());
+    emit(VerseStudyLoading(verseKey: event.verseKey));
     try {
       final data = await dataSource.getVerseStudy(event.verseKey);
       emit(
@@ -24,10 +25,11 @@ class VerseStudyBloc extends Bloc<VerseStudyEvent, VerseStudyState> {
           arabicText: data.arabicText,
           translation: data.translation,
           tafsir: data.tafsir,
+          verseKey: event.verseKey,
         ),
       );
     } catch (e) {
-      emit(VerseStudyError(e.toString()));
+      emit(VerseStudyError(message: e.toString(), verseKey: event.verseKey));
     }
   }
 }
