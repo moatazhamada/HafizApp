@@ -21,6 +21,7 @@ class BookmarksScreen extends StatelessWidget {
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => NavigatorService.goBack(),
+            tooltip: 'lbl_back'.tr,
           ),
         ),
         centerTitle: true,
@@ -144,7 +145,6 @@ class BookmarksScreen extends StatelessWidget {
                               arguments: {
                                 'surah': surah,
                                 'verseIndex': bookmark.verseNumber - 1,
-                                'resume': true,
                               },
                             ).then((_) {
                               // Refresh list when returning from Surah page
@@ -223,6 +223,7 @@ class BookmarksScreen extends StatelessWidget {
                                         ),
                                       );
                                     },
+                                    tooltip: 'lbl_delete'.tr,
                                   ),
                                 ),
                               ],

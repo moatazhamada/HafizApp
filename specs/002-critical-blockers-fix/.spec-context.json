@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "002-critical-blockers-fix",
+  "branch": "002-critical-blockers-fix",
+  "selectedAt": "2026-04-27T22:10:43.775Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}

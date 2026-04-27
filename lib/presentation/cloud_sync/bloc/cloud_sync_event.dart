@@ -7,16 +7,4 @@ abstract class CloudSyncEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class CheckAuthStatusEvent extends CloudSyncEvent {}
-
-class SignInEvent extends CloudSyncEvent {}
-
-class SignOutEvent extends CloudSyncEvent {}
-
-class SyncToCloudEvent extends CloudSyncEvent {}
-
-class SyncFromCloudEvent extends CloudSyncEvent {}
-
-class SyncBidirectionalEvent extends CloudSyncEvent {}
-
 class SyncWithQfEvent extends CloudSyncEvent {}

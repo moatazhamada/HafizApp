@@ -19,7 +19,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
   ) async {
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
-    result.fold((failure) => emit(MemorizationError(failure.toString())), (
+    result.fold((failure) => emit(const MemorizationError('msg_operation_failed')), (
       progress,
     ) {
       final now = DateTime.now();
@@ -57,8 +57,11 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     RecordReview event,
     Emitter<MemorizationState> emit,
   ) async {
-    await repository.recordReview(event.surahId, event.score);
-    add(LoadMemorizationProgress());
+    final result = await repository.recordReview(event.surahId, event.score);
+    result.fold(
+      (failure) => emit(const MemorizationError('msg_operation_failed')),
+      (_) => add(LoadMemorizationProgress()),
+    );
   }
 
   Future<void> _onLoadDueReviews(

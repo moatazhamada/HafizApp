@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
@@ -14,6 +15,7 @@ import '../../widgets/custom_app_bar.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
+import '../auth/bloc/qf_auth_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -241,14 +243,14 @@ class _HomeScreenState extends State<HomeScreen>
           leading: Builder(
             builder: (scaffoldContext) => Semantics(
               button: true,
-              label: 'Open navigation menu',
+              label: 'lbl_open_nav_menu'.tr,
               child: IconButton(
                 icon: Icon(
                   Icons.menu,
                   color: isDarkMode ? Colors.white : theme.colorScheme.primary,
                 ),
                 onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-                tooltip: 'Open navigation menu',
+                tooltip: 'lbl_open_nav_menu'.tr,
               ),
             ),
           ),
@@ -302,15 +304,14 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, state) {
               return SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
+                child: CustomScrollView(
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    children: [
-                      // Offline indicator banner
-                      if (_isOffline)
-                        Semantics(
+                  slivers: [
+                    // Offline indicator banner
+                    if (_isOffline)
+                      SliverToBoxAdapter(
+                        child: Semantics(
                           liveRegion: true,
                           child: Container(
                             width: double.infinity,
@@ -339,76 +340,82 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
+                      ),
 
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        _buildCardLastRead(state.surah, theme),
+                    if (state is UpdateLastReadSurah && state.surah != null)
+                      SliverToBoxAdapter(
+                        child: _buildCardLastRead(state.surah, theme),
+                      ),
 
-                      Semantics(
-                        label: 'lbl_surah_list'.tr,
-                        child: ListView.builder(
-                          key: const PageStorageKey('home-list'),
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      sliver: SliverList.builder(
+                        key: const PageStorageKey('home-list'),
+                        itemCount: QuranIndex.quranSurahs.length,
+                        itemBuilder: (context, index) {
+                          final surah = QuranIndex.quranSurahs[index];
 
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
+                          // Simple staggered animation logic
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOutQuad,
+                            // Delay based on index, capped to prevent long waits for bottom items
+                            builder: (context, value, child) {
+                              // Only animate the first 10 items to save performance/time
+                              final shouldAnimate = index < 10;
+                              final opacity = shouldAnimate ? value : 1.0;
+                              final offset = shouldAnimate
+                                  ? Offset(0, 50 * (1 - value))
+                                  : Offset.zero;
 
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    final defaultView = PrefUtils()
-                                        .getDefaultQuranView();
-                                    if (defaultView == 'mushaf') {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.mushafScreen,
-                                      );
-                                    } else {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.surahPage,
-                                        arguments: surah,
-                                      );
-                                    }
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
-                                  ),
+                              return Opacity(
+                                opacity: opacity,
+                                child: Transform.translate(
+                                  offset: offset,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Semantics(
+                              button: true,
+                              label:
+                                  '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                              child: InkWell(
+                                onTap: () {
+                                  PrefUtils().saveLastReadSurah(surah);
+                                  homeBloc.add(HomeShowLastSurahEvent());
+                                  final defaultView = PrefUtils()
+                                      .getDefaultQuranView();
+                                  if (defaultView == 'mushaf') {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.mushafScreen,
+                                      arguments: {
+                                        'initialPage':
+                                            MushafPageIndex.getPageForSurah(
+                                              surah.id,
+                                            ),
+                                      },
+                                    );
+                                  } else {
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.surahPage,
+                                      arguments: surah,
+                                    );
+                                  }
+                                },
+                                child: SurahListItem(
+                                  surahId: surah.id,
+                                  nameEnglish: surah.nameEnglish,
+                                  nameArabic: surah.nameArabic,
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -454,32 +461,7 @@ class _HomeScreenState extends State<HomeScreen>
         }
       },
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  'app_name'.tr[0],
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'app_name'.tr,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildDrawerAuthHeader(context, theme),
         const Divider(height: 1),
         const SizedBox(height: 12),
         NavigationDrawerDestination(
@@ -529,6 +511,109 @@ class _HomeScreenState extends State<HomeScreen>
           label: Text('about_title'.tr),
         ),
       ],
+    );
+  }
+
+  Widget _buildDrawerAuthHeader(BuildContext context, ThemeData theme) {
+    return BlocBuilder<QfAuthBloc, QfAuthState>(
+      builder: (context, state) {
+        final Widget avatar;
+        final String title;
+        final String subtitle;
+
+        if (state is QfAuthAuthenticated) {
+          final initial = state.userId?.isNotEmpty == true
+              ? state.userId![0].toUpperCase()
+              : null;
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.primary,
+            child: initial != null
+                ? Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  )
+                : const Icon(Icons.account_circle, color: Colors.white, size: 24),
+          );
+          title = 'msg_qf_account'.tr;
+          subtitle = state.userId ?? '';
+        } else if (state is QfAuthLoading || state is QfAuthInitial) {
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          );
+          title = 'lbl_not_signed_in'.tr;
+          subtitle = 'lbl_tap_to_sign_in'.tr;
+        } else {
+          // QfAuthUnauthenticated, QfAuthError, or any other state
+          avatar = CircleAvatar(
+            radius: 22,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: Icon(
+              Icons.account_circle_outlined,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: 24,
+            ),
+          );
+          title = 'lbl_not_signed_in'.tr;
+          subtitle = 'lbl_tap_to_sign_in'.tr;
+        }
+
+        return InkWell(
+          onTap: () {
+            Navigator.of(context).pop();
+            NavigatorService.pushNamed(AppRoutes.cloudSyncPage);
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            child: Row(
+              children: [
+                avatar,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -630,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 lastReadSurah.nameArabic,
                                 textDirection: TextDirection.rtl,
                                 style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontFamily: 'Amiri',
+                                  fontFamily: 'NotoNaskhArabic',
                                   color: Colors.white.withValues(alpha: 0.9),
                                   height: 1.2,
                                 ),
@@ -687,6 +772,12 @@ class _HomeScreenState extends State<HomeScreen>
                             if (defaultView == 'mushaf') {
                               NavigatorService.pushNamed(
                                 AppRoutes.mushafScreen,
+                                arguments: {
+                                  'initialPage':
+                                      MushafPageIndex.getPageForSurah(
+                                        lastReadSurah.id,
+                                      ),
+                                },
                               );
                             } else {
                               NavigatorService.pushNamed(
@@ -694,7 +785,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 arguments: {
                                   'surah': lastReadSurah,
                                   'offset': ?offset,
-                                  'resume': true,
                                   'verseIndex': ?lastVerseIndex,
                                 },
                               );

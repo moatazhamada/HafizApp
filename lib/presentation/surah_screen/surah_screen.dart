@@ -472,7 +472,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     onPressed: () => _navigateToSurah(surah!.id - 1),
                     icon: const Icon(Icons.skip_next, size: 18),
                     label: Text(
-                      isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish,
+                      isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish,
                       textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
@@ -500,7 +500,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     onPressed: () => _navigateToSurah(surah!.id + 1),
                     icon: const Icon(Icons.skip_previous, size: 18),
                     label: Text(
-                      isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish,
+                      isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish,
                       textDirection: TextDirection.rtl,
                       style: const TextStyle(fontSize: 13),
                       overflow: TextOverflow.ellipsis,
@@ -588,6 +588,7 @@ class _SurahScreenState extends State<SurahScreen> {
                             color: isDark ? Colors.white70 : Colors.black54,
                           ),
                           onPressed: () => Navigator.pop(context),
+                          tooltip: 'lbl_close'.tr,
                         ),
                       ],
                     ),
@@ -713,9 +714,26 @@ class _SurahScreenState extends State<SurahScreen> {
                     return const Center(child: CircularProgressIndicator());
                   } else if (state is FailureSurahState) {
                     return Center(
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Text(state.errorMessage.tr),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              state.errorMessage.tr,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () => context.read<SurahBloc>().add(
+                              LoadSurahEvent(surahId: '${surah!.id}'),
+                            ),
+                            icon: const Icon(Icons.refresh),
+                            label: Text('lbl_retry'.tr),
+                          ),
+                        ],
                       ),
                     );
                   } else {
@@ -782,6 +800,7 @@ class _SurahScreenState extends State<SurahScreen> {
         child: IconButton(
           icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
           onPressed: () => NavigatorService.goBack(),
+          tooltip: 'lbl_back'.tr,
         ),
       ),
       actions: [
@@ -945,7 +964,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
-                fontFamily: 'Amiri',
+                fontFamily: 'NotoNaskhArabic',
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
@@ -995,7 +1014,7 @@ class _SurahScreenState extends State<SurahScreen> {
           'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
           textDirection: TextDirection.rtl,
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'NotoNaskhArabic',
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: AppColors.of(context).bismillahColor,
@@ -1135,10 +1154,10 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
             Semantics(
               button: true,
-              label: 'Study',
+              label: 'lbl_study'.tr,
               child: ListTile(
                 leading: const Icon(Icons.school, color: Colors.deepPurple),
-                title: const Text('Study'),
+                title: Text('lbl_study'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   NavigatorService.pushNamed(
@@ -1373,10 +1392,45 @@ class _SurahScreenState extends State<SurahScreen> {
           ],
         ),
       );
-    } else {
-      // Maybe just close quietly or show a "Good effort"
-      _sessionCorrectCount = 0;
-      _sessionTotalCount = 0;
+    } else if (mounted) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('lbl_keep_practicing'.tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ExcludeSemantics(
+                child: Icon(Icons.fitness_center, color: Colors.orange, size: 50),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'msg_session_score'.tr.replaceAll(
+                  '{score}',
+                  percentage.toStringAsFixed(1),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'msg_keep_practicing'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _sessionCorrectCount = 0;
+                _sessionTotalCount = 0;
+                Navigator.pop(dialogContext);
+              },
+              child: Text('lbl_close'.tr),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -1407,32 +1461,48 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildBismillah(isDark),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: PrefUtils().getVerseViewMode()
-                ? _buildSingleLineContent(
-                    context,
-                    chapters,
-                    bookmarkState,
-                    errorState,
-                    isDark,
-                  )
-                : _buildRichTextContent(
-                    context,
-                    chapters,
-                    bookmarkState,
-                    errorState,
-                    isDark,
-                  ),
+    if (PrefUtils().getVerseViewMode()) {
+      return SliverMainAxisGroup(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [_buildBismillah(isDark), const SizedBox(height: 16.0)],
+            ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            sliver: _buildSingleLineContentSliver(
+              context,
+              chapters,
+              bookmarkState,
+              errorState,
+              isDark,
+            ),
+          ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 16.0)),
         ],
-      ),
-    );
+      );
+    } else {
+      return SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildBismillah(isDark),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildRichTextContent(
+                context,
+                chapters,
+                bookmarkState,
+                errorState,
+                isDark,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildRichTextContent(
@@ -1534,7 +1604,7 @@ class _SurahScreenState extends State<SurahScreen> {
         TextSpan(
           text: verseText,
           style: TextStyle(
-            fontFamily: 'Amiri',
+            fontFamily: 'NotoNaskhArabic',
             fontSize: PrefUtils().getQuranFontSize(),
             fontWeight: FontWeight
                 .normal, // Regular weight preserves tashkil/ligatures better
@@ -1581,7 +1651,7 @@ class _SurahScreenState extends State<SurahScreen> {
               child: Text(
                 aya.verseNumber.toLocalizedNumber(context),
                 style: TextStyle(
-                  fontFamily: 'Amiri',
+                  fontFamily: 'NotoNaskhArabic',
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: badgeText,
@@ -1678,7 +1748,7 @@ class _SurahScreenState extends State<SurahScreen> {
     return null;
   }
 
-  Widget _buildSingleLineContent(
+  Widget _buildSingleLineContentSliver(
     BuildContext context,
     List<Verse> chapters,
     BookmarkState bookmarkState,
@@ -1695,9 +1765,10 @@ class _SurahScreenState extends State<SurahScreen> {
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
     final errorVerseIds = verseStates.errorVerses;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: chapters.map((aya) {
+    return SliverList.builder(
+      itemCount: chapters.length,
+      itemBuilder: (context, index) {
+        final aya = chapters[index];
         bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
         bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
@@ -1789,7 +1860,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     textAlign: TextAlign.justify,
                     textDirection: TextDirection.rtl,
                     style: TextStyle(
-                      fontFamily: 'Amiri',
+                      fontFamily: 'NotoNaskhArabic',
                       fontSize: PrefUtils().getQuranFontSize(),
                       fontWeight: FontWeight.normal, // Regular weight
                       color: isBlurred ? Colors.transparent : textColor,
@@ -1824,7 +1895,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       child: Text(
                         aya.verseNumber.toLocalizedNumber(context),
                         style: TextStyle(
-                          fontFamily: 'Amiri',
+                          fontFamily: 'NotoNaskhArabic',
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: badgeText,
@@ -1837,7 +1908,7 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 }

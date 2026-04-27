@@ -154,16 +154,24 @@ final Map<String, String> arEg = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'النسخ السحابي',
-  'msg_sync_bidirectional_complete': 'اكتملت المزامنة ثنائية الاتجاه',
-  'msg_cloud_sync_error': 'خطأ في النسخ السحابي',
-
-  'lbl_sync_to_cloud': 'مزامنة إلى السحابة',
-  'lbl_sync_from_cloud': 'مزامنة من السحابة',
-  'lbl_sync_bidirectional': 'مزامنة ثنائية الاتجاه',
-  'lbl_sign_in': 'تسجيل الدخول',
+  'lbl_last_synced': 'آخر مزامنة',
+  'lbl_appearance': 'المظهر',
+  'lbl_reading': 'القراءة',
+  'lbl_about': 'حول',
+  'msg_qf_logged_in': 'تم تسجيل الدخول عبر Quran.com',
+  'msg_qf_not_logged_in': 'غير مسجل الدخول',
+  'msg_qf_login': 'تسجيل الدخول عبر Quran.com',
   'lbl_sign_out': 'تسجيل الخروج',
-  'lbl_not_authenticated': 'غير مصادق',
-  'lbl_authenticated': 'مصادق',
+  'lbl_user': 'المستخدم',
+  'lbl_bookmarks_sync': 'مزامنة المفضلة مع Quran.com',
+  'msg_last_synced': 'آخر مزامنة: {time}',
+  'msg_login_to_sync': 'سجّل الدخول عبر Quran.com أعلاه لتفعيل المزامنة',
+  'msg_recitation_progress': 'تقدم التلاوة',
+  'msg_local_data_note':
+      'تقدم التلاوة وبيانات الحفظ محفوظة محلياً على هذا الجهاز. النسخ السحابي قريباً.',
+  'msg_sync_complete': 'تمت المزامنة — تم إرسال {pushed}، واستقبال {pulled}',
+  'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
+  'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
 
   // Musali Teaser
   'musali_app_name': 'مُصَالي',
@@ -255,6 +263,12 @@ final Map<String, String> arEg = {
   'lbl_select_mushaf_type': 'اختر نوع المصحف',
   'msg_mushaf_type_desc': 'اختر نمط الخط المفضل لديك',
 
+  // Mushaf Settings
+  'lbl_mushaf_type': 'نوع المصحف',
+  'lbl_clear_mushaf_cache': 'مسح ذاكرة صور المصحف',
+  'msg_clear_mushaf_cache_desc': 'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
+  'msg_cache_cleared': 'تم مسح ذاكرة الصور',
+
   // Statistics
   'stats_title': 'تقدمي',
   'stats_bookmarks': 'الفواصل',
@@ -278,8 +292,99 @@ final Map<String, String> arEg = {
   'lbl_scroll_mode': 'وضع التمرير',
   'lbl_page_mode': 'وضع الصفحات',
   'lbl_audio_player': 'مشغل الصوت',
+  'lbl_rewind_10': 'إرجاع 10 ثواني',
+  'lbl_forward_10': 'تقديم 10 ثواني',
   'lbl_scroll_speed': 'سرعة التمرير',
   'lbl_slow': 'بطيء',
   'lbl_normal': 'عادي',
   'lbl_fast': 'سريع',
+  'lbl_whats_new': 'الجديد',
+  'lbl_version': 'الإصدار',
+  'lbl_latest': 'الأحدث',
+  'lbl_special_thanks': 'شكر خاص',
+  'changelog_3_1_0_intro': 'شكر خاص لمستخدمنا ',
+  'changelog_3_1_0_user': 'HASBUL HSB',
+  'changelog_3_1_0_outro':
+      ' على ملاحظاته الدقيقة حول سورة يس (آية 36:26)، والتي أدت إلى تحسين نص الرسم العثماني. جزاه الله خيراً.',
+  'changelog_3_1_0_1':
+      'ترحيل كامل إلى نص الرسم العثماني — مطابق للكتابة القياسية للمصحف.',
+  'changelog_3_1_0_2': 'خط نوتو نسخ العربي الجديد لعرض دقيق للأحرف المرتفعة.',
+  'changelog_3_1_0_3': 'تحسين ارتفاع السطر لمنع قطع الحركات والتشكيل.',
+  'changelog_3_1_0_4':
+      'شاشة دراسة الآية — استكشاف النص العربي والترجمة والتفسير معاً.',
+  'changelog_3_1_0_5':
+      'تكامل واجهة برمجة تطبيقات محتوى مؤسسة القرآن الكريم للتفسير وبيانات الآيات.',
+  'changelog_3_1_0_6':
+      'مزامنة العلامات المرجعية مع مؤسسة القرآن — مزامنة إشاراتك المرجعية مع Quran.com.',
+  'changelog_3_1_0_7': 'آلية التحديث الإجباري لإصلاحات دقة النص الحرجة.',
+  'changelog_3_0_0_1': 'إعادة تصميم كاملة للتطبيق باستخدام Material 3.',
+  'changelog_3_0_0_2': 'مزامنة سحابية عبر Firebase.',
+  'changelog_3_0_0_3': 'مشغل صوتي مع دعم القراء.',
+  'changelog_3_0_0_4': 'عرض صفحات المصحف مع عرض الآيات.',
+  'changelog_3_0_0_5': 'التحقق الصوتي لممارسة التلاوة.',
+  'changelog_3_0_0_6': 'تتبع الحفظ والختمة.',
+  'changelog_3_0_0_7': 'لوحة الإحصائيات.',
+  'changelog_3_0_0_8': 'التمرير التلقائي مع سرعة قابلة للتعديل.',
+
+  // Relative time
+  'lbl_just_now': 'الآن',
+  'lbl_minutes_ago': 'منذ {count} دقيقة',
+  'lbl_hours_ago': 'منذ {count} ساعة',
+
+  // QF Account
+  'msg_qf_account': 'حساب Quran.com',
+
+  // Navigation
+  'lbl_open_nav_menu': 'فتح القائمة',
+
+  // About
+  'msg_feedback_copied': 'تم نسخ الملاحظة للحافظة',
+
+  // Mushaf type labels (settings + onboarding)
+  'lbl_mushaf_madani': 'مدني (حفص)',
+  'lbl_mushaf_egyptian': 'مصري (حفص)',
+  'lbl_mushaf_indopak': 'هندي/باكستاني (نستعليق)',
+  'lbl_mushaf_warsh': 'ورش (شمال أفريقيا)',
+  'lbl_mushaf_madani_desc': 'حفص من المدينة المنورة',
+  'lbl_mushaf_egyptian_desc': 'حفص من مصر',
+  'lbl_mushaf_indopak_desc': 'خط نستعليق',
+  'lbl_mushaf_warsh_desc': 'ورش من شمال أفريقيا',
+
+  // Connectivity
+  'msg_no_internet_connection': 'لا يوجد اتصال بالإنترنت',
+
+  // Verse Study
+  'lbl_verse_study_title': 'دراسة الآية: {key}',
+  'lbl_retry': 'إعادة المحاولة',
+  'lbl_arabic': 'العربية',
+  'lbl_translation': 'الترجمة',
+  'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
+  'lbl_study': 'دراسة',
+
+  // Recitation feedback
+  'lbl_keep_practicing': 'واصل التدريب',
+  'msg_keep_practicing': 'كل محاولة تُحسب. حاول مجدداً لتحسين نتيجتك!',
+
+  // Mushaf rendering modes
+  'lbl_mushaf_rendering': 'عرض المصحف',
+  'lbl_render_text': 'نص',
+  'msg_render_text_desc': 'عرض نص القرآن من الأصول المحلية (يعمل بدون إنترنت)',
+  'lbl_render_ayah_images': 'صور الآيات',
+  'msg_render_ayah_images_desc': 'تحميل صور الآيات من الشبكة (يتطلب إنترنت)',
+  'lbl_render_glyph': 'رسم QF للرسم البياني',
+  'msg_render_glyph_desc': 'استخدام بيانات code_v2 من مؤسسة القرآن لعرض الصفحات',
+
+  // Delete My Data
+  'lbl_delete_my_data': 'حذف بياناتي',
+  'lbl_delete_data': 'حذف',
+  'msg_delete_data_confirm': 'سيؤدي هذا إلى إلغاء صلاحية الوصول إلى مؤسسة القرآن، وإزالة إشاراتك المرجعية المتزامنة، وتسجيل الخروج. لا يمكن التراجع عن هذا.',
+
+  // General
+  'msg_operation_failed': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+  'lbl_loading_app': 'جاري تحميل حافظ...',
+  'lbl_qf_attribution': 'مؤسسة القرآن — code_v2',
+
+  // Voice Verification
+  'msg_custom_asr_empty': 'لم يتم تكوين نقطة نهاية ASR المخصصة. يرجى تعيينها في الإعدادات.',
+  'lbl_tajweed': 'التجويد',
 };

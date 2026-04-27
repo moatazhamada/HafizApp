@@ -155,16 +155,24 @@ final Map<String, String> enUs = {
 
   // Cloud Sync
   'lbl_cloud_sync': 'Cloud Sync',
-  'msg_sync_bidirectional_complete': 'Bidirectional sync complete',
-  'msg_cloud_sync_error': 'Cloud sync error',
-
-  'lbl_sync_to_cloud': 'Sync to Cloud',
-  'lbl_sync_from_cloud': 'Sync from Cloud',
-  'lbl_sync_bidirectional': 'Bidirectional Sync',
-  'lbl_sign_in': 'Sign In',
-  'lbl_sign_out': 'Sign Out',
-  'lbl_not_authenticated': 'Not authenticated',
-  'lbl_authenticated': 'Authenticated',
+  'lbl_last_synced': 'Last synced',
+  'lbl_appearance': 'Appearance',
+  'lbl_reading': 'Reading',
+  'lbl_about': 'About',
+  'msg_qf_logged_in': 'Logged in to Quran.com',
+  'msg_qf_not_logged_in': 'Not logged in',
+  'msg_qf_login': 'Login with Quran.com',
+  'lbl_sign_out': 'Sign out',
+  'lbl_user': 'User',
+  'lbl_bookmarks_sync': 'Sync bookmarks with Quran.com',
+  'msg_last_synced': 'Last synced: {time}',
+  'msg_login_to_sync': 'Login to Quran.com above to enable sync',
+  'msg_recitation_progress': 'Recitation progress',
+  'msg_local_data_note':
+      'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
+  'msg_sync_complete': 'Sync complete — pushed {pushed}, pulled {pulled}',
+  'msg_login_cancelled': 'Login was cancelled or failed.',
+  'msg_sync_failed': 'Failed to sync with Quran.com',
 
   // Musali Teaser
   'musali_app_name': 'Musali',
@@ -258,6 +266,12 @@ final Map<String, String> enUs = {
   'lbl_select_mushaf_type': 'Choose Mushaf Type',
   'msg_mushaf_type_desc': 'Select your preferred Quran script style',
 
+  // Mushaf Settings
+  'lbl_mushaf_type': 'Mushaf Type',
+  'lbl_clear_mushaf_cache': 'Clear Mushaf Image Cache',
+  'msg_clear_mushaf_cache_desc': 'Remove cached page images to free space or fix display issues',
+  'msg_cache_cleared': 'Image cache cleared',
+
   // Statistics
   'stats_title': 'My Progress',
   'stats_bookmarks': 'Bookmarks',
@@ -281,8 +295,102 @@ final Map<String, String> enUs = {
   'lbl_scroll_mode': 'Scroll Mode',
   'lbl_page_mode': 'Page Mode',
   'lbl_audio_player': 'Audio Player',
+  'lbl_rewind_10': 'Rewind 10 seconds',
+  'lbl_forward_10': 'Forward 10 seconds',
   'lbl_scroll_speed': 'Scroll Speed',
   'lbl_slow': 'Slow',
   'lbl_normal': 'Normal',
   'lbl_fast': 'Fast',
+  'lbl_whats_new': "What's New",
+  'lbl_version': 'Version',
+  'lbl_latest': 'Latest',
+  'lbl_special_thanks': 'Special Thanks',
+  'changelog_3_1_0_intro': 'Special thanks to our user ',
+  'changelog_3_1_0_user': 'HASBUL HSB',
+  'changelog_3_1_0_outro':
+      ' for his precise feedback on Surah Yasin (36:26), which led to this Uthmani Rasm script improvement. May Allah reward him.',
+  'changelog_3_1_0_1':
+      'Complete migration to Uthmani Rasm script — matching the standard Mushaf writing.',
+  'changelog_3_1_0_2':
+      'New Noto Naskh Arabic font for accurate rendering of superscript characters.',
+  'changelog_3_1_0_3':
+      'Improved line height to prevent clipping of diacritical marks.',
+  'changelog_3_1_0_4':
+      'Verse Study screen — explore Arabic text, translation, and tafsir together.',
+  'changelog_3_1_0_5':
+      'Quran Foundation Content API integration for tafsir and verse data.',
+  'changelog_3_1_0_6':
+      'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
+  'changelog_3_1_0_7':
+      'Force update mechanism for critical text accuracy fixes.',
+  'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
+  'changelog_3_0_0_2': 'Cloud sync with Firebase.',
+  'changelog_3_0_0_3': 'Audio player with reciter support.',
+  'changelog_3_0_0_4': 'Mushaf page view with verse rendering.',
+  'changelog_3_0_0_5': 'Voice verification for recitation practice.',
+  'changelog_3_0_0_6': 'Memorization and Khatmah tracking.',
+  'changelog_3_0_0_7': 'Statistics dashboard.',
+  'changelog_3_0_0_8': 'Auto-scroll with configurable speed.',
+
+  // Relative time
+  'lbl_just_now': 'just now',
+  'lbl_minutes_ago': '{count}m ago',
+  'lbl_hours_ago': '{count}h ago',
+
+  // QF Account
+  'msg_qf_account': 'Quran.com account',
+
+  // Navigation
+  'lbl_open_nav_menu': 'Open navigation menu',
+
+  // About
+  'msg_feedback_copied': 'Feedback copied to clipboard',
+
+  // Mushaf type labels (settings + onboarding)
+  'lbl_mushaf_madani': 'Madani (Hafs)',
+  'lbl_mushaf_egyptian': 'Egyptian (Hafs)',
+  'lbl_mushaf_indopak': 'Indo-Pak (Nastaleeq)',
+  'lbl_mushaf_warsh': 'Warsh (North Africa)',
+  'lbl_mushaf_madani_desc': 'Hafs from Madinah',
+  'lbl_mushaf_egyptian_desc': 'Hafs from Egypt',
+  'lbl_mushaf_indopak_desc': 'Nastaleeq script',
+  'lbl_mushaf_warsh_desc': 'Warsh from North Africa',
+
+  // Connectivity
+  'msg_no_internet_connection': 'No Internet Connection',
+
+  // Verse Study
+  'lbl_verse_study_title': 'Verse Study: {key}',
+  'lbl_retry': 'Retry',
+  'lbl_arabic': 'Arabic',
+  'lbl_translation': 'Translation',
+  'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
+  'lbl_study': 'Study',
+
+  // Recitation feedback
+  'lbl_keep_practicing': 'Keep Practicing',
+  'msg_keep_practicing': 'Every effort counts. Try again to improve your score!',
+
+  // Mushaf rendering modes
+  'lbl_mushaf_rendering': 'Mushaf Rendering',
+  'lbl_render_text': 'Text',
+  'msg_render_text_desc': 'Render Quran text from local assets (offline)',
+  'lbl_render_ayah_images': 'Ayah Images',
+  'msg_render_ayah_images_desc': 'Load ayah-level images from CDN (requires internet)',
+  'lbl_render_glyph': 'QF Glyph Rendering',
+  'msg_render_glyph_desc': 'Use Quran Foundation code_v2 glyph data for page rendering',
+
+  // Delete My Data
+  'lbl_delete_my_data': 'Delete My Data',
+  'lbl_delete_data': 'Delete',
+  'msg_delete_data_confirm': 'This will revoke your Quran Foundation access, remove your synced bookmarks, and sign you out. This cannot be undone.',
+
+  // General
+  'msg_operation_failed': 'Something went wrong. Please try again.',
+  'lbl_loading_app': 'Loading Hafiz...',
+  'lbl_qf_attribution': 'Quran Foundation — code_v2',
+
+  // Voice Verification
+  'msg_custom_asr_empty': 'Custom ASR endpoint is not configured. Please set it in Settings.',
+  'lbl_tajweed': 'Tajweed',
 };

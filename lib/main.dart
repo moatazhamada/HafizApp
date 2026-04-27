@@ -4,13 +4,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 
 import 'core/app_export.dart';
+import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-// Just in case, though safe
-// Just in case
-// Just in case
+import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -24,6 +23,10 @@ import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'core/services/remote_config_service.dart';
+import 'presentation/force_update/force_update_screen.dart';
 
 var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -97,6 +100,9 @@ class MyApp extends StatelessWidget {
         BlocProvider.value(
           value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
         ),
+        BlocProvider.value(
+          value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
+        ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -140,6 +146,7 @@ class BootstrapApp extends StatefulWidget {
 
 class _BootstrapAppState extends State<BootstrapApp> {
   bool _ready = false;
+  bool _forceUpdate = false;
 
   @override
   void initState() {
@@ -217,6 +224,10 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
     if (mounted) {
       setState(() => _ready = true);
+      // Trigger in-app review prompt after a brief delay
+      Future.delayed(const Duration(seconds: 2), () {
+        AppReviewService.maybeRequestReview();
+      });
     }
   }
 
@@ -230,14 +241,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
         crashlytics: crashlytics,
       );
 
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('recitation_sessions');
-      await Hive.openBox('memorization_progress');
-      await Hive.openBox('reading_logs');
-      await Hive.openBox('reading_goal');
+      // Additional boxes not opened in _init()
       await Hive.openBox('qiraat_cache');
       await Hive.openBox('audio_cache');
 
@@ -265,6 +269,23 @@ class _BootstrapAppState extends State<BootstrapApp> {
       };
 
       unawaited(FirebaseAnalytics.instance.logAppOpen());
+
+      final remoteConfigService = RemoteConfigService();
+      await remoteConfigService.init();
+      if (!sl.isRegistered<RemoteConfigService>()) {
+        sl.registerLazySingleton(() => remoteConfigService);
+      }
+
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentCode = int.tryParse(packageInfo.buildNumber) ?? 0;
+      final minCode = remoteConfigService.minVersionCode;
+      if (currentCode < minCode && minCode > 0) {
+        _forceUpdate = true;
+        Logger.info(
+          'Force update required: $currentCode < $minCode',
+          feature: 'RemoteConfig',
+        );
+      }
     } catch (e, stackTrace) {
       Logger.error(
         'Firebase initialization failed: $e',
@@ -278,6 +299,13 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (_forceUpdate) {
+      return ForceUpdateScreen(
+        message: sl.isRegistered<RemoteConfigService>()
+            ? sl<RemoteConfigService>().forceUpdateMessage
+            : '',
+      );
+    }
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
@@ -287,8 +315,38 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 }
 
-class _ReadyApp extends StatelessWidget {
+class _ReadyApp extends StatefulWidget {
   const _ReadyApp();
+
+  @override
+  State<_ReadyApp> createState() => _ReadyAppState();
+}
+
+class _ReadyAppState extends State<_ReadyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _maybeShowChangelog();
+  }
+
+  Future<void> _maybeShowChangelog() async {
+    final version = (await PackageInfo.fromPlatform()).version;
+    final key = 'changelog_seen_${version.replaceAll('.', '_')}';
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(key) ?? false;
+    if (!seen) {
+      await prefs.setBool(key, true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final context = NavigatorService.navigatorKey.currentContext;
+          if (context != null) {
+            NavigatorService.pushNamed(AppRoutes.changelogScreen);
+          }
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) => MyApp();
 }
@@ -317,7 +375,7 @@ class _SplashScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Loading Hafiz...',
+                'lbl_loading_app'.tr,
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: isDark ? Colors.white70 : Colors.black54,

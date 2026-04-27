@@ -3,10 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  cloud_firestore
   connectivity_plus
-  firebase_auth
   firebase_core
+  firebase_remote_config
   flutter_secure_storage_windows
   flutter_sound
   permission_handler_windows

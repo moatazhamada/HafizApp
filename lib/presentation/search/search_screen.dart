@@ -38,6 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => NavigatorService.goBack(),
+              tooltip: 'lbl_back'.tr,
             ),
           ),
           title: Semantics(
@@ -158,7 +159,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                 arguments: {
                                   'surah': surah,
                                   'verseIndex': verse.verseNumber - 1,
-                                  'resume': true,
                                 },
                               );
                             },
@@ -332,7 +332,11 @@ class _SearchScreenState extends State<SearchScreen> {
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
-        style: TextStyle(fontFamily: 'Amiri', fontSize: 18, color: textColor),
+        style: TextStyle(
+          fontFamily: 'NotoNaskhArabic',
+          fontSize: 18,
+          color: textColor,
+        ),
         children: [
           TextSpan(
             text: fullText.substring(0, originalStart),
@@ -373,7 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
       overflow: TextOverflow.ellipsis,
       textDirection: TextDirection.rtl,
       style: TextStyle(
-        fontFamily: 'Amiri',
+        fontFamily: 'NotoNaskhArabic',
         fontSize: 18,
         color: isDark ? Colors.white : null,
       ),

@@ -14,9 +14,9 @@ class NavigatorService {
   }
 
   static Future<dynamic> pushNamedAndRemoveUntil(String routeName,
-      {bool routePredicate = false, dynamic arguments}) async {
+      {bool clearStack = true, dynamic arguments}) async {
     return navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        routeName, (route) => routePredicate,
+        routeName, (route) => !clearStack,
         arguments: arguments);
   }
 

@@ -13,8 +13,8 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
   final Dio _dio;
   final QfApiConfig _config;
 
-  QfUserApiRemoteDataSourceImpl({Dio? dio, QfApiConfig? config})
-      : _dio = dio ?? Dio(),
+  QfUserApiRemoteDataSourceImpl({required Dio dio, QfApiConfig? config})
+      : _dio = dio,
         _config = config ?? const QfApiConfig();
 
   @override

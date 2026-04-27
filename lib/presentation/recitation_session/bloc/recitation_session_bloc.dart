@@ -21,7 +21,7 @@ class RecitationSessionBloc
     emit(RecitationSessionLoading());
     final result = await repository.getSessions();
     result.fold(
-      (failure) => emit(RecitationSessionError(failure.toString())),
+      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
       (sessions) => emit(RecitationSessionLoaded(sessions)),
     );
   }
@@ -30,15 +30,21 @@ class RecitationSessionBloc
     SaveSession event,
     Emitter<RecitationSessionState> emit,
   ) async {
-    await repository.addSession(event.session);
-    add(LoadSessions());
+    final result = await repository.addSession(event.session);
+    result.fold(
+      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
+      (_) => add(LoadSessions()),
+    );
   }
 
   Future<void> _onClearAllSessions(
     ClearAllSessions event,
     Emitter<RecitationSessionState> emit,
   ) async {
-    await repository.clearAll();
-    add(LoadSessions());
+    final result = await repository.clearAll();
+    result.fold(
+      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
+      (_) => add(LoadSessions()),
+    );
   }
 }

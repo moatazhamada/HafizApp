@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "hafiz-app-3e264"
+  },
+  "targets": {
+    "hafiz-app-3e264": {
+      "hosting": {
+        "privacy-main": ["hafiz-app-3e264"],
+        "privacy-new": ["hafiz-app-privacy"],
+        "terms": ["hafiz-app-terms"]
+      }
+    }
+  },
+  "etags": {}
+}

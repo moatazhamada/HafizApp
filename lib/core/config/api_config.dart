@@ -2,10 +2,10 @@ class ApiConfig {
   // Whether to prefer Quran.Foundation content endpoints. Keep false to use existing Quran.com v4.
   static const bool useQfContent = bool.fromEnvironment('QF_USE_CONTENT', defaultValue: false);
 
-  // OAuth2 issuer base (no trailing slash), e.g. https://prelive-oauth2.quran.foundation or https://oauth2.quran.foundation
+  // OAuth2 issuer base (no trailing slash). Defaults to production.
   static const String oauthBase = String.fromEnvironment(
     'QF_OAUTH_BASE',
-    defaultValue: 'https://prelive-oauth2.quran.foundation',
+    defaultValue: 'https://oauth2.quran.foundation',
   );
 
   // Client credentials (DO NOT hardcode in source; pass via --dart-define)

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
@@ -25,13 +27,14 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   double _speed = 1.0;
   String? _errorMessage;
   int _currentVerse = -1;
+  StreamSubscription<int>? _verseSub;
 
   static const List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   @override
   void initState() {
     super.initState();
-    _handler.currentVerseStream.listen((verseIndex) {
+    _verseSub = _handler.currentVerseStream.listen((verseIndex) {
       if (mounted) {
         setState(() {
           _currentVerse = verseIndex;
@@ -42,6 +45,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   void dispose() {
+    _verseSub?.cancel();
     _handler.stop();
     super.dispose();
   }
@@ -293,7 +297,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           child: Text(
             surah.nameArabic,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(fontFamily: 'Amiri'),
+            style: const TextStyle(fontFamily: 'NotoNaskhArabic'),
           ),
         ),
         centerTitle: true,
@@ -307,7 +311,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
               surah.nameArabic,
               textDirection: TextDirection.rtl,
               style: const TextStyle(
-                fontFamily: 'Amiri',
+                fontFamily: 'NotoNaskhArabic',
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
               ),
@@ -379,12 +383,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          icon: const Icon(Icons.replay_10, size: 32),
-          onPressed: () {
-            _handler.seekRelative(const Duration(seconds: -10));
-            setState(() {});
-          },
+        Semantics(
+          button: true,
+          label: 'lbl_rewind_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.replay_10, size: 32),
+            tooltip: 'lbl_rewind_10'.tr,
+            onPressed: () {
+              _handler.seekRelative(const Duration(seconds: -10));
+              setState(() {});
+            },
+          ),
         ),
         const SizedBox(width: 24),
         Container(
@@ -402,31 +411,43 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     strokeWidth: 2,
                   ),
                 )
-              : IconButton(
-                  icon: Icon(
-                    _handler.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 36,
+              : Semantics(
+                  button: true,
+                  label: _handler.isPlaying ? 'lbl_pause'.tr : 'lbl_play'.tr,
+                  child: IconButton(
+                    icon: Icon(
+                      _handler.isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                    tooltip: _handler.isPlaying
+                        ? 'lbl_pause'.tr
+                        : 'lbl_play'.tr,
+                    onPressed: () {
+                      if (_handler.isPlaying) {
+                        _handler.pause();
+                      } else if (_handler.currentSurahId == widget.surahId) {
+                        _handler.resume();
+                      } else {
+                        _play();
+                      }
+                      setState(() {});
+                    },
                   ),
-                  onPressed: () {
-                    if (_handler.isPlaying) {
-                      _handler.pause();
-                    } else if (_handler.currentSurahId == widget.surahId) {
-                      _handler.resume();
-                    } else {
-                      _play();
-                    }
-                    setState(() {});
-                  },
                 ),
         ),
         const SizedBox(width: 24),
-        IconButton(
-          icon: const Icon(Icons.forward_10, size: 32),
-          onPressed: () {
-            _handler.seekRelative(const Duration(seconds: 10));
-            setState(() {});
-          },
+        Semantics(
+          button: true,
+          label: 'lbl_forward_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.forward_10, size: 32),
+            tooltip: 'lbl_forward_10'.tr,
+            onPressed: () {
+              _handler.seekRelative(const Duration(seconds: 10));
+              setState(() {});
+            },
+          ),
         ),
       ],
     );

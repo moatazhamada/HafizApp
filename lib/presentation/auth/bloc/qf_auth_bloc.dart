@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 
 part 'qf_auth_event.dart';
@@ -14,6 +15,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     on<QfAuthCheckRequested>(_onAuthCheckRequested);
     on<QfAuthLoginRequested>(_onAuthLoginRequested);
     on<QfAuthLogoutRequested>(_onAuthLogoutRequested);
+    on<QfAuthDeleteDataRequested>(_onAuthDeleteDataRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -62,6 +64,21 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       emit(QfAuthUnauthenticated());
     } catch (e) {
       emit(QfAuthError(message: 'Logout failed: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onAuthDeleteDataRequested(
+    QfAuthDeleteDataRequested event,
+    Emitter<QfAuthState> emit,
+  ) async {
+    emit(QfAuthLoading());
+    try {
+      await _authRemoteDataSource.revokeAndDeleteData();
+      // Clear sync timestamp
+      await PrefUtils().setQfLastSyncAt(DateTime(2000));
+      emit(QfAuthUnauthenticated());
+    } catch (e) {
+      emit(QfAuthError(message: 'Delete failed: ${e.toString()}'));
     }
   }
 }

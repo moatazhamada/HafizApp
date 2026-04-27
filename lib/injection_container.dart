@@ -6,7 +6,6 @@ import 'package:hafiz_app/data/datasource/surah/surah_remote_data_source.dart';
 import 'package:hafiz_app/data/repository/surah/surah_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 import 'package:hafiz_app/domain/usecase/getsurah/get_surah.dart';
-import 'package:hafiz_app/domain/usecase/cloud_sync/cloud_sync_usecase.dart';
 import 'package:hafiz_app/presentation/home_screen/bloc/home_bloc.dart';
 import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart';
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -31,18 +30,16 @@ import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_sessio
 import 'package:hafiz_app/data/datasource/surah/surah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/recitation_error/recitation_error_local_data_source.dart';
-import 'package:hafiz_app/data/datasource/cloud_sync/cloud_sync_remote_data_source.dart';
 import 'package:hafiz_app/data/repository/bookmark/bookmark_repository_impl.dart';
 import 'package:hafiz_app/data/repository/recitation_error/recitation_error_repository_impl.dart';
-import 'package:hafiz_app/data/repository/cloud_sync/cloud_sync_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/bookmark_repository.dart';
 import 'package:hafiz_app/domain/repository/recitation_error_repository.dart';
-import 'package:hafiz_app/domain/repository/cloud_sync_repository.dart';
 import 'package:hafiz_app/data/datasource/qrc/qrc_remote_datasource.dart';
 import 'package:hafiz_app/data/repository/qrc/qrc_repository_impl.dart';
 import 'package:hafiz_app/domain/repository/qrc/qrc_repository.dart';
 import 'package:hafiz_app/data/datasource/tafsir/qf_tafsir_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
 
 import 'core/network/network_manager.dart';
@@ -72,15 +69,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ThemeBloc());
   sl.registerLazySingleton(() => QfAuthBloc(authRemoteDataSource: sl()));
   sl.registerLazySingleton(() => ScrollPositionCubit());
-  sl.registerLazySingleton(
-    () => CloudSyncBloc(
-      performCloudSync: sl(),
-      checkCloudSyncAuth: sl(),
-      signInCloudSync: sl(),
-      signOutCloudSync: sl(),
-      syncWithQf: sl(),
-    ),
-  );
+  sl.registerFactory(() => CloudSyncBloc(syncWithQf: sl()));
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
   sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
@@ -90,10 +79,6 @@ Future<void> init() async {
 
   // Use Case
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
-  sl.registerLazySingleton(() => PerformCloudSync(repository: sl()));
-  sl.registerLazySingleton(() => CheckCloudSyncAuth(repository: sl()));
-  sl.registerLazySingleton(() => SignInCloudSync(repository: sl()));
-  sl.registerLazySingleton(() => SignOutCloudSync(repository: sl()));
   sl.registerLazySingleton(
     () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl()),
   );
@@ -113,14 +98,6 @@ Future<void> init() async {
 
   sl.registerLazySingleton<RecitationErrorRepository>(
     () => RecitationErrorRepositoryImpl(localDataSource: sl()),
-  );
-
-  sl.registerLazySingleton<CloudSyncRepository>(
-    () => CloudSyncRepositoryImpl(
-      remoteDataSource: sl(),
-      bookmarkLocalDataSource: sl(),
-      recitationErrorLocalDataSource: sl(),
-    ),
   );
 
   sl.registerLazySingleton<RecitationSessionRepository>(
@@ -185,10 +162,6 @@ Future<void> init() async {
     ),
   );
 
-  sl.registerLazySingleton<CloudSyncRemoteDataSource>(
-    () => CloudSyncRemoteDataSourceImpl(),
-  );
-
   sl.registerLazySingleton<QfAuthRemoteDataSource>(
     () => QfAuthRemoteDataSourceImpl(),
   );
@@ -203,6 +176,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<QfVerseStudyRemoteDataSource>(
     () => QfVerseStudyRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<QfMushafPageDataSource>(
+    () => QfMushafPageDataSourceImpl(dio: sl()),
   );
 
   sl.registerLazySingleton<QrcRepository>(

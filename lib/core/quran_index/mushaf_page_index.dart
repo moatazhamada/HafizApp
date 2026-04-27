@@ -10,14 +10,14 @@ class MushafPageRange {
   });
 }
 
-class MushafPageData {
+class MushafPageInfo {
   final int surahId;
   final String surahNameArabic;
   final String surahNameEnglish;
   final MushafPageRange? juzStart;
   final MushafPageRange? range;
 
-  const MushafPageData({
+  const MushafPageInfo({
     required this.surahId,
     required this.surahNameArabic,
     required this.surahNameEnglish,
@@ -113,11 +113,11 @@ class MushafPageIndex {
     596, // 77. Al-Mursalat
     599, // 78. An-Naba
     602, // 79. An-Nazi'at
-    604, // 80. 'Abasa
+    603, // 80. 'Abasa
     604, // 81. At-Takwir
-    601, // 82. Al-Infitar
-    600, // 83. Al-Mutaffifin
-    602, // 84. Al-Inshiqaq
+    604, // 82. Al-Infitar
+    604, // 83. Al-Mutaffifin
+    604, // 84. Al-Inshiqaq
     604, // 85. Al-Buruj
     604, // 86. At-Tariq
     604, // 87. Al-A'la
@@ -356,59 +356,42 @@ class MushafPageIndex {
 
   static List<MushafPageRange> getVersesForPage(int page) {
     if (page < 1 || page > totalPages) return [];
+    final ranges = <MushafPageRange>[];
 
-    final List<MushafPageRange> ranges = [];
-    final surahId = getSurahForPage(page);
-    final surahStartPage = _surahStartPages[surahId - 1];
-    final nextSurahId = surahId < 114 ? surahId + 1 : 114;
-    final nextSurahStartPage = surahId < 114
-        ? _surahStartPages[nextSurahId - 1]
-        : totalPages + 1;
-    final verseCount = _surahVerseCounts[surahId - 1];
-    final surahEndPage = nextSurahStartPage - 1;
-    final pagesInSurah = surahEndPage - surahStartPage + 1;
+    for (int i = 0; i < 114; i++) {
+      final surahStartPage = _surahStartPages[i];
+      if (surahStartPage > page) break;
 
-    if (pagesInSurah <= 0 || verseCount <= 0) {
-      ranges.add(
-        MushafPageRange(surahId: surahId, startVerse: 1, endVerse: verseCount),
-      );
-      return ranges;
-    }
+      final nextSurahStartPage = i < 113
+          ? _surahStartPages[i + 1]
+          : totalPages + 1;
+      if (nextSurahStartPage <= page) continue;
 
-    final pageOffset = page - surahStartPage;
-    final startVerse = (pageOffset * verseCount / pagesInSurah).floor() + 1;
-    final endVerse = ((pageOffset + 1) * verseCount / pagesInSurah).ceil();
+      final surahId = i + 1;
+      final verseCount = _surahVerseCounts[i];
 
-    ranges.add(
-      MushafPageRange(
-        surahId: surahId,
-        startVerse: startVerse.clamp(1, verseCount),
-        endVerse: endVerse.clamp(1, verseCount),
-      ),
-    );
-
-    if (nextSurahStartPage == page + 1 && surahId < 114) {
-      final nextVerseCount = _surahVerseCounts[nextSurahId - 1];
-      if (nextVerseCount > 0) {
-        final nextEndPage = nextSurahId < 114
-            ? _surahStartPages[nextSurahId] - 1
-            : totalPages;
-        final nextPagesInSurah = nextEndPage - (page + 1) + 1;
-        if (nextPagesInSurah > 0) {
-          ranges.add(
-            MushafPageRange(
-              surahId: nextSurahId,
-              startVerse: 1,
-              endVerse: (nextVerseCount / nextPagesInSurah).ceil().clamp(
-                1,
-                nextVerseCount,
-              ),
-            ),
-          );
-        }
+      if (surahStartPage == nextSurahStartPage) {
+        ranges.add(
+          MushafPageRange(
+            surahId: surahId,
+            startVerse: 1,
+            endVerse: verseCount,
+          ),
+        );
+      } else {
+        final pagesInSurah = nextSurahStartPage - surahStartPage;
+        final pageOffset = page - surahStartPage;
+        final startVerse = (pageOffset * verseCount / pagesInSurah).floor() + 1;
+        final endVerse = ((pageOffset + 1) * verseCount / pagesInSurah).ceil();
+        ranges.add(
+          MushafPageRange(
+            surahId: surahId,
+            startVerse: startVerse.clamp(1, verseCount),
+            endVerse: endVerse.clamp(1, verseCount),
+          ),
+        );
       }
     }
-
     return ranges;
   }
 }

@@ -25,6 +25,13 @@ class PrefUtils {
     await _sharedPreferences!.clear();
   }
 
+  // Generic int access
+  Future<void> setInt(String key, int value) async {
+    await _sharedPreferences!.setInt(key, value);
+  }
+
+  int? getInt(String key) => _sharedPreferences?.getInt(key);
+
   // Theme Mode: 'system', 'light', 'dark'
   Future<void> setThemeMode(String mode) async {
     await _sharedPreferences!.setString('themeMode', mode);
@@ -261,37 +268,20 @@ class PrefUtils {
     }
   }
 
-  Future<void> setCloudSyncEnabled(bool enabled) async {
-    await _sharedPreferences!.setBool('cloud_sync_enabled', enabled);
-  }
-
-  bool getCloudSyncEnabled() {
+  DateTime? getQfLastSyncAt() {
     try {
-      return _sharedPreferences!.getBool('cloud_sync_enabled') ?? false;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get cloud sync enabled: $e',
-        feature: 'Preferences',
-      );
-      return false;
+      final s = _sharedPreferences?.getString('qf_last_sync_at');
+      return s != null ? DateTime.tryParse(s) : null;
+    } catch (_) {
+      return null;
     }
   }
 
-  Future<void> setCloudSyncDirection(String direction) async {
-    await _sharedPreferences!.setString('cloud_sync_direction', direction);
-  }
-
-  String getCloudSyncDirection() {
-    try {
-      return _sharedPreferences!.getString('cloud_sync_direction') ??
-          'bidirectional';
-    } catch (e) {
-      Logger.warning(
-        'Failed to get cloud sync direction: $e',
-        feature: 'Preferences',
-      );
-      return 'bidirectional';
-    }
+  Future<void> setQfLastSyncAt(DateTime dt) async {
+    await _sharedPreferences!.setString(
+      'qf_last_sync_at',
+      dt.toIso8601String(),
+    );
   }
 
   String? getMushafType() {
@@ -305,6 +295,11 @@ class PrefUtils {
   Future<void> setMushafType(String type) async {
     await _sharedPreferences!.setString('mushafType', type);
   }
+
+  int getMushafLastPage() => _sharedPreferences?.getInt('mushafLastPage') ?? 1;
+
+  Future<void> setMushafLastPage(int page) async =>
+      _sharedPreferences!.setInt('mushafLastPage', page);
 
   bool getOnboardingCompleted() {
     try {
@@ -368,5 +363,18 @@ class PrefUtils {
 
   Future<void> setReadingNavMode(String mode) async {
     await _sharedPreferences!.setString('readingNavMode', mode);
+  }
+
+  // Mushaf Rendering Mode: 'text', 'ayah_images', 'glyph'
+  String getMushafRenderingMode() {
+    try {
+      return _sharedPreferences?.getString('mushafRenderingMode') ?? 'text';
+    } catch (e) {
+      return 'text';
+    }
+  }
+
+  Future<void> setMushafRenderingMode(String mode) async {
+    await _sharedPreferences!.setString('mushafRenderingMode', mode);
   }
 }

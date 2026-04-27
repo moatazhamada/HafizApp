@@ -9,7 +9,7 @@ class QfApiConfig {
 
   static const String clientId = String.fromEnvironment(
     'QF_CLIENT_ID',
-    defaultValue: '614c5855-f66a-426d-b8b2-021ba3293e12',
+    defaultValue: '5cd47ccf-93e5-47d0-83b5-9bf538bb5759',
   );
   static const String clientSecret = String.fromEnvironment(
     'QF_CLIENT_SECRET',
@@ -27,7 +27,9 @@ class QfApiConfig {
 
   final bool isProduction;
 
-  const QfApiConfig({this.isProduction = false});
+  /// Defaults to [isProduction = true] for release builds.
+  /// Set [isProduction = false] to hit prelive endpoints during development.
+  const QfApiConfig({this.isProduction = true});
 
   String get authBaseUrl =>
       isProduction ? productionAuthBaseUrl : preliveAuthBaseUrl;
