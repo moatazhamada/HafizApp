@@ -1,0 +1,3 @@
+## 2025-05-18 - SliverToBoxAdapter virtualization bug in Flutter
+**Learning:** Wrapping a large list of standard widgets inside a `SliverToBoxAdapter` completely breaks lazy-loading/virtualization in a `CustomScrollView`, causing the UI thread to freeze while computing the O(N) layout of all descendants immediately. This becomes a severe bottleneck for views rendering a large dataset (e.g., hundreds of verses in a Surah).
+**Action:** Always prefer `SliverList.builder` directly inside the `CustomScrollView`'s `slivers` array or use a `SliverMainAxisGroup` to combine elements natively, rather than forcing them into a `Column` wrapped in `SliverToBoxAdapter`.

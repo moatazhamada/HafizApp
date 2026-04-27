@@ -1407,31 +1407,35 @@ class _SurahScreenState extends State<SurahScreen> {
     RecitationErrorState errorState,
     bool isDark,
   ) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildBismillah(isDark),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: PrefUtils().getVerseViewMode()
-                ? _buildSingleLineContent(
-                    context,
-                    chapters,
-                    bookmarkState,
-                    errorState,
-                    isDark,
-                  )
-                : _buildRichTextContent(
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: _buildBismillah(isDark),
+        ),
+        PrefUtils().getVerseViewMode()
+            ? SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: _buildSingleLineContent(
+                  context,
+                  chapters,
+                  bookmarkState,
+                  errorState,
+                  isDark,
+                ),
+              )
+            : SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildRichTextContent(
                     context,
                     chapters,
                     bookmarkState,
                     errorState,
                     isDark,
                   ),
-          ),
-        ],
-      ),
+                ),
+              ),
+      ],
     );
   }
 
@@ -1695,9 +1699,14 @@ class _SurahScreenState extends State<SurahScreen> {
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
     final errorVerseIds = verseStates.errorVerses;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: chapters.map((aya) {
+    // PERFORMANCE OPTIMIZATION:
+    // Replaced Column with SliverList.builder to preserve virtualization.
+    // This avoids O(N) layout time during initial render, preventing frame
+    // drops and long main thread blocking, particularly for long Surahs.
+    return SliverList.builder(
+      itemCount: chapters.length,
+      itemBuilder: (context, index) {
+        final aya = chapters[index];
         bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
         bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
 
@@ -1837,7 +1846,7 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 }
