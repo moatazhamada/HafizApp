@@ -38,6 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => NavigatorService.goBack(),
+              tooltip: 'lbl_back'.tr,
             ),
           ),
           title: Semantics(

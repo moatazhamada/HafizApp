@@ -15,9 +15,14 @@ class RecitationErrorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => NavigatorService.goBack(),
+        leading: Semantics(
+          button: true,
+          label: 'lbl_back'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => NavigatorService.goBack(),
+            tooltip: 'lbl_back'.tr,
+          ),
         ),
         centerTitle: true,
         title: Text(
@@ -182,19 +187,24 @@ class RecitationErrorScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.green,
+                              Semantics(
+                                button: true,
+                                label: 'msg_unmark_practice'.tr,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.green,
+                                  ),
+                                  tooltip: 'msg_unmark_practice'.tr,
+                                  onPressed: () {
+                                    context.read<RecitationErrorBloc>().add(
+                                      RemoveRecitationErrorEvent(
+                                        error.surahId,
+                                        error.verseId,
+                                      ),
+                                    );
+                                  },
                                 ),
-                                onPressed: () {
-                                  context.read<RecitationErrorBloc>().add(
-                                    RemoveRecitationErrorEvent(
-                                      error.surahId,
-                                      error.verseId,
-                                    ),
-                                  );
-                                },
                               ),
                             ],
                           ),
