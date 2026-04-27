@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
-import 'package:hafiz_app/main.dart' show globalMessengerKey;
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../core/utils/platform_info.dart';
 
@@ -63,7 +62,7 @@ class _AboutScreenState extends State<AboutScreen> {
           ok = await launchUrlString(url, mode: LaunchMode.platformDefault);
         }
         if (!ok) {
-          globalMessengerKey.currentState?.showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
           );
         }
@@ -71,7 +70,7 @@ class _AboutScreenState extends State<AboutScreen> {
           await sl<AnalyticsService>().logLinkOpened(url);
         }
       } catch (e) {
-        globalMessengerKey.currentState?.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
         );
       }
@@ -127,12 +126,14 @@ class _AboutScreenState extends State<AboutScreen> {
                             Navigator.of(ctx).pop();
                             controller.dispose();
                             if (launched) {
-                              globalMessengerKey.currentState?.showSnackBar(
-                                SnackBar(content: Text('about_feedback_sent'.tr)),
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('about_feedback_sent'.tr),
+                                ),
                               );
                             } else {
                               await Clipboard.setData(ClipboardData(text: msg));
-                              globalMessengerKey.currentState?.showSnackBar(
+                              ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('msg_feedback_copied'.tr),
                                 ),
