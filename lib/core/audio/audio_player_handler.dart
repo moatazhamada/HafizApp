@@ -19,6 +19,7 @@ class AudioPlayerHandler {
   int? _loopEnd;
   Timer? _sleepTimer;
   DateTime? _sleepTimerEnd;
+  bool _isDisposed = false;
 
   AudioPlayer get player => _player;
   Stream<int> get currentVerseStream => _currentVerseController.stream;
@@ -28,11 +29,20 @@ class AudioPlayerHandler {
   DateTime? get sleepTimerEnd => _sleepTimerEnd;
   bool get isLooping => _isLooping;
 
+  void _guard(String operation) {
+    if (_isDisposed) {
+      throw StateError(
+        'AudioPlayerHandler has been disposed; cannot $operation',
+      );
+    }
+  }
+
   Future<void> playSurah({
     required int surahId,
     required List<String> verseAudioUrls,
     int startVerse = 0,
   }) async {
+    if (_isDisposed) return;
     _currentSurahId = surahId;
     _verseUrls = verseAudioUrls;
     _currentVerseIndex = startVerse;
@@ -40,6 +50,8 @@ class AudioPlayerHandler {
   }
 
   Future<void> _playCurrentVerse() async {
+    if (_isDisposed) return;
+
     if (_verseUrls == null || _currentVerseIndex >= _verseUrls!.length) {
       if (_isLooping && _loopStart != null && _loopEnd != null) {
         _currentVerseIndex = _loopStart!;
@@ -52,8 +64,10 @@ class AudioPlayerHandler {
 
     try {
       await _player.setUrl(_verseUrls![_currentVerseIndex]);
+      if (_isDisposed) return;
       _currentVerseController.add(_currentVerseIndex);
       await _player.play();
+      if (_isDisposed) return;
 
       if (_sleepTimerEnd != null && DateTime.now().isAfter(_sleepTimerEnd!)) {
         await pause();
@@ -64,19 +78,24 @@ class AudioPlayerHandler {
       _currentVerseIndex++;
       await _playCurrentVerse();
     } catch (e) {
-      _currentVerseController.add(-1);
+      if (!_isDisposed) {
+        _currentVerseController.add(-1);
+      }
     }
   }
 
   Future<void> pause() async {
+    if (_isDisposed) return;
     await _player.pause();
   }
 
   Future<void> resume() async {
+    if (_isDisposed) return;
     await _player.play();
   }
 
   Future<void> stop() async {
+    if (_isDisposed) return;
     await _player.stop();
     _currentSurahId = null;
     _verseUrls = null;
@@ -85,35 +104,43 @@ class AudioPlayerHandler {
   }
 
   void setLoopRange(int start, int end) {
+    if (_isDisposed) return;
     _isLooping = true;
     _loopStart = start;
     _loopEnd = end;
   }
 
   void clearLoop() {
+    if (_isDisposed) return;
     _isLooping = false;
     _loopStart = null;
     _loopEnd = null;
   }
 
   void setSleepTimer(Duration duration) {
+    if (_isDisposed) return;
     _sleepTimerEnd = DateTime.now().add(duration);
   }
 
   void cancelSleepTimer() {
+    if (_isDisposed) return;
     _sleepTimerEnd = null;
     _sleepTimer?.cancel();
   }
 
   void seekRelative(Duration offset) {
+    if (_isDisposed) return;
     _player.seek(_player.position + offset);
   }
 
   Future<void> setSpeed(double speed) async {
+    if (_isDisposed) return;
     await _player.setSpeed(speed);
   }
 
   Future<void> dispose() async {
+    if (_isDisposed) return;
+    _isDisposed = true;
     await _player.dispose();
     await _currentVerseController.close();
   }

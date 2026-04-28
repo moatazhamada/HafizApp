@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
@@ -6,17 +8,31 @@ import 'package:hafiz_app/core/utils/logger.dart';
 class QfApiInterceptor extends Interceptor {
   final QfAuthRemoteDataSource _authDataSource;
   final Dio _dio;
-  bool _isRefreshing = false;
+
+  /// Completer used to coalesce concurrent 401-triggered refreshes.
+  Completer<String?>? _refreshCompleter;
 
   QfApiInterceptor(this._authDataSource, this._dio);
 
+  /// Only match user-facing API requests (apis.quran.foundation/auth/ paths).
+  bool _isUserApiRequest(RequestOptions options) {
+    final host = options.uri.host.toLowerCase();
+    final path = options.uri.path.toLowerCase();
+
+    // Only match apis.quran.foundation with /auth/ in the path
+    if (host.contains('apis.quran.foundation') && path.contains('/auth/')) {
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   Future<void> onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
-    // Only inject headers if this request is going to the QF APIs
-    final isQfApiRequest = options.uri.toString().contains('quran.foundation');
-
-    if (isQfApiRequest) {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (_isUserApiRequest(options)) {
       final accessToken = await _authDataSource.getAccessToken();
 
       options.headers['x-client-id'] = QfApiConfig.clientId;
@@ -31,49 +47,75 @@ class QfApiInterceptor extends Interceptor {
 
   @override
   Future<void> onError(
-      DioException err, ErrorInterceptorHandler handler) async {
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     if (err.response?.statusCode == 401 &&
-        err.requestOptions.uri.toString().contains('quran.foundation')) {
-      if (!_isRefreshing) {
-        _isRefreshing = true;
-        Logger.info('Received 401 from QF API, attempting to refresh token',
-            feature: 'QfApiInterceptor');
+        _isUserApiRequest(err.requestOptions)) {
+      try {
+        final newToken = await _refreshOrQueue();
 
-        try {
-          final isRefreshed = await _authDataSource.refreshToken();
+        if (newToken != null && newToken.isNotEmpty) {
+          // Update the original request with the new token
+          final options = err.requestOptions;
+          options.headers['x-auth-token'] = newToken;
 
-          if (isRefreshed) {
-            final newAccessToken = await _authDataSource.getAccessToken();
-
-            // Update the original request with the new token
-            final options = err.requestOptions;
-            options.headers['x-auth-token'] = newAccessToken;
-
-            // Retry the request
-            final response = await _dio.fetch(options);
-            _isRefreshing = false;
-            return handler.resolve(response);
-          } else {
-            // Refresh failed, token might be revoked or expired
-            Logger.warning('Token refresh failed during interceptor retry',
-                feature: 'QfApiInterceptor');
-            _isRefreshing = false;
-            return super.onError(err, handler);
-          }
-        } catch (e) {
-          Logger.error('Error during token refresh in interceptor: $e',
-              feature: 'QfApiInterceptor');
-          _isRefreshing = false;
+          // Retry the request
+          final response = await _dio.fetch(options);
+          return handler.resolve(response);
+        } else {
+          // Refresh failed, token might be revoked or expired
+          Logger.warning(
+            'Token refresh returned null during interceptor retry',
+            feature: 'QfApiInterceptor',
+          );
           return super.onError(err, handler);
         }
-      } else {
-        // If already refreshing, you might want to enqueue requests,
-        // but for simplicity we'll just fail this one or wait.
-        // A more complex implementation uses a queue or Completer.
+      } catch (e) {
+        Logger.error(
+          'Error during token refresh in interceptor: $e',
+          feature: 'QfApiInterceptor',
+        );
         return super.onError(err, handler);
       }
     }
 
     return super.onError(err, handler);
+  }
+
+  /// Refreshes the token or waits for an in-flight refresh to complete.
+  ///
+  /// If a refresh is already underway ([_refreshCompleter] is active), this
+  /// just awaits its result. Otherwise it kicks off a new refresh and
+  /// populates the completer so subsequent callers can piggyback.
+  Future<String?> _refreshOrQueue() async {
+    // If a refresh is already in progress, wait for it.
+    if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+      return _refreshCompleter!.future;
+    }
+
+    // Start a new refresh.
+    _refreshCompleter = Completer<String?>();
+
+    try {
+      Logger.info(
+        'Received 401 from QF API, attempting to refresh token',
+        feature: 'QfApiInterceptor',
+      );
+
+      final isRefreshed = await _authDataSource.refreshToken();
+      String? newToken;
+      if (isRefreshed) {
+        newToken = await _authDataSource.getAccessToken();
+      }
+
+      _refreshCompleter!.complete(newToken);
+      return newToken;
+    } catch (e) {
+      _refreshCompleter!.completeError(e);
+      // Reset so the next attempt can retry
+      _refreshCompleter = null;
+      rethrow;
+    }
   }
 }

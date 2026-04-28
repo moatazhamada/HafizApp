@@ -96,13 +96,17 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
     try {
       int streak = 0;
       final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final startDate = today.subtract(const Duration(days: 365));
+
+      // Batch-read all logs for the past year in a single Hive read
+      final logs = await localDataSource.getLogsBatch(startDate, today);
+
       for (int i = 0; i < 365; i++) {
-        final date = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: i));
-        final log = await localDataSource.getLog(date);
+        final date = today.subtract(Duration(days: i));
+        final key =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        final log = logs[key];
         if (log != null && log.versesRead > 0) {
           streak++;
         } else if (i > 0) {

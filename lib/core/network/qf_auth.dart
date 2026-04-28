@@ -84,15 +84,32 @@ class QfAuthInterceptor extends Interceptor {
 
   QfAuthInterceptor(this.auth);
 
-  bool _isQfHost(RequestOptions options) {
+  /// Only match machine-to-machine OAuth token endpoint and content API paths.
+  bool _shouldInjectToken(RequestOptions options) {
     final host = options.uri.host.toLowerCase();
-    return host.endsWith('quran.foundation');
+    final path = options.uri.path.toLowerCase();
+
+    // Machine-to-machine OAuth token endpoint
+    if (host.contains('oauth2.quran.foundation') && path.contains('/token')) {
+      return true;
+    }
+
+    // Content API paths (api.quran.foundation or api.quran.com content routes)
+    if ((host.contains('api.quran.foundation') ||
+            host.contains('api.quran.com')) &&
+        path.contains('/content/')) {
+      return true;
+    }
+
+    return false;
   }
 
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
-    if (_isQfHost(options)) {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (_shouldInjectToken(options)) {
       try {
         await auth.ensureToken();
         final token = auth.accessToken;
@@ -108,7 +125,8 @@ class QfAuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401 && _isQfHost(err.requestOptions)) {
+    if (err.response?.statusCode == 401 &&
+        _shouldInjectToken(err.requestOptions)) {
       try {
         await auth.ensureToken();
         final token = auth.accessToken;
@@ -124,7 +142,9 @@ class QfAuthInterceptor extends Interceptor {
   }
 
   Future<Response<dynamic>> _retryWithToken(
-      RequestOptions requestOptions, String token) async {
+    RequestOptions requestOptions,
+    String token,
+  ) async {
     final dio = Dio();
     // Copy base options
     dio.options = BaseOptions(
