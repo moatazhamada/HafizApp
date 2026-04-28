@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/data/datasource/qf_search/qf_search_remote_data_source.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 import 'package:hafiz_app/presentation/search/bloc/search_bloc.dart';
@@ -9,8 +10,12 @@ import 'package:mocktail/mocktail.dart';
 
 class MockSurahRepository extends Mock implements SurahRepository {}
 
+class MockQfSearchRemoteDataSource extends Mock
+    implements QfSearchRemoteDataSource {}
+
 void main() {
   late MockSurahRepository mockRepository;
+  late MockQfSearchRemoteDataSource mockSearchRemote;
   late SearchBloc searchBloc;
 
   final testVerses = [
@@ -24,7 +29,11 @@ void main() {
 
   setUp(() {
     mockRepository = MockSurahRepository();
-    searchBloc = SearchBloc(repository: mockRepository);
+    mockSearchRemote = MockQfSearchRemoteDataSource();
+    searchBloc = SearchBloc(
+      repository: mockRepository,
+      searchRemoteDataSource: mockSearchRemote,
+    );
   });
 
   tearDown(() => searchBloc.close());

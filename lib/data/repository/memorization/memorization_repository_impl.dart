@@ -1,6 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_source.dart';
+import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/memorization_progress_model.dart';
 import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/domain/repository/memorization_repository.dart';
@@ -8,8 +11,12 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
 class MemorizationRepositoryImpl implements MemorizationRepository {
   final MemorizationLocalDataSource localDataSource;
+  final QfGoalsRemoteDataSource goalsRemoteDataSource;
 
-  MemorizationRepositoryImpl({required this.localDataSource});
+  MemorizationRepositoryImpl({
+    required this.localDataSource,
+    required this.goalsRemoteDataSource,
+  });
 
   @override
   Future<Either<Failure, List<MemorizationProgress>>> getAllProgress() async {
@@ -136,5 +143,44 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
     final quality = (score / 20).round().clamp(0, 5);
     final newEf = currentEf + (quality - 3) * 100;
     return newEf.clamp(1300, 5000);
+  }
+
+  @override
+  Future<Either<Failure, void>> syncMemorizationGoalToQf() async {
+    try {
+      final progress = await localDataSource.getAllProgress();
+      final inProgressItems = progress.where(
+        (p) =>
+            p.status == MemorizationStatus.inProgress ||
+            p.status == MemorizationStatus.needsReview,
+      );
+
+      // Create a QURAN_RANGE goal for each surah in progress
+      for (final item in inProgressItems) {
+        try {
+          final verseCount = MushafPageIndex.getVerseCount(item.surahId);
+
+          await goalsRemoteDataSource.createGoal(
+            type: 'QURAN_RANGE',
+            amount: '${item.surahId}:1-${item.surahId}:$verseCount',
+            category: 'QURAN',
+            mushafId: 4, // UthmaniHafs
+          );
+        } catch (e) {
+          Logger.warning(
+            'Failed to sync memorization goal for surah ${item.surahId}: $e',
+            feature: 'Memorization',
+          );
+        }
+      }
+
+      Logger.info(
+        'Synced ${inProgressItems.length} memorization goals to QF',
+        feature: 'Memorization',
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
   }
 }

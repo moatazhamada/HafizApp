@@ -12,6 +12,7 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
     on<LoadKhatmahDashboard>(_onLoadDashboard);
     on<SetReadingGoal>(_onSetGoal);
     on<RecordReading>(_onRecordReading);
+    on<SyncActivityDays>(_onSyncActivityDays);
   }
 
   Future<void> _onLoadDashboard(
@@ -23,45 +24,34 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
       final goalResult = await repository.getGoal();
       final logResult = await repository.getTodayLog();
       final logsResult = await repository.getRecentLogs(30);
-      final streakResult = await repository.getCurrentStreak();
+      // Use reconciled streak (cloud + local, take higher)
+      final streakResult = await repository.getReconciledStreak();
 
       int failCount = 0;
 
       ReadingGoal? goal;
-      goalResult.fold(
-        (_) {
-          failCount++;
-          Logger.warning('Failed to load khatmah goal', feature: 'Khatmah');
-        },
-        (g) => goal = g,
-      );
+      goalResult.fold((_) {
+        failCount++;
+        Logger.warning('Failed to load khatmah goal', feature: 'Khatmah');
+      }, (g) => goal = g);
 
       DailyReadingLog? todayLog;
-      logResult.fold(
-        (_) {
-          failCount++;
-          Logger.warning('Failed to load today log', feature: 'Khatmah');
-        },
-        (l) => todayLog = l,
-      );
+      logResult.fold((_) {
+        failCount++;
+        Logger.warning('Failed to load today log', feature: 'Khatmah');
+      }, (l) => todayLog = l);
 
       List<DailyReadingLog> recentLogs = [];
-      logsResult.fold(
-        (_) {
-          failCount++;
-          Logger.warning('Failed to load recent logs', feature: 'Khatmah');
-        },
-        (l) => recentLogs = l,
-      );
+      logsResult.fold((_) {
+        failCount++;
+        Logger.warning('Failed to load recent logs', feature: 'Khatmah');
+      }, (l) => recentLogs = l);
 
       int streak = 0;
-      streakResult.fold(
-        (_) {
-          failCount++;
-          Logger.warning('Failed to load streak', feature: 'Khatmah');
-        },
-        (s) => streak = s,
-      );
+      streakResult.fold((_) {
+        failCount++;
+        Logger.warning('Failed to load streak', feature: 'Khatmah');
+      }, (s) => streak = s);
 
       if (failCount == 4) {
         emit(const KhatmahError('msg_operation_failed'));
@@ -75,6 +65,9 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
           ),
         );
       }
+
+      // Background: sync pending activity days
+      add(SyncActivityDays());
     } catch (e) {
       emit(const KhatmahError('msg_operation_failed'));
     }
@@ -102,6 +95,22 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
     result.fold(
       (failure) => emit(const KhatmahError('msg_operation_failed')),
       (_) => add(LoadKhatmahDashboard()),
+    );
+  }
+
+  Future<void> _onSyncActivityDays(
+    SyncActivityDays event,
+    Emitter<KhatmahState> emit,
+  ) async {
+    final result = await repository.syncPendingActivityDays();
+    result.fold(
+      (failure) =>
+          Logger.warning('Activity day sync failed', feature: 'Khatmah'),
+      (synced) {
+        if (synced > 0) {
+          Logger.info('Synced $synced activity days to QF', feature: 'Khatmah');
+        }
+      },
     );
   }
 }

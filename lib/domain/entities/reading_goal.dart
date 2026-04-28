@@ -1,11 +1,14 @@
 import 'package:equatable/equatable.dart';
 
+enum SyncStatus { pending, synced, failed }
+
 class DailyReadingLog extends Equatable {
   final DateTime date;
   final int versesRead;
   final int juzRead;
   final int surahsVisited;
   final Duration readingDuration;
+  final SyncStatus syncStatus;
 
   const DailyReadingLog({
     required this.date,
@@ -13,6 +16,7 @@ class DailyReadingLog extends Equatable {
     this.juzRead = 0,
     this.surahsVisited = 0,
     this.readingDuration = Duration.zero,
+    this.syncStatus = SyncStatus.pending,
   });
 
   DailyReadingLog copyWith({
@@ -20,6 +24,7 @@ class DailyReadingLog extends Equatable {
     int? juzRead,
     int? surahsVisited,
     Duration? readingDuration,
+    SyncStatus? syncStatus,
   }) {
     return DailyReadingLog(
       date: date,
@@ -27,6 +32,7 @@ class DailyReadingLog extends Equatable {
       juzRead: juzRead ?? this.juzRead,
       surahsVisited: surahsVisited ?? this.surahsVisited,
       readingDuration: readingDuration ?? this.readingDuration,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 

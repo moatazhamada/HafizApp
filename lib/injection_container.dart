@@ -47,6 +47,9 @@ import 'core/network/qf_auth.dart';
 import 'core/config/api_config.dart';
 import 'data/datasource/auth/qf_auth_remote_data_source.dart';
 import 'data/datasource/qf_user_api_remote_data_source.dart';
+import 'data/datasource/qf_activity/qf_activity_remote_data_source.dart';
+import 'data/datasource/qf_goals/qf_goals_remote_data_source.dart';
+import 'data/datasource/qf_search/qf_search_remote_data_source.dart';
 import 'presentation/auth/bloc/qf_auth_bloc.dart';
 import 'core/network/qf_api_interceptor.dart';
 import 'core/scroll/scroll_position_cubit.dart';
@@ -63,7 +66,12 @@ Future<void> init() async {
   // Bloc
   sl.registerFactory(() => SurahBloc(getSurah: sl()));
   sl.registerLazySingleton(() => BookmarkBloc(repository: sl()));
-  sl.registerFactory(() => SearchBloc(repository: sl()));
+  sl.registerFactory(
+    () => SearchBloc(
+      repository: sl(),
+      searchRemoteDataSource: sl<QfSearchRemoteDataSource>(),
+    ),
+  );
   sl.registerFactory(() => HomeBloc());
   sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
   sl.registerLazySingleton(() => ThemeBloc());
@@ -112,11 +120,18 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton<MemorizationRepository>(
-    () => MemorizationRepositoryImpl(localDataSource: sl()),
+    () => MemorizationRepositoryImpl(
+      localDataSource: sl(),
+      goalsRemoteDataSource: sl<QfGoalsRemoteDataSource>(),
+    ),
   );
 
   sl.registerLazySingleton<KhatmahRepository>(
-    () => KhatmahRepositoryImpl(localDataSource: sl()),
+    () => KhatmahRepositoryImpl(
+      localDataSource: sl(),
+      activityRemoteDataSource: sl<QfActivityRemoteDataSource>(),
+      goalsRemoteDataSource: sl<QfGoalsRemoteDataSource>(),
+    ),
   );
 
   // Data Source
@@ -168,6 +183,21 @@ Future<void> init() async {
 
   sl.registerLazySingleton<QfUserApiRemoteDataSource>(
     () => QfUserApiRemoteDataSourceImpl(dio: sl()),
+  );
+
+  // QF Activity & Streak data source
+  sl.registerLazySingleton<QfActivityRemoteDataSource>(
+    () => QfActivityRemoteDataSourceImpl(dio: sl()),
+  );
+
+  // QF Goals & Reading Sessions data source
+  sl.registerLazySingleton<QfGoalsRemoteDataSource>(
+    () => QfGoalsRemoteDataSourceImpl(dio: sl()),
+  );
+
+  // QF Search data source
+  sl.registerLazySingleton<QfSearchRemoteDataSource>(
+    () => QfSearchRemoteDataSourceImpl(dio: sl()),
   );
 
   sl.registerLazySingleton<QrcRemoteDataSource>(
