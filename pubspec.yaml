@@ -1,5 +1,5 @@
 name: hafiz_app
-description: "A Quran memorization app with spaced repetition, voice verification, and Quran Foundation API integration."
+description: "Hafiz — Quran memorization assistant with smart review scheduling, mushaf reading, and recitation coaching"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
