@@ -66,7 +66,9 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   /// Loads verse text from local JSON assets for exact (surahId, verseNumber) pairs.
-  Future<List<_VerseText>> _loadTextForVerses(List<PageVerse> pageVerses) async {
+  Future<List<_VerseText>> _loadTextForVerses(
+    List<PageVerse> pageVerses,
+  ) async {
     final cacheKey = pageVerses.first.pageNumber;
     if (_localTextCache.containsKey(cacheKey) &&
         _localTextCache[cacheKey]!.length == pageVerses.length) {
@@ -87,14 +89,14 @@ class _MushafScreenState extends State<MushafScreen> {
           'assets/quran/uthmani/surah_$surahId.json',
         );
         final data = json.decode(jsonStr) as Map<String, dynamic>;
-        final versesRaw =
-            data.containsKey('verses') ? data['verses'] : data['chapter'];
+        final versesRaw = data.containsKey('verses')
+            ? data['verses']
+            : data['chapter'];
         final List<dynamic> verseList = versesRaw is List ? versesRaw : [];
 
         for (final v in verseList) {
           if (v is! Map<String, dynamic>) continue;
-          final verseNum =
-              (v['verse'] ?? v['verse_number'] ?? 0) as int;
+          final verseNum = (v['verse'] ?? v['verse_number'] ?? 0) as int;
           final text = (v['text'] ?? v['text_uthmani'] ?? '') as String;
           textMap['$surahId:$verseNum'] = text;
         }
@@ -112,13 +114,15 @@ class _MushafScreenState extends State<MushafScreen> {
       final showBismillah =
           isFirstVerseOfSurah && pv.surahId != 1 && pv.surahId != 9;
 
-      results.add(_VerseText(
-        surahId: pv.surahId,
-        verseNumber: pv.verseNumber,
-        text: text,
-        surahNameArabic: surah.nameArabic,
-        showBismillah: showBismillah,
-      ));
+      results.add(
+        _VerseText(
+          surahId: pv.surahId,
+          verseNumber: pv.verseNumber,
+          text: text,
+          surahNameArabic: surah.nameArabic,
+          showBismillah: showBismillah,
+        ),
+      );
     }
 
     _localTextCache[cacheKey] = results;
@@ -144,8 +148,9 @@ class _MushafScreenState extends State<MushafScreen> {
           'assets/quran/uthmani/surah_${range.surahId}.json',
         );
         final data = json.decode(jsonStr) as Map<String, dynamic>;
-        final versesRaw =
-            data.containsKey('verses') ? data['verses'] : data['chapter'];
+        final versesRaw = data.containsKey('verses')
+            ? data['verses']
+            : data['chapter'];
         final List<dynamic> verseList = versesRaw is List ? versesRaw : [];
 
         for (final v in verseList) {
@@ -153,23 +158,27 @@ class _MushafScreenState extends State<MushafScreen> {
           final verseNum = (v['verse'] ?? v['verse_number'] ?? 0) as int;
           if (verseNum >= range.startVerse && verseNum <= range.endVerse) {
             final text = (v['text'] ?? v['text_uthmani'] ?? '') as String;
-            entries.add(_VerseText(
-              surahId: range.surahId,
-              verseNumber: verseNum,
-              text: text,
-              surahNameArabic: surah.nameArabic,
-              showBismillah: showBismillah && verseNum == 1,
-            ));
+            entries.add(
+              _VerseText(
+                surahId: range.surahId,
+                verseNumber: verseNum,
+                text: text,
+                surahNameArabic: surah.nameArabic,
+                showBismillah: showBismillah && verseNum == 1,
+              ),
+            );
           }
         }
       } catch (_) {
-        entries.add(_VerseText(
-          surahId: range.surahId,
-          verseNumber: 0,
-          text: '',
-          surahNameArabic: surah.nameArabic,
-          showBismillah: false,
-        ));
+        entries.add(
+          _VerseText(
+            surahId: range.surahId,
+            verseNumber: 0,
+            text: '',
+            surahNameArabic: surah.nameArabic,
+            showBismillah: false,
+          ),
+        );
       }
     }
 
@@ -294,14 +303,21 @@ class _MushafScreenState extends State<MushafScreen> {
                   return switch (_renderingMode) {
                     MushafRenderingConfig.ayahImagesMode =>
                       _buildAyahImagesPage(isDark, apiPage),
-                    MushafRenderingConfig.glyphMode =>
-                      _buildGlyphPage(isDark, apiPage),
+                    MushafRenderingConfig.glyphMode => _buildGlyphPage(
+                      isDark,
+                      apiPage,
+                    ),
                     _ => _buildTextPageFromApi(isDark, apiPage),
                   };
                 }
 
                 // Offline fallback: approximate local index
-                return _buildOfflineTextPage(context, theme, isDark, pageNumber);
+                return _buildOfflineTextPage(
+                  context,
+                  theme,
+                  isDark,
+                  pageNumber,
+                );
               },
             ),
             Positioned(
@@ -323,12 +339,11 @@ class _MushafScreenState extends State<MushafScreen> {
       future: _loadTextForVerses(apiPage.verses),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          );
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
         final verses = snapshot.data ?? [];
-        if (verses.isEmpty) return const Center(child: Text('—'));
+        if (verses.isEmpty)
+          return Center(child: Text('lbl_verse_unavailable'.tr));
 
         return _buildTextContent(isDark, verses);
       },
@@ -337,8 +352,9 @@ class _MushafScreenState extends State<MushafScreen> {
 
   Widget _buildTextContent(bool isDark, List<_VerseText> verses) {
     final fontSize = PrefUtils().getQuranFontSize();
-    final textColor =
-        isDark ? const Color(0xFFE8D5B7) : const Color(0xFF1A1A1A);
+    final textColor = isDark
+        ? const Color(0xFFE8D5B7)
+        : const Color(0xFF1A1A1A);
     final verseNumColor = isDark ? Colors.white38 : Colors.black38;
 
     final List<InlineSpan> spans = [];
@@ -357,41 +373,48 @@ class _MushafScreenState extends State<MushafScreen> {
       if (v.verseNumber == 1) {
         final surah = QuranIndex.quranSurahs[v.surahId - 1];
         if (i > 0) spans.add(const TextSpan(text: '\n'));
-        spans.add(TextSpan(
-          text: '${surah.nameArabic}\n',
-          style: TextStyle(
-            fontFamily: 'NotoNaskhArabic',
-            fontSize: fontSize,
-            fontWeight: FontWeight.bold,
-            color:
-                isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
-          ),
-        ));
-        if (v.showBismillah) {
-          spans.add(const TextSpan(
-            text: 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ\n',
+        spans.add(
+          TextSpan(
+            text: '${surah.nameArabic}\n',
             style: TextStyle(
               fontFamily: 'NotoNaskhArabic',
-              fontSize: 20,
-              color: Colors.grey,
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
             ),
-          ));
+          ),
+        );
+        if (v.showBismillah) {
+          spans.add(
+            const TextSpan(
+              text: 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ\n',
+              style: TextStyle(
+                fontFamily: 'NotoNaskhArabic',
+                fontSize: 20,
+                color: Colors.grey,
+              ),
+            ),
+          );
         }
       }
 
-      spans.add(TextSpan(
-        text: '${v.text} ',
-        style: TextStyle(
-          fontFamily: 'NotoNaskhArabic',
-          fontSize: fontSize,
-          height: 2.0,
-          color: textColor,
+      spans.add(
+        TextSpan(
+          text: '${v.text} ',
+          style: TextStyle(
+            fontFamily: 'NotoNaskhArabic',
+            fontSize: fontSize,
+            height: 2.0,
+            color: textColor,
+          ),
         ),
-      ));
-      spans.add(TextSpan(
-        text: ' ۝${_toArabicNumeral(v.verseNumber)} ',
-        style: arabicVerseNumStyle,
-      ));
+      );
+      spans.add(
+        TextSpan(
+          text: ' ۝${_toArabicNumeral(v.verseNumber)} ',
+          style: arabicVerseNumStyle,
+        ),
+      );
     }
 
     return Padding(
@@ -413,12 +436,11 @@ class _MushafScreenState extends State<MushafScreen> {
       future: _loadTextForVerses(apiPage.verses),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          );
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
         final verses = snapshot.data ?? [];
-        if (verses.isEmpty) return const Center(child: Text('—'));
+        if (verses.isEmpty)
+          return Center(child: Text('lbl_verse_unavailable'.tr));
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
@@ -472,8 +494,10 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   Widget _buildAyahImage(bool isDark, _VerseText verse) {
-    final imageUrl =
-        MushafRenderingConfig.ayahImageUrl(verse.surahId, verse.verseNumber);
+    final imageUrl = MushafRenderingConfig.ayahImageUrl(
+      verse.surahId,
+      verse.verseNumber,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: CachedNetworkImage(
@@ -495,28 +519,30 @@ class _MushafScreenState extends State<MushafScreen> {
       child: RichText(
         textDirection: TextDirection.rtl,
         textAlign: TextAlign.right,
-        text: TextSpan(children: [
-          TextSpan(
-            text: '${verse.text} ',
-            style: TextStyle(
-              fontFamily: 'NotoNaskhArabic',
-              fontSize: fontSize,
-              height: 2.0,
-              color: isDark
-                  ? const Color(0xFFE8D5B7)
-                  : const Color(0xFF1A1A1A),
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '${verse.text} ',
+              style: TextStyle(
+                fontFamily: 'NotoNaskhArabic',
+                fontSize: fontSize,
+                height: 2.0,
+                color: isDark
+                    ? const Color(0xFFE8D5B7)
+                    : const Color(0xFF1A1A1A),
+              ),
             ),
-          ),
-          TextSpan(
-            text: ' ۝${_toArabicNumeral(verse.verseNumber)} ',
-            style: TextStyle(
-              fontFamily: 'NotoNaskhArabic',
-              fontSize: fontSize - 4,
-              color: isDark ? Colors.white38 : Colors.black38,
-              fontWeight: FontWeight.bold,
+            TextSpan(
+              text: ' ۝${_toArabicNumeral(verse.verseNumber)} ',
+              style: TextStyle(
+                fontFamily: 'NotoNaskhArabic',
+                fontSize: fontSize - 4,
+                color: isDark ? Colors.white38 : Colors.black38,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -530,12 +556,13 @@ class _MushafScreenState extends State<MushafScreen> {
     }
 
     final lines = apiPage.glyphLines;
-    if (lines.isEmpty) return const Center(child: Text('—'));
+    if (lines.isEmpty) return Center(child: Text('lbl_verse_unavailable'.tr));
 
     final sortedLineNums = lines.keys.toList()..sort();
     final fontSize = PrefUtils().getQuranFontSize() + 4;
-    final textColor =
-        isDark ? const Color(0xFFE8D5B7) : const Color(0xFF1A1A1A);
+    final textColor = isDark
+        ? const Color(0xFFE8D5B7)
+        : const Color(0xFF1A1A1A);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -614,7 +641,11 @@ class _MushafScreenState extends State<MushafScreen> {
           }
           return Padding(
             padding: const EdgeInsets.only(
-                left: 20, right: 20, top: 28, bottom: 20),
+              left: 20,
+              right: 20,
+              top: 28,
+              bottom: 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -643,8 +674,7 @@ class _MushafScreenState extends State<MushafScreen> {
               fontFamily: 'NotoNaskhArabic',
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color:
-                  isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
             ),
           ),
           const SizedBox(height: 8),
@@ -701,9 +731,7 @@ class _MushafScreenState extends State<MushafScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: (isDark
-                  ? const Color(0xFF1A1A2E)
-                  : const Color(0xFFFFFBF0))
+          color: (isDark ? const Color(0xFF1A1A2E) : const Color(0xFFFFFBF0))
               .withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -745,8 +773,10 @@ class _MushafScreenState extends State<MushafScreen> {
             GestureDetector(
               onTap: _showJumpDialog,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(16),

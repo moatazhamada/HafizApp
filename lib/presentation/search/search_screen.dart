@@ -30,7 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
       create: (context) => sl<SearchBloc>(),
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme.of(context).primaryColor,
           elevation: 0,
           leading: Semantics(
             button: true,

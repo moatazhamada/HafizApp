@@ -31,21 +31,72 @@ class StatisticsScreen extends StatelessWidget {
           context.read<MemorizationBloc>(),
         ],
         builders: (context) {
+          final bookmarkState = context.read<BookmarkBloc>().state;
+          final errorState = context.read<RecitationErrorBloc>().state;
+          final memState = context.read<MemorizationBloc>().state;
+
+          // Loading state: show spinner while any bloc is still loading
+          final isLoading =
+              memState is MemorizationInitial ||
+              memState is MemorizationLoading ||
+              bookmarkState is BookmarkInitial ||
+              bookmarkState is BookmarkLoading ||
+              errorState is RecitationErrorInitial ||
+              errorState is RecitationErrorLoading;
+
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Error state: show error with retry if the primary bloc failed
+          if (memState is MemorizationError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: theme.colorScheme.error.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      memState.message.tr,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.tonal(
+                      onPressed: () => context.read<MemorizationBloc>().add(
+                        LoadMemorizationProgress(),
+                      ),
+                      child: Text('lbl_retry'.tr),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // Loaded state: show populated UI
           int bookmarkCount = 0;
           int practiceCount = 0;
           int memorizedCount = 0;
 
-          final bookmarkState = context.read<BookmarkBloc>().state;
           if (bookmarkState is BookmarkLoaded) {
             bookmarkCount = bookmarkState.bookmarks.length;
           }
 
-          final errorState = context.read<RecitationErrorBloc>().state;
           if (errorState is RecitationErrorLoaded) {
             practiceCount = errorState.errors.length;
           }
 
-          final memState = context.read<MemorizationBloc>().state;
           if (memState is MemorizationLoaded) {
             memorizedCount = memState.totalMemorized;
           }
