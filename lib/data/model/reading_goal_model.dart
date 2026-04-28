@@ -7,6 +7,7 @@ class DailyReadingLogModel extends DailyReadingLog {
     super.juzRead,
     super.surahsVisited,
     super.readingDuration,
+    super.syncStatus,
   });
 
   String get _dateKey =>
@@ -19,6 +20,7 @@ class DailyReadingLogModel extends DailyReadingLog {
       'juzRead': juzRead,
       'surahsVisited': surahsVisited,
       'readingDurationMs': readingDuration.inMilliseconds,
+      'syncStatus': syncStatus.index,
     };
   }
 
@@ -31,6 +33,9 @@ class DailyReadingLogModel extends DailyReadingLog {
       readingDuration: Duration(
         milliseconds: (json['readingDurationMs'] as num?)?.toInt() ?? 0,
       ),
+      syncStatus: json['syncStatus'] != null
+          ? SyncStatus.values[(json['syncStatus'] as num).toInt()]
+          : SyncStatus.pending,
     );
   }
 }
