@@ -118,7 +118,7 @@ final Map<String, String> arEg = {
   'lbl_repeat_word': 'كرر الكلمة',
   'lbl_connecting': 'جاري الاتصال...',
   'msg_transcribing': 'جاري التفريغ محلياً...',
-  'msg_session_score': 'لقد تلوت الآيات بشكل صحيح.',
+  'msg_session_score': 'دقة التلاوة: {score}%',
   'lbl_try_again': 'حاول مرة أخرى',
   'lbl_save_practice': 'تحديد لتثبيت الحفظ والتالي',
   'msg_incorrect_recitation': 'التلاوة تحتاج لتحسين.',
@@ -266,7 +266,8 @@ final Map<String, String> arEg = {
   // Mushaf Settings
   'lbl_mushaf_type': 'نوع المصحف',
   'lbl_clear_mushaf_cache': 'مسح ذاكرة صور المصحف',
-  'msg_clear_mushaf_cache_desc': 'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
+  'msg_clear_mushaf_cache_desc':
+      'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
   'msg_cache_cleared': 'تم مسح ذاكرة الصور',
 
   // Statistics
@@ -372,12 +373,14 @@ final Map<String, String> arEg = {
   'lbl_render_ayah_images': 'صور الآيات',
   'msg_render_ayah_images_desc': 'تحميل صور الآيات من الشبكة (يتطلب إنترنت)',
   'lbl_render_glyph': 'رسم QF للرسم البياني',
-  'msg_render_glyph_desc': 'استخدام بيانات code_v2 من مؤسسة القرآن لعرض الصفحات',
+  'msg_render_glyph_desc':
+      'استخدام بيانات code_v2 من مؤسسة القرآن لعرض الصفحات',
 
   // Delete My Data
   'lbl_delete_my_data': 'حذف بياناتي',
   'lbl_delete_data': 'حذف',
-  'msg_delete_data_confirm': 'سيؤدي هذا إلى إلغاء صلاحية الوصول إلى مؤسسة القرآن، وإزالة إشاراتك المرجعية المتزامنة، وتسجيل الخروج. لا يمكن التراجع عن هذا.',
+  'msg_delete_data_confirm':
+      'سيؤدي هذا إلى إلغاء صلاحية الوصول إلى مؤسسة القرآن، وإزالة إشاراتك المرجعية المتزامنة، وتسجيل الخروج. لا يمكن التراجع عن هذا.',
 
   // General
   'msg_operation_failed': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
@@ -385,6 +388,10 @@ final Map<String, String> arEg = {
   'lbl_qf_attribution': 'مؤسسة القرآن — code_v2',
 
   // Voice Verification
-  'msg_custom_asr_empty': 'لم يتم تكوين نقطة نهاية ASR المخصصة. يرجى تعيينها في الإعدادات.',
+  'msg_custom_asr_empty':
+      'لم يتم تكوين نقطة نهاية ASR المخصصة. يرجى تعيينها في الإعدادات.',
   'lbl_tajweed': 'التجويد',
+
+  // Verse unavailable
+  'lbl_verse_unavailable': 'الآية غير متوفرة',
 };

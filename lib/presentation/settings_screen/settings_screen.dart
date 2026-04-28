@@ -127,7 +127,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: Text('lbl_qiraat'.tr),
               subtitle: Text(
-                _loadingEditions ? 'lbl_loading'.tr : _editionLabel(_qiraatEdition),
+                _loadingEditions
+                    ? 'lbl_loading'.tr
+                    : _editionLabel(_qiraatEdition),
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: _loadingEditions ? null : _selectQiraatEdition,
@@ -163,7 +165,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.new_releases, color: Colors.teal),
               title: Text('lbl_whats_new'.tr),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, AppRoutes.changelogScreen),
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.changelogScreen),
             ),
           ]),
           const SizedBox(height: 20),
@@ -195,7 +198,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                     ),
                   )
-                : const Icon(Icons.account_circle, color: Colors.white, size: 28),
+                : const Icon(
+                    Icons.account_circle,
+                    color: Colors.white,
+                    size: 28,
+                  ),
           );
           title = 'msg_qf_account'.tr;
           subtitle = state.userId ?? '';
@@ -231,7 +238,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         return Card(
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
@@ -277,10 +286,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionLabel(String label) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final displayLabel = isArabic ? label : label.toUpperCase();
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
-        label.toUpperCase(),
+        displayLabel,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -303,8 +314,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final label = _currentLang == 'system'
         ? 'lbl_system_default'.tr
         : _currentLang == 'ar'
-            ? 'العربية'
-            : 'English';
+        ? 'العربية'
+        : 'English';
     return ListTile(
       title: Text('about_language_title'.tr),
       subtitle: Text(label),
@@ -341,8 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final label = _themeMode == 'system'
         ? 'lbl_system_default'.tr
         : _themeMode == 'dark'
-            ? 'lbl_theme_dark'.tr
-            : 'lbl_theme_light'.tr;
+        ? 'lbl_theme_dark'.tr
+        : 'lbl_theme_light'.tr;
     return ListTile(
       title: Text('lbl_theme'.tr),
       subtitle: Text(label),
@@ -374,7 +385,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('lbl_quran_font'.tr, style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  'lbl_quran_font'.tr,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'بِسْمِ اللَّهِ',
@@ -411,8 +425,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final label = _orientationMode == 'portrait'
         ? 'lbl_portrait'.tr
         : _orientationMode == 'landscape'
-            ? 'lbl_landscape'.tr
-            : 'lbl_system_default'.tr;
+        ? 'lbl_landscape'.tr
+        : 'lbl_system_default'.tr;
     return ListTile(
       title: Text('lbl_orientation'.tr),
       subtitle: Text(label),
@@ -429,7 +443,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
         if (value != null && value != _orientationMode) {
           unawaited(PrefUtils().setOrientationMode(value));
-          unawaited(SystemChrome.setPreferredOrientations(_getOrientations(value)));
+          unawaited(
+            SystemChrome.setPreferredOrientations(_getOrientations(value)),
+          );
           setState(() => _orientationMode = value);
         }
       },
@@ -547,9 +563,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: Text('msg_clear_mushaf_cache_desc'.tr),
       onTap: () {
         DefaultCacheManager().emptyCache();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('msg_cache_cleared'.tr)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('msg_cache_cleared'.tr)));
       },
     );
   }
@@ -574,7 +590,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'portrait':
         return [DeviceOrientation.portraitUp];
       case 'landscape':
-        return [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight];
+        return [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ];
       default:
         return DeviceOrientation.values;
     }
@@ -750,7 +769,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           for (final option in options)
             ListTile(
               title: Text(option.isKey ? option.label.tr : option.label),
-              trailing: selected == option.value ? const Icon(Icons.check) : null,
+              trailing: selected == option.value
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () => Navigator.pop(context, option.value as T),
             ),
           const SizedBox(height: 8),
