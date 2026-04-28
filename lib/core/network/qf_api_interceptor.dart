@@ -14,13 +14,14 @@ class QfApiInterceptor extends Interceptor {
 
   QfApiInterceptor(this._authDataSource, this._dio);
 
-  /// Only match user-facing API requests (apis.quran.foundation/auth/ paths).
+  /// Match user-facing API requests that need x-auth-token headers.
   bool _isUserApiRequest(RequestOptions options) {
     final host = options.uri.host.toLowerCase();
     final path = options.uri.path.toLowerCase();
 
-    // Only match apis.quran.foundation with /auth/ in the path
-    if (host.contains('apis.quran.foundation') && path.contains('/auth/')) {
+    // Match apis.quran.foundation or api.quran.foundation with /auth/ or /api/ paths
+    if (host.contains('quran.foundation') &&
+        (path.contains('/auth/') || path.contains('/api/'))) {
       return true;
     }
 

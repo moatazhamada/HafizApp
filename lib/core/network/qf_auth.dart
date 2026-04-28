@@ -94,8 +94,9 @@ class QfAuthInterceptor extends Interceptor {
       return true;
     }
 
-    // Content API paths (api.quran.foundation or api.quran.com content routes)
-    if ((host.contains('api.quran.foundation') ||
+    // Content API paths (apis.quran.foundation, api.quran.foundation, or api.quran.com)
+    if ((host.contains('apis.quran.foundation') ||
+            host.contains('api.quran.foundation') ||
             host.contains('api.quran.com')) &&
         path.contains('/content/')) {
       return true;
