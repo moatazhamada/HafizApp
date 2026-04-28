@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
@@ -34,9 +35,9 @@ class RecitationSessionScreen extends StatelessWidget {
                   Text(state.message.tr),
                   const SizedBox(height: 16),
                   FilledButton.tonal(
-                    onPressed: () => context
-                        .read<RecitationSessionBloc>()
-                        .add(LoadSessions()),
+                    onPressed: () => context.read<RecitationSessionBloc>().add(
+                      LoadSessions(),
+                    ),
                     child: Text('lbl_retry'.tr),
                   ),
                 ],
@@ -94,7 +95,7 @@ class _SessionCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? AppColors.of(context).surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),

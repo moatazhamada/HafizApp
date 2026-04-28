@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import '../../core/app_export.dart';
 import '../../core/mushaf/mushaf_rendering_config.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
@@ -286,7 +287,7 @@ class _MushafScreenState extends State<MushafScreen> {
     return GestureDetector(
       onDoubleTap: _showJumpDialog,
       child: Container(
-        color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFFFFBF0),
+        color: AppColors.of(context).mushafPageBg,
         child: Stack(
           children: [
             FutureBuilder<MushafPageData?>(
@@ -353,8 +354,8 @@ class _MushafScreenState extends State<MushafScreen> {
   Widget _buildTextContent(bool isDark, List<_VerseText> verses) {
     final fontSize = PrefUtils().getQuranFontSize();
     final textColor = isDark
-        ? const Color(0xFFE8D5B7)
-        : const Color(0xFF1A1A1A);
+        ? AppColors.of(context).mushafPageBorder
+        : AppColors.of(context).onSurface;
     final verseNumColor = isDark ? Colors.white38 : Colors.black38;
 
     final List<InlineSpan> spans = [];
@@ -380,7 +381,7 @@ class _MushafScreenState extends State<MushafScreen> {
               fontFamily: 'NotoNaskhArabic',
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+              color: AppColors.of(context).primary,
             ),
           ),
         );
@@ -472,7 +473,7 @@ class _MushafScreenState extends State<MushafScreen> {
             fontFamily: 'NotoNaskhArabic',
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+            color: AppColors.of(context).primary,
           ),
         ),
         if (verse.showBismillah) ...[
@@ -528,8 +529,8 @@ class _MushafScreenState extends State<MushafScreen> {
                 fontSize: fontSize,
                 height: 2.0,
                 color: isDark
-                    ? const Color(0xFFE8D5B7)
-                    : const Color(0xFF1A1A1A),
+                    ? AppColors.of(context).mushafPageBorder
+                    : AppColors.of(context).onSurface,
               ),
             ),
             TextSpan(
@@ -561,8 +562,8 @@ class _MushafScreenState extends State<MushafScreen> {
     final sortedLineNums = lines.keys.toList()..sort();
     final fontSize = PrefUtils().getQuranFontSize() + 4;
     final textColor = isDark
-        ? const Color(0xFFE8D5B7)
-        : const Color(0xFF1A1A1A);
+        ? AppColors.of(context).mushafPageBorder
+        : AppColors.of(context).onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -617,7 +618,7 @@ class _MushafScreenState extends State<MushafScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A2E) : const Color(0xFFFFFBF0),
+        color: AppColors.of(context).mushafPageBg,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark ? Colors.white12 : Colors.brown.shade200,
@@ -674,7 +675,7 @@ class _MushafScreenState extends State<MushafScreen> {
               fontFamily: 'NotoNaskhArabic',
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+              color: AppColors.of(context).primary,
             ),
           ),
           const SizedBox(height: 8),
@@ -731,8 +732,7 @@ class _MushafScreenState extends State<MushafScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: (isDark ? const Color(0xFF1A1A2E) : const Color(0xFFFFFBF0))
-              .withValues(alpha: 0.8),
+          color: AppColors.of(context).mushafPageBg.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

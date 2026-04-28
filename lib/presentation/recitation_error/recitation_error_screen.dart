@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
+import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -20,14 +22,7 @@ class RecitationErrorScreen extends StatelessWidget {
           onPressed: () => NavigatorService.goBack(),
         ),
         centerTitle: true,
-        title: Text(
-          'lbl_practice_list'.tr,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
+        title: Text('lbl_practice_list'.tr, style: AppTextStyles.headingMedium),
       ),
       body: BlocConsumer<RecitationErrorBloc, RecitationErrorState>(
         listener: (context, state) {
@@ -90,7 +85,7 @@ class RecitationErrorScreen extends StatelessWidget {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      color: AppColors.of(context).surface,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -158,14 +153,12 @@ class RecitationErrorScreen extends StatelessWidget {
                                           )
                                           .localizedName(context),
                                       textDirection: TextDirection.rtl,
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: isDark
-                                            ? Colors.white
-                                            : const Color(0xFF2D2D2D),
-                                      ),
+                                      style: AppTextStyles.headingSmall
+                                          .copyWith(
+                                            color: AppColors.of(
+                                              context,
+                                            ).surfaceVariant,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(

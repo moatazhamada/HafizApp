@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 
 import '../../core/app_export.dart';
@@ -98,7 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   colors: [
                     colorScheme.primary.withValues(alpha: 0.8),
                     colorScheme.primary,
-                    const Color(0xFF00332c), // Deep rich green for footer
+                    AppColors.of(context).primaryDark,
                   ],
                 ),
               ),
@@ -183,7 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             Text(
                               'app_name'.tr,
                               style: theme.textTheme.displayMedium?.copyWith(
-                                color: const Color(0xFFE0F2F1), // Light Mint
+                                color: AppColors.of(context).primaryLight,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
@@ -219,8 +220,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   },
                                   text: 'lbl_get_started'.tr,
                                   buttonStyle: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFAF6EB),
-                                    foregroundColor: const Color(0xFF004B40),
+                                    backgroundColor: AppColors.of(
+                                      context,
+                                    ).badgeGradient[0],
+                                    foregroundColor: AppColors.of(
+                                      context,
+                                    ).bismillahColor,
                                     elevation: 5,
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 16,
@@ -229,18 +234,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                       borderRadius: BorderRadius.circular(30.0),
                                     ),
                                   ),
-                                  buttonTextStyle: const TextStyle(
+                                  buttonTextStyle: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
-                                    color: Color(0xFF004B40),
+                                    color: AppColors.of(context).bismillahColor,
                                   ),
-                                  rightIcon: const Padding(
-                                    padding: EdgeInsets.only(left: 12.0),
+                                  rightIcon: Padding(
+                                    padding: const EdgeInsets.only(left: 12.0),
                                     child: Icon(
                                       Icons.arrow_forward_rounded,
                                       size: 20,
-                                      color: Color(0xFF004B40),
+                                      color: AppColors.of(
+                                        context,
+                                      ).bismillahColor,
                                     ),
                                   ),
                                 ),
