@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -40,7 +41,9 @@ class _AboutScreenState extends State<AboutScreen> {
     final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final linkStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+      color: isDark
+          ? AppColors.of(context).accent
+          : AppColors.of(context).primary,
       decoration: TextDecoration.underline,
     );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
@@ -346,7 +347,7 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isDark
-                  ? const Color(0xFF004B40)
+                  ? AppColors.of(context).bismillahColor
                   : Theme.of(context).primaryColor,
               backgroundColor: isDark
                   ? Colors.amberAccent

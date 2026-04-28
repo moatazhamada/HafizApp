@@ -6,6 +6,7 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_state.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class MemorizationScreen extends StatelessWidget {
   const MemorizationScreen({super.key});
@@ -36,9 +37,9 @@ class MemorizationScreen extends StatelessWidget {
                   Text(state.message.tr),
                   const SizedBox(height: 16),
                   FilledButton.tonal(
-                    onPressed: () => context
-                        .read<MemorizationBloc>()
-                        .add(LoadMemorizationProgress()),
+                    onPressed: () => context.read<MemorizationBloc>().add(
+                      LoadMemorizationProgress(),
+                    ),
                     child: Text('lbl_retry'.tr),
                   ),
                 ],
@@ -105,7 +106,7 @@ class _ProgressSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: AppColors.of(context).surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -126,8 +127,8 @@ class _ProgressSummary extends StatelessWidget {
                 value: state.totalMemorized / 114,
                 minHeight: 12,
                 backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF006754),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.of(context).primary,
                 ),
               ),
             ),
@@ -215,7 +216,7 @@ class _ReviewCard extends StatelessWidget {
           '${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}%',
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.play_arrow, color: Color(0xFF006754)),
+          icon: Icon(Icons.play_arrow, color: AppColors.of(context).primary),
           onPressed: () {
             final surah = QuranIndex.quranSurahs.firstWhere(
               (s) => s.id == progress.surahId,
@@ -246,7 +247,7 @@ class _SurahProgressCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 1,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: AppColors.of(context).surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         leading: Container(

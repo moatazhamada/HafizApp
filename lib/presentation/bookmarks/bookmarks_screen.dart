@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
+import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -27,14 +29,7 @@ class BookmarksScreen extends StatelessWidget {
         centerTitle: true,
         title: Semantics(
           header: true,
-          child: Text(
-            'lbl_bookmarks'.tr,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-            ),
-          ),
+          child: Text('lbl_bookmarks'.tr, style: AppTextStyles.headingMedium),
         ),
       ),
       body: BlocConsumer<BookmarkBloc, BookmarkState>(
@@ -121,7 +116,7 @@ class BookmarksScreen extends StatelessWidget {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        color: AppColors.of(context).surface,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -163,14 +158,14 @@ class BookmarksScreen extends StatelessWidget {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF006754,
-                                      ).withValues(alpha: 0.1),
+                                      color: AppColors.of(
+                                        context,
+                                      ).primary.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.bookmark,
-                                      color: Color(0xFF006754),
+                                      color: AppColors.of(context).primary,
                                       size: 24,
                                     ),
                                   ),
@@ -184,14 +179,12 @@ class BookmarksScreen extends StatelessWidget {
                                       Text(
                                         surah.localizedName(context),
                                         textDirection: TextDirection.rtl,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF2D2D2D),
-                                        ),
+                                        style: AppTextStyles.headingSmall
+                                            .copyWith(
+                                              color: AppColors.of(
+                                                context,
+                                              ).onSurface,
+                                            ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(

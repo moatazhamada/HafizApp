@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
+import 'package:hafiz_app/core/theme/app_text_styles.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
@@ -122,10 +124,7 @@ class _HomeScreenState extends State<HomeScreen>
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'lbl_juz_index'.tr,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.headingMedium,
                 ),
               ),
               Expanded(
@@ -170,8 +169,10 @@ class _HomeScreenState extends State<HomeScreen>
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color(0xFF006754),
-                                const Color(0xFF006754).withValues(alpha: 0.8),
+                                AppColors.of(context).primary,
+                                AppColors.of(
+                                  context,
+                                ).primary.withValues(alpha: 0.8),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -184,10 +185,8 @@ class _HomeScreenState extends State<HomeScreen>
                             children: [
                               Text(
                                 juz.juzNumber.toString(),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                style: AppTextStyles.numericLarge.copyWith(
+                                  color: AppColors.of(context).onPrimary,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -195,10 +194,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 isArabic
                                     ? juz.startSurahNameAr
                                     : juz.startSurahNameEn,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: AppColors.of(context).onPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -531,13 +528,17 @@ class _HomeScreenState extends State<HomeScreen>
             child: initial != null
                 ? Text(
                     initial,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.of(context).onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   )
-                : const Icon(Icons.account_circle, color: Colors.white, size: 24),
+                : Icon(
+                    Icons.account_circle,
+                    color: AppColors.of(context).onPrimary,
+                    size: 24,
+                  ),
           );
           title = 'msg_qf_account'.tr;
           subtitle = state.userId ?? '';
@@ -643,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen>
             gradient: LinearGradient(
               colors: [
                 theme.colorScheme.primary,
-                const Color(0xFF00332c), // Darker shade
+                AppColors.of(context).primaryDark,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -652,7 +653,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: Stack(
             children: [
               // Decorative circle - exclude from semantics
-              const Positioned(
+              Positioned(
                 right: -30,
                 bottom: -30,
                 child: ExcludeSemantics(
@@ -661,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Icon(
                       Icons.menu_book_rounded,
                       size: 150,
-                      color: Colors.white,
+                      color: AppColors.of(context).onPrimary,
                     ),
                   ),
                 ),
@@ -674,10 +675,12 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     Row(
                       children: [
-                        const ExcludeSemantics(
+                        ExcludeSemantics(
                           child: Icon(
                             Icons.menu_book,
-                            color: Colors.white70,
+                            color: AppColors.of(
+                              context,
+                            ).onPrimary.withValues(alpha: 0.7),
                             size: 16,
                           ),
                         ),
@@ -685,7 +688,9 @@ class _HomeScreenState extends State<HomeScreen>
                         Text(
                           'lbl_last_read'.tr,
                           style: theme.textTheme.labelMedium?.copyWith(
-                            color: Colors.white70,
+                            color: AppColors.of(
+                              context,
+                            ).onPrimary.withValues(alpha: 0.7),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -707,16 +712,17 @@ class _HomeScreenState extends State<HomeScreen>
                                 Text(
                                   lastReadSurah.nameEnglish,
                                   style: theme.textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
+                                    color: AppColors.of(context).onPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               Text(
                                 lastReadSurah.nameArabic,
                                 textDirection: TextDirection.rtl,
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontFamily: 'NotoNaskhArabic',
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                style: AppTextStyles.quranMedium.copyWith(
+                                  color: AppColors.of(
+                                    context,
+                                  ).onPrimary.withValues(alpha: 0.9),
                                   height: 1.2,
                                 ),
                               ),
@@ -730,16 +736,20 @@ class _HomeScreenState extends State<HomeScreen>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: AppColors.of(
+                                context,
+                              ).onPrimary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
+                                color: AppColors.of(
+                                  context,
+                                ).onPrimary.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
                               '${"lbl_ayah".tr} ${(lastVerseIndex + 1).toLocalizedNumber(context)}',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppColors.of(context).onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -791,7 +801,7 @@ class _HomeScreenState extends State<HomeScreen>
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
+                            backgroundColor: AppColors.of(context).onPrimary,
                             foregroundColor: theme.colorScheme.primary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -804,10 +814,7 @@ class _HomeScreenState extends State<HomeScreen>
                             children: [
                               Text(
                                 'lbl_continue'.tr,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                style: AppTextStyles.headingSmall,
                               ),
                               const SizedBox(width: 8),
                               const Icon(Icons.arrow_forward_rounded, size: 20),
