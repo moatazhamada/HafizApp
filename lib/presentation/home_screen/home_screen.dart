@@ -27,11 +27,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 void changeLocale(BuildContext context, Locale newLocale) {
-  AppLocalization.of().setLocale(newLocale);
+  AppLocalization.of()?.setLocale(newLocale);
 }
 
 Locale getCurrentLocale() {
-  return AppLocalization.of().getCurrentLocale();
+  return AppLocalization.of()?.getCurrentLocale() ?? const Locale('en');
 }
 
 class _HomeScreenState extends State<HomeScreen>
