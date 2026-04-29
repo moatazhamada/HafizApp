@@ -164,6 +164,15 @@ class _BootstrapAppState extends State<BootstrapApp> {
     try {
       await PrefUtils().init();
 
+      // HydratedBloc storage must be initialized BEFORE di.init() because
+      // ThemeBloc (a HydratedBloc) is created during DI setup.
+      final storage = await HydratedStorage.build(
+        storageDirectory: HydratedStorageDirectory(
+          (await getTemporaryDirectory()).path,
+        ),
+      );
+      HydratedBloc.storage = storage;
+
       // Hive boxes must be open before di.init() because DI reads Hive.box(...)
       await Hive.initFlutter();
       await Hive.openBox('surah_cache');
@@ -197,13 +206,6 @@ class _BootstrapAppState extends State<BootstrapApp> {
           ];
       }
       await SystemChrome.setPreferredOrientations(orientations);
-
-      final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
-        ),
-      );
-      HydratedBloc.storage = storage;
     } catch (e) {
       debugPrint('Critical init failed: $e');
       // If critical init fails, we might still want to try showing the app
