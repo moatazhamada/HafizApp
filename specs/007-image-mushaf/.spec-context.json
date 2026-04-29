@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "007-image-mushaf",
+  "branch": "007-image-mushaf",
+  "selectedAt": "2026-04-29T00:00:00.000Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}

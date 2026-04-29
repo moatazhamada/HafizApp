@@ -3,8 +3,38 @@
   "specName": "003-qf-api-depth-expansion",
   "branch": "003-qf-api-depth-expansion",
   "selectedAt": "2026-04-27T22:10:20.808Z",
-  "currentStep": "specify",
-  "status": "draft",
-  "stepHistory": {},
-  "transitions": []
+  "currentStep": "plan",
+  "status": "planning",
+  "stepHistory": {
+    "specify": {
+      "startedAt": "2026-04-29T00:19:28.763Z",
+      "completedAt": "2026-04-29T00:19:28.763Z"
+    },
+    "plan": {
+      "startedAt": "2026-04-29T00:19:28.766Z",
+      "completedAt": null
+    }
+  },
+  "transitions": [
+    {
+      "step": "specify",
+      "substep": null,
+      "from": {
+        "step": "specify",
+        "substep": null
+      },
+      "by": "extension",
+      "at": "2026-04-29T00:19:28.763Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "from": {
+        "step": "specify",
+        "substep": null
+      },
+      "by": "extension",
+      "at": "2026-04-29T00:19:28.766Z"
+    }
+  ]
 }

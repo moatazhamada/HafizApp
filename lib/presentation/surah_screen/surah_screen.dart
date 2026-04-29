@@ -31,6 +31,7 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:hafiz_app/data/datasource/translation/qf_translation_remote_data_source.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -55,6 +56,11 @@ class _SurahScreenState extends State<SurahScreen> {
   int? _selectedVerse; // For visual selection feedback
   int? _highlightedVerse; // Verse to highlight and scroll to
 
+  // Translation State
+  bool _showTranslation = false;
+  Map<int, String> _translations = {};
+  bool _translationsLoading = false;
+
   // Scroll Keys
   final Map<int, GlobalKey> _verseKeys = {};
   final Map<int, GlobalKey> _richTextVerseKeys = {};
@@ -78,6 +84,7 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void initState() {
     super.initState();
+    _showTranslation = PrefUtils().getShowTranslation();
     // Logic moved to didChangeDependencies to safely access ModalRoute
   }
 
@@ -105,6 +112,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
       if (surah != null) {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
+        if (_showTranslation) _loadTranslations();
       }
 
       _scrollControllerForInit = ScrollController(
@@ -655,6 +663,17 @@ class _SurahScreenState extends State<SurahScreen> {
     return htmlText.replaceAll(regExp, '').trim();
   }
 
+  Future<void> _loadTranslations() async {
+    if (_translations.isNotEmpty || _translationsLoading) return;
+    if (surah == null) return;
+    setState(() => _translationsLoading = true);
+    try {
+      final ds = sl<QfTranslationRemoteDataSource>();
+      _translations = await ds.getTranslationsByChapter(surah!.id);
+    } catch (_) {}
+    if (mounted) setState(() => _translationsLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -804,6 +823,26 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       ),
       actions: [
+        Semantics(
+          button: true,
+          label: 'lbl_translation'.tr,
+          child: IconButton(
+            icon: Icon(
+              _showTranslation ? Icons.translate : Icons.translate_outlined,
+              color: _showTranslation
+                  ? AppColors.of(context).primary
+                  : Colors.white,
+            ),
+            tooltip: 'lbl_translation'.tr,
+            onPressed: () {
+              setState(() {
+                _showTranslation = !_showTranslation;
+                PrefUtils().setShowTranslation(_showTranslation);
+              });
+              if (_showTranslation) _loadTranslations();
+            },
+          ),
+        ),
         Semantics(
           button: true,
           label: _isAutoScrolling
@@ -1401,7 +1440,11 @@ class _SurahScreenState extends State<SurahScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const ExcludeSemantics(
-                child: Icon(Icons.fitness_center, color: Colors.orange, size: 50),
+                child: Icon(
+                  Icons.fitness_center,
+                  color: Colors.orange,
+                  size: 50,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -1903,6 +1946,21 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     ),
                   ),
+                  if (_showTranslation &&
+                      _translations[aya.verseNumber] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        _translations[aya.verseNumber]!,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          color: AppColors.of(context).textSecondary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
               ),
             ),

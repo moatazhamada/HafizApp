@@ -187,6 +187,26 @@ class PrefUtils {
     }
   }
 
+  // Translation settings
+  bool getShowTranslation() {
+    try {
+      return _requirePrefs().getBool('show_translation') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> setShowTranslation(bool value) async {
+    try {
+      await _requirePrefs().setBool('show_translation', value);
+    } catch (e) {
+      Logger.warning(
+        'Failed to set translation pref: $e',
+        feature: 'Preferences',
+      );
+    }
+  }
+
   // Recitation settings
   Future<void> setRecitationProvider(String provider) async {
     await _requirePrefs().setString('recitation_provider', provider);
