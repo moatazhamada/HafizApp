@@ -169,12 +169,26 @@ class _SearchScreenState extends State<SearchScreen> {
                                 _searchController.text,
                               ),
                             ),
-                            subtitle: Text(
-                              '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
-                              style: TextStyle(
-                                color: isDark ? Colors.grey[400] : null,
-                              ),
-                            ),
+                            subtitle:
+                                verse.translationText != null &&
+                                    verse.translationText!.isNotEmpty
+                                ? Text(
+                                    verse.translationText!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  )
+                                : Text(
+                                    '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
+                                    style: TextStyle(
+                                      color: isDark ? Colors.grey[400] : null,
+                                    ),
+                                  ),
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
