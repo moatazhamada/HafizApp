@@ -372,7 +372,7 @@ class _SplashScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'lbl_loading_app'.tr,
+                'Loading...',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: isDark ? Colors.white70 : Colors.black54,
