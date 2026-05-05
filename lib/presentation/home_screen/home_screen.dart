@@ -794,8 +794,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 AppRoutes.surahPage,
                                 arguments: {
                                   'surah': lastReadSurah,
-                                  'offset': ?offset,
-                                  'verseIndex': ?lastVerseIndex,
+                                  'offset': offset,
+                                  'verseIndex': lastVerseIndex,
                                 },
                               );
                             }

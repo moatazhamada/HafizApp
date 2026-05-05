@@ -35,9 +35,9 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
       _fetchTafsir(verseKey),
     ]);
 
-    final arabicText = results[0] as String;
-    final translation = results[1] as String;
-    final tafsir = results[2] as String;
+    final arabicText = results[0];
+    final translation = results[1];
+    final tafsir = results[2];
 
     if (arabicText.isEmpty && translation.isEmpty && tafsir.isEmpty) {
       throw Exception('No data found for verse $verseKey');
@@ -53,17 +53,17 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchArabic(String verseKey) async {
     try {
       final verseResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/v1/quran/verses/by_key/$verseKey',
-        queryParameters: {'words': 'false'},
+        '${_config.apiBaseUrl}/content/api/v4/quran/verses/by_key/$verseKey',
       );
       final verses = verseResponse.data['verses'] as List?;
       if (verses != null && verses.isNotEmpty) {
-        return verses[0]['text_uthmani'] as String? ??
-            verses[0]['text'] as String? ??
-            '';
+        return verses[0]['text_uthmani'] as String? ?? '';
       }
     } catch (e) {
-      Logger.warning('Failed to fetch verse text: $e', feature: 'VerseStudy');
+      Logger.warning(
+        'Failed to fetch verse by key $verseKey: $e',
+        feature: 'VerseStudy',
+      );
     }
     return '';
   }
@@ -71,7 +71,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTranslation(String verseKey) async {
     try {
       final translationResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/v1/translations/131/by_ayah/$verseKey',
+        '${_config.apiBaseUrl}/content/api/v4/translations/131/by_ayah/$verseKey',
       );
       final translations = translationResponse.data['translations'] as List?;
       if (translations != null && translations.isNotEmpty) {
@@ -86,7 +86,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTafsir(String verseKey) async {
     try {
       final tafsirResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/v1/tafsirs/en-tafsir-ibn-kathir/by_ayah/$verseKey',
+        '${_config.apiBaseUrl}/content/api/v4/tafsirs/en-tafsir-ibn-kathir/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {

@@ -1,5 +1,7 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 
@@ -32,7 +34,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
         emit(QfAuthUnauthenticated());
       }
     } catch (e) {
-      emit(QfAuthError(message: 'Failed to check auth status: ${e.toString()}'));
+      emit(const QfAuthError(message: 'msg_connection_error'));
     }
   }
 
@@ -40,6 +42,11 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     QfAuthLoginRequested event,
     Emitter<QfAuthState> emit,
   ) async {
+    if (QfApiConfig.clientId.isEmpty) {
+      emit(const QfAuthError(message: 'msg_login_not_configured'));
+      return;
+    }
+
     emit(QfAuthLoading());
     try {
       final success = await _authRemoteDataSource.login();
@@ -47,10 +54,26 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
         final userId = await _authRemoteDataSource.getUserId();
         emit(QfAuthAuthenticated(userId: userId));
       } else {
-        emit(const QfAuthError(message: 'Login was cancelled or failed.'));
+        emit(const QfAuthError(message: 'msg_login_cancelled'));
+      }
+    } on PlatformException catch (e) {
+      final code = e.code;
+      if (code.contains('cancelled') || code.contains('cancel')) {
+        emit(const QfAuthError(message: 'msg_login_cancelled'));
+      } else if (code.contains('network') || code.contains('timeout')) {
+        emit(const QfAuthError(message: 'msg_connection_error'));
+      } else {
+        emit(const QfAuthError(message: 'msg_unexpected_error'));
       }
     } catch (e) {
-      emit(QfAuthError(message: 'Login failed: ${e.toString()}'));
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('network') || msg.contains('timeout') || msg.contains('connection')) {
+        emit(const QfAuthError(message: 'msg_connection_error'));
+      } else if (msg.contains('cancelled') || msg.contains('cancel')) {
+        emit(const QfAuthError(message: 'msg_login_cancelled'));
+      } else {
+        emit(const QfAuthError(message: 'msg_unexpected_error'));
+      }
     }
   }
 
@@ -63,7 +86,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       await _authRemoteDataSource.logout();
       emit(QfAuthUnauthenticated());
     } catch (e) {
-      emit(QfAuthError(message: 'Logout failed: ${e.toString()}'));
+      emit(const QfAuthError(message: 'msg_unexpected_error'));
     }
   }
 
@@ -78,7 +101,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       await PrefUtils().setQfLastSyncAt(DateTime(2000));
       emit(QfAuthUnauthenticated());
     } catch (e) {
-      emit(QfAuthError(message: 'Delete failed: ${e.toString()}'));
+      emit(const QfAuthError(message: 'msg_unexpected_error'));
     }
   }
 }

@@ -39,16 +39,12 @@ class QfAuthService {
     _refreshing = true;
     _refreshCompleter = Completer<void>();
     try {
-      final tokenUrl = '${ApiConfig.oauthBase}/token';
+      final tokenUrl = '${ApiConfig.oauthBase}/oauth2/token';
       final authHeader =
           'Basic ${base64Encode(utf8.encode('${ApiConfig.clientId}:${ApiConfig.clientSecret}'))}';
-      final form = {
-        'grant_type': 'client_credentials',
-        if (ApiConfig.scope.isNotEmpty) 'scope': ApiConfig.scope,
-      };
       final resp = await _dio.post(
         tokenUrl,
-        data: FormData.fromMap(form),
+        data: 'grant_type=client_credentials&scope=content',
         options: Options(
           headers: {
             'Authorization': authHeader,
@@ -89,14 +85,17 @@ class QfAuthInterceptor extends Interceptor {
     final host = options.uri.host.toLowerCase();
     final path = options.uri.path.toLowerCase();
 
-    // Machine-to-machine OAuth token endpoint
-    if (host.contains('oauth2.quran.foundation') && path.contains('/token')) {
+    // Machine-to-machine OAuth token endpoint (production + prelive)
+    if ((host.contains('oauth2.quran.foundation') ||
+            host.contains('prelive-oauth2.quran.foundation')) &&
+        path.contains('/token')) {
       return true;
     }
 
-    // Content API paths (apis.quran.foundation, api.quran.foundation, or api.quran.com)
+    // Content API paths (production, prelive, or api.quran.com)
     if ((host.contains('apis.quran.foundation') ||
             host.contains('api.quran.foundation') ||
+            host.contains('apis-prelive.quran.foundation') ||
             host.contains('api.quran.com')) &&
         path.contains('/content/')) {
       return true;
@@ -115,7 +114,10 @@ class QfAuthInterceptor extends Interceptor {
         await auth.ensureToken();
         final token = auth.accessToken;
         if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+          options.headers['x-auth-token'] = token;
+        }
+        if (ApiConfig.clientId.isNotEmpty) {
+          options.headers['x-client-id'] = ApiConfig.clientId;
         }
       } catch (e) {
         Logger.warning('QF auth token injection failed: $e', feature: 'Auth');
@@ -155,7 +157,10 @@ class QfAuthInterceptor extends Interceptor {
       validateStatus: (_) => true,
     );
     final headers = Map<String, dynamic>.from(requestOptions.headers);
-    headers['Authorization'] = 'Bearer $token';
+    headers['x-auth-token'] = token;
+    if (ApiConfig.clientId.isNotEmpty) {
+      headers['x-client-id'] = ApiConfig.clientId;
+    }
     return dio.request(
       requestOptions.path,
       data: requestOptions.data,

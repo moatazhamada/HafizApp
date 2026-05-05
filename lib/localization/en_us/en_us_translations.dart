@@ -164,6 +164,8 @@ final Map<String, String> enUs = {
   'msg_qf_login': 'Login with Quran.com',
   'lbl_sign_out': 'Sign out',
   'lbl_user': 'User',
+  'lbl_not_signed_in': 'Not signed in',
+  'lbl_tap_to_sign_in': 'Tap to sign in',
   'lbl_bookmarks_sync': 'Sync bookmarks with Quran.com',
   'msg_last_synced': 'Last synced: {time}',
   'msg_login_to_sync': 'Login to Quran.com above to enable sync',
@@ -172,6 +174,7 @@ final Map<String, String> enUs = {
       'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
   'msg_sync_complete': 'Sync complete — pushed {pushed}, pulled {pulled}',
   'msg_login_cancelled': 'Login was cancelled or failed.',
+  'msg_login_not_configured': 'Login is not configured. Add your Quran.com client ID to continue.',
   'msg_sync_failed': 'Failed to sync with Quran.com',
 
   // Musali Teaser
@@ -365,6 +368,8 @@ final Map<String, String> enUs = {
   'lbl_retry': 'Retry',
   'lbl_arabic': 'Arabic',
   'lbl_translation': 'Translation',
+  'lbl_show_translation': 'Show Translation',
+  'lbl_hide_translation': 'Hide Translation',
   'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
   'lbl_study': 'Study',
 

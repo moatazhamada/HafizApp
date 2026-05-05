@@ -76,6 +76,12 @@ android/app/keystore.jks
 android/app/*.jks
 keystore.properties
 
+# QF API credentials (local only, keep secrets out of git)
+.dart_defines.json
+.dart_defines.production.json
+qf_credentials.properties
+android/qf_credentials.properties
+
 # Ruby
 android/vendor/
 android/.bundle/

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
@@ -44,7 +45,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       await localDataSource.saveLog(updated);
 
       // Fire-and-forget: report to QF if authenticated
-      _reportActivityDay(updated);
+      unawaited(_reportActivityDay(updated));
 
       return const Right(null);
     } catch (e) {
@@ -73,7 +74,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       await localDataSource.saveGoal(goal);
 
       // Sync goal to QF
-      _syncGoalToQf(dailyVerseTarget);
+      unawaited(_syncGoalToQf(dailyVerseTarget));
 
       return const Right(null);
     } catch (e) {

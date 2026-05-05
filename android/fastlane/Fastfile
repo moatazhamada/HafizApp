@@ -4,6 +4,9 @@
 # Use environment variable or dynamically compute from fastlane directory
 PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
 
+DART_DEFINES_FILE = File.join(PROJECT_ROOT, ".dart_defines.production.json")
+DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
+
 default_platform(:android)
 
 platform :android do
@@ -20,21 +23,47 @@ platform :android do
     version_line.split("+").last.strip
   end
 
+  # Generate dart defines JSON from environment variables
+  def ensure_dart_defines
+    if File.exist?(DART_DEFINES_FILE)
+      UI.success("✅ Found dart defines at: #{DART_DEFINES_FILE}")
+      return
+    end
+
+    # Build from environment variables for CI/CD
+    client_id = ENV['QF_CLIENT_ID']
+    client_secret = ENV['QF_CLIENT_SECRET']
+
+    if client_id && client_secret
+      require 'json'
+      defines = {
+        "QF_CLIENT_ID" => client_id,
+        "QF_CLIENT_SECRET" => client_secret,
+        "QF_PRODUCTION" => "true"
+      }
+      File.write(DART_DEFINES_FILE, JSON.pretty_generate(defines))
+      UI.success("✅ Generated dart defines from environment")
+    else
+      UI.error("❌ Dart defines not found!")
+      UI.error("  Set QF_CLIENT_ID and QF_CLIENT_SECRET env vars, or")
+      UI.error("  create #{DART_DEFINES_FILE} locally")
+      UI.user_error!("Missing QF credentials — cannot build")
+    end
+  end
+
   # Check if service account is configured
   def ensure_service_account
-    # Possible paths for service account
     possible_paths = [
-      "/Users/mm/Main/Projects/Android/HafizApp/android/fastlane/service-account.json",
       File.join(Dir.pwd, "service-account.json"),
       ENV["GOOGLE_PLAY_SERVICE_ACCOUNT_PATH"],
     ].compact
-    
+
     service_account_path = possible_paths.find { |p| p && File.exist?(p) }
-    
+
     if service_account_path.nil?
       UI.error("❌ Google Play Service Account not found!")
       UI.error("Checked paths:")
-      possible_paths.each { |p| UI.error("  - #{p}") }
+      possible_paths.each { |p| UI.error("  - #{p}") if p }
       UI.error("")
       UI.error("Please download the service account JSON from Google Play Console:")
       UI.error("  1. Go to Play Console → Settings → API Access")
@@ -51,41 +80,37 @@ platform :android do
 
   desc "Run Flutter tests"
   lane :test do
-    # Go up two levels from android/fastlane to project root
-    Dir.chdir("../../") do
+    Dir.chdir(PROJECT_ROOT) do
       sh("flutter test")
     end
   end
 
   desc "Build APK for testing"
   lane :build_apk do
-    Dir.chdir("../../") do
-      sh("flutter build apk --release")
+    ensure_dart_defines
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build apk --release --flavor production #{DART_DEFINES_ARG}")
     end
   end
 
   desc "Build Android App Bundle (AAB) for Play Store"
   lane :build_aab do
-    # Ensure tests pass before building
+    ensure_dart_defines
     test
-    
-    Dir.chdir("../../") do
-      sh("flutter build appbundle --release")
+
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build appbundle --release --flavor production #{DART_DEFINES_ARG}")
     end
-    
+
     UI.success("✅ AAB built successfully!")
     UI.message("Output: ../build/app/outputs/bundle/release/app-release.aab")
   end
 
   desc "Deploy to Google Play Internal Testing"
   lane :deploy_internal do
-    # Ensure service account is available
     ensure_service_account
-    
-    # Build AAB
     build_aab
-    
-    # Upload to Play Store Internal Testing
+
     upload_to_play_store(
       track: "internal",
       aab: "../build/app/outputs/bundle/release/app-release.aab",
@@ -95,7 +120,7 @@ platform :android do
       skip_upload_screenshots: false,
       changelog: "Changelog for version #{get_version_name}",
     )
-    
+
     UI.success("🚀 Deployed to Internal Testing!")
   end
 
@@ -103,57 +128,44 @@ platform :android do
   lane :deploy_beta do
     ensure_service_account
     build_aab
-    
+
     upload_to_play_store(
       track: "beta",
       aab: "../build/app/outputs/bundle/release/app-release.aab",
       release_status: "completed",
     )
-    
+
     UI.success("🚀 Deployed to Beta (Closed Testing)!")
   end
 
   desc "Deploy to Google Play Production"
   lane :deploy_production do
     ensure_service_account
-    
-    # Confirm before production release
+
     UI.confirm("Are you sure you want to deploy to PRODUCTION?")
-    
-    # Build AAB without tests
+
     build_aab_no_tests
-    
-    # Path relative to android/ directory (where Fastfile runs from)
+
     aab_path = "../build/app/outputs/bundle/release/app-release.aab"
-    
+
     upload_to_play_store(
       track: "production",
       aab: aab_path,
-      release_status: "draft", # Start as draft for review
+      release_status: "draft",
     )
-    
+
     UI.success("🚀 Deployed to Production (Draft)!")
     UI.important("Remember to submit the release for review in Play Console.")
   end
 
   desc "Build AAB without running tests"
   private_lane :build_aab_no_tests do
-    Dir.chdir("../../") do
-      sh("flutter build appbundle --release")
+    ensure_dart_defines
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build appbundle --release --flavor production #{DART_DEFINES_ARG}")
     end
-    
-    UI.success("✅ AAB built successfully!")
-  end
 
-  desc "Build AAB - skip tests if already exists"
-  private_lane :build_aab_skip_tests_if_exists do
-    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
-    if File.exist?(aab_path)
-      UI.success("✅ Using existing AAB: #{aab_path}")
-    else
-      UI.important("AAB not found, building...")
-      build_aab
-    end
+    UI.success("✅ AAB built successfully!")
   end
 
   desc "Promote from Internal to Production"
@@ -163,7 +175,7 @@ platform :android do
       track_promote_to: "production",
       skip_upload_changelogs: false,
     )
-    
+
     UI.success("🚀 Promoted to Production!")
   end
 
@@ -174,7 +186,7 @@ platform :android do
       track_promote_to: "production",
       skip_upload_changelogs: false,
     )
-    
+
     UI.success("🚀 Promoted Beta to Production!")
   end
 
@@ -182,18 +194,18 @@ platform :android do
   lane :bump_version do
     pubspec_path = File.join(PROJECT_ROOT, "pubspec.yaml")
     pubspec = File.read(pubspec_path)
-    
+
     version_line = pubspec.lines.find { |line| line.start_with?("version:") }
     version_parts = version_line.strip.split(":").last.strip.split("+")
     version_name = version_parts.first
     version_code = version_parts.last.to_i
-    
+
     new_version_code = version_code + 1
     new_version_line = "version: #{version_name}+#{new_version_code}\n"
-    
+
     new_pubspec = pubspec.gsub(version_line, new_version_line)
     File.write(pubspec_path, new_pubspec)
-    
+
     UI.success("Version bumped to #{version_name}+#{new_version_code}")
   end
 
@@ -211,30 +223,23 @@ platform :android do
 
   desc "Deploy to Firebase App Distribution for testing"
   lane :deploy_firebase_app_distribution do
-    # Build debug APK
+    ensure_dart_defines
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build apk --debug")
+      sh("flutter build apk --debug --flavor production #{DART_DEFINES_ARG}")
     end
 
-    # Get version info
     version_name = get_version_name
     version_code = get_version_code
 
-    # Get service account path
-    service_account_path = File.join(Dir.pwd, "service-account.json")
-
-    # Get APK path
     apk_path = File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-debug.apk")
 
-    # Upload to Firebase App Distribution using Firebase CLI
     sh(
       "firebase appdistribution:distribute #{apk_path} " \
         "--app 1:854811938553:android:7a72ac4049b699cff65c28 " \
-        "--testers motazhamada@gmail.com " \
-        "--release-notes 'Cloud Sync feature - First test build v#{version_name}+#{version_code}'"
+        "--testers #{ENV['FIREBASE_TESTERS'] || 'motazhamada@gmail.com'} " \
+        "--release-notes 'Build v#{version_name}+#{version_code}'"
     )
 
     UI.success("🚀 Uploaded to Firebase App Distribution!")
-    UI.message("Testers will receive an email to install the app.")
   end
 end

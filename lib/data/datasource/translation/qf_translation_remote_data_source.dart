@@ -16,7 +16,7 @@ class QfTranslationRemoteDataSource {
   Future<Map<int, String>> getTranslationsByChapter(int surahId) async {
     try {
       final response = await _dio.get(
-        '${_config.apiBaseUrl}/content/v1/translations/131/by_chapter/$surahId',
+        '${_config.apiBaseUrl}/content/api/v4/translations/131/by_chapter/$surahId',
       );
       // Response format: { translations: [ { verse_key: "1:1", text: "...", ... }, ... ] }
       // OR it might be: { verses: [ { verse_key: "1:1", translations: [ { text: "..." } ] } ] }

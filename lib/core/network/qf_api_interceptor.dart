@@ -15,13 +15,15 @@ class QfApiInterceptor extends Interceptor {
   QfApiInterceptor(this._authDataSource, this._dio);
 
   /// Match user-facing API requests that need x-auth-token headers.
+  /// Content paths (/content/) are included as a fallback so that logged-in
+  /// users can still fetch translations/tafsir when machine credentials
+  /// (QfAuthInterceptor) are not available.
   bool _isUserApiRequest(RequestOptions options) {
     final host = options.uri.host.toLowerCase();
     final path = options.uri.path.toLowerCase();
 
-    // Match apis.quran.foundation or api.quran.foundation with /auth/ or /api/ paths
     if (host.contains('quran.foundation') &&
-        (path.contains('/auth/') || path.contains('/api/'))) {
+        (path.contains('/auth/') || path.contains('/api/') || path.contains('/content/'))) {
       return true;
     }
 
@@ -36,7 +38,9 @@ class QfApiInterceptor extends Interceptor {
     if (_isUserApiRequest(options)) {
       final accessToken = await _authDataSource.getAccessToken();
 
-      options.headers['x-client-id'] = QfApiConfig.clientId;
+      if (QfApiConfig.clientId.isNotEmpty) {
+        options.headers['x-client-id'] = QfApiConfig.clientId;
+      }
 
       if (accessToken != null && accessToken.isNotEmpty) {
         options.headers['x-auth-token'] = accessToken;

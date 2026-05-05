@@ -18,6 +18,7 @@ class QiraatService {
               baseUrl: ApiConfig.quranHubBase,
               connectTimeout: const Duration(seconds: 7),
               receiveTimeout: const Duration(seconds: 12),
+              maxRedirects: 5,
             ));
 
   Future<List<QiraatEdition>> fetchEditions() async {

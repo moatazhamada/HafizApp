@@ -2,15 +2,22 @@ class ApiConfig {
   // Whether to prefer Quran.Foundation content endpoints. Keep false to use existing Quran.com v4.
   static const bool useQfContent = bool.fromEnvironment('QF_USE_CONTENT', defaultValue: false);
 
-  // OAuth2 issuer base (no trailing slash). Defaults to production.
-  static const String oauthBase = String.fromEnvironment(
-    'QF_OAUTH_BASE',
-    defaultValue: 'https://oauth2.quran.foundation',
+  // OAuth2 issuer base (no trailing slash).
+  // Respects QF_PRODUCTION env var to switch between prelive and production.
+  static const bool _isProduction = bool.fromEnvironment(
+    'QF_PRODUCTION',
+    defaultValue: true,
   );
+  static const String oauthBase = _isProduction
+      ? 'https://oauth2.quran.foundation'
+      : 'https://prelive-oauth2.quran.foundation';
 
-  // Client credentials (DO NOT hardcode in source; pass via --dart-define)
-  static const String clientId = String.fromEnvironment('QF_CLIENT_ID', defaultValue: '');
-  static const String clientSecret = String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: '');
+  // Machine-to-machine client credentials for Content API (client_credentials flow).
+  // Prefer explicit content credentials; fall back to PKCE credentials if not set.
+  static const String clientId = String.fromEnvironment('QF_CONTENT_CLIENT_ID',
+      defaultValue: String.fromEnvironment('QF_CLIENT_ID', defaultValue: ''));
+  static const String clientSecret = String.fromEnvironment('QF_CONTENT_CLIENT_SECRET',
+      defaultValue: String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: ''));
 
   // Optional audience/scope if required in the future
   static const String scope = String.fromEnvironment('QF_SCOPE', defaultValue: '');

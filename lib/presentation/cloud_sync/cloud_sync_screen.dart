@@ -106,7 +106,7 @@ class _AuthCard extends StatelessWidget {
                             ),
                           if (errorMsg != null)
                             Text(
-                              errorMsg,
+                              errorMsg.tr,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall

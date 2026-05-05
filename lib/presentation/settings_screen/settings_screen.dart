@@ -653,6 +653,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (value != null && value != _recitationProvider) {
       await PrefUtils().setRecitationProvider(value);
+      if (!mounted) return;
       setState(() => _recitationProvider = value);
     }
   }
@@ -668,6 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (value != null && value != _qiraatEdition) {
       await PrefUtils().setQiraatEdition(value);
+      if (!mounted) return;
       setState(() => _qiraatEdition = value);
     }
   }
@@ -684,6 +686,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (value != null) {
       final id = int.tryParse(value) ?? _reciterId;
       await PrefUtils().setReciterId(id);
+      if (!mounted) return;
       setState(() => _reciterId = id);
     }
   }
@@ -702,6 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _whisperDownloading = true);
       await _downloadWhisperModel(value);
       await PrefUtils().setWhisperModel(value);
+      if (!mounted) return;
       setState(() {
         _whisperModel = value;
         _whisperDownloading = false;

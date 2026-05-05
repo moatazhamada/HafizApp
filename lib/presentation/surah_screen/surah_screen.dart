@@ -825,26 +825,6 @@ class _SurahScreenState extends State<SurahScreen> {
       actions: [
         Semantics(
           button: true,
-          label: 'lbl_translation'.tr,
-          child: IconButton(
-            icon: Icon(
-              _showTranslation ? Icons.translate : Icons.translate_outlined,
-              color: _showTranslation
-                  ? AppColors.of(context).primary
-                  : Colors.white,
-            ),
-            tooltip: 'lbl_translation'.tr,
-            onPressed: () {
-              setState(() {
-                _showTranslation = !_showTranslation;
-                PrefUtils().setShowTranslation(_showTranslation);
-              });
-              if (_showTranslation) _loadTranslations();
-            },
-          ),
-        ),
-        Semantics(
-          button: true,
           label: _isAutoScrolling
               ? 'lbl_stop_autoscroll'.tr
               : 'lbl_start_autoscroll'.tr,
@@ -925,6 +905,13 @@ class _SurahScreenState extends State<SurahScreen> {
                     );
                   }
                   break;
+                case 'translation':
+                  setState(() {
+                    _showTranslation = !_showTranslation;
+                    PrefUtils().setShowTranslation(_showTranslation);
+                  });
+                  if (_showTranslation) _loadTranslations();
+                  break;
               }
             },
             itemBuilder: (context) => [
@@ -984,6 +971,24 @@ class _SurahScreenState extends State<SurahScreen> {
                       ],
                     );
                   },
+                ),
+              ),
+              PopupMenuItem(
+                value: 'translation',
+                child: Row(
+                  children: [
+                    Icon(
+                      _showTranslation
+                          ? Icons.text_fields
+                          : Icons.text_fields_outlined,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _showTranslation
+                          ? 'lbl_hide_translation'.tr
+                          : 'lbl_show_translation'.tr,
+                    ),
+                  ],
                 ),
               ),
             ],

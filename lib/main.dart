@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:hafiz_app/core/services/app_initializer.dart';
 
 import 'core/app_export.dart';
 import 'core/services/app_review_service.dart';
@@ -11,21 +10,12 @@ import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
-import 'package:flutter/foundation.dart';
+import 'core/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'core/services/remote_config_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
 
 final ThemeData lightTheme = ThemeData(
@@ -67,10 +57,6 @@ final ThemeData darkTheme = ThemeData(
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const BootstrapApp());
-}
-
-Future<void> initFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 class MyApp extends StatelessWidget {
@@ -144,6 +130,8 @@ class BootstrapApp extends StatefulWidget {
 class _BootstrapAppState extends State<BootstrapApp> {
   bool _ready = false;
   bool _forceUpdate = false;
+  bool _initFailed = false;
+  String _initError = '';
 
   @override
   void initState() {
@@ -152,152 +140,60 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 
   Future<void> _init() async {
-    // 1. Critical functional initialization (fast)
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
+    final initializer = AppInitializer();
+    final success = await initializer.init();
 
-    try {
-      await PrefUtils().init();
+    if (!mounted) return;
 
-      // HydratedBloc storage must be initialized BEFORE di.init() because
-      // ThemeBloc (a HydratedBloc) is created during DI setup.
-      final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
-        ),
-      );
-      HydratedBloc.storage = storage;
-
-      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('recitation_sessions');
-      await Hive.openBox('memorization_progress');
-      await Hive.openBox('reading_logs');
-      await Hive.openBox('reading_goal');
-
-      await di.init();
-
-      final orientationMode = PrefUtils().getOrientationMode();
-      List<DeviceOrientation> orientations;
-      switch (orientationMode) {
-        case 'portrait':
-          orientations = [DeviceOrientation.portraitUp];
-          break;
-        case 'landscape':
-          orientations = [
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ];
-          break;
-        default:
-          orientations = [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ];
-      }
-      await SystemChrome.setPreferredOrientations(orientations);
-    } catch (e) {
-      debugPrint('Critical init failed: $e');
-      // If critical init fails, we might still want to try showing the app
-      // or at least not stuck on splash forever, though likely it will crash later.
+    if (!success) {
+      setState(() {
+        _initFailed = true;
+        _initError = initializer.error ?? 'Unknown error';
+      });
+      return;
     }
 
-    // 2. Heavy/External services (can be slow, prone to network issues)
-    // We don't want to block the UI forever if Firebase/Hive hangs.
     try {
-      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
+      await initializer.postInitHeavyTasks().timeout(const Duration(seconds: 3));
     } catch (e) {
       debugPrint('Heavy init failed or timed out: $e');
-      // Continue anyway so the user sees the app
     }
 
     if (mounted) {
-      setState(() => _ready = true);
-      // Trigger in-app review prompt after a brief delay
+      setState(() {
+        _ready = true;
+        _forceUpdate = initializer.forceUpdate;
+      });
       Future.delayed(const Duration(seconds: 2), () {
         AppReviewService.maybeRequestReview();
       });
     }
   }
 
-  Future<void> _postInitHeavyTasks() async {
-    try {
-      await initFirebase();
-
-      final crashlytics = FirebaseCrashlytics.instance;
-      Logger.init(
-        kDebugMode ? LogMode.debug : LogMode.live,
-        crashlytics: crashlytics,
-      );
-
-      // Additional boxes not opened in _init()
-      await Hive.openBox('qiraat_cache');
-      await Hive.openBox('audio_cache');
-
-      FlutterError.onError = (errorDetails) {
-        Logger.error(
-          'Flutter error: ${errorDetails.exception}',
-          feature: 'Flutter',
-          error: errorDetails.exception,
-          stackTrace: errorDetails.stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      };
-
-      ui.PlatformDispatcher.instance.onError = (error, stack) {
-        Logger.error(
-          'Platform error: $error',
-          feature: 'Platform',
-          error: error,
-          stackTrace: stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-
-      unawaited(FirebaseAnalytics.instance.logAppOpen());
-
-      final remoteConfigService = RemoteConfigService();
-      await remoteConfigService.init();
-      if (!sl.isRegistered<RemoteConfigService>()) {
-        sl.registerLazySingleton(() => remoteConfigService);
-      }
-
-      final packageInfo = await PackageInfo.fromPlatform();
-      final currentCode = int.tryParse(packageInfo.buildNumber) ?? 0;
-      final minCode = remoteConfigService.minVersionCode;
-      if (currentCode < minCode && minCode > 0) {
-        _forceUpdate = true;
-        Logger.info(
-          'Force update required: $currentCode < $minCode',
-          feature: 'RemoteConfig',
-        );
-      }
-    } catch (e, stackTrace) {
-      Logger.error(
-        'Firebase initialization failed: $e',
-        feature: 'Firebase',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow; // Re-throw to trigger the timeout catch in _init if needed
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    if (_initFailed) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  const Text('Initialization Failed', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(_initError, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     if (_forceUpdate) {
       return ForceUpdateScreen(
         message: sl.isRegistered<RemoteConfigService>()

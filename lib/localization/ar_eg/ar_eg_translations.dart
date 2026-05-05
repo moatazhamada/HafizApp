@@ -163,6 +163,8 @@ final Map<String, String> arEg = {
   'msg_qf_login': 'تسجيل الدخول عبر Quran.com',
   'lbl_sign_out': 'تسجيل الخروج',
   'lbl_user': 'المستخدم',
+  'lbl_not_signed_in': 'غير مسجل الدخول',
+  'lbl_tap_to_sign_in': 'اضغط لتسجيل الدخول',
   'lbl_bookmarks_sync': 'مزامنة المفضلة مع Quran.com',
   'msg_last_synced': 'آخر مزامنة: {time}',
   'msg_login_to_sync': 'سجّل الدخول عبر Quran.com أعلاه لتفعيل المزامنة',
@@ -171,6 +173,7 @@ final Map<String, String> arEg = {
       'تقدم التلاوة وبيانات الحفظ محفوظة محلياً على هذا الجهاز. النسخ السحابي قريباً.',
   'msg_sync_complete': 'تمت المزامنة — تم إرسال {pushed}، واستقبال {pulled}',
   'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
+  'msg_login_not_configured': 'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
   'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
 
   // Musali Teaser
@@ -359,6 +362,8 @@ final Map<String, String> arEg = {
   'lbl_retry': 'إعادة المحاولة',
   'lbl_arabic': 'العربية',
   'lbl_translation': 'الترجمة',
+  'lbl_show_translation': 'إظهار الترجمة',
+  'lbl_hide_translation': 'إخفاء الترجمة',
   'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
   'lbl_study': 'دراسة',
 

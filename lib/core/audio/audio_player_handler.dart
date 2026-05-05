@@ -29,13 +29,7 @@ class AudioPlayerHandler {
   DateTime? get sleepTimerEnd => _sleepTimerEnd;
   bool get isLooping => _isLooping;
 
-  void _guard(String operation) {
-    if (_isDisposed) {
-      throw StateError(
-        'AudioPlayerHandler has been disposed; cannot $operation',
-      );
-    }
-  }
+
 
   Future<void> playSurah({
     required int surahId,

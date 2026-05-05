@@ -10,8 +10,8 @@ class ChangelogScreen extends StatelessWidget {
       appBar: AppBar(title: Text('lbl_whats_new'.tr)),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
-          const _VersionCard(
+        children: const [
+          _VersionCard(
             version: '3.1.0',
             isLatest: true,
             itemKeys: [
@@ -24,8 +24,8 @@ class ChangelogScreen extends StatelessWidget {
               'changelog_3_1_0_7',
             ],
           ),
-          const SizedBox(height: 16),
-          const _VersionCard(
+          SizedBox(height: 16),
+          _VersionCard(
             version: '3.0.0',
             isLatest: false,
             itemKeys: [
@@ -39,9 +39,9 @@ class ChangelogScreen extends StatelessWidget {
               'changelog_3_0_0_8',
             ],
           ),
-          const SizedBox(height: 24),
-          const _SpecialThanksCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: 24),
+          _SpecialThanksCard(),
+          SizedBox(height: 16),
         ],
       ),
     );

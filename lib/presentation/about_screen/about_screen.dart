@@ -65,17 +65,21 @@ class _AboutScreenState extends State<AboutScreen> {
           ok = await launchUrlString(url, mode: LaunchMode.platformDefault);
         }
         if (!ok) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+            );
+          }
         }
         if (ok) {
           await sl<AnalyticsService>().logLinkOpened(url);
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+          );
+        }
       }
     }
 
@@ -136,11 +140,13 @@ class _AboutScreenState extends State<AboutScreen> {
                               );
                             } else {
                               await Clipboard.setData(ClipboardData(text: msg));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('msg_feedback_copied'.tr),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('msg_feedback_copied'.tr),
+                                  ),
+                                );
+                              }
                             }
                             await sl<AnalyticsService>().logFeedbackSubmitted(
                               method: 'email',

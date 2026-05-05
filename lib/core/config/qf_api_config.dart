@@ -9,7 +9,7 @@ class QfApiConfig {
 
   static const String clientId = String.fromEnvironment(
     'QF_CLIENT_ID',
-    defaultValue: '5cd47ccf-93e5-47d0-83b5-9bf538bb5759',
+    defaultValue: '',
   );
   static const String clientSecret = String.fromEnvironment(
     'QF_CLIENT_SECRET',
@@ -25,11 +25,15 @@ class QfApiConfig {
     'collection',
   ];
 
+  static const bool defaultIsProduction = bool.fromEnvironment(
+    'QF_PRODUCTION',
+    defaultValue: true,
+  );
+
   final bool isProduction;
 
-  /// Defaults to [isProduction = true] for release builds.
-  /// Set [isProduction = false] to hit prelive endpoints during development.
-  const QfApiConfig({this.isProduction = true});
+  const QfApiConfig({bool? isProduction})
+      : isProduction = isProduction ?? defaultIsProduction;
 
   String get authBaseUrl =>
       isProduction ? productionAuthBaseUrl : preliveAuthBaseUrl;
@@ -38,4 +42,12 @@ class QfApiConfig {
 
   String get authorizationEndpoint => '$authBaseUrl/oauth2/auth';
   String get tokenEndpoint => '$authBaseUrl/oauth2/token';
+}
+
+class QfApiConfigResolver {
+  static const QfApiConfig _default = QfApiConfig();
+  static const QfApiConfig _prelive = QfApiConfig(isProduction: false);
+
+  static QfApiConfig resolve() =>
+      QfApiConfig.defaultIsProduction ? _default : _prelive;
 }

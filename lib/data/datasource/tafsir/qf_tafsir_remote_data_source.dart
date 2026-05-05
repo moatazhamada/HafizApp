@@ -21,7 +21,7 @@ class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
   }) async {
     try {
       final response = await _dio.get(
-        '${_config.apiBaseUrl}/content/v1/tafsirs/$tafsirId/by_ayah/$verseKey',
+        '${_config.apiBaseUrl}/content/api/v4/tafsirs/$tafsirId/by_ayah/$verseKey',
       );
 
       final tafsir = response.data['tafsir'] as Map<String, dynamic>?;
