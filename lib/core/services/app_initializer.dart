@@ -11,6 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../notifications/notification_service.dart';
+import '../services/home_widget_service.dart';
+import '../services/deep_link_handler.dart';
 import '../utils/logger.dart';
 import '../utils/pref_utils.dart';
 import '../../firebase_options.dart';
@@ -152,6 +154,12 @@ class AppInitializer {
       final notificationService = DailyVerseNotificationService();
       await notificationService.initialize();
       unawaited(notificationService.scheduleDailyVerse());
+
+      final homeWidgetService = sl<HomeWidgetService>();
+      unawaited(homeWidgetService.initialize());
+
+      final deepLinkHandler = sl<DeepLinkHandler>();
+      unawaited(deepLinkHandler.initialize());
 
       final remoteConfigService = RemoteConfigService();
       await remoteConfigService.init();

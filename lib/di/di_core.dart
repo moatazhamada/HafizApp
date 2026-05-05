@@ -12,6 +12,8 @@ import '../../data/datasource/auth/qf_auth_remote_data_source.dart';
 import '../../presentation/auth/bloc/qf_auth_bloc.dart';
 import '../../presentation/home_screen/bloc/home_bloc.dart';
 import '../../theme/bloc/theme_bloc.dart';
+import '../../core/services/home_widget_service.dart';
+import '../../core/services/deep_link_handler.dart';
 import '../injection_container.dart';
 
 void registerCoreDependencies() {
@@ -48,4 +50,7 @@ void registerCoreDependencies() {
   sl.registerFactory(() => HomeBloc());
   sl.registerLazySingleton(() => AnalyticsService());
   sl.registerLazySingleton(() => AnalyticsRouteObserver());
+
+  sl.registerLazySingleton<HomeWidgetService>(HomeWidgetService.new);
+  sl.registerLazySingleton<DeepLinkHandler>(DeepLinkHandler.new);
 }
