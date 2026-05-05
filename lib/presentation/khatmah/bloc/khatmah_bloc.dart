@@ -24,8 +24,8 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
       final goalResult = await repository.getGoal();
       final logResult = await repository.getTodayLog();
       final logsResult = await repository.getRecentLogs(30);
-      // Use reconciled streak (cloud + local, take higher)
       final streakResult = await repository.getReconciledStreak();
+      final localStreakResult = await repository.getCurrentStreak();
 
       int failCount = 0;
 
@@ -53,7 +53,15 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
         Logger.warning('Failed to load streak', feature: 'Khatmah');
       }, (s) => streak = s);
 
-      if (failCount == 4) {
+      int localStreak = 0;
+      localStreakResult.fold((_) {
+        failCount++;
+        Logger.warning('Failed to load local streak', feature: 'Khatmah');
+      }, (s) => localStreak = s);
+
+      final cloudStreak = streak - localStreak > 0 ? streak - localStreak : 0;
+
+      if (failCount >= 5) {
         emit(const KhatmahError('msg_operation_failed'));
       } else {
         emit(
@@ -62,11 +70,12 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
             todayLog: todayLog,
             recentLogs: recentLogs,
             streak: streak,
+            localStreak: localStreak,
+            cloudStreak: cloudStreak,
           ),
         );
       }
 
-      // Background: sync pending activity days
       add(SyncActivityDays());
     } catch (e) {
       emit(const KhatmahError('msg_operation_failed'));

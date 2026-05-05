@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'; // Required for RenderParagraph
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
@@ -28,6 +29,7 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart'
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
+import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../core/theme/app_colors.dart';
@@ -871,6 +873,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   NavigatorService.pushNamed(AppRoutes.helpScreen);
                   break;
                 case 'hifz':
+                  HapticFeedback.mediumImpact();
                   setState(() {
                     _isHifzMode = !_isHifzMode;
                     _revealedVerses.clear();
@@ -884,6 +887,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   );
                   break;
                 case 'bookmark':
+                  HapticFeedback.lightImpact();
                   final blocState = context.read<BookmarkBloc>().state;
                   final isBookmarked =
                       blocState is BookmarkLoaded &&
@@ -1101,10 +1105,12 @@ class _SurahScreenState extends State<SurahScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   if (isBookmarked) {
+                    HapticFeedback.lightImpact();
                     context.read<BookmarkBloc>().add(
                       RemoveBookmarkEvent(surah!.id, aya.verseNumber),
                     );
                   } else {
+                    HapticFeedback.lightImpact();
                     context.read<BookmarkBloc>().add(
                       AddBookmarkEvent(
                         BookmarkModel(
@@ -1168,6 +1174,18 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
             Semantics(
               button: true,
+              label: 'lbl_add_reflection'.tr,
+              child: ListTile(
+                leading: const Icon(Icons.lightbulb_outline, color: Colors.amber),
+                title: Text('lbl_add_reflection'.tr),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showReflectionDialog(aya);
+                },
+              ),
+            ),
+            Semantics(
+              button: true,
               label: 'lbl_share_verse'.tr,
               child: ListTile(
                 leading: const Icon(Icons.share, color: Colors.teal),
@@ -1213,6 +1231,56 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showReflectionDialog(Verse aya) {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('lbl_add_reflection'.tr),
+        content: TextField(
+          controller: textController,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: 'lbl_write_reflection'.tr,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('lbl_cancel'.tr),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final text = textController.text.trim();
+              if (text.isEmpty) return;
+              Navigator.pop(dialogContext);
+              try {
+                final postDs = sl<QfPostRemoteDataSource>();
+                await postDs.createReflection(
+                  verseKey: '${surah!.id}:${aya.verseNumber}',
+                  text: text,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('lbl_reflection_saved'.tr)),
+                  );
+                }
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('msg_operation_failed'.tr)),
+                  );
+                }
+              }
+            },
+            child: Text('lbl_submit_reflection'.tr),
+          ),
+        ],
       ),
     );
   }
@@ -1269,16 +1337,18 @@ class _SurahScreenState extends State<SurahScreen> {
         surah: surah!,
         aya: aya,
         expectedText: expectedText,
-        onCorrect: () {
-          if (mounted) {
-            _onRecitationCorrect(aya);
-          }
-        },
-        onWrong: (ctx) {
-          if (mounted) {
-            _showWrongDialog(context, aya);
-          }
-        },
+                        onCorrect: () {
+                          HapticFeedback.heavyImpact();
+                          if (mounted) {
+                            _onRecitationCorrect(aya);
+                          }
+                        },
+                        onWrong: (ctx) {
+                          HapticFeedback.mediumImpact();
+                          if (mounted) {
+                            _showWrongDialog(context, aya);
+                          }
+                        },
       ),
     );
   }

@@ -399,4 +399,22 @@ final Map<String, String> arEg = {
 
   // Verse unavailable
   'lbl_verse_unavailable': 'الآية غير متوفرة',
+
+  // Cloud Sync
+  'lbl_cloud_synced': 'متزامن مع السحابة',
+  'lbl_cloud_streak': 'سلسلة السحابة',
+  'lbl_local_streak': 'سلسلة محلية',
+  'msg_synced_to_qf': 'متزامن مع مؤسسة القرآن',
+
+  // Reflections
+  'lbl_add_reflection': 'إضافة تأمل',
+  'lbl_reflections': 'تأملات',
+  'lbl_write_reflection': 'اكتب تأملك...',
+  'lbl_no_reflections': 'لا توجد تأملات بعد',
+  'lbl_submit_reflection': 'حفظ التأمل',
+  'lbl_reflection_saved': 'تم حفظ التأمل',
+
+  // Daily Verse Notification
+  'lbl_daily_verse_notification': 'إشعار الآية اليومية',
+  'msg_daily_verse_desc': 'استلم آية قرآنية يومية لبدء يومك بتأمل',
 };

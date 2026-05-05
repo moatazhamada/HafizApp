@@ -28,7 +28,6 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
 
   @override
   Future<VerseStudyData> getVerseStudy(String verseKey) async {
-    // Fetch all three data sources in parallel
     final results = await Future.wait([
       _fetchArabic(verseKey),
       _fetchTranslation(verseKey),
@@ -90,15 +89,14 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {
-        return tafsirData['text'] as String? ?? '';
-      } else {
-        final verses = tafsirResponse.data['verses'] as List?;
-        if (verses != null && verses.isNotEmpty) {
-          final tafsirList = verses[0]['tafsirs'] as List?;
-          if (tafsirList != null && tafsirList.isNotEmpty) {
-            return tafsirList[0]['text'] as String? ?? '';
-          }
-        }
+        final text = tafsirData['text'] as String?;
+        if (text != null && text.isNotEmpty) return text;
+      }
+
+      final tafsirs = tafsirResponse.data['tafsirs'] as List?;
+      if (tafsirs != null && tafsirs.isNotEmpty) {
+        final text = tafsirs[0]['text'] as String?;
+        if (text != null && text.isNotEmpty) return text;
       }
     } catch (e) {
       Logger.warning('Failed to fetch tafsir: $e', feature: 'VerseStudy');

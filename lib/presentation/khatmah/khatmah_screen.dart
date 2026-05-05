@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/theme/app_spacing.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
+import 'package:hafiz_app/widgets/shimmer_loading.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 class KhatmahScreen extends StatelessWidget {
@@ -25,7 +26,20 @@ class KhatmahScreen extends StatelessWidget {
       body: BlocBuilder<KhatmahBloc, KhatmahState>(
         builder: (context, state) {
           if (state is KhatmahLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: ListView(
+                children: const [
+                  ShimmerCard(height: 240),
+                  SizedBox(height: AppSpacing.lg),
+                  ShimmerCard(height: 100),
+                  SizedBox(height: AppSpacing.lg),
+                  ShimmerCard(height: 140),
+                  SizedBox(height: AppSpacing.lg),
+                  ShimmerCard(height: 120),
+                ],
+              ),
+            );
           }
           if (state is KhatmahError) {
             return Center(
@@ -53,7 +67,11 @@ class KhatmahScreen extends StatelessWidget {
                 children: [
                   _TodayProgressCard(state: state),
                   const SizedBox(height: AppSpacing.lg),
-                  _StreakCard(streak: state.streak),
+                  _StreakCard(
+                    streak: state.streak,
+                    cloudStreak: state.cloudStreak,
+                    localStreak: state.localStreak,
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   _GoalCard(state: state),
                   const SizedBox(height: AppSpacing.lg),
@@ -156,8 +174,14 @@ class _TodayProgressCard extends StatelessWidget {
 
 class _StreakCard extends StatelessWidget {
   final int streak;
+  final int cloudStreak;
+  final int localStreak;
 
-  const _StreakCard({required this.streak});
+  const _StreakCard({
+    required this.streak,
+    this.cloudStreak = 0,
+    this.localStreak = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -169,46 +193,132 @@ class _StreakCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: streak > 0
-                    ? Colors.orange.withValues(alpha: 0.15)
-                    : Colors.grey.withValues(alpha: 0.15),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.local_fire_department,
-                size: 32,
-                color: streak > 0 ? Colors.orange : Colors.grey,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$streak ${'lbl_day_streak'.tr}',
-                    style: AppTextStyles.headingMedium.copyWith(
-                      color: colors.onSurface,
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: streak > 0
+                        ? Colors.orange.withValues(alpha: 0.15)
+                        : Colors.grey.withValues(alpha: 0.15),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.local_fire_department,
+                    size: 32,
+                    color: streak > 0 ? Colors.orange : Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$streak ${'lbl_day_streak'.tr}',
+                        style: AppTextStyles.headingMedium.copyWith(
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'lbl_keep_going'.tr,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (cloudStreak > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                        const SizedBox(width: 4),
+                        Text(
+                          'lbl_cloud_synced'.tr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    'lbl_keep_going'.tr,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
+            if (localStreak != streak)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.md),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _StreakSourceChip(
+                      label: 'lbl_local_streak'.tr,
+                      value: localStreak,
+                      icon: Icons.phone_android,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    _StreakSourceChip(
+                      label: 'lbl_cloud_streak'.tr,
+                      value: cloudStreak > 0 ? cloudStreak + localStreak : 0,
+                      icon: Icons.cloud,
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StreakSourceChip extends StatelessWidget {
+  final String label;
+  final int value;
+  final IconData icon;
+
+  const _StreakSourceChip({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey[800]
+            : Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(
+            '$label: $value',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
       ),
     );
   }
@@ -240,6 +350,24 @@ class _GoalCard extends StatelessWidget {
                 color: colors.onSurface,
               ),
             ),
+            if (state.cloudStreak > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'lbl_cloud_synced'.tr,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.green[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: AppSpacing.md),
             Wrap(
               spacing: AppSpacing.sm,

@@ -407,4 +407,23 @@ final Map<String, String> enUs = {
 
   // Verse unavailable
   'lbl_verse_unavailable': 'Verse unavailable',
+
+  // Cloud Sync
+  'lbl_cloud_synced': 'Cloud Synced',
+  'lbl_cloud_streak': 'Cloud Streak',
+  'lbl_local_streak': 'Local Streak',
+  'msg_synced_to_qf': 'Synced to Quran Foundation',
+
+  // Reflections
+  'lbl_add_reflection': 'Add Reflection',
+  'lbl_reflections': 'Reflections',
+  'lbl_write_reflection': 'Write your reflection...',
+  'lbl_no_reflections': 'No reflections yet',
+  'lbl_submit_reflection': 'Save Reflection',
+  'lbl_reflection_saved': 'Reflection saved',
+
+  // Daily Verse Notification
+  'lbl_daily_verse_notification': 'Daily Verse Notification',
+  'msg_daily_verse_desc':
+      'Receive a daily Quran verse to start your day with reflection',
 };

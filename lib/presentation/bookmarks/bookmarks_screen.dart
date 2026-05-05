@@ -6,6 +6,7 @@ import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -48,7 +49,7 @@ class BookmarksScreen extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is BookmarkLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const ShimmerLoadingList();
           } else if (state is BookmarkLoaded) {
             if (state.bookmarks.isEmpty) {
               return Center(
@@ -78,8 +79,12 @@ class BookmarksScreen extends StatelessWidget {
                 ),
               );
             }
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<BookmarkBloc>().add(const LoadBookmarksEvent());
+              },
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: state.bookmarks.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
@@ -228,6 +233,7 @@ class BookmarksScreen extends StatelessWidget {
                   ),
                 );
               },
+            ),
             );
           } else if (state is BookmarkError) {
             return Center(

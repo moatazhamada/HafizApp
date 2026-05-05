@@ -72,6 +72,7 @@ dependencies:
   jwt_decoder: ^2.0.1
   flutter_secure_storage: ^10.0.0
   in_app_review: ^2.0.11
+  flutter_local_notifications: ^19.2.0
 
 flutter_icons:
   android: true
@@ -80,6 +81,8 @@ flutter_icons:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   mocktail: ^1.0.2

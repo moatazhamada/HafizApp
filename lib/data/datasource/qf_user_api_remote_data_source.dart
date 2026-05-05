@@ -4,6 +4,7 @@ import 'package:hafiz_app/core/utils/logger.dart';
 
 abstract class QfUserApiRemoteDataSource {
   Future<List<dynamic>> getCollections();
+  Future<Map<String, dynamic>?> createCollection(String name);
   Future<List<dynamic>> getBookmarks();
   Future<void> addBookmark(int verseId, {String? collectionId});
   Future<void> removeBookmark(int verseId);
@@ -30,6 +31,23 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
     } catch (e) {
       Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
       rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> createCollection(String name) async {
+    try {
+      final response = await _dio.post(
+        '${_config.apiBaseUrl}/auth/v1/collections',
+        data: {'name': name},
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      Logger.error('Failed to create QF collection: $e', feature: 'QfUserApi');
+      return null;
     }
   }
 

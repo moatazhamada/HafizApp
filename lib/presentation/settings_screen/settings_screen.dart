@@ -35,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultQuranView;
   late String _mushafType;
   late String _mushafRenderingMode;
+  late bool _dailyVerseEnabled;
   bool _whisperDownloading = false;
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -59,6 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _mushafRenderingMode = PrefUtils().getMushafRenderingMode();
+    _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
     _loadRecitationResources();
   }
 
@@ -113,6 +115,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildMushafRenderingModeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildClearMushafCacheTile(),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildDailyVerseTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),
@@ -566,6 +570,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('msg_cache_cleared'.tr)));
+      },
+    );
+  }
+
+  Widget _buildDailyVerseTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.notifications_outlined),
+      title: Text('lbl_daily_verse_notification'.tr),
+      subtitle: Text('msg_daily_verse_desc'.tr),
+      value: _dailyVerseEnabled,
+      onChanged: (val) {
+        setState(() => _dailyVerseEnabled = val);
+        PrefUtils().setDailyVerseEnabled(val);
       },
     );
   }

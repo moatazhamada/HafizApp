@@ -421,4 +421,16 @@ class PrefUtils {
   Future<void> setMushafRenderingMode(String mode) async {
     await _requirePrefs().setString('mushafRenderingMode', mode);
   }
+
+  bool isDailyVerseEnabled() {
+    try {
+      return _requirePrefs().getBool('dailyVerseEnabled') ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  Future<void> setDailyVerseEnabled(bool enabled) async {
+    await _requirePrefs().setBool('dailyVerseEnabled', enabled);
+  }
 }

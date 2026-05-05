@@ -32,6 +32,21 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
         localVerseIds.add(absoluteId);
       }
 
+      String? defaultCollectionId;
+      try {
+        final collections = await qfUserApi.getCollections();
+        final existing = collections.cast<Map<String, dynamic>?>().firstWhere(
+          (c) => c?['name'] == 'Hafiz Bookmarks',
+          orElse: () => null,
+        );
+        if (existing != null) {
+          defaultCollectionId = existing['id']?.toString();
+        } else {
+          final created = await qfUserApi.createCollection('Hafiz Bookmarks');
+          defaultCollectionId = created?['id']?.toString();
+        }
+      } catch (_) {}
+
       final qfBookmarks = await qfUserApi.getBookmarks();
       final Set<int> qfVerseIds = {};
       for (final b in qfBookmarks) {
@@ -47,7 +62,7 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
       final toPush = localVerseIds.difference(qfVerseIds);
       for (final verseId in toPush) {
         try {
-          await qfUserApi.addBookmark(verseId);
+          await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
         } catch (e) {
           Logger.warning(
             'Failed to push bookmark $verseId: $e',

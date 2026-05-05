@@ -8,6 +8,8 @@ import '../../data/datasource/tafsir/qf_tafsir_remote_data_source.dart';
 import '../../data/datasource/translation/qf_translation_remote_data_source.dart';
 import '../../data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
 import '../../data/datasource/mushaf/qf_mushaf_page_data_source.dart';
+import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
+import '../../data/datasource/random_verse/random_verse_remote_data_source.dart';
 import '../injection_container.dart';
 
 void registerQfDataSources() {
@@ -41,5 +43,13 @@ void registerQfDataSources() {
 
   sl.registerSingleton<QfTranslationRemoteDataSource>(
     QfTranslationRemoteDataSource(dio: sl<Dio>()),
+  );
+
+  sl.registerLazySingleton<QfPostRemoteDataSource>(
+    () => QfPostRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<RandomVerseRemoteDataSource>(
+    () => RandomVerseRemoteDataSource(dio: sl()),
   );
 }
