@@ -3,17 +3,11 @@ import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
-/// Default translation ID for English renderings.
-/// 85 = M.A.S. Abdel Haleem (modern, readable English).
-/// Valid alternatives: 20 (Saheeh International), 22 (Yusuf Ali), 149 (Bridges).
-const int _translationId = 85;
-
 class QfTranslationRemoteDataSource {
   final Dio _dio;
   final Map<int, Map<int, String>> _translationCache = {};
 
-  QfTranslationRemoteDataSource({required Dio dio})
-    : _dio = dio;
+  QfTranslationRemoteDataSource({required Dio dio}) : _dio = dio;
 
   /// Returns a verse-number → text map for [surahId].
   /// Only fetches when the current UI locale is **not Arabic**.
@@ -25,10 +19,13 @@ class QfTranslationRemoteDataSource {
     }
 
     try {
-      final allItems = await _fetchAllPages((page) => _dio.get(
-        '${ApiConfig.quranComBase}/translations/$_translationId/by_chapter/$surahId',
-        queryParameters: {'per_page': 50, 'page': page},
-      ), 'translations');
+      final allItems = await _fetchAllPages(
+        (page) => _dio.get(
+          '${ApiConfig.quranComBase}/translations/${ApiConfig.translationId}/by_chapter/$surahId',
+          queryParameters: {'per_page': 50, 'page': page},
+        ),
+        'translations',
+      );
 
       // API returns items ordered by verse but without a verse_key field.
       // Compute verse number from page offset + position.

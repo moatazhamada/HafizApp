@@ -29,13 +29,17 @@ class RandomVerseRemoteDataSource {
     try {
       final response = await _dio.get(
         '${ApiConfig.quranComBase}/verses/random',
-        queryParameters: {'translations': '85', 'words': 'true'},
+        queryParameters: {
+          'translations': '${ApiConfig.translationId}',
+          'words': 'true',
+        },
       );
 
       final verse = response.data['verse'] as Map<String, dynamic>?;
       if (verse == null) return null;
 
-      final words = (verse['words'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final words =
+          (verse['words'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       final arabicText = words.map((w) => w['text_uthmani'] ?? '').join(' ');
 
       // Translation text comes via the verse.translations array.
@@ -56,7 +60,10 @@ class RandomVerseRemoteDataSource {
         englishText: englishText,
       );
     } catch (e) {
-      Logger.warning('Failed to fetch random verse: $e', feature: 'RandomVerse');
+      Logger.warning(
+        'Failed to fetch random verse: $e',
+        feature: 'RandomVerse',
+      );
       return null;
     }
   }

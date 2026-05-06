@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/api_config.dart';
+import 'package:hafiz_app/core/i18n/locale_controller.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class VerseStudyData {
@@ -21,8 +22,7 @@ abstract class QfVerseStudyRemoteDataSource {
 class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   final Dio _dio;
 
-  QfVerseStudyRemoteDataSourceImpl({required Dio dio})
-    : _dio = dio;
+  QfVerseStudyRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
 
   @override
   Future<VerseStudyData> getVerseStudy(String verseKey) async {
@@ -53,9 +53,9 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
         '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
         queryParameters: {'fields': 'text_uthmani'},
       );
-      final verses = verseResponse.data['verses'] as List?;
-      if (verses != null && verses.isNotEmpty) {
-        return verses[0]['text_uthmani'] as String? ?? '';
+      final verse = verseResponse.data['verse'] as Map<String, dynamic>?;
+      if (verse != null) {
+        return verse['text_uthmani'] as String? ?? '';
       }
     } catch (e) {
       Logger.warning(
@@ -67,14 +67,19 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   }
 
   Future<String> _fetchTranslation(String verseKey) async {
+    if (_isArabicLocale()) return '';
+
     try {
       final translationResponse = await _dio.get(
         '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
-        queryParameters: {'translations': '85', 'fields': 'text_uthmani'},
+        queryParameters: {
+          'translations': '${ApiConfig.translationId}',
+          'fields': 'text_uthmani',
+        },
       );
-      final verses = translationResponse.data['verses'] as List?;
-      if (verses != null && verses.isNotEmpty) {
-        final translations = verses[0]['translations'] as List?;
+      final verse = translationResponse.data['verse'] as Map<String, dynamic>?;
+      if (verse != null) {
+        final translations = verse['translations'] as List?;
         if (translations != null && translations.isNotEmpty) {
           final text = translations[0]['text'] as String? ?? '';
           return text.replaceAll(RegExp(r'<[^>]*>'), '').trim();
@@ -89,7 +94,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTafsir(String verseKey) async {
     try {
       final tafsirResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/tafsirs/169/by_ayah/$verseKey',
+        '${ApiConfig.quranComBase}/tafsirs/${ApiConfig.tafsirId}/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {
@@ -106,5 +111,13 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
       Logger.warning('Failed to fetch tafsir: $e', feature: 'VerseStudy');
     }
     return '';
+  }
+
+  bool _isArabicLocale() {
+    try {
+      return LocaleController.notifier.value.languageCode == 'ar';
+    } catch (_) {
+      return false;
+    }
   }
 }

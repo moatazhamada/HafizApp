@@ -3,24 +3,24 @@ import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 abstract class QfTafsirRemoteDataSource {
-  Future<String> getTafsirForVerse(String verseKey, {String tafsirId});
-  Future<Map<int, String>> getTafsirsByChapter(int chapterId, {String tafsirId});
+  Future<String> getTafsirForVerse(String verseKey, {String? tafsirId});
+  Future<Map<int, String>> getTafsirsByChapter(
+    int chapterId, {
+    String? tafsirId,
+  });
 }
 
 class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
   final Dio _dio;
 
-  QfTafsirRemoteDataSourceImpl({required Dio dio})
-    : _dio = dio;
+  QfTafsirRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
 
   @override
-  Future<String> getTafsirForVerse(
-    String verseKey, {
-    String tafsirId = '169',
-  }) async {
+  Future<String> getTafsirForVerse(String verseKey, {String? tafsirId}) async {
+    final id = tafsirId ?? ApiConfig.tafsirId;
     try {
       final response = await _dio.get(
-        '$ApiConfig.quranComBase/tafsirs/$tafsirId/by_ayah/$verseKey',
+        '${ApiConfig.quranComBase}/tafsirs/$id/by_ayah/$verseKey',
       );
 
       final tafsir = response.data['tafsir'] as Map<String, dynamic>?;
@@ -45,13 +45,17 @@ class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
   @override
   Future<Map<int, String>> getTafsirsByChapter(
     int chapterId, {
-    String tafsirId = '169',
+    String? tafsirId,
   }) async {
+    final id = tafsirId ?? ApiConfig.tafsirId;
     try {
-      final allItems = await _fetchAllPages((page) => _dio.get(
-        '$ApiConfig.quranComBase/tafsirs/$tafsirId/by_chapter/$chapterId',
-        queryParameters: {'per_page': 50, 'page': page},
-      ), 'tafsirs');
+      final allItems = await _fetchAllPages(
+        (page) => _dio.get(
+          '${ApiConfig.quranComBase}/tafsirs/$id/by_chapter/$chapterId',
+          queryParameters: {'per_page': 50, 'page': page},
+        ),
+        'tafsirs',
+      );
 
       final Map<int, String> result = {};
       for (final item in allItems) {

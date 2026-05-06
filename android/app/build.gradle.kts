@@ -40,6 +40,11 @@ android {
         create("production") {
             dimension = "default"
         }
+        create("prelive") {
+            dimension = "default"
+            applicationIdSuffix = ".prelive"
+            manifestPlaceholders += mapOf("appAuthRedirectScheme" to "hafizapp-prelive")
+        }
     }
 
     signingConfigs {
