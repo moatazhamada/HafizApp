@@ -1,4 +1,28 @@
-# Hafiz App — Hackathon Submission
+# Hafiz App — Quran Foundation Hackathon Submission
+
+## Project Title
+
+**Hafiz — Post-Ramadan Quran Companion**
+
+## Team
+
+<!-- Add your team member names here before submitting -->
+- [Your Name]
+
+## Demo Video
+
+<!-- Link your 2-3 minute demo video here after uploading (YouTube unlisted, Loom, or similar) -->
+- [Demo Video Link]
+
+## GitHub Repository
+
+https://github.com/abualgait/HafizApp
+
+## Live App
+
+https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app
+
+---
 
 ## Problem
 
@@ -19,38 +43,60 @@ All synced to the **Quran Foundation** cloud so users never lose progress across
 
 ## Quran Foundation API Usage
 
-Hafiz makes extensive use of the Quran Foundation's v4 Content API and v1 Auth API:
+Hafiz integrates **34 API endpoints** across the Quran Foundation ecosystem — one of the deepest integrations of any Quran app:
 
-### Content API v4
-
-| Endpoint | Feature | Why it matters |
-|----------|---------|----------------|
-| `GET /quran/verses/by_key/{key}` | Verse text retrieval | Fetches exact Uthmani text for voice verification comparison |
-| `GET /quran/verses/by_page/{page}` | Mushaf page rendering | Loads verse mappings, glyph codes (`code_v1`, `code_v2`), line positioning for 604-page mushaf |
-| `GET /translations/{id}/by_chapter/{id}` | Translation display | Fetches all verses of a surah with pagination (`per_page=50`), cached locally |
-| `GET /translations/{id}/by_ayah/{key}` | Per-verse translation | Quick lookup for verse context menus and study screen |
-| `GET /tafsirs/{id}/by_ayah/{key}` | Tafsir display | Ibn Kathir tafsir per ayah via bottom sheet |
-| `GET /tafsirs/{id}/by_chapter/{id}` | Bulk tafsir load | Pre-fetches all tafsir for a surah with pagination |
-| `GET /resources/recitations` | Audio listings | Available reciters and chapter recitations for audio playback |
-
-### Auth API v1
+### Content API (Quran.com v4) — 8 endpoints
 
 | Endpoint | Feature | Why it matters |
 |----------|---------|----------------|
-| `POST /activity-days` | Reading activity sync | Reports daily reading events (type `QURAN`, verses read, time spent) — feeds streak calculations |
-| `GET /streaks/current-streak-days` | Cloud streak | Fetches server-computed streak for reconciliation with local streak |
+| `GET /verses/by_chapter/{id}` | Surah text loading | Fetches Uthmani text with word-level data for all verses |
+| `GET /verses/by_key/{key}` | Single verse lookup | Exact text for voice verification comparison and tafsir |
+| `GET /verses/by_page/{n}` | Mushaf page rendering | Glyph codes (`code_v1`, `code_v2`), line positioning for 604-page mushaf — **pixel-perfect rendering** |
+| `GET /verses/random` | Daily verse widget | Home screen random verse with translation — auto-refreshes hourly |
+| `GET /translations/85/by_chapter/{id}` | Translation display | Abdel Haleem English translation, paginated and cached |
+| `GET /tafsirs/169/by_ayah/{key}` | Per-verse tafsir | Ibn Kathir tafsir in bottom sheet and study screen |
+| `GET /tafsirs/169/by_chapter/{id}` | Bulk tafsir load | Pre-fetches full surah tafsir with pagination |
+| `GET /resources/recitations` + `/chapter_recitations/{id}/{chapter}` | Audio with word sync | Reciter listings + word-level timing segments for highlighted playback |
+
+### User API (Quran Foundation Auth v1) — 20 endpoints
+
+| Endpoint | Feature | Why it matters |
+|----------|---------|----------------|
+| `POST /activity-days` | Reading activity sync | Reports daily reading events — feeds streak calculations |
+| `GET /activity-days` | Activity history | Full reading activity log |
+| `GET /streaks/current-streak-days` | Cloud streak | Server-computed streak reconciled with local streak |
+| `GET /streaks` | Streak history | Long-term streak visualization |
 | `POST /goals` | Reading goals | Syncs daily verse targets to cloud |
-| `GET /goals/get-todays-plan` | Goal progress | Pulls today's plan with progress percentage |
-| `POST /reading-sessions` | Session tracking | Reports each reading session (last verse position) |
-| `POST/PUT/DELETE /bookmarks` | Bookmark sync | Bidirectional sync — push local bookmarks, pull cloud bookmarks. Uses "Hafiz Bookmarks" collection |
-| `POST /collections` | Bookmark organization | Creates/manages bookmark collections |
-| `POST /posts` | Verse reflections | Users add personal reflections linked to specific verses |
+| `PUT /goals/{id}` | Update goals | Track progress toward memorization/reading goals |
+| `DELETE /goals/{id}` | Remove goals | Clean up completed or abandoned goals |
+| `GET /goals/get-todays-plan` | Daily plan | Personalized reading plan with progress percentage |
+| `GET /goals/estimate` | Timeline estimation | Predicts goal completion date |
+| `POST /reading-sessions` | Session tracking | Records each reading session with position |
+| `GET /reading-sessions` | Session history | Full historical log |
+| `GET /bookmarks` | Pull bookmarks | Fetches cloud bookmarks for local merge |
+| `POST /bookmarks` | Push bookmarks | Uploads local bookmarks to cloud |
+| `DELETE /bookmarks/{id}` | Remove bookmark | Bidirectional delete sync |
+| `GET /collections` | List collections | Bookmark organization |
+| `POST /collections` | Create collection | Auto-creates "Hafiz Bookmarks" collection |
+| `POST /posts` | Verse reflections | Personal reflections linked to specific verses |
+| `GET /posts` | View reflections | Retrieve reflections for a verse |
+| `DELETE /posts/{id}` | Delete reflection | Manage personal content |
+| `GET /search?q=...` | Semantic search | AI-powered verse search beyond keyword matching |
 
-### Authentication
+### Authentication (OAuth2 + PKCE) — 3 endpoints
 
-- **OAuth2 + PKCE** via `flutter_appauth` with OpenID Connect
-- Handles token refresh automatically via Dio interceptors
-- "Delete My Data" support revokes tokens and removes synced content per QF Developer Terms
+- **`/oauth2/auth`** — PKCE authorization redirect
+- **`/oauth2/token`** — Token exchange and refresh (auto-retry on 401)
+- **`/oauth2/revoke`** — "Delete My Data" compliance — revokes tokens and clears all synced content
+
+### External Integrations
+
+| Source | Purpose |
+|--------|---------|
+| **QuranHub API** (`api.quranhub.com/v1`) | Qiraat editions — view ayah text in Hafs, Warsh, Qaloon, and other recitation variants |
+| **Qurani.ai QRC** (`wss://api.qurani.ai`) | Real-time recitation verification via WebSocket — streams Opus audio, receives tajweed-level feedback |
+| **EveryAyah CDN** | Ayah PNG images for mushaf image rendering mode |
+| **Tanzil (local assets)** | Offline-first Uthmani text stored as per-surah JSON — always available without network |
 
 ### Impact
 
@@ -76,8 +122,23 @@ Built for the global Muslim community. Open source. Non-profit.
 - **Authentication:** flutter_appauth (OAuth2/OpenID Connect)
 - **CI/CD:** GitHub Actions + Fastlane
 
-## App Store
+## App Store & Source
 
 - **Google Play:** https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app
 - **Source:** https://github.com/abualgait/HafizApp
-- **Version:** 3.1.0 (hackathon release)
+- **Version:** 3.1.0+15
+- **Platforms:** Android (primary), iOS
+- **License:** Open-source, non-profit (Sadaqah Jariyah)
+
+---
+
+## Submission Checklist
+
+- [x] Project title
+- [ ] Team member names
+- [x] Short description
+- [x] Detailed explanation
+- [x] Live demo / working app link (Play Store)
+- [x] GitHub repository
+- [ ] 2–3 minute demo video (script: `DEMO_VIDEO_SCRIPT.md`)
+- [x] API usage description (34 endpoints documented above)

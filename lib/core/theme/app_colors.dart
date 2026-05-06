@@ -48,6 +48,9 @@ class AppColors {
   final Color mushafPageBg;
   final Color mushafPageBorder;
   final Color mushafVerseHover;
+  final Color mushafTextPrimary;
+  final Color mushafSurahHeaderColor;
+  final Color mushafJuzMarkerColor;
 
   const AppColors({
     required this.primary,
@@ -79,6 +82,9 @@ class AppColors {
     required this.mushafPageBg,
     required this.mushafPageBorder,
     required this.mushafVerseHover,
+    required this.mushafTextPrimary,
+    required this.mushafSurahHeaderColor,
+    required this.mushafJuzMarkerColor,
   });
 
   factory AppColors.of(BuildContext context) {
@@ -116,6 +122,9 @@ class AppColors {
     mushafPageBg: Color(0xFFFFFBF0),
     mushafPageBorder: Color(0xFFE8D5B7),
     mushafVerseHover: Color(0xFFB2DFDB),
+    mushafTextPrimary: Color(0xFF1A1A1A),
+    mushafSurahHeaderColor: Color(0xFF006754),
+    mushafJuzMarkerColor: Color(0xFF8B4513),
   );
 
   static const _dark = AppColors(
@@ -145,8 +154,11 @@ class AppColors {
     textPrimary: Color(0xFFE0E0E0),
     textSecondary: Color(0xFFAAAAAA),
     textHint: Color(0xFF757575),
-    mushafPageBg: Color(0xFF1A1A2E),
-    mushafPageBorder: Color(0xFF2A2A4A),
+    mushafPageBg: Color(0xFF1E1A1A),
+    mushafPageBorder: Color(0xFF3D2E2E),
     mushafVerseHover: Color(0xFF2A4A42),
+    mushafTextPrimary: Color(0xFFE8D5B7),
+    mushafSurahHeaderColor: Color(0xFF87D1A4),
+    mushafJuzMarkerColor: Color(0xFFD4A574),
   );
 }

@@ -372,14 +372,6 @@ final Map<String, String> arEg = {
   'msg_keep_practicing': 'كل محاولة تُحسب. حاول مجدداً لتحسين نتيجتك!',
 
   // Mushaf rendering modes
-  'lbl_mushaf_rendering': 'عرض المصحف',
-  'lbl_render_text': 'نص',
-  'msg_render_text_desc': 'عرض نص القرآن من الأصول المحلية (يعمل بدون إنترنت)',
-  'lbl_render_ayah_images': 'صور الآيات',
-  'msg_render_ayah_images_desc': 'تحميل صور الآيات من الشبكة (يتطلب إنترنت)',
-  'lbl_render_glyph': 'رسم QF للرسم البياني',
-  'msg_render_glyph_desc':
-      'استخدام بيانات code_v2 من مؤسسة القرآن لعرض الصفحات',
 
   // Delete My Data
   'lbl_delete_my_data': 'حذف بياناتي',

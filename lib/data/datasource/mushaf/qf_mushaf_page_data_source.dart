@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
-/// Exact verse reference on a page — surah:verse parsed from API verse_key.
 class PageVerse {
   final String verseKey;
   final int surahId;
@@ -28,16 +27,13 @@ class PageVerse {
   }
 }
 
-/// A word with glyph codes for font-based rendering.
 class GlyphWord {
   final int position;
-  final String codeV1;
   final String codeV2;
   final int lineV2;
 
   const GlyphWord({
     required this.position,
-    required this.codeV1,
     required this.codeV2,
     required this.lineV2,
   });
@@ -45,36 +41,36 @@ class GlyphWord {
   factory GlyphWord.fromJson(Map<String, dynamic> json) {
     return GlyphWord(
       position: (json['position'] ?? 0) as int,
-      codeV1: (json['code_v1'] ?? '').toString(),
       codeV2: (json['code_v2'] ?? '').toString(),
       lineV2: (json['line_v2'] ?? 0) as int,
     );
   }
 }
 
-/// Complete page data from the QF Content API.
+class GlyphLine {
+  final int lineNumber;
+  final List<GlyphWord> words;
+
+  GlyphLine({required this.lineNumber, List<GlyphWord>? words})
+      : words = words ?? [];
+
+  String get combinedCodeV2 => words.map((w) => w.codeV2).join();
+
+  String get combinedText => combinedCodeV2;
+}
+
 class MushafPageData {
   final int pageNumber;
   final List<PageVerse> verses;
-  final Map<String, List<GlyphWord>> wordsByVerse; // verseKey → words
+  final Map<String, List<GlyphWord>> wordsByVerse;
+  final List<GlyphLine> lines;
 
   const MushafPageData({
     required this.pageNumber,
     required this.verses,
     required this.wordsByVerse,
+    required this.lines,
   });
-
-  /// Glyph lines: groups code_v2 glyphs by their line number.
-  Map<int, List<String>> get glyphLines {
-    final Map<int, List<String>> result = {};
-    for (final words in wordsByVerse.values) {
-      for (final w in words) {
-        result.putIfAbsent(w.lineV2, () => []);
-        result[w.lineV2]!.add(w.codeV2);
-      }
-    }
-    return result;
-  }
 
   bool get isEmpty => verses.isEmpty;
   bool get hasGlyphData => wordsByVerse.isNotEmpty;
@@ -82,6 +78,52 @@ class MushafPageData {
 
 abstract class QfMushafPageDataSource {
   Future<MushafPageData?> fetchPage(int pageNumber);
+}
+
+class CachedQfMushafPageDataSource implements QfMushafPageDataSource {
+  final QfMushafPageDataSource _inner;
+  final Map<int, MushafPageData> _cache = {};
+  final List<int> _cacheOrder = [];
+  static const int _maxCacheSize = 20;
+
+  CachedQfMushafPageDataSource({required QfMushafPageDataSource inner})
+      : _inner = inner;
+
+  @override
+  Future<MushafPageData?> fetchPage(int pageNumber) async {
+    if (_cache.containsKey(pageNumber)) {
+      _cacheOrder.remove(pageNumber);
+      _cacheOrder.add(pageNumber);
+      return _cache[pageNumber];
+    }
+
+    final data = await _inner.fetchPage(pageNumber);
+    if (data != null) {
+      if (_cache.length >= _maxCacheSize) {
+        final oldest = _cacheOrder.removeAt(0);
+        _cache.remove(oldest);
+      }
+      _cache[pageNumber] = data;
+      _cacheOrder.add(pageNumber);
+    }
+    return data;
+  }
+
+  Future<void> prefetchPages(List<int> pageNumbers) async {
+    for (final page in pageNumbers) {
+      if (!_cache.containsKey(page)) {
+        final data = await _inner.fetchPage(page);
+        if (data != null) {
+          if (_cache.length >= _maxCacheSize) {
+            final oldest = _cacheOrder.removeAt(0);
+            _cache.remove(oldest);
+          }
+          _cache[page] = data;
+          _cacheOrder.add(page);
+        }
+      }
+    }
+  }
 }
 
 class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
@@ -103,6 +145,7 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
 
       final verses = <PageVerse>[];
       final wordsByVerse = <String, List<GlyphWord>>{};
+      final lineMap = <int, GlyphLine>{};
 
       for (final v in versesRaw) {
         if (v is! Map<String, dynamic>) continue;
@@ -111,17 +154,27 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
 
         final wordsRaw = v['words'] as List<dynamic>? ?? [];
         if (wordsRaw.isNotEmpty) {
-          wordsByVerse[pv.verseKey] = wordsRaw
+          final glyphWords = wordsRaw
               .whereType<Map<String, dynamic>>()
               .map((w) => GlyphWord.fromJson(w))
               .toList();
+          wordsByVerse[pv.verseKey] = glyphWords;
+
+          for (final gw in glyphWords) {
+            lineMap.putIfAbsent(gw.lineV2, () => GlyphLine(lineNumber: gw.lineV2, words: []));
+            lineMap[gw.lineV2]!.words.add(gw);
+          }
         }
       }
+
+      final lineNumbers = lineMap.keys.toList()..sort();
+      final lines = lineNumbers.map((ln) => lineMap[ln]!).toList();
 
       return MushafPageData(
         pageNumber: pageNumber,
         verses: verses,
         wordsByVerse: wordsByVerse,
+        lines: lines,
       );
     } catch (e) {
       Logger.error('Failed to fetch mushaf page $pageNumber: $e',

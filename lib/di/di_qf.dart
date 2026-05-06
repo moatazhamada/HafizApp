@@ -38,7 +38,9 @@ void registerQfDataSources() {
   );
 
   sl.registerLazySingleton<QfMushafPageDataSource>(
-    () => QfMushafPageDataSourceImpl(dio: sl()),
+    () => CachedQfMushafPageDataSource(
+      inner: QfMushafPageDataSourceImpl(dio: sl()),
+    ),
   );
 
   sl.registerSingleton<QfTranslationRemoteDataSource>(

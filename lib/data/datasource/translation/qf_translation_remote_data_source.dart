@@ -9,6 +9,10 @@ class QfTranslationRemoteDataSource {
 
   QfTranslationRemoteDataSource({required Dio dio}) : _dio = dio;
 
+  /// Clear cached translations so the next fetch hits the API.
+  /// Called when the app locale changes to prevent stale data.
+  void clearCache() => _translationCache.clear();
+
   /// Returns a verse-number → text map for [surahId].
   /// Only fetches when the current UI locale is **not Arabic**.
   Future<Map<int, String>> getTranslationsByChapter(int surahId) async {

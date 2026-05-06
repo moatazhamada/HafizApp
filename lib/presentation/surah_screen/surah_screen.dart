@@ -34,6 +34,7 @@ import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:hafiz_app/data/datasource/translation/qf_translation_remote_data_source.dart';
+import 'package:hafiz_app/core/i18n/locale_controller.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -87,6 +88,7 @@ class _SurahScreenState extends State<SurahScreen> {
   void initState() {
     super.initState();
     _showTranslation = PrefUtils().getShowTranslation();
+    LocaleController.notifier.addListener(_onLocaleChanged);
     // Logic moved to didChangeDependencies to safely access ModalRoute
   }
 
@@ -365,6 +367,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   void dispose() {
+    LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
     _autoScrollTimer?.cancel();
     _voiceService.stop();
@@ -672,8 +675,34 @@ class _SurahScreenState extends State<SurahScreen> {
     try {
       final ds = sl<QfTranslationRemoteDataSource>();
       _translations = await ds.getTranslationsByChapter(surah!.id);
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning(
+        'Failed to load translations for surah ${surah!.id}: $e',
+        feature: 'Translation',
+      );
+    }
     if (mounted) setState(() => _translationsLoading = false);
+  }
+
+  void _onLocaleChanged() {
+    if (!mounted) return;
+    final isArabic = LocaleController.notifier.value.languageCode == 'ar';
+    setState(() {
+      _translations = {};
+      _translationsLoading = false;
+      if (isArabic) {
+        _showTranslation = false;
+        PrefUtils().setShowTranslation(false);
+      }
+    });
+    // Clear the singleton cache so re-fetch gets fresh data for the new locale.
+    try {
+      sl<QfTranslationRemoteDataSource>().clearCache();
+    } catch (_) {}
+    if (!isArabic && PrefUtils().getShowTranslation()) {
+      _showTranslation = true;
+      _loadTranslations();
+    }
   }
 
   @override
@@ -1172,18 +1201,22 @@ class _SurahScreenState extends State<SurahScreen> {
                 },
               ),
             ),
-            Semantics(
-              button: true,
-              label: 'lbl_add_reflection'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.lightbulb_outline, color: Colors.amber),
-                title: Text('lbl_add_reflection'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showReflectionDialog(aya);
-                },
-              ),
-            ),
+            // Reflection feature hidden — not yet fully implemented.
+            // Semantics(
+            //   button: true,
+            //   label: 'lbl_add_reflection'.tr,
+            //   child: ListTile(
+            //     leading: const Icon(
+            //       Icons.lightbulb_outline,
+            //       color: Colors.amber,
+            //     ),
+            //     title: Text('lbl_add_reflection'.tr),
+            //     onTap: () {
+            //       Navigator.pop(context);
+            //       _showReflectionDialog(aya);
+            //     },
+            //   ),
+            // ),
             Semantics(
               button: true,
               label: 'lbl_share_verse'.tr,
@@ -1337,18 +1370,18 @@ class _SurahScreenState extends State<SurahScreen> {
         surah: surah!,
         aya: aya,
         expectedText: expectedText,
-                        onCorrect: () {
-                          HapticFeedback.heavyImpact();
-                          if (mounted) {
-                            _onRecitationCorrect(aya);
-                          }
-                        },
-                        onWrong: (ctx) {
-                          HapticFeedback.mediumImpact();
-                          if (mounted) {
-                            _showWrongDialog(context, aya);
-                          }
-                        },
+        onCorrect: () {
+          HapticFeedback.heavyImpact();
+          if (mounted) {
+            _onRecitationCorrect(aya);
+          }
+        },
+        onWrong: (ctx) {
+          HapticFeedback.mediumImpact();
+          if (mounted) {
+            _showWrongDialog(context, aya);
+          }
+        },
       ),
     );
   }

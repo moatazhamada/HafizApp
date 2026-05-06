@@ -379,15 +379,6 @@ final Map<String, String> enUs = {
       'Every effort counts. Try again to improve your score!',
 
   // Mushaf rendering modes
-  'lbl_mushaf_rendering': 'Mushaf Rendering',
-  'lbl_render_text': 'Text',
-  'msg_render_text_desc': 'Render Quran text from local assets (offline)',
-  'lbl_render_ayah_images': 'Ayah Images',
-  'msg_render_ayah_images_desc':
-      'Load ayah-level images from CDN (requires internet)',
-  'lbl_render_glyph': 'QF Glyph Rendering',
-  'msg_render_glyph_desc':
-      'Use Quran Foundation code_v2 glyph data for page rendering',
 
   // Delete My Data
   'lbl_delete_my_data': 'Delete My Data',
