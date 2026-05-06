@@ -6,10 +6,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.text.TextUtils
 import android.view.View
 import android.widget.RemoteViews
-import androidx.core.text.TextUtilsCompat
 import java.util.Locale
 
 class HafizAppWidgetProvider : AppWidgetProvider() {
@@ -68,8 +66,12 @@ private fun updateAppWidget(
         views.setInt(R.id.widget_verse_text, "setTextDirection", View.TEXT_DIRECTION_LTR)
     }
 
-    views.setTextViewText(R.id.widget_verse_text, finalText)
-    views.setTextViewText(R.id.widget_verse_ref, verseRef)
+    if (finalText.isNotEmpty()) {
+        views.setTextViewText(R.id.widget_verse_text, finalText)
+    }
+    if (verseRef.isNotEmpty()) {
+        views.setTextViewText(R.id.widget_verse_ref, verseRef)
+    }
 
     // Deep link: tapping opens the surah screen at this verse
     val deepLink = Uri.parse("hafiz://verse/$chapterId/$verseNumber")

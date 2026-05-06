@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class PageVerse {
@@ -134,7 +133,12 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
   @override
   Future<MushafPageData?> fetchPage(int pageNumber) async {
     try {
-      final url = MushafRenderingConfig.glyphPageUrl(pageNumber);
+      final url =
+          'https://api.quran.com/api/v4/verses/by_page/$pageNumber'
+          '?fields=code_v1,code_v2,v2_page,page_number'
+          '&words=true'
+          '&word_fields=code_v1,code_v2,position,v2_page,line_v2,page_number'
+          '&per_page=300';
       final response = await _dio.get(url);
 
       if (response.statusCode != 200) return null;

@@ -16,15 +16,6 @@ class LoadPage extends MushafEvent {
   List<Object?> get props => [pageNumber];
 }
 
-class PrefetchPages extends MushafEvent {
-  final List<int> pageNumbers;
-
-  const PrefetchPages(this.pageNumbers);
-
-  @override
-  List<Object?> get props => [pageNumbers];
-}
-
 class NavigateToPage extends MushafEvent {
   final int pageNumber;
 
@@ -36,13 +27,4 @@ class NavigateToPage extends MushafEvent {
 
 class ToggleDualPage extends MushafEvent {
   const ToggleDualPage();
-}
-
-class RefreshPage extends MushafEvent {
-  final int pageNumber;
-
-  const RefreshPage(this.pageNumber);
-
-  @override
-  List<Object?> get props => [pageNumber];
 }

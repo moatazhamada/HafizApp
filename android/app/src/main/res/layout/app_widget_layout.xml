@@ -18,7 +18,6 @@
         android:textColor="#1A1A1A"
         android:maxLines="6"
         android:ellipsize="end"
-        android:scrollbars="vertical"
         android:lineSpacingExtra="4dp"
         android:text="بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" />
 

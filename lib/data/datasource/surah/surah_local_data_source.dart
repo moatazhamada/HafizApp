@@ -20,6 +20,9 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
   /// Call [invalidateCache] when locale/data changes to force a reload.
   static Map<String, List<Map<String, dynamic>>>? _surahCache;
 
+  /// Per-surah result cache: key is '$basePath:$surahId'.
+  static final Map<String, ChapterResponse> _responseCache = {};
+
   /// LRU query-result cache (max 50 entries).
   /// Key: "basePath$normalizedQuery". Evicts oldest entry when full.
   static final Map<String, List<Map<String, dynamic>>> _queryCache = {};
@@ -33,10 +36,38 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 
   @override
   Future<ChapterResponse> getSurah(String surahId) async {
+    final surahIndex = int.tryParse(surahId) ?? 0;
+    if (surahIndex < 1 || surahIndex > 114) {
+      return ChapterResponse(chapters: []);
+    }
+
+    final cacheKey = '$basePath:$surahId';
+
+    if (_responseCache.containsKey(cacheKey)) {
+      return _responseCache[cacheKey]!;
+    }
+
+    if (_surahCache != null && _surahCache!.containsKey(basePath)) {
+      final all = _surahCache![basePath]!;
+      if (surahIndex - 1 < all.length) {
+        final response = ChapterResponse.fromJson(all[surahIndex - 1]);
+        _responseCache[cacheKey] = response;
+        return response;
+      }
+    }
+
     final path = '$basePath/surah_$surahId.json';
     final jsonStr = await rootBundle.loadString(path);
-    final data = await compute(_decodeJsonToMap, jsonStr);
-    return ChapterResponse.fromJson(data);
+    final data = json.decode(jsonStr) as Map<String, dynamic>;
+    final response = ChapterResponse.fromJson(data);
+    _responseCache[cacheKey] = response;
+    return response;
+  }
+
+  Future<List<ChapterResponse>> preloadAllSurahs() async {
+    return Future.wait(
+      List.generate(114, (i) => getSurah((i + 1).toString())),
+    );
   }
 
   @override
@@ -169,6 +200,3 @@ Future<List<Map<String, dynamic>>> _searchCachedWorker(
   return allMatches;
 }
 
-Map<String, dynamic> _decodeJsonToMap(String jsonStr) {
-  return json.decode(jsonStr) as Map<String, dynamic>;
-}

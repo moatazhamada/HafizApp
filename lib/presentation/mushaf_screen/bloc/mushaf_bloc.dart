@@ -1,52 +1,78 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
-import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
-import 'package:hafiz_app/injection_container.dart';
 import 'mushaf_event.dart';
 import 'mushaf_state.dart';
 
 class MushafBloc extends Bloc<MushafEvent, MushafState> {
-  final QfMushafPageDataSource _dataSource;
   bool dualPageEnabled;
 
   MushafBloc({
-    QfMushafPageDataSource? dataSource,
     bool? initialDualPage,
-  }) : _dataSource = dataSource ?? sl<QfMushafPageDataSource>(),
-       dualPageEnabled = initialDualPage ?? PrefUtils().getMushafDualPage(),
+  }) : dualPageEnabled = initialDualPage ?? PrefUtils().getMushafDualPage(),
        super(const MushafInitial()) {
     on<LoadPage>(_onLoadPage);
-    on<PrefetchPages>(_onPrefetchPages);
     on<NavigateToPage>(_onNavigateToPage);
     on<ToggleDualPage>(_onToggleDualPage);
-    on<RefreshPage>(_onRefreshPage);
   }
 
   Future<void> _onLoadPage(LoadPage event, Emitter<MushafState> emit) async {
     emit(MushafPageLoading(event.pageNumber));
     try {
-      final data = await _dataSource.fetchPage(event.pageNumber);
-      if (data != null && data.hasGlyphData) {
-        emit(MushafPageLoaded(pageNumber: event.pageNumber, pageData: data));
-      } else {
-        emit(MushafPageError(
-          event.pageNumber,
-          'Failed to load page data',
-        ));
+      final mushafType = PrefUtils().getMushafType() ?? 'madani';
+      final isWarsh = mushafType == 'warsh';
+
+      final ranges = MushafPageVerseMap.getVersesForPage(event.pageNumber);
+      if (ranges.isEmpty) {
+        emit(MushafPageError(event.pageNumber, 'No verses for this page'));
+        return;
       }
+
+      final entries = <AyahEntry>[];
+
+      for (final range in ranges) {
+        if (range.surahId < 1 || range.surahId > 114) continue;
+
+        final surah = QuranIndex.quranSurahs[range.surahId - 1];
+        final isSurahStart = range.startVerse == 1;
+
+        if (isSurahStart) {
+          final isFatiha = range.surahId == 1;
+          final isTawbah = range.surahId == 9;
+          final showBismillah = isWarsh ? isFatiha : !isFatiha && !isTawbah;
+
+          entries.add(AyahEntry(
+            surahId: range.surahId,
+            verseNumber: 0,
+            surahNameArabic: surah.nameArabic,
+            isSurahHeader: true,
+            showBismillah: showBismillah,
+          ));
+        }
+
+        for (int v = range.startVerse; v <= range.endVerse; v++) {
+          entries.add(AyahEntry(
+            surahId: range.surahId,
+            verseNumber: v,
+            surahNameArabic: surah.nameArabic,
+          ));
+        }
+      }
+
+      if (entries.isEmpty) {
+        emit(MushafPageError(event.pageNumber, 'No entries for this page'));
+        return;
+      }
+
+      emit(MushafPageLoaded(
+        pageNumber: event.pageNumber,
+        entries: entries,
+        mushafType: mushafType,
+      ));
     } catch (e) {
       emit(MushafPageError(event.pageNumber, e.toString()));
     }
-  }
-
-  Future<void> _onPrefetchPages(
-    PrefetchPages event,
-    Emitter<MushafState> emit,
-  ) async {
-    final ds = _dataSource;
-    await (ds is CachedQfMushafPageDataSource
-        ? ds.prefetchPages(event.pageNumbers)
-        : Future.value());
   }
 
   void _onNavigateToPage(NavigateToPage event, Emitter<MushafState> emit) {
@@ -57,12 +83,5 @@ class MushafBloc extends Bloc<MushafEvent, MushafState> {
     dualPageEnabled = !dualPageEnabled;
     PrefUtils().setMushafDualPage(dualPageEnabled);
     emit(MushafDualPageToggled(dualPageEnabled));
-  }
-
-  Future<void> _onRefreshPage(
-    RefreshPage event,
-    Emitter<MushafState> emit,
-  ) async {
-    add(LoadPage(event.pageNumber));
   }
 }

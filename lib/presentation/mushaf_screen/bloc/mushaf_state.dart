@@ -1,5 +1,24 @@
 import 'package:equatable/equatable.dart';
-import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
+
+class AyahEntry extends Equatable {
+  final int surahId;
+  final int verseNumber;
+  final String surahNameArabic;
+  final bool isSurahHeader;
+  final bool showBismillah;
+
+  const AyahEntry({
+    required this.surahId,
+    required this.verseNumber,
+    required this.surahNameArabic,
+    this.isSurahHeader = false,
+    this.showBismillah = false,
+  });
+
+  @override
+  List<Object?> get props =>
+      [surahId, verseNumber, surahNameArabic, isSurahHeader, showBismillah];
+}
 
 abstract class MushafState extends Equatable {
   const MushafState();
@@ -23,17 +42,17 @@ class MushafPageLoading extends MushafState {
 
 class MushafPageLoaded extends MushafState {
   final int pageNumber;
-  final MushafPageData pageData;
-  final bool isUsingFallback;
+  final List<AyahEntry> entries;
+  final String mushafType;
 
   const MushafPageLoaded({
     required this.pageNumber,
-    required this.pageData,
-    this.isUsingFallback = false,
+    required this.entries,
+    this.mushafType = 'madani',
   });
 
   @override
-  List<Object?> get props => [pageNumber, pageData, isUsingFallback];
+  List<Object?> get props => [pageNumber, entries, mushafType];
 }
 
 class MushafPageError extends MushafState {

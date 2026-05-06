@@ -116,7 +116,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
       if (surah != null) {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
-        if (_showTranslation) _loadTranslations();
+        final isArabic = LocaleController.notifier.value.languageCode == 'ar';
+        if (_showTranslation && !isArabic) _loadTranslations();
       }
 
       _scrollControllerForInit = ScrollController(
@@ -1006,24 +1007,25 @@ class _SurahScreenState extends State<SurahScreen> {
                   },
                 ),
               ),
-              PopupMenuItem(
-                value: 'translation',
-                child: Row(
-                  children: [
-                    Icon(
-                      _showTranslation
-                          ? Icons.text_fields
-                          : Icons.text_fields_outlined,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      _showTranslation
-                          ? 'lbl_hide_translation'.tr
-                          : 'lbl_show_translation'.tr,
-                    ),
-                  ],
+              if (Localizations.localeOf(context).languageCode != 'ar')
+                PopupMenuItem(
+                  value: 'translation',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _showTranslation
+                            ? Icons.text_fields
+                            : Icons.text_fields_outlined,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _showTranslation
+                            ? 'lbl_hide_translation'.tr
+                            : 'lbl_show_translation'.tr,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

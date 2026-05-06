@@ -3,8 +3,6 @@ import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
-import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
-import 'package:hafiz_app/injection_container.dart';
 import 'bloc/mushaf_bloc.dart';
 import 'bloc/mushaf_event.dart';
 import 'bloc/mushaf_state.dart';
@@ -24,23 +22,17 @@ class _MushafScreenState extends State<MushafScreen> {
   late PageController _pageController;
   late int _currentPage;
   late MushafBloc _bloc;
-  final Set<int> _loadingPages = {};
-  final Set<int> _errorPages = {};
-  final Map<int, MushafPageData?> _pageDataMap = {};
   bool _showOverlay = true;
-  bool _dualPage = false;
+
+  final Map<int, _PageState> _pageStates = {};
 
   @override
   void initState() {
     super.initState();
-    _bloc = MushafBloc(dataSource: sl<QfMushafPageDataSource>());
-    _dualPage = PrefUtils().getMushafDualPage();
+    _bloc = MushafBloc();
     final resolved = widget.initialPage ?? PrefUtils().getMushafLastPage();
     _currentPage = resolved.clamp(1, MushafPageIndex.totalPages);
-    _pageController = PageController(
-      initialPage: _currentPage - 1,
-      viewportFraction: 1.0,
-    );
+    _pageController = PageController(initialPage: _currentPage - 1);
     _bloc.add(LoadPage(_currentPage));
     _bloc.stream.listen(_onBlocState);
   }
@@ -56,18 +48,11 @@ class _MushafScreenState extends State<MushafScreen> {
     if (!mounted) return;
     setState(() {
       if (state is MushafPageLoading) {
-        _loadingPages.add(state.pageNumber);
-        _errorPages.remove(state.pageNumber);
+        _pageStates[state.pageNumber] = const _PageState(isLoading: true);
       } else if (state is MushafPageLoaded) {
-        _loadingPages.remove(state.pageNumber);
-        _errorPages.remove(state.pageNumber);
-        _pageDataMap[state.pageNumber] = state.pageData;
+        _pageStates[state.pageNumber] = _PageState(entries: state.entries);
       } else if (state is MushafPageError) {
-        _loadingPages.remove(state.pageNumber);
-        _errorPages.add(state.pageNumber);
-        _pageDataMap.remove(state.pageNumber);
-      } else if (state is MushafDualPageToggled) {
-        _dualPage = state.dualPageEnabled;
+        _pageStates.remove(state.pageNumber);
       }
     });
   }
@@ -104,6 +89,8 @@ class _MushafScreenState extends State<MushafScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = AppColors.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: colors.mushafPageBg,
@@ -117,13 +104,9 @@ class _MushafScreenState extends State<MushafScreen> {
               itemCount: MushafPageIndex.totalPages,
               onPageChanged: (index) {
                 final page = index + 1;
-                setState(() => _currentPage = page);
+                _currentPage = page;
                 PrefUtils().setMushafLastPage(page);
                 _bloc.add(LoadPage(page));
-                final nextPages = [page - 1, page + 1, page + 2]
-                    .where((p) => p >= 1 && p <= MushafPageIndex.totalPages)
-                    .toList();
-                _bloc.add(PrefetchPages(nextPages));
                 if (_showOverlay) {
                   Future.delayed(const Duration(seconds: 3), () {
                     if (mounted) setState(() => _showOverlay = false);
@@ -132,21 +115,17 @@ class _MushafScreenState extends State<MushafScreen> {
               },
               itemBuilder: (context, index) {
                 final page = index + 1;
-                return _buildPageContent(page, isDark, colors);
+                return _buildPageContent(page, isDark);
               },
             ),
             if (_showOverlay)
               Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _buildTopBar(isDark, colors),
+                top: 0, left: 0, right: 0,
+                child: _buildTopBar(isDark, colors, isWideScreen),
               ),
             if (_showOverlay)
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                bottom: 0, left: 0, right: 0,
                 child: _buildBottomBar(isDark, colors),
               ),
           ],
@@ -155,61 +134,17 @@ class _MushafScreenState extends State<MushafScreen> {
     );
   }
 
-  Widget _buildPageContent(int page, bool isDark, AppColors colors) {
-    return Stack(
-      children: [
-        MushafPageWidget(
-          pageNumber: page,
-          pageData: _pageDataMap[page],
-          isLoading: _loadingPages.contains(page),
-          isDark: isDark,
-          errorMessage: _errorPages.contains(page) ? 'Tap to retry' : '',
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: IgnorePointer(
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    colors.mushafPageBg,
-                    colors.mushafPageBg.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 0,
-          child: IgnorePointer(
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colors.mushafPageBg,
-                    colors.mushafPageBg.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+  Widget _buildPageContent(int page, bool isDark) {
+    final pageState = _pageStates[page];
+    return MushafPageWidget(
+      pageNumber: page,
+      entries: pageState?.entries ?? const [],
+      isLoading: pageState?.isLoading ?? false,
+      isDark: isDark,
     );
   }
 
-  Widget _buildTopBar(bool isDark, AppColors colors) {
+  Widget _buildTopBar(bool isDark, AppColors colors, bool isWideScreen) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -217,7 +152,7 @@ class _MushafScreenState extends State<MushafScreen> {
           end: Alignment.bottomCenter,
           colors: [
             colors.mushafPageBg,
-            colors.mushafPageBg.withValues(alpha: 0.9),
+            colors.mushafPageBg.withValues(alpha: 0.85),
           ],
         ),
       ),
@@ -237,14 +172,6 @@ class _MushafScreenState extends State<MushafScreen> {
                 icon: Icon(Icons.search, color: colors.textPrimary),
                 onPressed: _showJumpDialog,
                 tooltip: 'lbl_jump_to_page'.tr,
-              ),
-              IconButton(
-                icon: Icon(
-                  _dualPage ? Icons.book : Icons.chrome_reader_mode,
-                  color: colors.textPrimary,
-                ),
-                onPressed: () => _bloc.add(const ToggleDualPage()),
-                tooltip: 'Toggle dual page',
               ),
             ],
           ),
@@ -268,7 +195,7 @@ class _MushafScreenState extends State<MushafScreen> {
           end: Alignment.topCenter,
           colors: [
             colors.mushafPageBg,
-            colors.mushafPageBg.withValues(alpha: 0.9),
+            colors.mushafPageBg.withValues(alpha: 0.85),
           ],
         ),
       ),
@@ -295,18 +222,14 @@ class _MushafScreenState extends State<MushafScreen> {
                 children: [
                   Text(
                     'Juz $juz',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colors.textHint,
-                    ),
+                    style: TextStyle(fontSize: 11, color: colors.textHint),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _showJumpDialog,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+                        horizontal: 12, vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: colors.mushafPageBorder.withValues(alpha: 0.3),
@@ -325,10 +248,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   const SizedBox(width: 8),
                   Text(
                     '$_currentPage / ${MushafPageIndex.totalPages}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colors.textHint,
-                    ),
+                    style: TextStyle(fontSize: 11, color: colors.textHint),
                   ),
                 ],
               ),
@@ -385,4 +305,14 @@ class _MushafScreenState extends State<MushafScreen> {
       return n != null ? d[n] : c;
     }).join();
   }
+}
+
+class _PageState {
+  final List<AyahEntry> entries;
+  final bool isLoading;
+
+  const _PageState({
+    this.entries = const [],
+    this.isLoading = false,
+  });
 }

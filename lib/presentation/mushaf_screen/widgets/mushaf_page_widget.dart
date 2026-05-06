@@ -1,25 +1,21 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
-import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
-import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
-import 'package:hafiz_app/data/datasource/mushaf/qf_mushaf_page_data_source.dart';
-import 'package:hafiz_app/presentation/mushaf_screen/widgets/mushaf_glyph_painter.dart';
+import 'package:hafiz_app/presentation/mushaf_screen/bloc/mushaf_state.dart';
 
 class MushafPageWidget extends StatelessWidget {
   final int pageNumber;
-  final MushafPageData? pageData;
+  final List<AyahEntry> entries;
   final bool isLoading;
   final bool isDark;
-  final String errorMessage;
 
   const MushafPageWidget({
     super.key,
     required this.pageNumber,
-    this.pageData,
+    this.entries = const [],
     this.isLoading = false,
     this.isDark = false,
-    this.errorMessage = '',
   });
 
   @override
@@ -33,88 +29,109 @@ class MushafPageWidget extends StatelessWidget {
       );
     }
 
-    if (pageData != null && pageData!.hasGlyphData) {
-      return Container(
-        color: colors.mushafPageBg,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              children: [
-                _buildSurahHeader(context),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: MushafGlyphPainter(
-                    pageData: pageData!,
-                    isDark: isDark,
-                  ),
-                ),
-                _buildPageNumber(context),
-              ],
-            ),
-          ),
-        ),
-      );
+    if (entries.isEmpty) {
+      return Container(color: colors.mushafPageBg);
     }
 
-    return _buildFallbackPage(context, colors);
+    return Container(
+      color: colors.mushafPageBg,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: entries.map((entry) {
+                          if (entry.isSurahHeader) {
+                            return _buildSurahHeader(colors, entry);
+                          }
+                          return _buildVerseImage(entry);
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _buildPageNumber(),
+            ],
+          );
+        },
+      ),
+    );
   }
 
-  Widget _buildSurahHeader(BuildContext context) {
-    final surahId = MushafPageIndex.getSurahForPage(pageNumber);
-    if (surahId < 1 || surahId > 114) return const SizedBox.shrink();
-
-    final surahStartPage = MushafPageIndex.getPageForSurah(surahId);
-    if (surahStartPage != pageNumber) return const SizedBox.shrink();
-
-    final surah = QuranIndex.quranSurahs[surahId - 1];
-
-    final colors = AppColors.of(context);
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: colors.mushafPageBorder),
-              bottom: BorderSide(color: colors.mushafPageBorder),
-            ),
-          ),
-          child: Text(
-            surah.nameArabic,
+  Widget _buildSurahHeader(AppColors colors, AyahEntry entry) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          Text(
+            entry.surahNameArabic,
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 22,
+              fontFamily: 'NotoNaskhArabic',
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: colors.mushafSurahHeaderColor,
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        if (surah.id != 1 && surah.id != 9 && surahStartPage == pageNumber)
-          Text(
-            '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 '
-            '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 '
-            '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650',
-            textDirection: TextDirection.rtl,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: isDark ? Colors.white54 : Colors.black45,
+          if (entry.showBismillah)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 '
+                    '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 '
+                    '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650',
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'NotoNaskhArabic',
+                  fontSize: 16,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildPageNumber(BuildContext context) {
+  Widget _buildVerseImage(AyahEntry entry) {
+    final url = MushafRenderingConfig.ayahImageUrl(
+      entry.surahId,
+      entry.verseNumber,
+    );
+
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        fit: BoxFit.fitWidth,
+        placeholder: (ctx, url) => const SizedBox(
+          height: 28,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 1)),
+        ),
+        errorWidget: (ctx, url, err) => _buildVerseFallback(entry),
+      ),
+    );
+  }
+
+  Widget _buildVerseFallback(AyahEntry entry) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text(
-        _toArabicNumeral(pageNumber),
+        '\u06DD${_toArabicNumeral(entry.verseNumber)}',
         textDirection: TextDirection.rtl,
+        textAlign: TextAlign.center,
         style: TextStyle(
+          fontFamily: 'NotoNaskhArabic',
           fontSize: 14,
           color: isDark ? Colors.white38 : Colors.black38,
         ),
@@ -122,41 +139,21 @@ class MushafPageWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFallbackPage(BuildContext context, AppColors colors) {
-    final ranges = MushafPageVerseMap.getVersesForPage(pageNumber);
-    if (ranges.isEmpty) {
-      return Container(
-        color: colors.mushafPageBg,
-        child: Center(
+  Widget _buildPageNumber() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
           child: Text(
-            errorMessage.isNotEmpty ? errorMessage : 'Page $pageNumber',
-            style: TextStyle(color: colors.textSecondary),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      color: colors.mushafPageBg,
-      child: SafeArea(
-        child: Column(
-          children: [
-            _buildSurahHeader(context),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: CustomPaint(
-                  size: Size.infinite,
-                  painter: _FallbackTextPainter(
-                    ranges: ranges,
-                    isDark: isDark,
-                    textColor: colors.mushafTextPrimary,
-                  ),
-                ),
-              ),
+            _toArabicNumeral(pageNumber),
+            textDirection: TextDirection.rtl,
+            style: TextStyle(
+              fontFamily: 'NotoNaskhArabic',
+              fontSize: 14,
+              color: isDark ? Colors.white38 : Colors.black38,
             ),
-            _buildPageNumber(context),
-          ],
+          ),
         ),
       ),
     );
@@ -172,53 +169,4 @@ class MushafPageWidget extends StatelessWidget {
       return n != null ? d[n] : c;
     }).join();
   }
-}
-
-class _FallbackTextPainter extends CustomPainter {
-  final List<MushafPageRange> ranges;
-  final bool isDark;
-  final Color textColor;
-
-  _FallbackTextPainter({
-    required this.ranges,
-    required this.isDark,
-    required this.textColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final textStyle = TextStyle(
-      fontSize: 18,
-      color: textColor,
-      fontFamily: 'NotoNaskhArabic',
-    );
-
-    final columnWidth = (size.width - 24) / 2;
-    double y = 0;
-    const double lineHeight = 36;
-
-    for (final range in ranges) {
-      final surah = QuranIndex.quranSurahs[range.surahId - 1];
-      final label = '${surah.nameArabic} '
-          '${range.startVerse} - ${range.endVerse}';
-
-      final tp = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: textStyle.copyWith(
-            fontSize: 14,
-            color: textColor.withValues(alpha: 0.6),
-          ),
-        ),
-        textDirection: TextDirection.rtl,
-      )..layout(maxWidth: columnWidth);
-
-      tp.paint(canvas, Offset(8, y));
-      y += lineHeight;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_FallbackTextPainter oldDelegate) =>
-      ranges != oldDelegate.ranges || isDark != oldDelegate.isDark;
 }
