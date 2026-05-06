@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class RandomVerseData {
@@ -28,17 +28,22 @@ class RandomVerseRemoteDataSource {
   Future<RandomVerseData?> fetchRandomVerse() async {
     try {
       final response = await _dio.get(
-        'https://api.quran.com/api/v4/verses/random',
-        queryParameters: {'language': 'en', 'words': 'true'},
+        '${ApiConfig.quranComBase}/verses/random',
+        queryParameters: {'translations': '85', 'words': 'true'},
       );
 
       final verse = response.data['verse'] as Map<String, dynamic>?;
-      final translation = response.data['translation'] as Map<String, dynamic>?;
-
       if (verse == null) return null;
 
       final words = (verse['words'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       final arabicText = words.map((w) => w['text_uthmani'] ?? '').join(' ');
+
+      // Translation text comes via the verse.translations array.
+      final translations = (verse['translations'] as List?)
+          ?.cast<Map<String, dynamic>>();
+      final englishText = (translations != null && translations.isNotEmpty)
+          ? _cleanText(translations[0]['text'] as String? ?? '')
+          : '';
 
       return RandomVerseData(
         verseId: verse['id'] as int? ?? 0,
@@ -48,11 +53,15 @@ class RandomVerseRemoteDataSource {
         arabicText: arabicText.isNotEmpty
             ? arabicText
             : verse['text_uthmani'] as String? ?? '',
-        englishText: translation?['text'] as String? ?? '',
+        englishText: englishText,
       );
     } catch (e) {
       Logger.warning('Failed to fetch random verse: $e', feature: 'RandomVerse');
       return null;
     }
+  }
+
+  String _cleanText(String text) {
+    return text.replaceAll(RegExp(r'<[^>]*>'), '').replaceAll('\n', ' ').trim();
   }
 }

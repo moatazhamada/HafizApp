@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class VerseStudyData {
@@ -20,11 +20,9 @@ abstract class QfVerseStudyRemoteDataSource {
 
 class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   final Dio _dio;
-  final QfApiConfig _config;
 
-  QfVerseStudyRemoteDataSourceImpl({required Dio dio, QfApiConfig? config})
-    : _dio = dio,
-      _config = config ?? const QfApiConfig();
+  QfVerseStudyRemoteDataSourceImpl({required Dio dio})
+    : _dio = dio;
 
   @override
   Future<VerseStudyData> getVerseStudy(String verseKey) async {
@@ -52,7 +50,8 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchArabic(String verseKey) async {
     try {
       final verseResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/quran/verses/by_key/$verseKey',
+        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        queryParameters: {'fields': 'text_uthmani'},
       );
       final verses = verseResponse.data['verses'] as List?;
       if (verses != null && verses.isNotEmpty) {
@@ -70,11 +69,16 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTranslation(String verseKey) async {
     try {
       final translationResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/translations/131/by_ayah/$verseKey',
+        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        queryParameters: {'translations': '85', 'fields': 'text_uthmani'},
       );
-      final translations = translationResponse.data['translations'] as List?;
-      if (translations != null && translations.isNotEmpty) {
-        return translations[0]['text'] as String? ?? '';
+      final verses = translationResponse.data['verses'] as List?;
+      if (verses != null && verses.isNotEmpty) {
+        final translations = verses[0]['translations'] as List?;
+        if (translations != null && translations.isNotEmpty) {
+          final text = translations[0]['text'] as String? ?? '';
+          return text.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+        }
       }
     } catch (e) {
       Logger.warning('Failed to fetch translation: $e', feature: 'VerseStudy');
@@ -85,7 +89,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTafsir(String verseKey) async {
     try {
       final tafsirResponse = await _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/tafsirs/en-tafsir-ibn-kathir/by_ayah/$verseKey',
+        '${ApiConfig.quranComBase}/tafsirs/169/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {

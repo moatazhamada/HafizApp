@@ -1,55 +1,46 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
+import 'package:hafiz_app/core/i18n/locale_controller.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+
+/// Default translation ID for English renderings.
+/// 85 = M.A.S. Abdel Haleem (modern, readable English).
+/// Valid alternatives: 20 (Saheeh International), 22 (Yusuf Ali), 149 (Bridges).
+const int _translationId = 85;
 
 class QfTranslationRemoteDataSource {
   final Dio _dio;
-  final QfApiConfig _config;
   final Map<int, Map<int, String>> _translationCache = {};
 
-  QfTranslationRemoteDataSource({required Dio dio, QfApiConfig? config})
-    : _dio = dio,
-      _config = config ?? const QfApiConfig();
+  QfTranslationRemoteDataSource({required Dio dio})
+    : _dio = dio;
 
+  /// Returns a verse-number → text map for [surahId].
+  /// Only fetches when the current UI locale is **not Arabic**.
   Future<Map<int, String>> getTranslationsByChapter(int surahId) async {
+    if (_isArabicLocale()) return {};
+
     if (_translationCache.containsKey(surahId)) {
       return _translationCache[surahId]!;
     }
 
     try {
       final allItems = await _fetchAllPages((page) => _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/translations/131/by_chapter/$surahId',
+        '${ApiConfig.quranComBase}/translations/$_translationId/by_chapter/$surahId',
         queryParameters: {'per_page': 50, 'page': page},
       ), 'translations');
 
+      // API returns items ordered by verse but without a verse_key field.
+      // Compute verse number from page offset + position.
       final Map<int, String> result = {};
       if (allItems.isNotEmpty) {
-        for (final t in allItems) {
-          final verseKey = t['verse_key'] as String? ?? '';
-          final verseNumber = int.tryParse(verseKey.split(':').last) ?? 0;
-          final text = _cleanText(t['text'] as String? ?? '');
-          if (verseNumber > 0) result[verseNumber] = text;
+        // allItems is a flat list across all pages; they arrive in order.
+        for (int i = 0; i < allItems.length; i++) {
+          final text = _cleanText(allItems[i]['text'] as String? ?? '');
+          if (text.isNotEmpty) result[i + 1] = text;
         }
         _translationCache[surahId] = result;
-        return result;
       }
-
-      final allVerseItems = await _fetchAllPages((page) => _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/translations/131/by_chapter/$surahId',
-        queryParameters: {'per_page': 50, 'page': page},
-      ), 'verses');
-
-      if (allVerseItems.isNotEmpty) {
-        for (final v in allVerseItems) {
-          final verseKey = v['verse_key'] as String? ?? '';
-          final verseNumber = int.tryParse(verseKey.split(':').last) ?? 0;
-          final text = _cleanText(v['text'] as String? ?? '');
-          if (verseNumber > 0 && text.isNotEmpty) result[verseNumber] = text;
-        }
-        _translationCache[surahId] = result;
-        return result;
-      }
-
       return result;
     } catch (e) {
       Logger.warning(
@@ -57,6 +48,14 @@ class QfTranslationRemoteDataSource {
         feature: 'Translation',
       );
       return {};
+    }
+  }
+
+  bool _isArabicLocale() {
+    try {
+      return LocaleController.notifier.value.languageCode == 'ar';
+    } catch (_) {
+      return false;
     }
   }
 
@@ -88,6 +87,6 @@ class QfTranslationRemoteDataSource {
   }
 
   String _cleanText(String text) {
-    return text.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+    return text.replaceAll(RegExp(r'<[^>]*>'), '').replaceAll('\n', ' ').trim();
   }
 }

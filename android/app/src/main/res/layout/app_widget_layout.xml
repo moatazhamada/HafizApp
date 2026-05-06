@@ -4,35 +4,23 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_background"
-    android:padding="16dp"
+    android:padding="12dp"
     android:gravity="center">
 
     <TextView
-        android:id="@+id/widget_verse_arabic"
+        android:id="@+id/widget_verse_text"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:textDirection="rtl"
         android:textColor="#1A1A1A"
-        android:maxLines="4"
+        android:maxLines="6"
         android:ellipsize="end"
+        android:scrollbars="vertical"
+        android:lineSpacingExtra="4dp"
         android:text="بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" />
-
-    <TextView
-        android:id="@+id/widget_verse_english"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:textColor="#666666"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:layout_marginTop="8dp"
-        android:text="In the name of Allah, the Entirely Merciful, the Especially Merciful." />
 
     <TextView
         android:id="@+id/widget_verse_ref"

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 abstract class QfTafsirRemoteDataSource {
@@ -9,20 +9,18 @@ abstract class QfTafsirRemoteDataSource {
 
 class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
   final Dio _dio;
-  final QfApiConfig _config;
 
-  QfTafsirRemoteDataSourceImpl({required Dio dio, QfApiConfig? config})
-    : _dio = dio,
-      _config = config ?? const QfApiConfig();
+  QfTafsirRemoteDataSourceImpl({required Dio dio})
+    : _dio = dio;
 
   @override
   Future<String> getTafsirForVerse(
     String verseKey, {
-    String tafsirId = 'en-tafsir-ibn-kathir',
+    String tafsirId = '169',
   }) async {
     try {
       final response = await _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/tafsirs/$tafsirId/by_ayah/$verseKey',
+        '$ApiConfig.quranComBase/tafsirs/$tafsirId/by_ayah/$verseKey',
       );
 
       final tafsir = response.data['tafsir'] as Map<String, dynamic>?;
@@ -47,11 +45,11 @@ class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
   @override
   Future<Map<int, String>> getTafsirsByChapter(
     int chapterId, {
-    String tafsirId = 'en-tafsir-ibn-kathir',
+    String tafsirId = '169',
   }) async {
     try {
       final allItems = await _fetchAllPages((page) => _dio.get(
-        '${_config.apiBaseUrl}/content/api/v4/tafsirs/$tafsirId/by_chapter/$chapterId',
+        '$ApiConfig.quranComBase/tafsirs/$tafsirId/by_chapter/$chapterId',
         queryParameters: {'per_page': 50, 'page': page},
       ), 'tafsirs');
 

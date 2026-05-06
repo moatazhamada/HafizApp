@@ -112,6 +112,8 @@ class MyApp extends StatelessWidget {
                   ? AppRoutes.homeScreen
                   : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
+              // Silently handle unknown routes from navigation state restoration.
+              onUnknownRoute: (_) => null,
             ),
           );
         },

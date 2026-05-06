@@ -28,7 +28,7 @@ void registerCoreDependencies() {
     if (ApiConfig.useQfContent) {
       dio.options.baseUrl = ApiConfig.qfContentBase;
     } else {
-      dio.options.baseUrl = 'https://api.quran.com/api/v4';
+      dio.options.baseUrl = ApiConfig.quranComBase;
     }
     dio.options.connectTimeout = const Duration(seconds: 7);
     dio.options.receiveTimeout = const Duration(seconds: 10);
