@@ -507,7 +507,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   Widget _buildDailyVerseTile() {
     return SwitchListTile(
       secondary: const Icon(Icons.notifications_outlined),
@@ -527,8 +526,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'lbl_mushaf_madani'.tr;
       case 'egyptian':
         return 'lbl_mushaf_egyptian'.tr;
-      case 'indopak':
-        return 'lbl_mushaf_indopak'.tr;
+      case 'naskh':
+        return 'lbl_mushaf_naskh'.tr;
       case 'warsh':
         return 'lbl_mushaf_warsh'.tr;
       default:

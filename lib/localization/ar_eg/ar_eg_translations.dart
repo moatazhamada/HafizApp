@@ -173,7 +173,8 @@ final Map<String, String> arEg = {
       'تقدم التلاوة وبيانات الحفظ محفوظة محلياً على هذا الجهاز. النسخ السحابي قريباً.',
   'msg_sync_complete': 'تمت المزامنة — تم إرسال {pushed}، واستقبال {pulled}',
   'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
-  'msg_login_not_configured': 'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
+  'msg_login_not_configured':
+      'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
   'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
 
   // Musali Teaser
@@ -347,11 +348,11 @@ final Map<String, String> arEg = {
   // Mushaf type labels (settings + onboarding)
   'lbl_mushaf_madani': 'مدني (حفص)',
   'lbl_mushaf_egyptian': 'مصري (حفص)',
-  'lbl_mushaf_indopak': 'هندي/باكستاني (نستعليق)',
+  'lbl_mushaf_naskh': 'نسخ (حفص)',
   'lbl_mushaf_warsh': 'ورش (شمال أفريقيا)',
   'lbl_mushaf_madani_desc': 'حفص من المدينة المنورة',
   'lbl_mushaf_egyptian_desc': 'حفص من مصر',
-  'lbl_mushaf_indopak_desc': 'خط نستعليق',
+  'lbl_mushaf_naskh_desc': 'خط النسخ',
   'lbl_mushaf_warsh_desc': 'ورش من شمال أفريقيا',
 
   // Connectivity

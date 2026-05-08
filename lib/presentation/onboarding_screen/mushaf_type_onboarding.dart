@@ -4,7 +4,7 @@ import '../../core/app_export.dart';
 enum MushafType {
   madani('Madani', 'مدني', 'lbl_mushaf_madani_desc', Colors.teal),
   egyptian('Egyptian', 'مصري', 'lbl_mushaf_egyptian_desc', Colors.blueAccent),
-  indopak('Indo-Pak', 'هندي/باكستاني', 'lbl_mushaf_indopak_desc', Colors.orange),
+  naskh('Naskh', 'نسخ', 'lbl_mushaf_naskh_desc', Colors.orange),
   warsh('Warsh', 'ورش', 'lbl_mushaf_warsh_desc', Colors.purple);
 
   const MushafType(this.nameEn, this.nameAr, this.descriptionKey, this.color);

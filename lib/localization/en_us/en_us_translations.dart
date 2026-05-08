@@ -174,7 +174,8 @@ final Map<String, String> enUs = {
       'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
   'msg_sync_complete': 'Sync complete — pushed {pushed}, pulled {pulled}',
   'msg_login_cancelled': 'Login was cancelled or failed.',
-  'msg_login_not_configured': 'Login is not configured. Add your Quran.com client ID to continue.',
+  'msg_login_not_configured':
+      'Login is not configured. Add your Quran.com client ID to continue.',
   'msg_sync_failed': 'Failed to sync with Quran.com',
 
   // Musali Teaser
@@ -353,11 +354,11 @@ final Map<String, String> enUs = {
   // Mushaf type labels (settings + onboarding)
   'lbl_mushaf_madani': 'Madani (Hafs)',
   'lbl_mushaf_egyptian': 'Egyptian (Hafs)',
-  'lbl_mushaf_indopak': 'Indo-Pak (Nastaleeq)',
+  'lbl_mushaf_naskh': 'Naskh (Hafs)',
   'lbl_mushaf_warsh': 'Warsh (North Africa)',
   'lbl_mushaf_madani_desc': 'Hafs from Madinah',
   'lbl_mushaf_egyptian_desc': 'Hafs from Egypt',
-  'lbl_mushaf_indopak_desc': 'Nastaleeq script',
+  'lbl_mushaf_naskh_desc': 'Naskh script',
   'lbl_mushaf_warsh_desc': 'Warsh from North Africa',
 
   // Connectivity
