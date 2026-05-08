@@ -3,7 +3,9 @@ import '../../core/app_export.dart';
 import '../../core/quran_index/mushaf_types.dart';
 
 class MushafTypeOnboarding extends StatefulWidget {
-  const MushafTypeOnboarding({super.key});
+  final bool fromSettings;
+
+  const MushafTypeOnboarding({super.key, this.fromSettings = false});
 
   @override
   State<MushafTypeOnboarding> createState() => _MushafTypeOnboardingState();
@@ -26,16 +28,24 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
 
   void _skip() {
     PrefUtils().setMushafType(MushafType.madani.name);
-    PrefUtils().setOnboardingCompleted(true);
-    NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    if (widget.fromSettings) {
+      NavigatorService.goBack();
+    } else {
+      PrefUtils().setOnboardingCompleted(true);
+      NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    }
   }
 
   void _continue() {
     if (_selected == null) {
       PrefUtils().setMushafType(MushafType.madani.name);
     }
-    PrefUtils().setOnboardingCompleted(true);
-    NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    if (widget.fromSettings) {
+      NavigatorService.goBack();
+    } else {
+      PrefUtils().setOnboardingCompleted(true);
+      NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    }
   }
 
   @override

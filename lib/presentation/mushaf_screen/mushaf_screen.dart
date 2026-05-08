@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,7 @@ class _MushafScreenState extends State<MushafScreen> {
   late int _currentPage;
   late MushafType _mushafType;
   bool _showOverlay = true;
+  Timer? _overlayTimer;
 
   final Map<int, List<_VerseText>> _localTextCache = {};
 
@@ -40,6 +42,7 @@ class _MushafScreenState extends State<MushafScreen> {
 
   @override
   void dispose() {
+    _overlayTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -118,6 +121,7 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   void _switchMushafType(MushafType newType) {
+    _localTextCache.clear();
     setState(() {
       _mushafType = newType;
       _currentPage = _currentPage.clamp(1, newType.totalPages);
@@ -251,7 +255,8 @@ class _MushafScreenState extends State<MushafScreen> {
                   PrefUtils().setMushafLastPage(page);
                   _precacheAdjacentPages(page);
                   if (_showOverlay) {
-                    Future.delayed(const Duration(seconds: 3), () {
+                    _overlayTimer?.cancel();
+                    _overlayTimer = Timer(const Duration(seconds: 3), () {
                       if (mounted) setState(() => _showOverlay = false);
                     });
                   }
@@ -544,8 +549,8 @@ class _MushafScreenState extends State<MushafScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildNavArrow(true, isArabic),
                   _buildNavArrow(false, isArabic),
+                  _buildNavArrow(true, isArabic),
                 ],
               ),
             ],

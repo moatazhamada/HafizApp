@@ -60,6 +60,7 @@ final Map<String, String> enUs = {
   'lbl_view_continuous': 'Mushaf Page',
   'lbl_view_single_line': 'Single Line',
   'lbl_juz_index': 'Juz',
+  'lbl_juz': 'Juz',
   'lbl_system_default': 'System Default',
   'lbl_theme': 'Appearance',
   'lbl_theme_light': 'Light Mode',
@@ -264,6 +265,7 @@ final Map<String, String> enUs = {
   'lbl_mushaf': 'Mushaf',
   'lbl_jump_to_page': 'Jump to Page',
   'lbl_page': 'Page',
+  'lbl_page_number': 'Page Number',
   'lbl_go': 'Go',
 
   // Mushaf Type Onboarding

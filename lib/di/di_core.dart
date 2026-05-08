@@ -46,7 +46,7 @@ void registerCoreDependencies() {
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfo(Connectivity()));
 
   sl.registerLazySingleton(
-    () => ConnectivityCubit(connectivity: Connectivity(), dio: Dio()),
+    () => ConnectivityCubit(connectivity: Connectivity(), dio: sl<Dio>()),
   );
 
   sl.registerLazySingleton(() => ThemeBloc());

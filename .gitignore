@@ -86,3 +86,6 @@ android/qf_credentials.properties
 android/vendor/
 android/.bundle/
 android/Gemfile.lock
+/appbundle/13.aab
+/appbundle/14.aab
+/appbundle/14.apk

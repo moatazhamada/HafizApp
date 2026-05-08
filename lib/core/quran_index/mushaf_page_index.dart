@@ -328,6 +328,11 @@ class MushafPageIndex {
 
   static int getPageForSurah(int surahId) {
     if (surahId < 1 || surahId > 114) return 1;
+    if (_loaded) {
+      for (final page in _pages) {
+        if (page.surahId == surahId) return page.pageNumber;
+      }
+    }
     return surahStartPages[surahId - 1];
   }
 

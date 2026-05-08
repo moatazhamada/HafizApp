@@ -1,19 +1,6 @@
 class MushafRenderingConfig {
   static const String quranHubApiBase = 'https://api.quranhub.com/v1';
 
-  static String editionId(String mushafType) {
-    switch (mushafType) {
-      case 'tajweed':
-        return 'quran-tajweed';
-      case 'naskh':
-      case 'warsh':
-      case 'shemerly':
-      case 'madani':
-      default:
-        return 'quran-uthmani';
-    }
-  }
-
   // ─── Tajweed Parsing (kept for future use) ──────────────────────
 
   static const Map<String, int> _tajweedColors = {

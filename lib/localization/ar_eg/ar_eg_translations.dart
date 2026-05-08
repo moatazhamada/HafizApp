@@ -60,6 +60,7 @@ final Map<String, String> arEg = {
   'lbl_view_continuous': 'صفحات مصحف',
   'lbl_view_single_line': 'سطر لكل آية',
   'lbl_juz_index': 'الأجزاء',
+  'lbl_juz': 'الجزء',
   'lbl_system_default': 'افتراضي النظام',
   'lbl_theme': 'المظهر',
   'lbl_theme_light': 'الوضع الفاتح',
@@ -261,6 +262,7 @@ final Map<String, String> arEg = {
   'lbl_mushaf': 'المصحف',
   'lbl_jump_to_page': 'الانتقال لصفحة',
   'lbl_page': 'صفحة',
+  'lbl_page_number': 'رقم الصفحة',
   'lbl_go': 'اذهب',
 
   // Mushaf Type Onboarding

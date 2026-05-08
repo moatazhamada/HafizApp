@@ -78,7 +78,14 @@ class AppRoutes {
           {};
       return MushafScreen(initialPage: args['initialPage'] as int?);
     },
-    mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
+    mushafTypeOnboarding: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+          {};
+      return MushafTypeOnboarding(
+        fromSettings: args['fromSettings'] as bool? ?? false,
+      );
+    },
     statisticsScreen: (context) => StatisticsScreen.builder(context),
     verseStudyScreen: (context) {
       final args =

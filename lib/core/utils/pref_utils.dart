@@ -409,31 +409,7 @@ class PrefUtils {
     await _requirePrefs().setString('readingNavMode', mode);
   }
 
-  // Mushaf Rendering Mode: 'text', 'ayahImages', 'glyph', 'tajweed'
-  String getMushafRenderingMode() {
-    try {
-      return _requirePrefs().getString('mushafRenderingMode') ?? 'ayahImages';
-    } catch (e) {
-      return 'ayahImages';
-    }
-  }
 
-  Future<void> setMushafRenderingMode(String mode) async {
-    await _requirePrefs().setString('mushafRenderingMode', mode);
-  }
-
-  // Mushaf Dual Page Mode
-  bool getMushafDualPage() {
-    try {
-      return _requirePrefs().getBool('mushafDualPage') ?? true;
-    } catch (e) {
-      return true;
-    }
-  }
-
-  Future<void> setMushafDualPage(bool value) async {
-    await _requirePrefs().setBool('mushafDualPage', value);
-  }
 
   bool isDailyVerseEnabled() {
     try {

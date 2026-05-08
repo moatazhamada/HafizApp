@@ -498,7 +498,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: Text(_mushafTypeLabel(_mushafType)),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
-        await Navigator.pushNamed(context, AppRoutes.mushafTypeOnboarding);
+        await Navigator.pushNamed(
+          context,
+          AppRoutes.mushafTypeOnboarding,
+          arguments: {'fromSettings': true},
+        );
         final newType = PrefUtils().getMushafType() ?? 'madani';
         if (newType != _mushafType) {
           setState(() => _mushafType = newType);

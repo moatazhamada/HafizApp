@@ -141,7 +141,9 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
       itemCount: 114,
       itemBuilder: (context, index) {
         final surah = QuranIndex.quranSurahs[index];
-        final page = MushafPageIndex.getPageForSurah(surah.id);
+        final page = MushafPageIndex.getPageForSurah(
+          surah.id,
+        ).clamp(1, widget.totalPages);
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
         return ListTile(
           leading: CircleAvatar(
@@ -179,7 +181,9 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
       itemCount: 30,
       itemBuilder: (context, index) {
         final juz = index + 1;
-        final page = MushafPageIndex.getPageForJuz(juz);
+        final page = MushafPageIndex.getPageForJuz(
+          juz,
+        ).clamp(1, widget.totalPages);
         final isActive = MushafPageIndex.getJuzForPage(_selectedPage) == juz;
         return GestureDetector(
           onTap: () => Navigator.pop(context, page),

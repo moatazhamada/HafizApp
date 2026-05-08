@@ -9,18 +9,17 @@ class ConnectivityState extends Equatable {
   final ConnectivityResult connectionType;
 
   const ConnectivityState({
-    this.isOnline = true,
+    this.isOnline = false,
     this.connectionType = ConnectivityResult.none,
   });
 
   ConnectivityState copyWith({
     bool? isOnline,
     ConnectivityResult? connectionType,
-  }) =>
-      ConnectivityState(
-        isOnline: isOnline ?? this.isOnline,
-        connectionType: connectionType ?? this.connectionType,
-      );
+  }) => ConnectivityState(
+    isOnline: isOnline ?? this.isOnline,
+    connectionType: connectionType ?? this.connectionType,
+  );
 
   @override
   List<Object?> get props => [isOnline, connectionType];
@@ -32,16 +31,13 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
   StreamSubscription<List<ConnectivityResult>>? _sub;
   Timer? _debounce;
 
-  static const _reachabilityUrl =
-      'https://clients3.google.com/generate_204';
+  static const _reachabilityUrl = 'https://clients3.google.com/generate_204';
   static const _timeout = Duration(seconds: 4);
 
-  ConnectivityCubit({
-    required Connectivity connectivity,
-    required Dio dio,
-  })  : _connectivity = connectivity,
-        _dio = dio,
-        super(const ConnectivityState()) {
+  ConnectivityCubit({required Connectivity connectivity, required Dio dio})
+    : _connectivity = connectivity,
+      _dio = dio,
+      super(const ConnectivityState()) {
     _init();
   }
 
@@ -56,18 +52,19 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
         final hasInterface = results.any((r) => r != ConnectivityResult.none);
         if (!hasInterface) {
           if (!isClosed) {
-            emit(state.copyWith(
-              isOnline: false,
-              connectionType: ConnectivityResult.none,
-            ));
+            emit(
+              state.copyWith(
+                isOnline: false,
+                connectionType: ConnectivityResult.none,
+              ),
+            );
           }
         } else {
           final online = await _checkReachability();
           if (!isClosed) {
-            emit(state.copyWith(
-              isOnline: online,
-              connectionType: results.first,
-            ));
+            emit(
+              state.copyWith(isOnline: online, connectionType: results.first),
+            );
           }
         }
       });
@@ -78,10 +75,7 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
     try {
       final response = await _dio.head(
         _reachabilityUrl,
-        options: Options(
-          sendTimeout: _timeout,
-          receiveTimeout: _timeout,
-        ),
+        options: Options(sendTimeout: _timeout, receiveTimeout: _timeout),
       );
       return response.statusCode == 204;
     } catch (_) {
