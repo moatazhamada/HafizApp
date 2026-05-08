@@ -1,44 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class MushafPageWidget extends StatelessWidget {
   final int pageNumber;
-  final String mushafType;
-  final int imageWidth;
+  final MushafType mushafType;
   final Widget? fallback;
 
   const MushafPageWidget({
     super.key,
     required this.pageNumber,
-    this.mushafType = 'madani',
-    this.imageWidth = 1024,
+    this.mushafType = MushafType.madani,
     this.fallback,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-
-    if (!MushafRenderingConfig.hasPageImages(mushafType)) {
-      return fallback ??
-          Container(
-            color: colors.mushafPageBg,
-            child: Center(
-              child: Text(
-                '$pageNumber',
-                style: TextStyle(color: colors.textHint),
-              ),
-            ),
-          );
-    }
-
-    final url = MushafRenderingConfig.pageImageUrl(
-      pageNumber,
-      mushafType: mushafType,
-      width: imageWidth,
-    );
+    final url = mushafType.pageImageUrl(pageNumber);
 
     return Container(
       decoration: BoxDecoration(

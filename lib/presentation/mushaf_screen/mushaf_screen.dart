@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hafiz_app/core/mushaf/mushaf_rendering_config.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
@@ -22,8 +22,7 @@ class MushafScreen extends StatefulWidget {
 class _MushafScreenState extends State<MushafScreen> {
   late PageController _pageController;
   late int _currentPage;
-  late String _mushafType;
-  late int _imageWidth;
+  late MushafType _mushafType;
   bool _showOverlay = true;
 
   final Map<int, List<_VerseText>> _localTextCache = {};
@@ -31,19 +30,11 @@ class _MushafScreenState extends State<MushafScreen> {
   @override
   void initState() {
     super.initState();
+    _mushafType = MushafType.fromString(PrefUtils().getMushafType());
     final resolved = widget.initialPage ?? PrefUtils().getMushafLastPage();
-    _currentPage = resolved.clamp(1, MushafPageIndex.totalPages);
-    _mushafType = PrefUtils().getMushafType() ?? 'madani';
+    _currentPage = resolved.clamp(1, _mushafType.totalPages);
 
     _pageController = PageController(initialPage: _currentPage - 1);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final screenWidth = MediaQuery.of(context).size.width;
-      setState(() {
-        _imageWidth = MushafRenderingConfig.optimalWidth(screenWidth);
-      });
-    });
-    _imageWidth = 1024;
   }
 
   @override
@@ -62,7 +53,7 @@ class _MushafScreenState extends State<MushafScreen> {
     }
 
     final ranges = MushafPageVerseMap.getVersesForPage(pageNumber);
-    final isWarsh = MushafRenderingConfig.isWarsh(_mushafType);
+    final isWarsh = _mushafType == MushafType.warsh;
     final List<_VerseText> entries = [];
 
     for (final range in ranges) {
@@ -117,7 +108,7 @@ class _MushafScreenState extends State<MushafScreen> {
   // ─── Navigation ─────────────────────────────────────────────────
 
   void _goToPage(int page) {
-    final target = page.clamp(1, MushafPageIndex.totalPages);
+    final target = page.clamp(1, _mushafType.totalPages);
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 300),
@@ -132,7 +123,10 @@ class _MushafScreenState extends State<MushafScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => MushafJumpDialog(currentPage: _currentPage),
+      builder: (_) => MushafJumpDialog(
+        currentPage: _currentPage,
+        totalPages: _mushafType.totalPages,
+      ),
     ).then((page) {
       if (page != null && page != _currentPage) {
         _goToPage(page);
@@ -160,7 +154,7 @@ class _MushafScreenState extends State<MushafScreen> {
             PageView.builder(
               reverse: true,
               controller: _pageController,
-              itemCount: MushafPageIndex.totalPages,
+              itemCount: _mushafType.totalPages,
               onPageChanged: (index) {
                 final page = _pageIndexToNumber(index);
                 _currentPage = page;
@@ -199,17 +193,9 @@ class _MushafScreenState extends State<MushafScreen> {
   // ─── Page Rendering ─────────────────────────────────────────────
 
   Widget _buildPage(int pageNumber, bool isDark, AppColors colors) {
-    if (MushafRenderingConfig.hasPageImages(_mushafType)) {
-      return _buildPageImage(pageNumber, isDark, colors);
-    }
-    return _buildOfflineFallback(pageNumber, isDark, colors);
-  }
-
-  Widget _buildPageImage(int pageNumber, bool isDark, AppColors colors) {
     return MushafPageWidget(
       pageNumber: pageNumber,
       mushafType: _mushafType,
-      imageWidth: _imageWidth,
       fallback: _buildOfflineFallback(pageNumber, isDark, colors),
     );
   }
@@ -247,7 +233,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  '$pageNumber / ${MushafPageIndex.totalPages}',
+                  '$pageNumber / ${_mushafType.totalPages}',
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white38 : Colors.black38,
@@ -379,7 +365,9 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   Widget _buildBottomBar(bool isDark, AppColors colors) {
-    final surahId = MushafPageIndex.getSurahForPage(_currentPage);
+    final pageData = MushafPageIndex.getPageData(_currentPage);
+    final surahId =
+        pageData?.surahId ?? MushafPageIndex.getSurahForPage(_currentPage);
     final surah = surahId >= 1 && surahId <= 114
         ? QuranIndex.quranSurahs[surahId - 1]
         : null;
@@ -447,7 +435,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$_currentPage / ${MushafPageIndex.totalPages}',
+                    '$_currentPage / ${_mushafType.totalPages}',
                     style: TextStyle(fontSize: 11, color: colors.textHint),
                   ),
                 ],

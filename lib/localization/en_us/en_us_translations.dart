@@ -353,11 +353,11 @@ final Map<String, String> enUs = {
 
   // Mushaf type labels (settings + onboarding)
   'lbl_mushaf_madani': 'Madani (Hafs)',
-  'lbl_mushaf_egyptian': 'Egyptian (Hafs)',
+  'lbl_mushaf_shemerly': 'Shemerly (Egyptian)',
   'lbl_mushaf_naskh': 'Naskh (Hafs)',
   'lbl_mushaf_warsh': 'Warsh (North Africa)',
   'lbl_mushaf_madani_desc': 'Hafs from Madinah',
-  'lbl_mushaf_egyptian_desc': 'Hafs from Egypt',
+  'lbl_mushaf_shemerly_desc': 'Egyptian script',
   'lbl_mushaf_naskh_desc': 'Naskh script',
   'lbl_mushaf_warsh_desc': 'Warsh from North Africa',
 

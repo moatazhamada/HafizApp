@@ -5,8 +5,13 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
 class MushafJumpDialog extends StatefulWidget {
   final int currentPage;
+  final int totalPages;
 
-  const MushafJumpDialog({super.key, required this.currentPage});
+  const MushafJumpDialog({
+    super.key,
+    required this.currentPage,
+    this.totalPages = 604,
+  });
 
   @override
   State<MushafJumpDialog> createState() => _MushafJumpDialogState();
@@ -105,7 +110,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'lbl_page_number'.tr,
-              hintText: '1 - ${MushafPageIndex.totalPages}',
+              hintText: '1 - ${widget.totalPages}',
               border: const OutlineInputBorder(),
             ),
             onSubmitted: (value) => _jumpAndClose(),
@@ -114,8 +119,8 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           Slider(
             value: _selectedPage.toDouble(),
             min: 1,
-            max: MushafPageIndex.totalPages.toDouble(),
-            divisions: MushafPageIndex.totalPages - 1,
+            max: widget.totalPages.toDouble(),
+            divisions: widget.totalPages - 1,
             label: _selectedPage.toString(),
             onChanged: (value) {
               setState(() {
@@ -125,10 +130,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             },
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _jumpAndClose,
-            child: Text('lbl_go'.tr),
-          ),
+          FilledButton(onPressed: _jumpAndClose, child: Text('lbl_go'.tr)),
         ],
       ),
     );
@@ -199,10 +201,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
                     fontSize: 16,
                   ),
                 ),
-                Text(
-                  'p.$page',
-                  style: const TextStyle(fontSize: 10),
-                ),
+                Text('p.$page', style: const TextStyle(fontSize: 10)),
               ],
             ),
           ),
@@ -213,6 +212,6 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
 
   void _jumpAndClose() {
     final page = int.tryParse(_pageController.text) ?? _selectedPage;
-    Navigator.pop(context, page.clamp(1, MushafPageIndex.totalPages));
+    Navigator.pop(context, page.clamp(1, widget.totalPages));
   }
 }

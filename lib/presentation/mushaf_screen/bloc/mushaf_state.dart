@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 
 abstract class MushafState extends Equatable {
   const MushafState();
@@ -22,11 +23,11 @@ class MushafPageLoading extends MushafState {
 
 class MushafPageLoaded extends MushafState {
   final int pageNumber;
-  final String mushafType;
+  final MushafType mushafType;
 
   const MushafPageLoaded({
     required this.pageNumber,
-    this.mushafType = 'madani',
+    this.mushafType = MushafType.madani,
   });
 
   @override

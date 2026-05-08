@@ -106,6 +106,7 @@ flutter:
     - assets/
     - assets/images/
     - assets/quran/uthmani/
+    - assets/quran/
   fonts:
     - family: Poppins
       fonts:

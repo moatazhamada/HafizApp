@@ -1,18 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-
-enum MushafType {
-  madani('Madani', 'مدني', 'lbl_mushaf_madani_desc', Colors.teal),
-  egyptian('Egyptian', 'مصري', 'lbl_mushaf_egyptian_desc', Colors.blueAccent),
-  naskh('Naskh', 'نسخ', 'lbl_mushaf_naskh_desc', Colors.orange),
-  warsh('Warsh', 'ورش', 'lbl_mushaf_warsh_desc', Colors.purple);
-
-  const MushafType(this.nameEn, this.nameAr, this.descriptionKey, this.color);
-  final String nameEn;
-  final String nameAr;
-  final String descriptionKey;
-  final Color color;
-}
+import '../../core/quran_index/mushaf_types.dart';
 
 class MushafTypeOnboarding extends StatefulWidget {
   const MushafTypeOnboarding({super.key});
@@ -28,12 +16,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   void initState() {
     super.initState();
     final saved = PrefUtils().getMushafType();
-    if (saved != null) {
-      _selected = MushafType.values.firstWhere(
-        (t) => t.name == saved,
-        orElse: () => MushafType.madani,
-      );
-    }
+    _selected = MushafType.fromString(saved);
   }
 
   void _select(MushafType type) {
@@ -58,7 +41,6 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       body: SafeArea(
@@ -93,10 +75,11 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                itemCount: MushafType.values.length,
+                itemCount: MushafType.all.length,
                 itemBuilder: (context, index) {
-                  final type = MushafType.values[index];
+                  final type = MushafType.all[index];
                   final isSelected = _selected == type;
+                  final color = Color(type.colorValue);
 
                   return GestureDetector(
                     onTap: () => _select(type),
@@ -104,11 +87,11 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? type.color.withValues(alpha: 0.1)
+                            ? color.withValues(alpha: 0.1)
                             : theme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? type.color : theme.dividerColor,
+                          color: isSelected ? color : theme.dividerColor,
                           width: isSelected ? 2.5 : 1,
                         ),
                       ),
@@ -121,21 +104,21 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: type.color.withValues(alpha: 0.15),
+                                color: color.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.menu_book_rounded,
-                                color: type.color,
+                                color: color,
                                 size: 28,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              isArabic ? type.nameAr : type.nameEn,
+                              type.label.tr,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? type.color : null,
+                                color: isSelected ? color : null,
                               ),
                             ),
                             const SizedBox(height: 4),

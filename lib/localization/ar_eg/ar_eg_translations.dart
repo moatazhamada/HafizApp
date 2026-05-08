@@ -347,11 +347,11 @@ final Map<String, String> arEg = {
 
   // Mushaf type labels (settings + onboarding)
   'lbl_mushaf_madani': 'مدني (حفص)',
-  'lbl_mushaf_egyptian': 'مصري (حفص)',
+  'lbl_mushaf_shemerly': 'شمرلي (مصري)',
   'lbl_mushaf_naskh': 'نسخ (حفص)',
   'lbl_mushaf_warsh': 'ورش (شمال أفريقيا)',
   'lbl_mushaf_madani_desc': 'حفص من المدينة المنورة',
-  'lbl_mushaf_egyptian_desc': 'حفص من مصر',
+  'lbl_mushaf_shemerly_desc': 'الخط المصري',
   'lbl_mushaf_naskh_desc': 'خط النسخ',
   'lbl_mushaf_warsh_desc': 'ورش من شمال أفريقيا',
 

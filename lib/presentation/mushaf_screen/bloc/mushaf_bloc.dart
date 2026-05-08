@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'mushaf_event.dart';
 import 'mushaf_state.dart';
@@ -15,10 +16,8 @@ class MushafBloc extends Bloc<MushafEvent, MushafState> {
   }
 
   void _onLoadPage(LoadPage event, Emitter<MushafState> emit) {
-    final mushafType = PrefUtils().getMushafType() ?? 'madani';
-    emit(
-      MushafPageLoaded(pageNumber: event.pageNumber, mushafType: mushafType),
-    );
+    final type = MushafType.fromString(PrefUtils().getMushafType());
+    emit(MushafPageLoaded(pageNumber: event.pageNumber, mushafType: type));
   }
 
   void _onNavigateToPage(NavigateToPage event, Emitter<MushafState> emit) {

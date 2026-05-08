@@ -524,8 +524,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     switch (type) {
       case 'madani':
         return 'lbl_mushaf_madani'.tr;
-      case 'egyptian':
-        return 'lbl_mushaf_egyptian'.tr;
+      case 'shemerly':
+        return 'lbl_mushaf_shemerly'.tr;
       case 'naskh':
         return 'lbl_mushaf_naskh'.tr;
       case 'warsh':

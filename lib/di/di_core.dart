@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
 import '../../core/config/api_config.dart';
+import '../../core/network/connectivity_cubit.dart';
 import '../../core/network/network_info.dart';
 import '../../core/network/qf_api_interceptor.dart';
 import '../../core/network/qf_auth.dart';
@@ -43,6 +44,10 @@ void registerCoreDependencies() {
   });
 
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfo(Connectivity()));
+
+  sl.registerLazySingleton(
+    () => ConnectivityCubit(connectivity: Connectivity(), dio: Dio()),
+  );
 
   sl.registerLazySingleton(() => ThemeBloc());
   sl.registerLazySingleton(() => QfAuthBloc(authRemoteDataSource: sl()));

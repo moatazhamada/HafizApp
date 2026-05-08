@@ -15,6 +15,7 @@ import '../services/home_widget_service.dart';
 import '../services/deep_link_handler.dart';
 import '../utils/logger.dart';
 import '../utils/pref_utils.dart';
+import '../quran_index/mushaf_page_index.dart';
 import '../../firebase_options.dart';
 import '../../injection_container.dart' as di;
 import '../../injection_container.dart';
@@ -63,15 +64,17 @@ class AppInitializer {
       'recitation_sessions',
       'memorization_progress',
       'reading_logs',
-      'reading_goal'
+      'reading_goal',
     ];
-    await Future.wait(boxes.map((box) async {
-      try {
-        await Hive.openBox(box);
-      } catch (e) {
-        debugPrint('Failed to open box $box: $e');
-      }
-    }));
+    await Future.wait(
+      boxes.map((box) async {
+        try {
+          await Hive.openBox(box);
+        } catch (e) {
+          debugPrint('Failed to open box $box: $e');
+        }
+      }),
+    );
 
     try {
       await sl.reset();
@@ -80,6 +83,12 @@ class AppInitializer {
       debugPrint('Critical init failed: $e');
       error = e.toString();
       return false;
+    }
+
+    try {
+      await MushafPageIndex.loadFromAsset();
+    } catch (e) {
+      debugPrint('MushafPageIndex load failed: $e');
     }
 
     try {
