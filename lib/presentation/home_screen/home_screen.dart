@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
@@ -14,6 +13,7 @@ import '../../core/app_export.dart';
 import '../../core/scroll/scroll_position_cubit.dart';
 import '../../injection_container.dart';
 import '../../widgets/custom_app_bar.dart';
+import '../../widgets/offline_indicator.dart';
 import 'package:hafiz_app/widgets/surah_list_item.dart';
 import 'bloc/home_bloc.dart';
 import '../../core/utils/number_converter.dart';
@@ -40,20 +40,10 @@ class _HomeScreenState extends State<HomeScreen>
   final themeBloc = sl<ThemeBloc>();
   final scrollCubit = sl<ScrollPositionCubit>();
   final ScrollController _scrollController = ScrollController();
-  final NetworkInfo _networkInfo = sl<NetworkInfo>();
-  bool _isOffline = false;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
-    _checkConnectivity();
-    _connectivitySub = _networkInfo.onConnectivityChanged.listen((results) {
-      final connected = results.any((r) => r != ConnectivityResult.none);
-      if (mounted && _isOffline != !connected) {
-        setState(() => _isOffline = !connected);
-      }
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final saved = scrollCubit.getOffset('home');
       if (saved != null && _scrollController.hasClients) {
@@ -67,12 +57,7 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  Future<void> _checkConnectivity() async {
-    final connected = await _networkInfo.isConnected();
-    if (mounted) {
-      setState(() => _isOffline = !connected);
-    }
-  }
+
 
   @override
   void didChangeDependencies() {
@@ -95,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    _connectivitySub?.cancel();
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
     } catch (_) {}
@@ -295,7 +279,8 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        body: BlocProvider<HomeBloc>.value(
+        body: OfflineIndicator(
+          child: BlocProvider<HomeBloc>.value(
           value: homeBloc,
           child: BlocBuilder<HomeBloc, HomeState>(
             builder: (context, state) {
@@ -305,39 +290,6 @@ class _HomeScreenState extends State<HomeScreen>
                   controller: _scrollController,
                   key: const PageStorageKey('home-scroll'),
                   slivers: [
-                    // Offline indicator banner
-                    if (_isOffline)
-                      SliverToBoxAdapter(
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            color: Colors.orange.shade700,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.wifi_off,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'msg_offline'.tr,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
 
                     if (state is UpdateLastReadSurah && state.surah != null)
                       SliverToBoxAdapter(
@@ -417,6 +369,7 @@ class _HomeScreenState extends State<HomeScreen>
               );
             },
           ),
+        ),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/core/services/app_initializer.dart';
 
 import 'core/app_export.dart';
+import 'core/network/connectivity_cubit.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
@@ -87,6 +88,7 @@ class MyApp extends StatelessWidget {
         BlocProvider.value(
           value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
         ),
+        BlocProvider.value(value: sl<ConnectivityCubit>()),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -156,7 +158,9 @@ class _BootstrapAppState extends State<BootstrapApp> {
     }
 
     try {
-      await initializer.postInitHeavyTasks().timeout(const Duration(seconds: 3));
+      await initializer.postInitHeavyTasks().timeout(
+        const Duration(seconds: 3),
+      );
     } catch (e) {
       debugPrint('Heavy init failed or timed out: $e');
     }
@@ -186,9 +190,16 @@ class _BootstrapAppState extends State<BootstrapApp> {
                 children: [
                   const Icon(Icons.error_outline, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
-                  const Text('Initialization Failed', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Initialization Failed',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
-                  Text(_initError, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    _initError,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
