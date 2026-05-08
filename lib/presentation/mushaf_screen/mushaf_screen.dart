@@ -8,6 +8,7 @@ import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
@@ -27,14 +28,15 @@ class _MushafScreenState extends State<MushafScreen> {
   late MushafType _mushafType;
   bool _showOverlay = true;
   Timer? _overlayTimer;
-
   final Map<int, List<_VerseText>> _localTextCache = {};
 
   @override
   void initState() {
     super.initState();
     _mushafType = MushafType.fromString(PrefUtils().getMushafType());
-    final resolved = widget.initialPage ?? PrefUtils().getMushafLastPage();
+    final resolved =
+        widget.initialPage ??
+        PrefUtils().getMushafLastPageForType(_mushafType.name);
     _currentPage = resolved.clamp(1, _mushafType.totalPages);
 
     _pageController = PageController(initialPage: _currentPage - 1);
@@ -48,6 +50,16 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   int _pageIndexToNumber(int index) => index + 1;
+
+  int _surahToPageInType(int surahId, MushafType type) {
+    if (type.totalPages == 604) {
+      return MushafPageIndex.getPageForSurah(surahId).clamp(1, 604);
+    }
+    final madaniStart = MushafPageIndex.surahStartPages[surahId - 1];
+    return (madaniStart / 604.0 * type.totalPages)
+        .round()
+        .clamp(1, type.totalPages);
+  }
 
   // ─── Page Precaching ────────────────────────────────────────────
 
@@ -121,10 +133,13 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   void _switchMushafType(MushafType newType) {
+    final surahId = MushafPageIndex.getSurahForPage(_currentPage);
+    final targetPage = _surahToPageInType(surahId, newType);
+
     _localTextCache.clear();
     setState(() {
       _mushafType = newType;
-      _currentPage = _currentPage.clamp(1, newType.totalPages);
+      _currentPage = targetPage;
       PrefUtils().setMushafType(newType.name);
     });
     _pageController.dispose();
@@ -252,7 +267,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 onPageChanged: (index) {
                   final page = _pageIndexToNumber(index);
                   _currentPage = page;
-                  PrefUtils().setMushafLastPage(page);
+                  PrefUtils().setMushafLastPageForType(_mushafType.name, page);
                   _precacheAdjacentPages(page);
                   if (_showOverlay) {
                     _overlayTimer?.cancel();
@@ -291,6 +306,7 @@ class _MushafScreenState extends State<MushafScreen> {
 
   Widget _buildPage(int pageNumber, bool isDark, AppColors colors) {
     return MushafPageWidget(
+      key: ValueKey('mushaf_page_$pageNumber'),
       pageNumber: pageNumber,
       mushafType: _mushafType,
       fallback: _buildOfflineFallback(pageNumber, isDark, colors),
@@ -305,7 +321,9 @@ class _MushafScreenState extends State<MushafScreen> {
           return Center(
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: colors.mushafPageBorder.withValues(alpha: 0.4),
+              color: isDark
+                  ? colors.mushafTextPrimary.withValues(alpha: 0.4)
+                  : colors.mushafPageBorder.withValues(alpha: 0.4),
             ),
           );
         }
@@ -354,7 +372,7 @@ class _MushafScreenState extends State<MushafScreen> {
     List<_VerseText> verses,
   ) {
     final fontSize = PrefUtils().getQuranFontSize();
-    final textColor = isDark ? colors.mushafPageBorder : colors.onSurface;
+    final textColor = colors.mushafTextPrimary;
     final verseNumColor = isDark ? Colors.white38 : Colors.black38;
 
     final List<InlineSpan> spans = [];
@@ -384,7 +402,7 @@ class _MushafScreenState extends State<MushafScreen> {
         );
         if (v.showBismillah) {
           spans.add(
-            const TextSpan(
+            TextSpan(
               text:
                   '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 '
                   '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 '
@@ -392,7 +410,7 @@ class _MushafScreenState extends State<MushafScreen> {
               style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
                 fontSize: 16,
-                color: Colors.grey,
+                color: colors.textHint,
               ),
             ),
           );
@@ -419,10 +437,14 @@ class _MushafScreenState extends State<MushafScreen> {
     }
 
     return SingleChildScrollView(
-      child: RichText(
-        textDirection: TextDirection.rtl,
-        textAlign: TextAlign.justify,
-        text: TextSpan(children: spans),
+      child: InteractiveViewer(
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: RichText(
+          textDirection: TextDirection.rtl,
+          textAlign: TextAlign.justify,
+          text: TextSpan(children: spans),
+        ),
       ),
     );
   }
@@ -513,7 +535,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Juz $juz',
+                    '${'lbl_juz'.tr} ${juz.toLocalizedNumber(context)}',
                     style: TextStyle(fontSize: 11, color: colors.textHint),
                   ),
                   const SizedBox(width: 8),
@@ -529,7 +551,7 @@ class _MushafScreenState extends State<MushafScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        _toArabicNumeral(_currentPage),
+                        '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -538,19 +560,14 @@ class _MushafScreenState extends State<MushafScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$_currentPage / ${_mushafType.totalPages}',
-                    style: TextStyle(fontSize: 11, color: colors.textHint),
-                  ),
                 ],
               ),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildNavArrow(false, isArabic),
                   _buildNavArrow(true, isArabic),
+                  _buildNavArrow(false, isArabic),
                 ],
               ),
             ],
@@ -560,6 +577,9 @@ class _MushafScreenState extends State<MushafScreen> {
     );
   }
 
+  /// Builds a surah navigation arrow.
+  /// Follows SurahScreen convention: prev surah uses skip_next (▷),
+  /// next surah uses skip_previous (◁) — matching RTL visual semantics.
   Widget _buildNavArrow(bool isPrev, bool isArabic) {
     final surahId = MushafPageIndex.getSurahForPage(_currentPage);
     final targetSurahId = isPrev ? surahId - 1 : surahId + 1;
@@ -567,11 +587,11 @@ class _MushafScreenState extends State<MushafScreen> {
       return const SizedBox(width: 80);
     }
     final targetSurah = QuranIndex.quranSurahs[targetSurahId - 1];
-    final targetPage = MushafPageIndex.getPageForSurah(targetSurahId);
+    final targetPage = _surahToPageInType(targetSurahId, _mushafType);
 
     return TextButton.icon(
       onPressed: () => _goToPage(targetPage),
-      icon: Icon(isPrev ? Icons.skip_previous : Icons.skip_next, size: 18),
+      icon: Icon(isPrev ? Icons.skip_next : Icons.skip_previous, size: 18),
       label: Text(
         isArabic ? targetSurah.nameArabic : targetSurah.nameEnglish,
         textDirection: TextDirection.rtl,

@@ -345,6 +345,12 @@ class PrefUtils {
   Future<void> setMushafLastPage(int page) async =>
       _requirePrefs().setInt('mushafLastPage', page);
 
+  int getMushafLastPageForType(String type) =>
+      _requirePrefs().getInt('mushafLastPage_$type') ?? 1;
+
+  Future<void> setMushafLastPageForType(String type, int page) async =>
+      _requirePrefs().setInt('mushafLastPage_$type', page);
+
   bool getOnboardingCompleted() {
     try {
       return _requirePrefs().getBool('onboardingCompleted') ?? false;
@@ -408,8 +414,6 @@ class PrefUtils {
   Future<void> setReadingNavMode(String mode) async {
     await _requirePrefs().setString('readingNavMode', mode);
   }
-
-
 
   bool isDailyVerseEnabled() {
     try {

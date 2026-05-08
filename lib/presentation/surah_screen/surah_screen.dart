@@ -1378,6 +1378,12 @@ class _SurahScreenState extends State<SurahScreen> {
             _onRecitationCorrect(aya);
           }
         },
+        onSaveForPractice: () {
+          HapticFeedback.mediumImpact();
+          if (mounted) {
+            _saveAndAdvanceToNext(aya);
+          }
+        },
         onWrong: (ctx) {
           HapticFeedback.mediumImpact();
           if (mounted) {
@@ -1423,6 +1429,41 @@ class _SurahScreenState extends State<SurahScreen> {
       } else {
         // End of Surah
         _showCompletionDialog();
+      }
+    }
+  }
+
+  void _saveAndAdvanceToNext(Verse aya) {
+    _sessionTotalCount++;
+    final recitationErrorBloc = context.read<RecitationErrorBloc>();
+    recitationErrorBloc.add(
+      AddRecitationErrorEvent(
+        RecitationErrorModel(
+          surahId: surah!.id,
+          surahName: surah!.nameEnglish,
+          verseId: aya.verseNumber,
+          createdAt: DateTime.now(),
+        ),
+      ),
+    );
+
+    // Move to next verse
+    final currentState = surahBloc.state;
+    if (currentState is SuccessSurahState) {
+      final chapters = currentState.chapters;
+      final currentIndex = chapters.indexWhere(
+        (v) => v.verseNumber == aya.verseNumber,
+      );
+      if (currentIndex != -1 && currentIndex < chapters.length - 1) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _showVoiceDialog(chapters[currentIndex + 1]);
+          }
+        });
+      } else {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) _showCompletionDialog();
+        });
       }
     }
   }

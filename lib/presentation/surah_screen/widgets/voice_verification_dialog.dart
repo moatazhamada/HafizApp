@@ -20,6 +20,7 @@ class VoiceVerificationDialog extends StatefulWidget {
   final Verse aya;
   final String expectedText;
   final VoidCallback onCorrect;
+  final VoidCallback onSaveForPractice;
   final Function(BuildContext context) onWrong;
 
   const VoiceVerificationDialog({
@@ -28,6 +29,7 @@ class VoiceVerificationDialog extends StatefulWidget {
     required this.aya,
     required this.expectedText,
     required this.onCorrect,
+    required this.onSaveForPractice,
     required this.onWrong,
   });
 
@@ -271,10 +273,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _qrcMistakeIndices = _qrcMistakes.map((m) => m.wordIndex ?? -1).toSet();
       _qrcMistakeLines = _qrcMistakes.map((m) {
         final wordIdx = (m.wordIndex ?? 1) - 1;
-        final wordText =
-            (wordIdx >= 0 && wordIdx < expectedTokens.length)
-                ? expectedTokens[wordIdx]
-                : '-';
+        final wordText = (wordIdx >= 0 && wordIdx < expectedTokens.length)
+            ? expectedTokens[wordIdx]
+            : '-';
         return '${m.name ?? 'lbl_tajweed'.tr}: $wordText';
       }).toList();
       _showFeedback = true;
@@ -451,7 +452,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           children: [
             Semantics(
               button: true,
-              label: _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
+              label: _isListening
+                  ? 'msg_tap_to_stop'.tr
+                  : 'lbl_tap_to_speak'.tr,
               child: GestureDetector(
                 onTap: () {
                   if (_isListening) {
@@ -466,28 +469,28 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                     color: _isListening
                         ? Colors.redAccent.withValues(alpha: 0.1)
                         : _isCorrect
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : _isWrong
-                                ? Colors.orangeAccent.withValues(alpha: 0.1)
-                                : Colors.blueAccent.withValues(alpha: 0.1),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : _isWrong
+                        ? Colors.orangeAccent.withValues(alpha: 0.1)
+                        : Colors.blueAccent.withValues(alpha: 0.1),
                   ),
                   padding: const EdgeInsets.all(20),
                   child: Icon(
                     _isListening
                         ? Icons.mic
                         : _isCorrect
-                            ? Icons.check_circle
-                            : _isWrong
-                                ? Icons.refresh
-                                : Icons.mic_none,
+                        ? Icons.check_circle
+                        : _isWrong
+                        ? Icons.refresh
+                        : Icons.mic_none,
                     size: 48,
                     color: _isListening
                         ? Colors.redAccent
                         : _isCorrect
-                            ? Colors.green
-                            : _isWrong
-                                ? Colors.orangeAccent
-                                : Colors.blueAccent,
+                        ? Colors.green
+                        : _isWrong
+                        ? Colors.orangeAccent
+                        : Colors.blueAccent,
                   ),
                 ),
               ),
@@ -639,7 +642,10 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _expectedText,
               textAlign: TextAlign.center,
               textDirection: TextDirection.rtl,
-              style: const TextStyle(fontSize: 18, fontFamily: 'NotoNaskhArabic'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontFamily: 'NotoNaskhArabic',
+              ),
             ),
           ],
         ),
@@ -671,15 +677,15 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              widget.onWrong(context);
+              widget.onSaveForPractice();
             },
             child: Text('lbl_save_practice'.tr),
           ),
           FilledButton(
-            onPressed: () {
-              _cleanup();
+            onPressed: () async {
+              await _cleanup();
               setState(() => _resetState());
-              _startListening();
+              await _startListening();
             },
             child: Text('lbl_try_again'.tr),
           ),

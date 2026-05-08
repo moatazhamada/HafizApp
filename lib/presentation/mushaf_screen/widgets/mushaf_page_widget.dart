@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 
-class MushafPageWidget extends StatelessWidget {
+const _invertMatrix = <double>[
+  -1,  0,  0, 0, 255,
+   0, -1,  0, 0, 255,
+   0,  0, -1, 0, 255,
+   0,  0,  0, 1,   0,
+];
+
+class MushafPageWidget extends StatefulWidget {
   final int pageNumber;
   final MushafType mushafType;
   final Widget? fallback;
@@ -16,43 +23,81 @@ class MushafPageWidget extends StatelessWidget {
   });
 
   @override
+  State<MushafPageWidget> createState() => _MushafPageWidgetState();
+}
+
+class _MushafPageWidgetState extends State<MushafPageWidget> {
+  final TransformationController _transformController =
+      TransformationController();
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final url = mushafType.pageImageUrl(pageNumber);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final url = widget.mushafType.pageImageUrl(widget.pageNumber);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.mushafPageBg,
-        border: Border.symmetric(
-          vertical: BorderSide(
-            color: colors.mushafPageBorder.withValues(alpha: 0.15),
-            width: 6,
-          ),
-        ),
-      ),
-      child: CachedNetworkImage(
-        imageUrl: url,
-        fit: BoxFit.contain,
-        width: double.infinity,
-        height: double.infinity,
-        placeholder: (context, url) => Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: colors.mushafPageBorder.withValues(alpha: 0.4),
-          ),
-        ),
-        errorWidget: (context, url, error) =>
-            fallback ??
-            Container(
-              color: colors.mushafPageBg,
-              child: Center(
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: colors.textHint,
-                  size: 32,
+    final imageWidget = isDark
+        ? ColorFiltered(
+            colorFilter: const ColorFilter.matrix(_invertMatrix),
+            child: CachedNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.contain,
+              placeholder: (context, url) => Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colors.mushafTextPrimary.withValues(alpha: 0.4),
                 ),
               ),
+              errorWidget: (context, url, error) =>
+                  widget.fallback ??
+                  Container(
+                    color: colors.mushafPageBg,
+                    child: Center(
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        color: colors.textHint,
+                        size: 32,
+                      ),
+                    ),
+                  ),
             ),
+          )
+        : CachedNetworkImage(
+            imageUrl: url,
+            fit: BoxFit.contain,
+            placeholder: (context, url) => Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colors.mushafPageBorder.withValues(alpha: 0.4),
+              ),
+            ),
+            errorWidget: (context, url, error) =>
+                widget.fallback ??
+                Container(
+                  color: colors.mushafPageBg,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: colors.textHint,
+                      size: 32,
+                    ),
+                  ),
+                ),
+          );
+
+    return Container(
+      color: colors.mushafPageBg,
+      child: InteractiveViewer(
+        transformationController: _transformController,
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: imageWidget,
       ),
     );
   }
