@@ -27,6 +27,7 @@ class _MushafScreenState extends State<MushafScreen> {
   late int _currentPage;
   late MushafType _mushafType;
   bool _showOverlay = true;
+  bool _isZoomed = false;
   Timer? _overlayTimer;
   final Map<int, List<_VerseText>> _localTextCache = {};
 
@@ -140,6 +141,7 @@ class _MushafScreenState extends State<MushafScreen> {
     setState(() {
       _mushafType = newType;
       _currentPage = targetPage;
+      _isZoomed = false;
       PrefUtils().setMushafType(newType.name);
     });
     _pageController.dispose();
@@ -263,10 +265,14 @@ class _MushafScreenState extends State<MushafScreen> {
                 reverse: true,
                 key: ValueKey(_mushafType),
                 controller: _pageController,
+                physics: _isZoomed
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
                 itemCount: _mushafType.totalPages,
                 onPageChanged: (index) {
                   final page = _pageIndexToNumber(index);
                   _currentPage = page;
+                  _isZoomed = false;
                   PrefUtils().setMushafLastPageForType(_mushafType.name, page);
                   _precacheAdjacentPages(page);
                   if (_showOverlay) {
@@ -310,6 +316,9 @@ class _MushafScreenState extends State<MushafScreen> {
       pageNumber: pageNumber,
       mushafType: _mushafType,
       fallback: _buildOfflineFallback(pageNumber, isDark, colors),
+      onZoomChanged: (zoomed) {
+        if (mounted) setState(() => _isZoomed = zoomed);
+      },
     );
   }
 

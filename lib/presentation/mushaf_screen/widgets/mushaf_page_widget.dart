@@ -14,12 +14,14 @@ class MushafPageWidget extends StatefulWidget {
   final int pageNumber;
   final MushafType mushafType;
   final Widget? fallback;
+  final ValueChanged<bool>? onZoomChanged;
 
   const MushafPageWidget({
     super.key,
     required this.pageNumber,
     this.mushafType = MushafType.madani,
     this.fallback,
+    this.onZoomChanged,
   });
 
   @override
@@ -31,7 +33,19 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
       TransformationController();
 
   @override
+  void initState() {
+    super.initState();
+    _transformController.addListener(_onTransformChanged);
+  }
+
+  void _onTransformChanged() {
+    final scale = _transformController.value.getMaxScaleOnAxis();
+    widget.onZoomChanged?.call(scale > 1.05);
+  }
+
+  @override
   void dispose() {
+    _transformController.removeListener(_onTransformChanged);
     _transformController.dispose();
     super.dispose();
   }
