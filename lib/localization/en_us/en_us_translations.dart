@@ -37,6 +37,8 @@ final Map<String, String> enUs = {
   'lbl_close': 'Close',
   'msg_unmark_practice': 'Unmark',
   'msg_mark_practice': 'Mark for Practice',
+  'msg_marked_error': 'Verse marked for practice',
+  'msg_error_removed': 'Removed from practice list',
   'lbl_settings': 'Settings',
   'lbl_recitation_coach': 'Recitation Coach',
   'lbl_recitation_provider': 'Recitation Engine',
@@ -93,6 +95,8 @@ final Map<String, String> enUs = {
   'lbl_verse_num': 'Ayah', // Unified to Ayah
   'lbl_remove_bookmark': 'Remove Bookmark',
   'lbl_add_bookmark': 'Add Bookmark',
+  'lbl_remove_surah_bookmark': 'Remove Surah Bookmark',
+  'lbl_add_surah_bookmark': 'Add Surah Bookmark',
   'lbl_delete': 'Delete',
   'msg_swipe_delete': 'Swipe to delete',
   // Surah
@@ -131,6 +135,8 @@ final Map<String, String> enUs = {
   'msg_offline': 'You are offline',
   // Voice Dialog
   'msg_mic_permission': 'Microphone Access',
+  'msg_mic_permission_desc':
+      'Hafiz needs microphone access to verify your recitation. You can change this anytime in your device settings.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility
@@ -150,7 +156,7 @@ final Map<String, String> enUs = {
   'msg_no_results': 'No results found',
   'msg_search_hint': 'Search for a Surah or verse',
   'lbl_error': 'Error',
-  'msg_error_prefix': '', // Removed prefix for cleaner errors
+  'msg_error_prefix': '',
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
 

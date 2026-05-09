@@ -29,7 +29,6 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart'
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
-import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../core/theme/app_colors.dart';
@@ -476,55 +475,76 @@ class _SurahScreenState extends State<SurahScreen> {
         top: false,
         child: Row(
           children: [
-            if (hasPrev)
+            // Next surah – always LEFT, icon AFTER text
+            if (hasNext)
               Expanded(
                 child: Semantics(
                   button: true,
                   label:
-                      '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
-                  child: TextButton.icon(
-                    onPressed: () => _navigateToSurah(surah!.id - 1),
-                    icon: const Icon(Icons.skip_next, size: 18),
-                    label: Text(
-                      isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(fontSize: 13),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                  '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
+                  child: TextButton(
+                    onPressed: () => _navigateToSurah(surah!.id + 1),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.skip_previous, size: 18),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish,
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               )
             else
               const Expanded(child: SizedBox.shrink()),
+
             const SizedBox(width: 8),
-            if (hasNext)
+            // Previous surah – always RIGHT, arrow on RIGHT of text
+            if (hasPrev)
               Expanded(
                 child: Semantics(
                   button: true,
                   label:
-                      '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
-                  child: TextButton.icon(
-                    onPressed: () => _navigateToSurah(surah!.id + 1),
-                    icon: const Icon(Icons.skip_previous, size: 18),
-                    label: Text(
-                      isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(fontSize: 13),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                  '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
+                  child: TextButton(
+                    onPressed: () => _navigateToSurah(surah!.id - 1),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish,
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.skip_next, size: 18),
+                      ],
                     ),
                   ),
                 ),
@@ -860,21 +880,25 @@ class _SurahScreenState extends State<SurahScreen> {
           label: _isAutoScrolling
               ? 'lbl_stop_autoscroll'.tr
               : 'lbl_start_autoscroll'.tr,
-          child: GestureDetector(
-            onLongPress: _showAutoScrollSpeedDialog,
-            child: IconButton(
-              icon: Badge(
-                isLabelVisible: _autoScrollSpeed != 0.5,
-                label: Text('${_autoScrollSpeed}x'),
-                child: Icon(
-                  _isAutoScrolling
-                      ? Icons.pause_circle
-                      : Icons.play_circle_outline,
-                  color: _isAutoScrolling ? Colors.amber : Colors.white,
+          child: Tooltip(
+            message: 'lbl_scroll_speed'.tr,
+            child: InkWell(
+              onTap: _toggleAutoScroll,
+              onLongPress: _showAutoScrollSpeedDialog,
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Badge(
+                  isLabelVisible: _autoScrollSpeed != 0.5,
+                  label: Text('${_autoScrollSpeed}x'),
+                  child: Icon(
+                    _isAutoScrolling
+                        ? Icons.pause_circle
+                        : Icons.play_circle_outline,
+                    color: _isAutoScrolling ? Colors.amber : Colors.white,
+                  ),
                 ),
               ),
-              onPressed: _toggleAutoScroll,
-              tooltip: 'lbl_scroll_speed'.tr,
             ),
           ),
         ),
@@ -919,10 +943,12 @@ class _SurahScreenState extends State<SurahScreen> {
                 case 'bookmark':
                   HapticFeedback.lightImpact();
                   final blocState = context.read<BookmarkBloc>().state;
-                  final isBookmarked =
+                  final isSurahBookmarked =
                       blocState is BookmarkLoaded &&
-                      blocState.bookmarks.any((b) => b.surahId == surah?.id);
-                  if (isBookmarked) {
+                      blocState.bookmarks.any(
+                        (b) => b.surahId == surah?.id && b.verseNumber == 1,
+                      );
+                  if (isSurahBookmarked) {
                     context.read<BookmarkBloc>().add(
                       RemoveBookmarkEvent(surah!.id, 1),
                     );
@@ -988,19 +1014,21 @@ class _SurahScreenState extends State<SurahScreen> {
                 child: Builder(
                   builder: (context) {
                     final state = context.read<BookmarkBloc>().state;
-                    final isBookmarked =
+                    final isSurahBookmarked =
                         state is BookmarkLoaded &&
-                        state.bookmarks.any((b) => b.surahId == surah?.id);
+                        state.bookmarks.any(
+                          (b) => b.surahId == surah?.id && b.verseNumber == 1,
+                        );
                     return Row(
                       children: [
                         Icon(
-                          isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                          isSurahBookmarked ? Icons.bookmark : Icons.bookmark_border,
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          isBookmarked
-                              ? 'lbl_remove_bookmark'.tr
-                              : 'lbl_add_bookmark'.tr,
+                          isSurahBookmarked
+                              ? 'lbl_remove_surah_bookmark'.tr
+                              : 'lbl_add_surah_bookmark'.tr,
                         ),
                       ],
                     );
@@ -1203,22 +1231,6 @@ class _SurahScreenState extends State<SurahScreen> {
                 },
               ),
             ),
-            // Reflection feature hidden — not yet fully implemented.
-            // Semantics(
-            //   button: true,
-            //   label: 'lbl_add_reflection'.tr,
-            //   child: ListTile(
-            //     leading: const Icon(
-            //       Icons.lightbulb_outline,
-            //       color: Colors.amber,
-            //     ),
-            //     title: Text('lbl_add_reflection'.tr),
-            //     onTap: () {
-            //       Navigator.pop(context);
-            //       _showReflectionDialog(aya);
-            //     },
-            //   ),
-            // ),
             Semantics(
               button: true,
               label: 'lbl_share_verse'.tr,
@@ -1266,56 +1278,6 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showReflectionDialog(Verse aya) {
-    final textController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('lbl_add_reflection'.tr),
-        content: TextField(
-          controller: textController,
-          maxLines: 5,
-          decoration: InputDecoration(
-            hintText: 'lbl_write_reflection'.tr,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('lbl_cancel'.tr),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final text = textController.text.trim();
-              if (text.isEmpty) return;
-              Navigator.pop(dialogContext);
-              try {
-                final postDs = sl<QfPostRemoteDataSource>();
-                await postDs.createReflection(
-                  verseKey: '${surah!.id}:${aya.verseNumber}',
-                  text: text,
-                );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('lbl_reflection_saved'.tr)),
-                  );
-                }
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('msg_operation_failed'.tr)),
-                  );
-                }
-              }
-            },
-            child: Text('lbl_submit_reflection'.tr),
-          ),
-        ],
       ),
     );
   }
@@ -1856,6 +1818,41 @@ class _SurahScreenState extends State<SurahScreen> {
         ),
       );
       currentOffset += 1;
+
+      // Translation text below the verse
+      if (_showTranslation && _translations[aya.verseNumber] != null) {
+        final translationText = _translations[aya.verseNumber]!;
+        verseRanges.add(_VerseRange(
+          start: currentOffset,
+          end: currentOffset + 1,
+          verse: aya,
+          isBadge: false,
+          isBookmarked: isBookmarked,
+          isError: isRecitationError,
+        ));
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 6.0, bottom: 14.0),
+              child: Text(
+                translationText,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  height: 1.5,
+                  color: colors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        );
+        currentOffset += 1;
+      }
     }
 
     final textSpan = TextSpan(children: spans);

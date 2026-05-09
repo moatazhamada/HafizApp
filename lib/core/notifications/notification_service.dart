@@ -45,7 +45,7 @@ class DailyVerseNotificationService {
     final title = '${randomSurah.nameEnglish} ${randomSurah.nameArabic}';
     final body = 'Verse $randomVerse — Open Hafiz to read';
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
@@ -59,7 +59,7 @@ class DailyVerseNotificationService {
       title,
       body,
       RepeatInterval.daily,
-      NotificationDetails(android: androidDetails),
+      const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
 

@@ -37,6 +37,8 @@ final Map<String, String> arEg = {
   'lbl_close': 'إغلاق',
   'msg_unmark_practice': 'إزالة من تثبيت الحفظ',
   'msg_mark_practice': 'تحديد لتثبيت الحفظ',
+  'msg_marked_error': 'تم تحديد الآية لتثبيت الحفظ',
+  'msg_error_removed': 'تمت الإزالة من قائمة التثبيت',
   'lbl_settings': 'الإعدادات',
   'lbl_recitation_coach': 'مدرب التلاوة',
   'lbl_recitation_provider': 'محرك التلاوة',
@@ -93,6 +95,8 @@ final Map<String, String> arEg = {
   'lbl_verse_num': 'آية',
   'lbl_remove_bookmark': 'إزالة العلامة',
   'lbl_add_bookmark': 'إضافة علامة',
+  'lbl_remove_surah_bookmark': 'إزالة علامة السورة',
+  'lbl_add_surah_bookmark': 'إضافة علامة السورة',
   'lbl_delete': 'حذف',
   'msg_swipe_delete': 'اسحب للحذف',
   // Surah
@@ -130,6 +134,8 @@ final Map<String, String> arEg = {
   'msg_offline': 'أنت غير متصل بالإنترنت',
   // Voice Dialog
   'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
+  'msg_mic_permission_desc':
+      'يحتاج حافظ إلى إذن الميكروفون للتحقق من تلاوتك. يمكنك تغيير هذا في أي وقت من إعدادات جهازك.',
   'msg_tap_to_resume': 'اضغط للمتابعة',
   'lbl_incorrect': 'تحتاج لتحسين',
   // Accessibility
@@ -149,7 +155,7 @@ final Map<String, String> arEg = {
   'msg_no_results': 'لا توجد نتائج',
   'msg_search_hint': 'ابحث عن سورة أو آية',
   'lbl_error': 'خطأ',
-  'msg_error_prefix': 'حدث خطأ: ',
+  'msg_error_prefix': '',
   'msg_could_not_open': 'تعذر فتح الرابط: ',
   'lbl_search_surah': 'البحث عن سورة...',
 

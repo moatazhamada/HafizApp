@@ -132,7 +132,9 @@ void main() {
     ]);
   }
 
-  final json = JsonEncoder.withIndent('  ').convert(result);
+  const encoder = JsonEncoder.withIndent('  ');
+  final json = encoder.convert(result);
   File('assets/quran/mushaf_page_index.json').writeAsStringSync(json);
+  // ignore: avoid_print
   print('Generated ${result.length} entries to assets/quran/mushaf_page_index.json');
 }

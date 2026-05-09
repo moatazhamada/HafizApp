@@ -70,18 +70,18 @@ class ShimmerListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          const ShimmerBox(width: 48, height: 48, borderRadius: 24),
-          const SizedBox(width: 16),
+          ShimmerBox(width: 48, height: 48, borderRadius: 24),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerBox(width: 160, height: 16, borderRadius: 4),
-                const SizedBox(height: 8),
+                ShimmerBox(width: 160, height: 16, borderRadius: 4),
+                SizedBox(height: 8),
                 ShimmerBox(
                   width: 100,
                   height: 12,
@@ -90,7 +90,7 @@ class ShimmerListTile extends StatelessWidget {
               ],
             ),
           ),
-          const ShimmerBox(width: 40, height: 40, borderRadius: 20),
+          ShimmerBox(width: 40, height: 40, borderRadius: 20),
         ],
       ),
     );

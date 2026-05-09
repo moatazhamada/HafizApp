@@ -20,6 +20,8 @@ class AudioPlayerHandler {
   Timer? _sleepTimer;
   DateTime? _sleepTimerEnd;
   bool _isDisposed = false;
+  StreamSubscription<ProcessingState>? _completionSub;
+  Completer<void>? _verseCompleter;
 
   AudioPlayer get player => _player;
   Stream<int> get currentVerseStream => _currentVerseController.stream;
@@ -44,7 +46,7 @@ class AudioPlayerHandler {
   }
 
   Future<void> _playCurrentVerse() async {
-    if (_isDisposed) return;
+    if (_isDisposed || _currentSurahId == null) return;
 
     if (_verseUrls == null || _currentVerseIndex >= _verseUrls!.length) {
       if (_isLooping && _loopStart != null && _loopEnd != null) {
@@ -58,10 +60,13 @@ class AudioPlayerHandler {
 
     try {
       await _player.setUrl(_verseUrls![_currentVerseIndex]);
-      if (_isDisposed) return;
+      if (_isDisposed || _currentSurahId == null) return;
       _currentVerseController.add(_currentVerseIndex);
       await _player.play();
-      if (_isDisposed) return;
+      if (_isDisposed || _currentSurahId == null) return;
+
+      await _waitForCompletion();
+      if (_isDisposed || _currentSurahId == null) return;
 
       if (_sleepTimerEnd != null && DateTime.now().isAfter(_sleepTimerEnd!)) {
         await pause();
@@ -78,6 +83,19 @@ class AudioPlayerHandler {
     }
   }
 
+  Future<void> _waitForCompletion() async {
+    await _completionSub?.cancel();
+    _verseCompleter = Completer<void>();
+    _completionSub = _player.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) {
+        if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+          _verseCompleter!.complete();
+        }
+      }
+    });
+    await _verseCompleter!.future;
+  }
+
   Future<void> pause() async {
     if (_isDisposed) return;
     await _player.pause();
@@ -90,10 +108,16 @@ class AudioPlayerHandler {
 
   Future<void> stop() async {
     if (_isDisposed) return;
-    await _player.stop();
+    await _completionSub?.cancel();
+    _completionSub = null;
     _currentSurahId = null;
     _verseUrls = null;
     _currentVerseIndex = 0;
+    if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+      _verseCompleter!.complete();
+    }
+    _verseCompleter = null;
+    await _player.stop();
     _currentVerseController.add(-1);
   }
 
@@ -135,6 +159,12 @@ class AudioPlayerHandler {
   Future<void> dispose() async {
     if (_isDisposed) return;
     _isDisposed = true;
+    await _completionSub?.cancel();
+    _completionSub = null;
+    if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+      _verseCompleter!.complete();
+    }
+    _verseCompleter = null;
     await _player.dispose();
     await _currentVerseController.close();
   }

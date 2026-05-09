@@ -7,7 +7,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Surah reading flow', (tester) async {
-    app.main();
+    await app.main();
     await tester.pumpAndSettle(const Duration(seconds: 5));
 
     await tester.tap(find.text('Continue').last);

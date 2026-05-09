@@ -100,7 +100,7 @@ class _MushafScreenState extends State<MushafScreen> {
                     leading: CircleAvatar(
                       backgroundColor: Color(type.colorValue),
                       radius: 16,
-                      child: Icon(
+                      child: const Icon(
                         Icons.menu_book,
                         color: Colors.white,
                         size: 18,
