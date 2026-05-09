@@ -410,7 +410,7 @@ class _MushafScreenState extends State<MushafScreen> {
               style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
                 fontSize: 16,
-                color: colors.textHint,
+                color: colors.textSecondary,
               ),
             ),
           );
@@ -536,7 +536,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 children: [
                   Text(
                     '${'lbl_juz'.tr} ${juz.toLocalizedNumber(context)}',
-                    style: TextStyle(fontSize: 11, color: colors.textHint),
+                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -563,44 +563,9 @@ class _MushafScreenState extends State<MushafScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavArrow(true, isArabic),
-                  _buildNavArrow(false, isArabic),
-                ],
-              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// Builds a surah navigation arrow.
-  /// Follows SurahScreen convention: prev surah uses skip_next (▷),
-  /// next surah uses skip_previous (◁) — matching RTL visual semantics.
-  Widget _buildNavArrow(bool isPrev, bool isArabic) {
-    final surahId = MushafPageIndex.getSurahForPage(_currentPage);
-    final targetSurahId = isPrev ? surahId - 1 : surahId + 1;
-    if (targetSurahId < 1 || targetSurahId > 114) {
-      return const SizedBox(width: 80);
-    }
-    final targetSurah = QuranIndex.quranSurahs[targetSurahId - 1];
-    final targetPage = _surahToPageInType(targetSurahId, _mushafType);
-
-    return TextButton.icon(
-      onPressed: () => _goToPage(targetPage),
-      icon: Icon(isPrev ? Icons.skip_next : Icons.skip_previous, size: 18),
-      label: Text(
-        isArabic ? targetSurah.nameArabic : targetSurah.nameEnglish,
-        textDirection: TextDirection.rtl,
-        style: const TextStyle(fontSize: 12),
-        overflow: TextOverflow.ellipsis,
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        minimumSize: const Size(0, 32),
       ),
     );
   }

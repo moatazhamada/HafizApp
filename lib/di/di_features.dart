@@ -33,10 +33,12 @@ import '../../domain/usecase/cloud_sync/sync_with_qf.dart';
 import '../../domain/usecase/getsurah/get_surah.dart';
 import '../../domain/usecase/bookmark/load_bookmarks.dart';
 import '../../domain/usecase/bookmark/toggle_bookmark.dart';
+import '../../domain/usecase/goals/get_todays_plan.dart';
 import '../../domain/usecase/khatmah/log_reading.dart';
 import '../../domain/usecase/search/search_verses.dart';
 import '../../presentation/bookmarks/bloc/bookmark_bloc.dart';
 import '../../presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
+import '../../presentation/goals/bloc/goals_bloc.dart';
 import '../../presentation/khatmah/bloc/khatmah_bloc.dart';
 import '../../presentation/memorization/bloc/memorization_bloc.dart';
 import '../../presentation/recitation_error/bloc/recitation_error_bloc.dart';
@@ -56,8 +58,9 @@ void registerFeatureDependencies() {
     ),
   );
   sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
-  sl.registerFactory(() => CloudSyncBloc(syncWithQf: sl()));
+  sl.registerLazySingleton(() => CloudSyncBloc(syncWithQf: sl()));
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
+  sl.registerFactory(() => GoalsBloc(getTodaysPlan: sl()));
   sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
 
@@ -71,6 +74,9 @@ void registerFeatureDependencies() {
   sl.registerLazySingleton(() => ToggleBookmark(bookmarkRepository: sl()));
   sl.registerLazySingleton(() => LogReading(khatmahRepository: sl()));
   sl.registerLazySingleton(() => SearchVerses(surahRepository: sl()));
+  sl.registerLazySingleton(
+    () => GetTodaysPlan(goalsRemoteDataSource: sl<QfGoalsRemoteDataSource>()),
+  );
 
   // Repositories
   sl.registerLazySingleton<SurahRepository>(

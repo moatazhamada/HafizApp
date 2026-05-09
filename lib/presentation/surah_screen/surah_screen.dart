@@ -18,6 +18,7 @@ import '../../widgets/verse_share_sheet.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
@@ -964,6 +965,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     );
                   }
+                  _triggerBookmarkSync(context);
                   break;
                 case 'translation':
                   setState(() {
@@ -1181,6 +1183,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     );
                   }
+                  _triggerBookmarkSync(context);
                 },
               ),
             ),
@@ -2135,4 +2138,10 @@ class _VerseRange {
     this.isBookmarked = false,
     this.isError = false,
   });
+}
+
+void _triggerBookmarkSync(BuildContext context) {
+  try {
+    context.read<CloudSyncBloc>().add(SyncWithQfEvent());
+  } catch (_) {}
 }

@@ -288,6 +288,8 @@ final Map<String, String> arEg = {
   'stats_practice_verses': 'آيات التثبيت',
   'stats_surahs_completed': 'السور المكتملة',
   'stats_no_activity': 'ابدأ القراءة لتتبع تقدمك!',
+  'stats_streak': 'السلسلة الحالية',
+  'stats_cloud_streak': '+{count} يوم متزامن من السحابة',
 
   // Auto-scroll
   'lbl_start_autoscroll': 'بدء التمرير التلقائي',
@@ -341,6 +343,12 @@ final Map<String, String> arEg = {
 
   // Relative time
   'lbl_just_now': 'الآن',
+
+  // Goals
+  'goals_title': 'خطة اليوم',
+  'goals_no_plan': 'لا توجد خطة لليوم',
+  'goals_no_plan_hint': 'أنشئ هدف قراءة في متتبع الختمة لرؤية خطتك اليومية هنا.',
+  'goals_items_count': '{count} عناصر في خطتك',
   'lbl_minutes_ago': 'منذ {count} دقيقة',
   'lbl_hours_ago': 'منذ {count} ساعة',
 

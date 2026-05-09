@@ -291,6 +291,8 @@ final Map<String, String> enUs = {
   'stats_practice_verses': 'Practice Verses',
   'stats_surahs_completed': 'Surahs Completed',
   'stats_no_activity': 'Start reading to track your progress!',
+  'stats_streak': 'Current Streak',
+  'stats_cloud_streak': '+{count} days synced from cloud',
 
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
@@ -347,6 +349,12 @@ final Map<String, String> enUs = {
 
   // Relative time
   'lbl_just_now': 'just now',
+
+  // Goals
+  'goals_title': "Today's Plan",
+  'goals_no_plan': 'No plan for today',
+  'goals_no_plan_hint': 'Create a reading goal in the Khatmah tracker to see your daily plan here.',
+  'goals_items_count': '{count} items on your plan',
   'lbl_minutes_ago': '{count}m ago',
   'lbl_hours_ago': '{count}h ago',
 

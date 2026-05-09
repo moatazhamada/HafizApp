@@ -17,6 +17,7 @@ import '../presentation/cloud_sync/cloud_sync_screen.dart';
 import '../presentation/audio_player/audio_player_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
 import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
+import '../presentation/goals/goals_screen.dart';
 import '../presentation/statistics_screen/statistics_screen.dart';
 import '../presentation/verse_study/verse_study_screen.dart';
 import '../presentation/changelog/changelog_screen.dart';
@@ -34,6 +35,7 @@ class AppRoutes {
   static const String recitationSessionsPage = '/recitation_sessions';
   static const String memorizationPage = '/memorization';
   static const String khatmahPage = '/khatmah';
+  static const String goalsPage = '/goals';
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
   static const String cloudSyncPage = '/cloud_sync';
@@ -59,6 +61,7 @@ class AppRoutes {
     recitationSessionsPage: RecitationSessionScreen.builder,
     memorizationPage: MemorizationScreen.builder,
     khatmahPage: KhatmahScreen.builder,
+    goalsPage: (context) => const GoalsScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),

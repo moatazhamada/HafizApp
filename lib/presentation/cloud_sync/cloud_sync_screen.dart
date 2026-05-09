@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../injection_container.dart' as di;
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
 
@@ -9,10 +8,7 @@ class CloudSyncScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<CloudSyncBloc>(),
-      child: const _CloudSyncView(),
-    );
+    return const _CloudSyncView();
   }
 }
 

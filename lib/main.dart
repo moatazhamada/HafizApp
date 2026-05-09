@@ -9,6 +9,7 @@ import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'dart:async';
@@ -73,6 +74,7 @@ class MyApp extends StatelessWidget {
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
+  final cloudSyncBloc = sl<CloudSyncBloc>();
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +91,7 @@ class MyApp extends StatelessWidget {
           value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
         ),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
+        BlocProvider.value(value: cloudSyncBloc),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {

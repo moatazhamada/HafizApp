@@ -61,7 +61,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
                     child: Center(
                       child: Icon(
                         Icons.image_not_supported_outlined,
-                        color: colors.textHint,
+                        color: colors.textSecondary,
                         size: 32,
                       ),
                     ),
@@ -84,7 +84,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
                   child: Center(
                     child: Icon(
                       Icons.image_not_supported_outlined,
-                      color: colors.textHint,
+                      color: colors.textSecondary,
                       size: 32,
                     ),
                   ),

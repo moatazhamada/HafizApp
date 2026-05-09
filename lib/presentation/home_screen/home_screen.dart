@@ -397,15 +397,18 @@ class _HomeScreenState extends State<HomeScreen>
             NavigatorService.pushNamed(AppRoutes.khatmahPage);
             break;
           case 5:
-            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+            NavigatorService.pushNamed(AppRoutes.goalsPage);
             break;
           case 6:
-            NavigatorService.pushNamed(AppRoutes.mushafScreen);
+            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
             break;
           case 7:
-            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            NavigatorService.pushNamed(AppRoutes.mushafScreen);
             break;
           case 8:
+            NavigatorService.pushNamed(AppRoutes.settingsScreen);
+            break;
+          case 9:
             NavigatorService.pushNamed(AppRoutes.aboutPage);
             break;
         }
@@ -438,6 +441,11 @@ class _HomeScreenState extends State<HomeScreen>
           icon: const Icon(Icons.auto_stories_outlined),
           selectedIcon: const Icon(Icons.auto_stories_rounded),
           label: Text('lbl_khatmah_tracker'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.event_note_outlined),
+          selectedIcon: const Icon(Icons.event_note_rounded),
+          label: Text('goals_title'.tr),
         ),
         NavigationDrawerDestination(
           icon: const Icon(Icons.trending_up_outlined),
