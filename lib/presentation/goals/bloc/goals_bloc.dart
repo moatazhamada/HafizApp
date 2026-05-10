@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/domain/usecase/goals/get_todays_plan.dart';
 
@@ -27,6 +28,11 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
           'Failed to load today\'s plan: ${failure.errorMessage}',
           feature: 'Goals',
         );
+
+        if (failure is InsufficientScopeFailure) {
+          emit(GoalsError(failure.errorMessage));
+          return;
+        }
 
         // Distinguish auth errors from general failures
         final msg = failure.errorMessage;

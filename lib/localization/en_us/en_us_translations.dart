@@ -205,6 +205,8 @@ final Map<String, String> enUs = {
   'msg_login_not_configured':
       'Login is not configured. Add your Quran.com client ID to continue.',
   'msg_sync_failed': 'Failed to sync with Quran.com',
+  'msg_re_login_required':
+      'Please sign in again to grant updated permissions required by the server.',
 
   // Musali Teaser
   'musali_app_name': 'Musali',

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/network/qf_api_interceptor.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 abstract class QfUserApiRemoteDataSource {
@@ -18,16 +20,42 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
     : _dio = dio,
       _config = config ?? const QfApiConfig();
 
+  static const int _pageSize = 20;
+  static const int _maxPages = 50;
+
   @override
   Future<List<dynamic>> getCollections() async {
     try {
-      final response = await _dio.get(
-        '${_config.apiBaseUrl}/auth/v1/collections?first=50',
-      );
-      if (response.statusCode == 200) {
-        return response.data['collections'] ?? [];
+      final allCollections = <dynamic>[];
+      String? after;
+      var pageCount = 0;
+
+      while (pageCount < _maxPages) {
+        pageCount++;
+        final queryParams = <String, dynamic>{'first': _pageSize};
+        if (after != null) queryParams['after'] = after;
+
+        final response = await _dio.get(
+          '${_config.apiBaseUrl}/auth/v1/collections',
+          queryParameters: queryParams,
+        );
+        if (response.statusCode == 200) {
+          final page = response.data['collections'] as List<dynamic>? ?? [];
+          allCollections.addAll(page);
+
+          after = response.data['after']?.toString();
+          if (page.length < _pageSize || after == null || after.isEmpty) break;
+        } else {
+          break;
+        }
       }
-      return [];
+      return allCollections;
+    } on QfInsufficientScopeException {
+      Logger.warning(
+        'Insufficient scope for QF collections',
+        feature: 'QfUserApi',
+      );
+      throw InsufficientScopeFailure();
     } on DioException catch (e) {
       Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
       rethrow;
@@ -57,13 +85,36 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
   @override
   Future<List<dynamic>> getBookmarks() async {
     try {
-      final response = await _dio.get(
-        '${_config.apiBaseUrl}/auth/v1/bookmarks?first=100',
-      );
-      if (response.statusCode == 200) {
-        return response.data['bookmarks'] ?? [];
+      final allBookmarks = <dynamic>[];
+      String? after;
+      var pageCount = 0;
+
+      while (pageCount < _maxPages) {
+        pageCount++;
+        final queryParams = <String, dynamic>{'first': _pageSize};
+        if (after != null) queryParams['after'] = after;
+
+        final response = await _dio.get(
+          '${_config.apiBaseUrl}/auth/v1/bookmarks',
+          queryParameters: queryParams,
+        );
+        if (response.statusCode == 200) {
+          final page = response.data['bookmarks'] as List<dynamic>? ?? [];
+          allBookmarks.addAll(page);
+
+          after = response.data['after']?.toString();
+          if (page.length < _pageSize || after == null || after.isEmpty) break;
+        } else {
+          break;
+        }
       }
-      return [];
+      return allBookmarks;
+    } on QfInsufficientScopeException {
+      Logger.warning(
+        'Insufficient scope for QF bookmarks',
+        feature: 'QfUserApi',
+      );
+      throw InsufficientScopeFailure();
     } on DioException catch (e) {
       Logger.error('Failed to get QF bookmarks: $e', feature: 'QfUserApi');
       rethrow;

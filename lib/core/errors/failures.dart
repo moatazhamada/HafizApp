@@ -5,6 +5,7 @@ abstract class Failure extends Equatable {
 }
 
 const String messageConnectionFailure = 'msg_connection_error';
+const String messageInsufficientScope = 'msg_re_login_required';
 
 class ServerFailure extends Failure {
   @override
@@ -46,5 +47,20 @@ class CacheFailure extends Failure {
   @override
   String toString() {
     return 'CacheFailure{errorMessage: $errorMessage}';
+  }
+}
+
+class InsufficientScopeFailure extends Failure {
+  @override
+  final String errorMessage;
+
+  InsufficientScopeFailure([this.errorMessage = messageInsufficientScope]);
+
+  @override
+  List<Object> get props => [errorMessage];
+
+  @override
+  String toString() {
+    return 'InsufficientScopeFailure{errorMessage: $errorMessage}';
   }
 }

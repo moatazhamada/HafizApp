@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
+import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/network/qf_api_interceptor.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 /// Remote data source for QF Goals & Reading Sessions APIs.
@@ -158,6 +160,12 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         return response.data['data'] as Map<String, dynamic>?;
       }
       return null;
+    } on QfInsufficientScopeException {
+      Logger.warning(
+        'Insufficient scope for today\'s plan',
+        feature: 'QfGoals',
+      );
+      throw InsufficientScopeFailure();
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode == 401 || statusCode == 403) {

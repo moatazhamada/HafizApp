@@ -29,5 +29,10 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
   }
 
-  String _mapFailureToMessage(Failure _) => 'msg_sync_failed'.tr;
+  String _mapFailureToMessage(Failure failure) {
+    if (failure is InsufficientScopeFailure) {
+      return failure.errorMessage.tr;
+    }
+    return 'msg_sync_failed'.tr;
+  }
 }

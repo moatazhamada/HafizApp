@@ -203,6 +203,8 @@ final Map<String, String> arEg = {
   'msg_login_not_configured':
       'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
   'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
+  'msg_re_login_required':
+      'يرجى تسجيل الدخول مرة أخرى لمنح الأذونات المطلوبة من الخادم.',
 
   // Musali Teaser
   'musali_app_name': 'مُصَالي',

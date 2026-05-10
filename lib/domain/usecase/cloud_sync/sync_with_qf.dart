@@ -103,6 +103,12 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
         feature: 'SyncWithQf',
       );
       return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length));
+    } on InsufficientScopeFailure {
+      Logger.warning(
+        'QF sync blocked by insufficient scope',
+        feature: 'SyncWithQf',
+      );
+      return Left(InsufficientScopeFailure());
     } catch (e) {
       Logger.error('QF sync failed: $e', feature: 'SyncWithQf');
       return Left(ServerFailure('Failed to sync with Quran.com: $e'));

@@ -1,9 +1,31 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+
+class QfInsufficientScopeException extends DioException {
+  final String path;
+
+  // ignore: use_super_parameters
+  QfInsufficientScopeException({
+    required RequestOptions requestOptions,
+    required this.path,
+    DioException? cause,
+  }) : super(
+          requestOptions: requestOptions,
+          response: cause?.response,
+          type: cause?.type ?? DioExceptionType.badResponse,
+          message: cause?.message,
+          error: cause?.error,
+        );
+
+  @override
+  String toString() => 'QfInsufficientScopeException: '
+      'Token lacks required scopes for $path. Re-login required.';
+}
 
 class QfApiInterceptor extends Interceptor {
   final QfAuthRemoteDataSource _authDataSource;
@@ -59,42 +81,96 @@ class QfApiInterceptor extends Interceptor {
   ) async {
     final statusCode = err.response?.statusCode;
 
-    // Retry on 401 (expired token) or 403 (insufficient auth) for user API.
-    if ((statusCode == 401 || statusCode == 403) &&
-        _isUserApiRequest(err.requestOptions)) {
-      try {
-        final newToken = await _refreshOrQueue();
+    if (statusCode == 401 && _isUserApiRequest(err.requestOptions)) {
+      // Expired/invalid token — refresh and retry once.
+      await _handleAuthError(err, handler);
+      return;
+    }
 
-        if (newToken != null && newToken.isNotEmpty) {
-          final options = err.requestOptions;
-          options.headers['x-auth-token'] = newToken;
-
-          final response = await _dio.fetch(options);
-          return handler.resolve(response);
-        } else {
-          Logger.warning(
-            'Token refresh returned null; user may need to re-login',
-            feature: 'QfApiInterceptor',
-          );
-          return super.onError(err, handler);
-        }
-      } catch (e) {
-        Logger.error(
-          'Error during token refresh in interceptor: $e',
+    if (statusCode == 403 && _isUserApiRequest(err.requestOptions)) {
+      // 403 could be expired token OR insufficient_scope.
+      // insufficient_scope means the token is valid but missing permissions
+      // — refreshing won't help, user must re-login to grant new scopes.
+      if (_isInsufficientScope(err)) {
+        Logger.warning(
+          'Token lacks required scopes for ${err.requestOptions.uri.path}. '
+          'User must re-login to grant updated permissions.',
           feature: 'QfApiInterceptor',
         );
-        return super.onError(err, handler);
+        final wrapped = QfInsufficientScopeException(
+          requestOptions: err.requestOptions,
+          path: err.requestOptions.uri.path,
+          cause: err,
+        );
+        return super.onError(wrapped, handler);
       }
+
+      // Otherwise treat as stale token — refresh and retry once.
+      await _handleAuthError(err, handler);
+      return;
     }
 
     return super.onError(err, handler);
   }
 
+  Future<void> _handleAuthError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    // Prevent recursive retries: if this request is itself a retry from a
+    // previous interceptor pass, don't attempt another refresh + retry cycle.
+    if (err.requestOptions.extra['_retried'] == true) {
+      return super.onError(err, handler);
+    }
+
+    try {
+      final newToken = await _refreshOrQueue();
+
+      if (newToken != null && newToken.isNotEmpty) {
+        final options = err.requestOptions;
+        options.headers['x-auth-token'] = newToken;
+        options.extra['_retried'] = true;
+
+        final response = await _dio.fetch(options);
+        return handler.resolve(response);
+      } else {
+        Logger.warning(
+          'Token refresh returned null; user may need to re-login',
+          feature: 'QfApiInterceptor',
+        );
+        return super.onError(err, handler);
+      }
+    } catch (e) {
+      Logger.error(
+        'Error during token refresh in interceptor: $e',
+        feature: 'QfApiInterceptor',
+      );
+      return super.onError(err, handler);
+    }
+  }
+
+  /// Check if the 403 is due to insufficient OAuth2 scopes.
+  bool _isInsufficientScope(DioException err) {
+    try {
+      var data = err.response?.data;
+
+      // Dio may leave the body as a raw String instead of parsing JSON.
+      if (data is String) {
+        data = jsonDecode(data);
+      }
+
+      if (data is Map<String, dynamic>) {
+        final type = data['type']?.toString().toLowerCase() ?? '';
+        final message = data['message']?.toString().toLowerCase() ?? '';
+        return type == 'insufficient_scope' ||
+            message.contains('required scopes') ||
+            message.contains('insufficient scope');
+      }
+    } catch (_) {}
+    return false;
+  }
+
   /// Refreshes the token or waits for an in-flight refresh to complete.
-  ///
-  /// If a refresh is already underway ([_refreshCompleter] is active), this
-  /// just awaits its result. Otherwise it kicks off a new refresh and
-  /// populates the completer so subsequent callers can piggyback.
   Future<String?> _refreshOrQueue() async {
     if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
       return _refreshCompleter!.future;
@@ -104,7 +180,7 @@ class QfApiInterceptor extends Interceptor {
 
     try {
       Logger.info(
-        'Received auth error from QF API, attempting to refresh token',
+        'Auth error from QF API, attempting to refresh token',
         feature: 'QfApiInterceptor',
       );
 

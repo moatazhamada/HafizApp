@@ -7,15 +7,6 @@ class QfApiConfig {
   static const String productionAuthBaseUrl = 'https://oauth2.quran.foundation';
   static const String productionApiBaseUrl = 'https://apis.quran.foundation';
 
-  static const String clientId = String.fromEnvironment(
-    'QF_CLIENT_ID',
-    defaultValue: '',
-  );
-  static const String clientSecret = String.fromEnvironment(
-    'QF_CLIENT_SECRET',
-    defaultValue: '',
-  );
-
   // Derive environment from the flavor dart-define (set automatically by
   // Flutter's --flavor flag).  This is the single source of truth — no
   // separate QF_PRODUCTION flag needed.
@@ -25,6 +16,16 @@ class QfApiConfig {
   );
   static const bool defaultIsProduction = _flavor != 'prelive';
 
+  // Production credentials come from --dart-define at build time.
+  // Prelive uses hardcoded test credentials provided by QF.
+  static const String clientId = defaultIsProduction
+      ? String.fromEnvironment('QF_CLIENT_ID', defaultValue: '')
+      : '5cd47ccf-93e5-47d0-83b5-9bf538bb5759';
+  static const String clientSecret = defaultIsProduction
+      ? String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: '')
+      : String.fromEnvironment('QF_CLIENT_SECRET',
+          defaultValue: 'pd9aPG1ieJL2.34Qi-LV6E8FBG');
+
   // Redirect URI must match the app-auth scheme registered in
   // AndroidManifest / Info.plist.  The prelive flavor uses a separate scheme
   // so both builds can coexist on the same device.
@@ -32,11 +33,17 @@ class QfApiConfig {
       ? 'hafizapp://oauth/callback'
       : 'hafizapp-prelive://oauth/callback';
 
+  static const String storedFlavorKey = 'qf_stored_flavor';
+  static const String currentFlavor = _flavor;
+
+  static bool get isProductionBuild => defaultIsProduction;
+
   static const List<String> scopes = [
     'openid',
     'offline_access',
     'user',
     'collection',
+    'goal',
   ];
 
   final bool isProduction;
