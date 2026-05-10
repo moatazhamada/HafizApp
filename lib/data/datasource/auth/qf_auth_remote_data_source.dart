@@ -33,48 +33,73 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
        _config = config ?? const QfApiConfig();
 
-  static const String _goalScope = 'goal';
-
-  /// Scopes with the 'goal' scope included (full set).
-  static List<String> get _scopesWithGoal => QfApiConfig.scopes;
-
-  /// Scopes without 'goal' — used as fallback when the OAuth server
-  /// rejects the 'goal' scope (e.g., not yet allotted for the client).
-  static List<String> get _scopesWithoutGoal =>
-      QfApiConfig.scopes.where((s) => s != _goalScope).toList();
+  /// Core scopes always available from QF.
+  static const List<String> _coreScopes = ['openid', 'offline_access', 'user'];
 
   bool _isInvalidScopeError(Object e) {
     final msg = e.toString().toLowerCase();
     return msg.contains('invalid_scope');
   }
 
+  /// Extract the specific scope name from an `invalid_scope` error message.
+  /// Returns null if no scope name can be identified.
+  String? _extractRejectedScope(Object e) {
+    final msg = e.toString().toLowerCase();
+    for (final scope in QfApiConfig.scopes) {
+      if (msg.contains(scope.toLowerCase())) return scope;
+    }
+    return null;
+  }
+
   @override
   Future<bool> login() async {
     try {
-      return await _loginWithScopes(_scopesWithGoal);
+      return await _loginWithFallback();
     } on FlutterAppAuthUserCancelledException {
       Logger.info('User cancelled login', feature: 'QfAuth');
       return false;
     } catch (e) {
-      if (_isInvalidScopeError(e)) {
-        Logger.warning(
-          'Full scopes rejected (invalid_scope), retrying without goal scope',
-          feature: 'QfAuth',
-        );
-        try {
-          return await _loginWithScopes(_scopesWithoutGoal);
-        } on FlutterAppAuthUserCancelledException {
-          Logger.info('User cancelled login', feature: 'QfAuth');
-          return false;
-        } catch (e2) {
-          Logger.error('Login failed (without goal): $e2', feature: 'QfAuth');
-          rethrow;
-        }
-      }
       Logger.error('Login failed: $e', feature: 'QfAuth');
       rethrow;
     }
   }
+
+  /// Try to login with full scopes, cascading down on `invalid_scope`.
+  Future<bool> _loginWithFallback() async {
+    List<String> scopes = List.from(QfApiConfig.scopes);
+
+    while (true) {
+      try {
+        return await _loginWithScopes(scopes);
+      } catch (e) {
+        if (_isInvalidScopeError(e)) {
+          final rejected = _extractRejectedScope(e);
+          if (rejected != null &&
+              !_coreScopes.contains(rejected) &&
+              scopes.contains(rejected)) {
+            Logger.warning(
+              'Scope "$rejected" rejected by server, retrying without it',
+              feature: 'QfAuth',
+            );
+            scopes = List.from(scopes)..remove(rejected);
+            if (scopes.isNotEmpty) continue;
+          }
+          // Couldn't identify the failing scope — fall back to core only.
+          if (!_everyScopeInCore(scopes)) {
+            Logger.warning(
+              'Falling back to core scopes only',
+              feature: 'QfAuth',
+            );
+            return await _loginWithScopes(_coreScopes);
+          }
+        }
+        rethrow;
+      }
+    }
+  }
+
+  bool _everyScopeInCore(List<String> scopes) =>
+      scopes.every((s) => _coreScopes.contains(s));
 
   Future<bool> _loginWithScopes(List<String> scopes) async {
     final AuthorizationTokenResponse result = await _appAuth
@@ -137,23 +162,48 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
   @override
   Future<bool> refreshToken() async {
     try {
-      return await _refreshWithScopes(_scopesWithGoal);
+      return await _refreshWithFallback();
     } catch (e) {
-      if (_isInvalidScopeError(e)) {
-        Logger.warning(
-          'Token refresh with goal scope failed, retrying without it',
-          feature: 'QfAuth',
-        );
-        try {
-          return await _refreshWithScopes(_scopesWithoutGoal);
-        } catch (_) {
-          await logout();
-          return false;
-        }
-      }
       Logger.error('Failed to refresh token: $e', feature: 'QfAuth');
       await logout();
       return false;
+    }
+  }
+
+  Future<bool> _refreshWithFallback() async {
+    List<String> scopes = List.from(QfApiConfig.scopes);
+
+    while (true) {
+      try {
+        return await _refreshWithScopes(scopes);
+      } catch (e) {
+        if (_isInvalidScopeError(e)) {
+          final rejected = _extractRejectedScope(e);
+          if (rejected != null &&
+              !_coreScopes.contains(rejected) &&
+              scopes.contains(rejected)) {
+            Logger.warning(
+              'Token refresh: scope "$rejected" rejected, retrying without it',
+              feature: 'QfAuth',
+            );
+            scopes = List.from(scopes)..remove(rejected);
+            if (scopes.isNotEmpty) continue;
+          }
+          if (!_everyScopeInCore(scopes)) {
+            Logger.warning(
+              'Token refresh: falling back to core scopes only',
+              feature: 'QfAuth',
+            );
+            try {
+              return await _refreshWithScopes(_coreScopes);
+            } catch (_) {
+              await logout();
+              return false;
+            }
+          }
+        }
+        rethrow;
+      }
     }
   }
 

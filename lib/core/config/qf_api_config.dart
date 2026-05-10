@@ -42,8 +42,11 @@ class QfApiConfig {
     'openid',
     'offline_access',
     'user',
+    'bookmark',
     'collection',
+    'reading_session',
     'goal',
+    'streak',
   ];
 
   final bool isProduction;
