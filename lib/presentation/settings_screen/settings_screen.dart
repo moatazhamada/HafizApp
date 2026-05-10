@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/app_export.dart';
 
 import '../../core/i18n/locale_controller.dart';
@@ -33,14 +35,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultQuranView;
   late String _mushafType;
   late bool _dailyVerseEnabled;
-  bool _whisperDownloading = false;
+  double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
   bool _loadingEditions = true;
   bool _loadingReciters = true;
   final QiraatService _qiraatService = QiraatService();
   final RecitationService _recitationService = RecitationService();
-  final WhisperController _whisperController = WhisperController();
 
   @override
   void initState() {
@@ -149,9 +150,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(height: 1, indent: 16, endIndent: 16),
               ListTile(
                 title: Text('lbl_whisper_model'.tr),
-                subtitle: Text(_whisperModelLabel(_whisperModel)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _whisperDownloading ? null : _selectWhisperModel,
+                subtitle: _downloadProgress != null
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'msg_model_downloading'.tr,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _downloadProgress,
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(_whisperModelLabel(_whisperModel)),
+                trailing: _downloadProgress != null
+                    ? SizedBox(
+                        width: 48,
+                        child: Text(
+                          '${(_downloadProgress! * 100).round()}%',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: _downloadProgress != null ? null : _selectWhisperModel,
               ),
             ],
           ]),
@@ -587,12 +617,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _whisperModelLabel(String model) {
     switch (model) {
       case 'tiny':
-        return '${'lbl_model_tiny'.tr} (${'lbl_model_tiny_size'.tr})';
+        return '${'lbl_model_tiny'.tr} · ${'lbl_model_tiny_size'.tr}';
       case 'small':
-        return '${'lbl_model_small'.tr} (${'lbl_model_small_size'.tr})';
+        return '${'lbl_model_small'.tr} · ${'lbl_model_small_size'.tr}';
       case 'base':
       default:
-        return '${'lbl_model_base'.tr} (${'lbl_model_base_size'.tr})';
+        return '${'lbl_model_base'.tr} · ${'lbl_model_base_size'.tr} · ${'lbl_model_recommended'.tr}';
     }
   }
 
@@ -646,52 +676,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _selectWhisperModel() async {
-    final value = await _showSelectionSheet<String>(
-      title: 'lbl_whisper_model'.tr,
-      options: const [
-        _Option('tiny', 'lbl_model_tiny'),
-        _Option('base', 'lbl_model_base'),
-        _Option('small', 'lbl_model_small'),
-      ],
-      selected: _whisperModel,
+    const models = [
+      _WhisperModelOption(
+        key: 'tiny',
+        titleKey: 'lbl_model_tiny',
+        descKey: 'lbl_model_tiny_desc',
+        sizeKey: 'lbl_model_tiny_size',
+      ),
+      _WhisperModelOption(
+        key: 'base',
+        titleKey: 'lbl_model_base',
+        descKey: 'lbl_model_base_desc',
+        sizeKey: 'lbl_model_base_size',
+        recommended: true,
+      ),
+      _WhisperModelOption(
+        key: 'small',
+        titleKey: 'lbl_model_small',
+        descKey: 'lbl_model_small_desc',
+        sizeKey: 'lbl_model_small_size',
+      ),
+    ];
+
+    final value = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'lbl_whisper_model'.tr,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          for (final model in models)
+            ListTile(
+              selected: _whisperModel == model.key,
+              selectedTileColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+              title: Row(
+                children: [
+                  Text(model.titleKey.tr),
+                  const SizedBox(width: 8),
+                  Text(
+                    model.sizeKey.tr,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
+                  if (model.recommended) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'lbl_model_recommended'.tr,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              subtitle: Text(
+                model.descKey.tr,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              trailing: _whisperModel == model.key
+                  ? Icon(Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () => Navigator.pop(context, model.key),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
+
     if (value != null && value != _whisperModel) {
-      setState(() => _whisperDownloading = true);
       await _downloadWhisperModel(value);
-      await PrefUtils().setWhisperModel(value);
-      if (!mounted) return;
-      setState(() {
-        _whisperModel = value;
-        _whisperDownloading = false;
-      });
+      if (mounted && _downloadProgress == null) {
+        await PrefUtils().setWhisperModel(value);
+        setState(() => _whisperModel = value);
+      }
     }
   }
 
   Future<void> _downloadWhisperModel(String value) async {
     final model = _mapWhisperModel(value);
-    unawaited(
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: Text('lbl_downloading_model'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(strokeWidth: 2),
-              const SizedBox(height: 12),
-              Text('msg_model_download_wait'.tr),
-            ],
-          ),
-        ),
-      ),
-    );
+    final modelDir = await WhisperController.getModelDir();
+    final localPath = '$modelDir/ggml-${model.modelName}.bin';
+
+    // Skip download if model already exists
+    if (File(localPath).existsSync()) return;
+
+    setState(() => _downloadProgress = 0.0);
+
     try {
-      await _whisperController.downloadModel(model);
-    } finally {
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      final dio = Dio();
+      await dio.download(
+        model.modelUri.toString(),
+        localPath,
+        onReceiveProgress: (received, total) {
+          if (total > 0 && mounted) {
+            setState(() => _downloadProgress = received / total);
+          }
+        },
+      );
+    } catch (e) {
+      // Clean up partial download on failure
+      if (File(localPath).existsSync()) {
+        File(localPath).deleteSync();
       }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('msg_model_download_failed'.tr),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _downloadProgress = null);
     }
   }
 
@@ -744,4 +856,19 @@ class _Option {
   final String label;
   final bool isKey;
   const _Option(this.value, this.label, {this.isKey = true});
+}
+
+class _WhisperModelOption {
+  final String key;
+  final String titleKey;
+  final String descKey;
+  final String sizeKey;
+  final bool recommended;
+  const _WhisperModelOption({
+    required this.key,
+    required this.titleKey,
+    required this.descKey,
+    required this.sizeKey,
+    this.recommended = false,
+  });
 }
