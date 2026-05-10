@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
@@ -49,5 +53,18 @@
 	<string>This app needs access to the microphone to verify your recitation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This app uses speech recognition to verify your recitation.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.hafizapp.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hafizapp</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

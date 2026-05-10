@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -12,6 +13,7 @@ abstract class QfAuthRemoteDataSource {
   Future<String?> getUserId();
   Future<bool> refreshToken();
   Future<bool> isAuthenticated();
+  Future<void> revokeAndDeleteData();
 }
 
 class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
@@ -27,36 +29,105 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     FlutterAppAuth? appAuth,
     FlutterSecureStorage? secureStorage,
     QfApiConfig? config,
-  })  : _appAuth = appAuth ?? const FlutterAppAuth(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _config = config ?? const QfApiConfig();
+  }) : _appAuth = appAuth ?? const FlutterAppAuth(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _config = config ?? const QfApiConfig();
+
+  /// Core scopes always available from QF.
+  static const List<String> _coreScopes = ['openid', 'offline_access', 'user'];
+
+  bool _isInvalidScopeError(Object e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('invalid_scope');
+  }
+
+  /// Extract the specific scope name from an `invalid_scope` error message.
+  /// Returns null if no scope name can be identified.
+  String? _extractRejectedScope(Object e) {
+    final msg = e.toString().toLowerCase();
+    for (final scope in QfApiConfig.scopes) {
+      if (msg.contains(scope.toLowerCase())) return scope;
+    }
+    return null;
+  }
 
   @override
   Future<bool> login() async {
     try {
-      final AuthorizationTokenResponse? result =
-          await _appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(
-          QfApiConfig.clientId,
-          QfApiConfig.redirectUri,
-          serviceConfiguration: AuthorizationServiceConfiguration(
-            authorizationEndpoint: _config.authorizationEndpoint,
-            tokenEndpoint: _config.tokenEndpoint,
-          ),
-          scopes: QfApiConfig.scopes,
-        ),
-      );
-
-      if (result != null && result.accessToken != null) {
-        await _saveTokens(result);
-        Logger.info('Successfully logged in via QF OAuth', feature: 'QfAuth');
-        return true;
-      }
+      return await _loginWithFallback();
+    } on FlutterAppAuthUserCancelledException {
+      Logger.info('User cancelled login', feature: 'QfAuth');
       return false;
     } catch (e) {
       Logger.error('Login failed: $e', feature: 'QfAuth');
-      return false;
+      rethrow;
     }
+  }
+
+  /// Try to login with full scopes, cascading down on `invalid_scope`.
+  Future<bool> _loginWithFallback() async {
+    List<String> scopes = List.from(QfApiConfig.scopes);
+
+    while (true) {
+      try {
+        return await _loginWithScopes(scopes);
+      } catch (e) {
+        if (_isInvalidScopeError(e)) {
+          final rejected = _extractRejectedScope(e);
+          if (rejected != null &&
+              !_coreScopes.contains(rejected) &&
+              scopes.contains(rejected)) {
+            Logger.warning(
+              'Scope "$rejected" rejected by server, retrying without it',
+              feature: 'QfAuth',
+            );
+            scopes = List.from(scopes)..remove(rejected);
+            if (scopes.isNotEmpty) continue;
+          }
+          // Couldn't identify the failing scope — fall back to core only.
+          if (!_everyScopeInCore(scopes)) {
+            Logger.warning(
+              'Falling back to core scopes only',
+              feature: 'QfAuth',
+            );
+            return await _loginWithScopes(_coreScopes);
+          }
+        }
+        rethrow;
+      }
+    }
+  }
+
+  bool _everyScopeInCore(List<String> scopes) =>
+      scopes.every((s) => _coreScopes.contains(s));
+
+  Future<bool> _loginWithScopes(List<String> scopes) async {
+    final AuthorizationTokenResponse result = await _appAuth
+        .authorizeAndExchangeCode(
+          AuthorizationTokenRequest(
+            QfApiConfig.clientId,
+            QfApiConfig.redirectUri,
+            clientSecret: QfApiConfig.clientSecret.isNotEmpty
+                ? QfApiConfig.clientSecret
+                : null,
+            serviceConfiguration: AuthorizationServiceConfiguration(
+              authorizationEndpoint: _config.authorizationEndpoint,
+              tokenEndpoint: _config.tokenEndpoint,
+            ),
+            scopes: scopes,
+          ),
+        );
+
+    if (result.accessToken != null) {
+      await _saveTokens(result);
+      Logger.info('Successfully logged in via QF OAuth', feature: 'QfAuth');
+      return true;
+    }
+    Logger.warning(
+      'Login returned null response — user may have cancelled',
+      feature: 'QfAuth',
+    );
+    return false;
   }
 
   @override
@@ -64,6 +135,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     await _secureStorage.delete(key: _accessTokenKey);
     await _secureStorage.delete(key: _refreshTokenKey);
     await _secureStorage.delete(key: _idTokenKey);
+    await _secureStorage.delete(key: QfApiConfig.storedFlavorKey);
     Logger.info('Logged out from QF', feature: 'QfAuth');
   }
 
@@ -90,40 +162,96 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
   @override
   Future<bool> refreshToken() async {
     try {
-      final refreshToken = await getRefreshToken();
-      if (refreshToken == null) return false;
-
-      final TokenResponse? result = await _appAuth.token(
-        TokenRequest(
-          QfApiConfig.clientId,
-          QfApiConfig.redirectUri,
-          refreshToken: refreshToken,
-          serviceConfiguration: AuthorizationServiceConfiguration(
-            authorizationEndpoint: _config.authorizationEndpoint,
-            tokenEndpoint: _config.tokenEndpoint,
-          ),
-          scopes: QfApiConfig.scopes,
-        ),
-      );
-
-      if (result != null && result.accessToken != null) {
-        await _saveTokens(result);
-        Logger.info('Successfully refreshed QF tokens', feature: 'QfAuth');
-        return true;
-      }
-      return false;
+      return await _refreshWithFallback();
     } catch (e) {
       Logger.error('Failed to refresh token: $e', feature: 'QfAuth');
-      // If refresh fails (e.g., refresh token expired or revoked), clear local tokens
       await logout();
       return false;
     }
+  }
+
+  Future<bool> _refreshWithFallback() async {
+    List<String> scopes = List.from(QfApiConfig.scopes);
+
+    while (true) {
+      try {
+        return await _refreshWithScopes(scopes);
+      } catch (e) {
+        if (_isInvalidScopeError(e)) {
+          final rejected = _extractRejectedScope(e);
+          if (rejected != null &&
+              !_coreScopes.contains(rejected) &&
+              scopes.contains(rejected)) {
+            Logger.warning(
+              'Token refresh: scope "$rejected" rejected, retrying without it',
+              feature: 'QfAuth',
+            );
+            scopes = List.from(scopes)..remove(rejected);
+            if (scopes.isNotEmpty) continue;
+          }
+          if (!_everyScopeInCore(scopes)) {
+            Logger.warning(
+              'Token refresh: falling back to core scopes only',
+              feature: 'QfAuth',
+            );
+            try {
+              return await _refreshWithScopes(_coreScopes);
+            } catch (_) {
+              await logout();
+              return false;
+            }
+          }
+        }
+        rethrow;
+      }
+    }
+  }
+
+  Future<bool> _refreshWithScopes(List<String> scopes) async {
+    final refreshToken = await getRefreshToken();
+    if (refreshToken == null) return false;
+
+    final TokenResponse result = await _appAuth.token(
+      TokenRequest(
+        QfApiConfig.clientId,
+        QfApiConfig.redirectUri,
+        refreshToken: refreshToken,
+        clientSecret: QfApiConfig.clientSecret.isNotEmpty
+            ? QfApiConfig.clientSecret
+            : null,
+        serviceConfiguration: AuthorizationServiceConfiguration(
+          authorizationEndpoint: _config.authorizationEndpoint,
+          tokenEndpoint: _config.tokenEndpoint,
+        ),
+        scopes: scopes,
+      ),
+    );
+
+    if (result.accessToken != null) {
+      await _saveTokens(result);
+      Logger.info('Successfully refreshed QF tokens', feature: 'QfAuth');
+      return true;
+    }
+    return false;
   }
 
   @override
   Future<bool> isAuthenticated() async {
     final accessToken = await getAccessToken();
     if (accessToken == null) return false;
+
+    final storedFlavor = await _secureStorage.read(
+      key: QfApiConfig.storedFlavorKey,
+    );
+    if (storedFlavor != null && storedFlavor != QfApiConfig.currentFlavor) {
+      Logger.warning(
+        'Flavor mismatch: stored=$storedFlavor current=${QfApiConfig.currentFlavor}. '
+        'Clearing stale tokens.',
+        feature: 'QfAuth',
+      );
+      await logout();
+      return false;
+    }
 
     // Check if the idToken is expired as a proxy for access token.
     // If we only had an access token, we might need to rely on api calls to know for sure,
@@ -134,6 +262,31 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
       return await refreshToken();
     }
     return true;
+  }
+
+  @override
+  Future<void> revokeAndDeleteData() async {
+    // Attempt to revoke the refresh token with QF's revocation endpoint
+    try {
+      final token = await getRefreshToken();
+      if (token != null) {
+        await Dio().post(
+          '${_config.authBaseUrl}/oauth2/revoke',
+          data: 'token=$token&client_id=${QfApiConfig.clientId}',
+          options: Options(contentType: Headers.formUrlEncodedContentType),
+        );
+        Logger.info('QF token revoked', feature: 'QfAuth');
+      }
+    } catch (e) {
+      Logger.warning(
+        'Token revocation failed (continuing with local cleanup): $e',
+        feature: 'QfAuth',
+      );
+    }
+
+    // Clear all local tokens regardless of revocation result
+    await logout();
+    Logger.info('All QF data deleted', feature: 'QfAuth');
   }
 
   Future<void> _saveTokens(TokenResponse response) async {
@@ -150,10 +303,11 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
       );
     }
     if (response.idToken != null) {
-      await _secureStorage.write(
-        key: _idTokenKey,
-        value: response.idToken,
-      );
+      await _secureStorage.write(key: _idTokenKey, value: response.idToken);
     }
+    await _secureStorage.write(
+      key: QfApiConfig.storedFlavorKey,
+      value: QfApiConfig.currentFlavor,
+    );
   }
 }

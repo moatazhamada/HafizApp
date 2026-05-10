@@ -17,8 +17,10 @@ import '../presentation/cloud_sync/cloud_sync_screen.dart';
 import '../presentation/audio_player/audio_player_screen.dart';
 import '../presentation/mushaf_screen/mushaf_screen.dart';
 import '../presentation/onboarding_screen/mushaf_type_onboarding.dart';
+import '../presentation/goals/goals_screen.dart';
 import '../presentation/statistics_screen/statistics_screen.dart';
 import '../presentation/verse_study/verse_study_screen.dart';
+import '../presentation/changelog/changelog_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -33,6 +35,7 @@ class AppRoutes {
   static const String recitationSessionsPage = '/recitation_sessions';
   static const String memorizationPage = '/memorization';
   static const String khatmahPage = '/khatmah';
+  static const String goalsPage = '/goals';
   static const String settingsScreen = '/settings';
   static const String musaliTeaserScreen = '/musali_teaser_screen';
   static const String cloudSyncPage = '/cloud_sync';
@@ -41,6 +44,7 @@ class AppRoutes {
   static const String mushafTypeOnboarding = '/mushaf_type_onboarding';
   static const String statisticsScreen = '/statistics';
   static const String verseStudyScreen = '/verse_study';
+  static const String changelogScreen = '/changelog';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -57,6 +61,7 @@ class AppRoutes {
     recitationSessionsPage: RecitationSessionScreen.builder,
     memorizationPage: MemorizationScreen.builder,
     khatmahPage: KhatmahScreen.builder,
+    goalsPage: (context) => const GoalsScreen(),
     settingsScreen: (context) => const SettingsScreen(),
     musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),
@@ -74,9 +79,16 @@ class AppRoutes {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
           {};
-      return MushafScreen(initialPage: args['initialPage'] as int? ?? 1);
+      return MushafScreen(initialPage: args['initialPage'] as int?);
     },
-    mushafTypeOnboarding: (context) => const MushafTypeOnboarding(),
+    mushafTypeOnboarding: (context) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
+          {};
+      return MushafTypeOnboarding(
+        fromSettings: args['fromSettings'] as bool? ?? false,
+      );
+    },
     statisticsScreen: (context) => StatisticsScreen.builder(context),
     verseStudyScreen: (context) {
       final args =
@@ -84,5 +96,6 @@ class AppRoutes {
           {};
       return VerseStudyScreen(verseKey: args['verseKey'] as String? ?? '1:1');
     },
+    changelogScreen: (context) => const ChangelogScreen(),
   };
 }

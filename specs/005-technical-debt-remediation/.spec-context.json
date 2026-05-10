@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "005-technical-debt-remediation",
+  "branch": "005-technical-debt-remediation",
+  "selectedAt": "2026-04-28T01:15:00.000Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}

@@ -16,7 +16,9 @@ class VerseStudyScreen extends StatelessWidget {
           VerseStudyBloc(dataSource: di.sl<QfVerseStudyRemoteDataSource>())
             ..add(LoadVerseStudy(verseKey)),
       child: Scaffold(
-        appBar: AppBar(title: Text('Verse Study: $verseKey')),
+        appBar: AppBar(
+          title: Text('lbl_verse_study_title'.tr.replaceAll('{key}', verseKey)),
+        ),
         body: const _VerseStudyView(),
       ),
     );
@@ -54,12 +56,10 @@ class _VerseStudyView extends StatelessWidget {
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () => context.read<VerseStudyBloc>().add(
-                      LoadVerseStudy(
-                        context.read<VerseStudyBloc>().state.toString(),
-                      ),
+                      LoadVerseStudy(state.verseKey!),
                     ),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text('lbl_retry'.tr),
                   ),
                 ],
               ),
@@ -74,7 +74,7 @@ class _VerseStudyView extends StatelessWidget {
               children: [
                 if (state.arabicText.isNotEmpty) ...[
                   _SectionCard(
-                    title: 'Arabic',
+                    title: 'lbl_arabic'.tr,
                     icon: Icons.format_quote,
                     color: Colors.teal,
                     child: SelectableText(
@@ -83,7 +83,7 @@ class _VerseStudyView extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 26,
                         height: 2.0,
-                        fontFamily: 'Uthmani',
+                        fontFamily: 'NotoNaskhArabic',
                       ),
                     ),
                   ),
@@ -91,7 +91,7 @@ class _VerseStudyView extends StatelessWidget {
                 ],
                 if (state.translation.isNotEmpty) ...[
                   _SectionCard(
-                    title: 'Translation',
+                    title: 'lbl_translation'.tr,
                     icon: Icons.translate,
                     color: Colors.blue,
                     child: SelectableText(_stripHtml(state.translation)),
@@ -100,7 +100,7 @@ class _VerseStudyView extends StatelessWidget {
                 ],
                 if (state.tafsir.isNotEmpty) ...[
                   _SectionCard(
-                    title: 'Tafsir (Ibn Kathir)',
+                    title: 'lbl_tafsir_ibn_kathir'.tr,
                     icon: Icons.menu_book,
                     color: Colors.deepPurple,
                     child: SelectableText(_stripHtml(state.tafsir)),

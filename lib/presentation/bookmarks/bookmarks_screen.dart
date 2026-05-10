@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
+import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../widgets/shimmer_loading.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -21,19 +24,13 @@ class BookmarksScreen extends StatelessWidget {
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => NavigatorService.goBack(),
+            tooltip: 'lbl_back'.tr,
           ),
         ),
         centerTitle: true,
         title: Semantics(
           header: true,
-          child: Text(
-            'lbl_bookmarks'.tr,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-            ),
-          ),
+          child: Text('lbl_bookmarks'.tr, style: AppTextStyles.headingMedium),
         ),
       ),
       body: BlocConsumer<BookmarkBloc, BookmarkState>(
@@ -52,7 +49,7 @@ class BookmarksScreen extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is BookmarkLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const ShimmerLoadingList();
           } else if (state is BookmarkLoaded) {
             if (state.bookmarks.isEmpty) {
               return Center(
@@ -82,8 +79,12 @@ class BookmarksScreen extends StatelessWidget {
                 ),
               );
             }
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<BookmarkBloc>().add(const LoadBookmarksEvent());
+              },
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: state.bookmarks.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
@@ -120,7 +121,7 @@ class BookmarksScreen extends StatelessWidget {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        color: AppColors.of(context).surface,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -144,7 +145,6 @@ class BookmarksScreen extends StatelessWidget {
                               arguments: {
                                 'surah': surah,
                                 'verseIndex': bookmark.verseNumber - 1,
-                                'resume': true,
                               },
                             ).then((_) {
                               // Refresh list when returning from Surah page
@@ -163,14 +163,14 @@ class BookmarksScreen extends StatelessWidget {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF006754,
-                                      ).withValues(alpha: 0.1),
+                                      color: AppColors.of(
+                                        context,
+                                      ).primary.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.bookmark,
-                                      color: Color(0xFF006754),
+                                      color: AppColors.of(context).primary,
                                       size: 24,
                                     ),
                                   ),
@@ -184,14 +184,12 @@ class BookmarksScreen extends StatelessWidget {
                                       Text(
                                         surah.localizedName(context),
                                         textDirection: TextDirection.rtl,
-                                        style: TextStyle(
-                                          fontFamily: 'Poppins',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF2D2D2D),
-                                        ),
+                                        style: AppTextStyles.headingSmall
+                                            .copyWith(
+                                              color: AppColors.of(
+                                                context,
+                                              ).onSurface,
+                                            ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
@@ -223,6 +221,7 @@ class BookmarksScreen extends StatelessWidget {
                                         ),
                                       );
                                     },
+                                    tooltip: 'lbl_delete'.tr,
                                   ),
                                 ),
                               ],
@@ -234,6 +233,7 @@ class BookmarksScreen extends StatelessWidget {
                   ),
                 );
               },
+            ),
             );
           } else if (state is BookmarkError) {
             return Center(

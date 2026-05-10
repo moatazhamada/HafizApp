@@ -9,44 +9,16 @@ abstract class CloudSyncState extends Equatable {
 
 class CloudSyncInitial extends CloudSyncState {}
 
-class CloudSyncLoading extends CloudSyncState {}
-
-class CloudSyncAuthenticated extends CloudSyncState {
-  final bool isAuthenticated;
-
-  const CloudSyncAuthenticated(this.isAuthenticated);
-
-  @override
-  List<Object> get props => [isAuthenticated];
-}
-
-class CloudSyncSuccess extends CloudSyncState {
-  final String message;
-
-  const CloudSyncSuccess(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
-class CloudSyncError extends CloudSyncState {
-  final String message;
-
-  const CloudSyncError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
 class QfSyncLoading extends CloudSyncState {}
 
 class QfSyncSuccess extends CloudSyncState {
-  final int bookmarkCount;
+  final int pushed;
+  final int pulled;
 
-  const QfSyncSuccess(this.bookmarkCount);
+  const QfSyncSuccess({required this.pushed, required this.pulled});
 
   @override
-  List<Object> get props => [bookmarkCount];
+  List<Object> get props => [pushed, pulled];
 }
 
 class QfSyncError extends CloudSyncState {

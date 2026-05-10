@@ -4,11 +4,16 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class AnalyticsService {
+  FirebaseAnalytics? _cached;
+  bool _checked = false;
+
   FirebaseAnalytics? get _analytics {
+    if (_checked) return _cached;
+    _checked = true;
     try {
-      // Avoid accessing Firebase before initialization
       if (Firebase.apps.isEmpty) return null;
-      return FirebaseAnalytics.instance;
+      _cached = FirebaseAnalytics.instance;
+      return _cached;
     } catch (_) {
       return null;
     }
@@ -62,7 +67,7 @@ class AnalyticsService {
     if (a == null) return;
     await a.logEvent(
       name: 'continue_reading',
-      parameters: {'surah_id': surahId, 'offset': ?offset},
+      parameters: {'surah_id': surahId, 'offset': offset ?? 0.0},
     );
   }
 

@@ -17,12 +17,16 @@ class KhatmahDashboardLoaded extends KhatmahState {
   final DailyReadingLog? todayLog;
   final List<DailyReadingLog> recentLogs;
   final int streak;
+  final int cloudStreak;
+  final int localStreak;
 
   const KhatmahDashboardLoaded({
     this.goal,
     this.todayLog,
     this.recentLogs = const [],
     this.streak = 0,
+    this.cloudStreak = 0,
+    this.localStreak = 0,
   });
 
   double get todayProgress {
@@ -34,7 +38,7 @@ class KhatmahDashboardLoaded extends KhatmahState {
   int get versesReadToday => todayLog?.versesRead ?? 0;
 
   @override
-  List<Object?> get props => [goal, todayLog, recentLogs, streak];
+  List<Object?> get props => [goal, todayLog, recentLogs, streak, cloudStreak, localStreak];
 }
 
 class KhatmahError extends KhatmahState {

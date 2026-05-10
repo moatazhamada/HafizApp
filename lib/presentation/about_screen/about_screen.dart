@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
-import 'package:hafiz_app/main.dart' show globalMessengerKey;
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/utils/platform_info.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
@@ -40,9 +39,12 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final linkStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: isDark ? const Color(0xFF87D1A4) : const Color(0xFF006754),
+      color: isDark
+          ? AppColors.of(context).accent
+          : AppColors.of(context).primary,
       decoration: TextDecoration.underline,
     );
 
@@ -64,17 +66,21 @@ class _AboutScreenState extends State<AboutScreen> {
           ok = await launchUrlString(url, mode: LaunchMode.platformDefault);
         }
         if (!ok) {
-          globalMessengerKey.currentState?.showSnackBar(
-            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+            );
+          }
         }
         if (ok) {
           await sl<AnalyticsService>().logLinkOpened(url);
         }
       } catch (e) {
-        globalMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+          );
+        }
       }
     }
 
@@ -98,7 +104,12 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: isSending ? null : () => Navigator.of(ctx).pop(),
+                onPressed: isSending
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        controller.dispose();
+                      },
                 child: Text('lbl_cancel'.tr),
               ),
               FilledButton(
@@ -110,24 +121,36 @@ class _AboutScreenState extends State<AboutScreen> {
 
                         setState(() => isSending = true);
                         try {
-                          await FirebaseFirestore.instance
-                              .collection('feedback')
-                              .add({
-                                'message': msg,
-                                'timestamp': FieldValue.serverTimestamp(),
-                                'platform': getPlatformLabel(),
-                                'version': _version.isNotEmpty
-                                    ? _version
-                                    : 'Unknown',
-                              });
+                          final body = Uri.encodeComponent(
+                            '$msg\n\n---\n'
+                            'Platform: ${getPlatformLabel()}\n'
+                            'Version: ${_version.isNotEmpty ? _version : 'Unknown'}',
+                          );
+                          final launched = await launchUrlString(
+                            'mailto:support@hafizapp.com?subject=Hafiz%20App%20Feedback&body=$body',
+                          );
 
                           if (context.mounted) {
                             Navigator.of(ctx).pop();
-                            globalMessengerKey.currentState?.showSnackBar(
-                              SnackBar(content: Text('about_feedback_sent'.tr)),
-                            );
+                            controller.dispose();
+                            if (launched) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('about_feedback_sent'.tr),
+                                ),
+                              );
+                            } else {
+                              await Clipboard.setData(ClipboardData(text: msg));
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('msg_feedback_copied'.tr),
+                                  ),
+                                );
+                              }
+                            }
                             await sl<AnalyticsService>().logFeedbackSubmitted(
-                              method: 'firestore',
+                              method: 'email',
                             );
                           }
                         } catch (e) {
@@ -273,6 +296,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ListTile(
                   leading: const Icon(Icons.public),
                   title: Text('about_source_quran_api'.tr, style: linkStyle),
+                  subtitle: Text('about_source_quran_api_desc'.tr),
                   onTap: () => openExternal('https://api.quran.com/api/v4'),
                   onLongPress: () => copy('https://api.quran.com/api/v4'),
                   trailing: const Icon(Icons.open_in_new),
@@ -280,9 +304,73 @@ class _AboutScreenState extends State<AboutScreen> {
                 ListTile(
                   leading: const Icon(Icons.public),
                   title: Text('about_source_tanzil'.tr, style: linkStyle),
+                  subtitle: Text('about_source_tanzil_desc'.tr),
                   onTap: () => openExternal('https://tanzil.net/download/'),
                   onLongPress: () => copy('https://tanzil.net/download/'),
                   trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cloud_outlined),
+                  title: Text('about_source_qf_content'.tr, style: linkStyle),
+                  subtitle: Text('about_source_qf_content_desc'.tr),
+                  onTap: () => openExternal('https://api.quran.foundation'),
+                  onLongPress: () => copy('https://api.quran.foundation'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.sync_outlined),
+                  title: Text('about_source_qf_sync'.tr, style: linkStyle),
+                  subtitle: Text('about_source_qf_sync_desc'.tr),
+                  onTap: () => openExternal('https://oauth2.quran.foundation'),
+                  onLongPress: () => copy('https://oauth2.quran.foundation'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.record_voice_over_outlined),
+                  title: Text('about_source_quranhub'.tr, style: linkStyle),
+                  subtitle: Text('about_source_quranhub_desc'.tr),
+                  onTap: () => openExternal('https://quranhub.com'),
+                  onLongPress: () => copy('https://quranhub.com'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: Icon(Icons.mic_outlined, color: theme.disabledColor),
+                  title: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'about_source_qurani'.tr,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.disabledColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'lbl_coming_soon'.tr,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Text(
+                    'about_source_qurani_desc'.tr,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.disabledColor,
+                    ),
+                  ),
+                  trailing: Icon(Icons.open_in_new, color: theme.disabledColor),
                 ),
               ],
             ),
@@ -295,8 +383,9 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
-          const SizedBox(height: 24),
-          const MusaliComingSoonCard(),
+          // TODO: Uncomment when Musali is ready to announce
+          // const SizedBox(height: 24),
+          // const MusaliComingSoonCard(),
         ],
       ),
     );

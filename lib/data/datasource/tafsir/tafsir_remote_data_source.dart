@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 
 abstract class TafsirRemoteDataSource {
   Future<String> getTafsir(int surahNumber, int verseNumber);
@@ -14,17 +15,18 @@ class TafsirRemoteDataSourceImpl implements TafsirRemoteDataSource {
     final response = await dio.get(
       '/verses/by_key/$surahNumber:$verseNumber',
       queryParameters: {
-        'translations': '169', // Ibn Kathir English (169)
+        'translations': ApiConfig.tafsirId,
         'fields': 'text_uthmani',
       },
     );
 
-    final verses = response.data['verses'] as List?;
-    if (verses == null || verses.isEmpty) {
+    // /verses/by_key/{key} returns { "verse": {...} } (singular), not "verses" (plural).
+    final verse = response.data['verse'] as Map<String, dynamic>?;
+    if (verse == null) {
       throw Exception('No tafsir found');
     }
 
-    final translations = verses[0]['translations'] as List?;
+    final translations = verse['translations'] as List?;
     if (translations == null || translations.isEmpty) {
       throw Exception('No translation found');
     }

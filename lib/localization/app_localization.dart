@@ -12,12 +12,13 @@ class AppLocalization {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': enUs,
-    'ar': arEg
+    'ar': arEg,
   };
 
-  static AppLocalization of() {
-    return Localizations.of<AppLocalization>(
-        NavigatorService.navigatorKey.currentContext!, AppLocalization)!;
+  static AppLocalization? of() {
+    final context = NavigatorService.navigatorKey.currentContext;
+    if (context == null) return null;
+    return Localizations.of<AppLocalization>(context, AppLocalization);
   }
 
   static List<String> languages() => _localizedValues.keys.toList();
@@ -53,5 +54,5 @@ class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalization> {
 }
 
 extension LocalizationExtension on String {
-  String get tr => AppLocalization.of().getString(this);
+  String get tr => AppLocalization.of()?.getString(this) ?? this;
 }

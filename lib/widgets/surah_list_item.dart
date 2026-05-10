@@ -82,7 +82,7 @@ class SurahListItem extends StatelessWidget {
                     nameArabic,
                     textDirection: TextDirection.rtl,
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      fontFamily: 'Amiri',
+                      fontFamily: 'NotoNaskhArabic',
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
                       height: 1.2,

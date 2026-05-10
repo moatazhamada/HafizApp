@@ -2,6 +2,11 @@
 
 تطبيق غير ربحي يهدف إلى تقديم تجربة محترمة وموثوقة لقراءة القرآن الكريم، مع دعم للعمل دون اتصال وحفظ حالة الصفحة وموضع التمرير.
 
+[![Google Play](https://img.shields.io/badge/Google_Play-تحميل-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app)
+[![YouTube](https://img.shields.io/badge/YouTube-فيديو_توضيحي-red?logo=youtube)](https://youtu.be/A9g0FEGydnY)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
+
 ## الشكر والتقدير
 
 - الفكرة الأصلية والمشروع الأولي من: https://github.com/abualgait

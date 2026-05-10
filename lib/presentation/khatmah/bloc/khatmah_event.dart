@@ -27,3 +27,5 @@ class RecordReading extends KhatmahEvent {
   @override
   List<Object?> get props => [verses, surahs];
 }
+
+class SyncActivityDays extends KhatmahEvent {}

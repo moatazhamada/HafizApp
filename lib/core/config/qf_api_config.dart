@@ -7,27 +7,52 @@ class QfApiConfig {
   static const String productionAuthBaseUrl = 'https://oauth2.quran.foundation';
   static const String productionApiBaseUrl = 'https://apis.quran.foundation';
 
-  static const String clientId = String.fromEnvironment(
-    'QF_CLIENT_ID',
-    defaultValue: '614c5855-f66a-426d-b8b2-021ba3293e12',
+  // Derive environment from the flavor dart-define (set automatically by
+  // Flutter's --flavor flag).  This is the single source of truth — no
+  // separate QF_PRODUCTION flag needed.
+  static const String _flavor = String.fromEnvironment(
+    'flavor',
+    defaultValue: 'production',
   );
-  static const String clientSecret = String.fromEnvironment(
-    'QF_CLIENT_SECRET',
-    defaultValue: '',
-  );
+  static const bool defaultIsProduction = _flavor != 'prelive';
 
-  static const String redirectUri = 'hafizapp://oauth/callback';
+  // Production credentials come from --dart-define at build time.
+  // Prelive uses hardcoded test credentials provided by QF.
+  static const String clientId = defaultIsProduction
+      ? String.fromEnvironment('QF_CLIENT_ID', defaultValue: '')
+      : '5cd47ccf-93e5-47d0-83b5-9bf538bb5759';
+  static const String clientSecret = defaultIsProduction
+      ? String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: '')
+      : String.fromEnvironment('QF_CLIENT_SECRET',
+          defaultValue: 'pd9aPG1ieJL2.34Qi-LV6E8FBG');
+
+  // Redirect URI must match the app-auth scheme registered in
+  // AndroidManifest / Info.plist.  The prelive flavor uses a separate scheme
+  // so both builds can coexist on the same device.
+  static const String redirectUri = defaultIsProduction
+      ? 'hafizapp://oauth/callback'
+      : 'hafizapp-prelive://oauth/callback';
+
+  static const String storedFlavorKey = 'qf_stored_flavor';
+  static const String currentFlavor = _flavor;
+
+  static bool get isProductionBuild => defaultIsProduction;
 
   static const List<String> scopes = [
     'openid',
     'offline_access',
     'user',
+    'bookmark',
     'collection',
+    'reading_session',
+    'goal',
+    'streak',
   ];
 
   final bool isProduction;
 
-  const QfApiConfig({this.isProduction = false});
+  const QfApiConfig({bool? isProduction})
+    : isProduction = isProduction ?? defaultIsProduction;
 
   String get authBaseUrl =>
       isProduction ? productionAuthBaseUrl : preliveAuthBaseUrl;
@@ -36,4 +61,12 @@ class QfApiConfig {
 
   String get authorizationEndpoint => '$authBaseUrl/oauth2/auth';
   String get tokenEndpoint => '$authBaseUrl/oauth2/token';
+}
+
+class QfApiConfigResolver {
+  static const QfApiConfig _default = QfApiConfig();
+  static const QfApiConfig _prelive = QfApiConfig(isProduction: false);
+
+  static QfApiConfig resolve() =>
+      QfApiConfig.defaultIsProduction ? _default : _prelive;
 }

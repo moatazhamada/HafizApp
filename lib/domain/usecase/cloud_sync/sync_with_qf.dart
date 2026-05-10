@@ -8,14 +8,21 @@ import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.da
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
-class SyncWithQf implements UseCase<int, NoParams> {
+class QfSyncResult {
+  final int pushed;
+  final int pulled;
+
+  const QfSyncResult({required this.pushed, required this.pulled});
+}
+
+class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   final QfUserApiRemoteDataSource qfUserApi;
   final BookmarkLocalDataSource bookmarkLocalDataSource;
 
   SyncWithQf({required this.qfUserApi, required this.bookmarkLocalDataSource});
 
   @override
-  Future<Either<Failure, int>> call(NoParams params) async {
+  Future<Either<Failure, QfSyncResult>> call(NoParams params) async {
     try {
       final localBookmarks = await bookmarkLocalDataSource.getBookmarks();
 
@@ -24,6 +31,21 @@ class SyncWithQf implements UseCase<int, NoParams> {
         final absoluteId = _surahVerseToAbsoluteId(b.surahId, b.verseNumber);
         localVerseIds.add(absoluteId);
       }
+
+      String? defaultCollectionId;
+      try {
+        final collections = await qfUserApi.getCollections();
+        final existing = collections.cast<Map<String, dynamic>?>().firstWhere(
+          (c) => c?['name'] == 'Hafiz Bookmarks',
+          orElse: () => null,
+        );
+        if (existing != null) {
+          defaultCollectionId = existing['id']?.toString();
+        } else {
+          final created = await qfUserApi.createCollection('Hafiz Bookmarks');
+          defaultCollectionId = created?['id']?.toString();
+        }
+      } catch (_) {}
 
       final qfBookmarks = await qfUserApi.getBookmarks();
       final Set<int> qfVerseIds = {};
@@ -40,7 +62,7 @@ class SyncWithQf implements UseCase<int, NoParams> {
       final toPush = localVerseIds.difference(qfVerseIds);
       for (final verseId in toPush) {
         try {
-          await qfUserApi.addBookmark(verseId);
+          await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
         } catch (e) {
           Logger.warning(
             'Failed to push bookmark $verseId: $e',
@@ -80,7 +102,13 @@ class SyncWithQf implements UseCase<int, NoParams> {
         'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}',
         feature: 'SyncWithQf',
       );
-      return Right(localBookmarks.length + toPull.length);
+      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length));
+    } on InsufficientScopeFailure {
+      Logger.warning(
+        'QF sync blocked by insufficient scope',
+        feature: 'SyncWithQf',
+      );
+      return Left(InsufficientScopeFailure());
     } catch (e) {
       Logger.error('QF sync failed: $e', feature: 'SyncWithQf');
       return Left(ServerFailure('Failed to sync with Quran.com: $e'));

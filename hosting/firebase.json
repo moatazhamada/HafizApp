@@ -1,0 +1,19 @@
+{
+  "hosting": [
+    {
+      "target": "privacy-main",
+      "public": "privacy",
+      "ignore": ["firebase.json", "**/.*"]
+    },
+    {
+      "target": "privacy-new",
+      "public": "privacy",
+      "ignore": ["firebase.json", "**/.*"]
+    },
+    {
+      "target": "terms",
+      "public": "terms",
+      "ignore": ["firebase.json", "**/.*"]
+    }
+  ]
+}

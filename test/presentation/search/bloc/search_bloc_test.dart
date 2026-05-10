@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/data/datasource/qf_search/qf_search_remote_data_source.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
 import 'package:hafiz_app/presentation/search/bloc/search_bloc.dart';
@@ -9,8 +10,12 @@ import 'package:mocktail/mocktail.dart';
 
 class MockSurahRepository extends Mock implements SurahRepository {}
 
+class MockQfSearchRemoteDataSource extends Mock
+    implements QfSearchRemoteDataSource {}
+
 void main() {
   late MockSurahRepository mockRepository;
+  late MockQfSearchRemoteDataSource mockSearchRemote;
   late SearchBloc searchBloc;
 
   final testVerses = [
@@ -24,7 +29,21 @@ void main() {
 
   setUp(() {
     mockRepository = MockSurahRepository();
-    searchBloc = SearchBloc(repository: mockRepository);
+    mockSearchRemote = MockQfSearchRemoteDataSource();
+    searchBloc = SearchBloc(
+      repository: mockRepository,
+      searchRemoteDataSource: mockSearchRemote,
+    );
+
+    // Default: online search returns empty (simulates offline or no online results)
+    when(
+      () => mockSearchRemote.search(
+        any(),
+        size: any(named: 'size'),
+        page: any(named: 'page'),
+        language: any(named: 'language'),
+      ),
+    ).thenAnswer((_) async => []);
   });
 
   tearDown(() => searchBloc.close());
@@ -38,7 +57,7 @@ void main() {
       'emits [SearchInitial] when query is empty',
       build: () => searchBloc,
       act: (bloc) => bloc.add(const SearchQueryChanged('')),
-      wait: const Duration(milliseconds: 600), // Account for debounce
+      wait: const Duration(milliseconds: 600),
       expect: () => [isA<SearchInitial>()],
     );
 
@@ -102,10 +121,7 @@ void main() {
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Fatiha')),
       wait: const Duration(milliseconds: 600),
-      expect: () => [
-        isA<SearchLoading>(),
-        isA<SearchLoaded>(), // Still succeeds with surah-name-only results
-      ],
+      expect: () => [isA<SearchLoading>(), isA<SearchLoaded>()],
     );
 
     blocTest<SearchBloc, SearchState>(
@@ -121,6 +137,58 @@ void main() {
       expect: () => [isA<SearchLoading>(), isA<SearchLoaded>()],
       verify: (_) {
         verifyNever(() => mockRepository.searchVerses(any()));
+      },
+    );
+
+    blocTest<SearchBloc, SearchState>(
+      'merges online results when local results are sparse',
+      build: () {
+        when(
+          () => mockRepository.searchVerses(any()),
+        ).thenAnswer((_) async => const Right([]));
+        when(
+          () => mockSearchRemote.search(
+            any(),
+            size: any(named: 'size'),
+            page: any(named: 'page'),
+            language: any(named: 'language'),
+          ),
+        ).thenAnswer(
+          (_) async => [
+            {
+              'verse_key': '2:255',
+              'text': 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ',
+              'translations': [
+                {
+                  'text':
+                      'Allah - there is no deity except Him, the Ever-Living.',
+                },
+              ],
+            },
+          ],
+        );
+        return searchBloc;
+      },
+      act: (bloc) => bloc.add(const SearchQueryChanged('Allah')),
+      wait: const Duration(milliseconds: 600),
+      expect: () => [
+        isA<SearchLoading>(),
+        predicate<SearchState>((state) {
+          if (state is SearchLoaded) {
+            return state.verseResults.isNotEmpty && state.isSemantic;
+          }
+          return false;
+        }),
+      ],
+      verify: (_) {
+        verify(
+          () => mockSearchRemote.search(
+            any(),
+            size: any(named: 'size'),
+            page: any(named: 'page'),
+            language: any(named: 'language'),
+          ),
+        ).called(1);
       },
     );
   });

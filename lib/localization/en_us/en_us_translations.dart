@@ -18,7 +18,19 @@ final Map<String, String> enUs = {
   'about_language_title': 'Language',
   'about_sources_title': 'Data Sources',
   'about_source_quran_api': 'Quran.com API v4',
+  'about_source_quran_api_desc':
+      'Surah metadata, translations, and audio recitations',
   'about_source_tanzil': 'Tanzil (Verified Uthmani Text)',
+  'about_source_tanzil_desc': 'Local Quran text for offline reading',
+  'about_source_qf_content': 'Quran Foundation Content API',
+  'about_source_qf_content_desc': 'Tafsir, translations, and verse study data',
+  'about_source_qf_sync': 'Quran Foundation Sync (OAuth2)',
+  'about_source_qf_sync_desc': 'Bookmark sync with Quran.com',
+  'about_source_quranhub': 'QuranHub Qiraat API',
+  'about_source_quranhub_desc': 'Qiraat (recitation styles) data',
+  'about_source_qurani': 'Qurani.ai QRC',
+  'about_source_qurani_desc': 'Voice recitation verification and coaching',
+  'lbl_coming_soon': 'Coming Soon',
   'lbl_ayah': 'Ayah',
   'about_feedback_title': 'Feedback',
   'about_feedback_desc': 'Report bugs or suggest new features via email.',
@@ -37,6 +49,8 @@ final Map<String, String> enUs = {
   'lbl_close': 'Close',
   'msg_unmark_practice': 'Unmark',
   'msg_mark_practice': 'Mark for Practice',
+  'msg_marked_error': 'Verse marked for practice',
+  'msg_error_removed': 'Removed from practice list',
   'lbl_settings': 'Settings',
   'lbl_recitation_coach': 'Recitation Coach',
   'lbl_recitation_provider': 'Recitation Engine',
@@ -45,21 +59,29 @@ final Map<String, String> enUs = {
   'lbl_qiraat': 'Qiraat',
   'lbl_reciter': 'Reciter',
   'lbl_loading': 'Loading...',
-  'msg_local_whisper_tip': 'Offline Whisper',
-  'msg_local_whisper_desc': 'Runs on device; first use may be slower.',
-  'lbl_whisper_model': 'Whisper Model',
+  'msg_local_whisper_tip': 'Offline AI Speech Recognition',
+  'msg_local_whisper_desc':
+      'Works fully offline. More accurate for Quranic Arabic than device speech-to-text. First use downloads the selected model.',
+  'lbl_whisper_model': 'AI Model',
   'lbl_model_tiny': 'Tiny',
+  'lbl_model_tiny_desc': 'Fastest, lowest accuracy. Good for quick tests.',
   'lbl_model_base': 'Base',
+  'lbl_model_base_desc': 'Best balance of speed and accuracy.',
   'lbl_model_small': 'Small',
-  'lbl_model_tiny_size': '~75MB',
-  'lbl_model_base_size': '~142MB',
-  'lbl_model_small_size': '~466MB',
+  'lbl_model_small_desc': 'Most accurate, but slower and uses more memory.',
+  'lbl_model_recommended': 'Recommended',
+  'lbl_model_tiny_size': '~75 MB',
+  'lbl_model_base_size': '~142 MB',
+  'lbl_model_small_size': '~466 MB',
   'lbl_downloading_model': 'Downloading model',
-  'msg_model_download_wait': 'Please wait while the model downloads.',
+  'msg_model_downloading': 'Downloading... do not close the app',
+  'msg_model_download_failed':
+      'Download failed. Check your internet connection and try again.',
   'lbl_view_mode': 'Reading Mode',
   'lbl_view_continuous': 'Mushaf Page',
   'lbl_view_single_line': 'Single Line',
   'lbl_juz_index': 'Juz',
+  'lbl_juz': 'Juz',
   'lbl_system_default': 'System Default',
   'lbl_theme': 'Appearance',
   'lbl_theme_light': 'Light Mode',
@@ -92,6 +114,8 @@ final Map<String, String> enUs = {
   'lbl_verse_num': 'Ayah', // Unified to Ayah
   'lbl_remove_bookmark': 'Remove Bookmark',
   'lbl_add_bookmark': 'Add Bookmark',
+  'lbl_remove_surah_bookmark': 'Remove Surah Bookmark',
+  'lbl_add_surah_bookmark': 'Add Surah Bookmark',
   'lbl_delete': 'Delete',
   'msg_swipe_delete': 'Swipe to delete',
   // Surah
@@ -130,6 +154,8 @@ final Map<String, String> enUs = {
   'msg_offline': 'You are offline',
   // Voice Dialog
   'msg_mic_permission': 'Microphone Access',
+  'msg_mic_permission_desc':
+      'Hafiz needs microphone access to verify your recitation. You can change this anytime in your device settings.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility
@@ -148,23 +174,39 @@ final Map<String, String> enUs = {
   'lbl_verses': 'Verses',
   'msg_no_results': 'No results found',
   'msg_search_hint': 'Search for a Surah or verse',
+  'msg_search_online': 'Includes online results',
+  'msg_results_count': 'results found',
   'lbl_error': 'Error',
-  'msg_error_prefix': '', // Removed prefix for cleaner errors
+  'msg_error_prefix': '',
   'msg_could_not_open': 'Could not open: ',
   'lbl_search_surah': 'Search Surah...',
 
   // Cloud Sync
   'lbl_cloud_sync': 'Cloud Sync',
-  'msg_sync_bidirectional_complete': 'Bidirectional sync complete',
-  'msg_cloud_sync_error': 'Cloud sync error',
-
-  'lbl_sync_to_cloud': 'Sync to Cloud',
-  'lbl_sync_from_cloud': 'Sync from Cloud',
-  'lbl_sync_bidirectional': 'Bidirectional Sync',
-  'lbl_sign_in': 'Sign In',
-  'lbl_sign_out': 'Sign Out',
-  'lbl_not_authenticated': 'Not authenticated',
-  'lbl_authenticated': 'Authenticated',
+  'lbl_last_synced': 'Last synced',
+  'lbl_appearance': 'Appearance',
+  'lbl_reading': 'Reading',
+  'lbl_about': 'About',
+  'msg_qf_logged_in': 'Logged in to Quran.com',
+  'msg_qf_not_logged_in': 'Not logged in',
+  'msg_qf_login': 'Login with Quran.com',
+  'lbl_sign_out': 'Sign out',
+  'lbl_user': 'User',
+  'lbl_not_signed_in': 'Not signed in',
+  'lbl_tap_to_sign_in': 'Tap to sign in',
+  'lbl_bookmarks_sync': 'Sync bookmarks with Quran.com',
+  'msg_last_synced': 'Last synced: {time}',
+  'msg_login_to_sync': 'Login to Quran.com above to enable sync',
+  'msg_recitation_progress': 'Recitation progress',
+  'msg_local_data_note':
+      'Recitation progress and memorization data are stored locally on this device. Cloud backup coming soon.',
+  'msg_sync_complete': 'Sync complete — pushed {pushed}, pulled {pulled}',
+  'msg_login_cancelled': 'Login was cancelled or failed.',
+  'msg_login_not_configured':
+      'Login is not configured. Add your Quran.com client ID to continue.',
+  'msg_sync_failed': 'Failed to sync with Quran.com',
+  'msg_re_login_required':
+      'Please sign in again to grant updated permissions required by the server.',
 
   // Musali Teaser
   'musali_app_name': 'Musali',
@@ -252,11 +294,19 @@ final Map<String, String> enUs = {
   'lbl_mushaf': 'Mushaf',
   'lbl_jump_to_page': 'Jump to Page',
   'lbl_page': 'Page',
+  'lbl_page_number': 'Page Number',
   'lbl_go': 'Go',
 
   // Mushaf Type Onboarding
   'lbl_select_mushaf_type': 'Choose Mushaf Type',
   'msg_mushaf_type_desc': 'Select your preferred Quran script style',
+
+  // Mushaf Settings
+  'lbl_mushaf_type': 'Mushaf Type',
+  'lbl_clear_mushaf_cache': 'Clear Mushaf Image Cache',
+  'msg_clear_mushaf_cache_desc':
+      'Remove cached page images to free space or fix display issues',
+  'msg_cache_cleared': 'Image cache cleared',
 
   // Statistics
   'stats_title': 'My Progress',
@@ -264,6 +314,8 @@ final Map<String, String> enUs = {
   'stats_practice_verses': 'Practice Verses',
   'stats_surahs_completed': 'Surahs Completed',
   'stats_no_activity': 'Start reading to track your progress!',
+  'stats_streak': 'Current Streak',
+  'stats_cloud_streak': '+{count} days synced from cloud',
 
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
@@ -281,8 +333,152 @@ final Map<String, String> enUs = {
   'lbl_scroll_mode': 'Scroll Mode',
   'lbl_page_mode': 'Page Mode',
   'lbl_audio_player': 'Audio Player',
+  'lbl_rewind_10': 'Rewind 10 seconds',
+  'lbl_forward_10': 'Forward 10 seconds',
   'lbl_scroll_speed': 'Scroll Speed',
   'lbl_slow': 'Slow',
   'lbl_normal': 'Normal',
   'lbl_fast': 'Fast',
+  'lbl_whats_new': "What's New",
+  'lbl_version': 'Version',
+  'lbl_latest': 'Latest',
+  'lbl_special_thanks': 'Special Thanks',
+  'changelog_3_1_0_intro': 'Special thanks to our user ',
+  'changelog_3_1_0_user': 'HASBUL HSB',
+  'changelog_3_1_0_outro':
+      ' for his precise feedback on Surah Yasin (36:26), which led to this Uthmani Rasm script improvement. May Allah reward him.',
+  'changelog_3_1_0_1':
+      'Complete migration to Uthmani Rasm script — matching the standard Mushaf writing.',
+  'changelog_3_1_0_2':
+      'New Noto Naskh Arabic font for accurate rendering of superscript characters.',
+  'changelog_3_1_0_3':
+      'Improved line height to prevent clipping of diacritical marks.',
+  'changelog_3_1_0_4':
+      'Verse Study screen — explore Arabic text, translation, and tafsir together.',
+  'changelog_3_1_0_5':
+      'Quran Foundation Content API integration for tafsir and verse data.',
+  'changelog_3_1_0_6':
+      'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
+  'changelog_3_1_0_7':
+      'Force update mechanism for critical text accuracy fixes.',
+  'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
+  'changelog_3_0_0_2': 'Cloud sync with Firebase.',
+  'changelog_3_0_0_3': 'Audio player with reciter support.',
+  'changelog_3_0_0_4': 'Mushaf page view with verse rendering.',
+  'changelog_3_0_0_5': 'Voice verification for recitation practice.',
+  'changelog_3_0_0_6': 'Memorization and Khatmah tracking.',
+  'changelog_3_0_0_7': 'Statistics dashboard.',
+  'changelog_3_0_0_8': 'Auto-scroll with configurable speed.',
+
+  // Relative time
+  'lbl_just_now': 'just now',
+
+  // Goals
+  'goals_title': "Today's Plan",
+  'goals_no_plan': 'No plan for today',
+  'goals_no_plan_hint':
+      'Create a reading goal in the Khatmah tracker to see your daily plan here.',
+  'goals_items_count': '{count} items on your plan',
+  'goals_auth_required': 'Sign in to view your daily plan',
+  'goals_auth_hint':
+      'Connect your Quran.com account to sync goals and track progress.',
+  'goals_error_title': 'Could not load plan',
+  'goals_error_auth': 'Please sign in again to continue.',
+  'goals_progress_label': '{done} of {total}',
+  'goals_completed': 'Completed',
+  'goals_in_progress': 'In progress',
+  'lbl_minutes_ago': '{count}m ago',
+  'lbl_hours_ago': '{count}h ago',
+
+  // QF Account
+  'msg_qf_account': 'Quran.com account',
+
+  // Navigation
+  'lbl_open_nav_menu': 'Open navigation menu',
+
+  // About
+  'msg_feedback_copied': 'Feedback copied to clipboard',
+
+  // Mushaf type labels (settings + onboarding)
+  'lbl_mushaf_madani': 'Madani (Hafs)',
+  'lbl_mushaf_shemerly': 'Shemerly (Egyptian)',
+  'lbl_mushaf_naskh': 'Naskh (Hafs)',
+  'lbl_mushaf_warsh': 'Warsh (North Africa)',
+  'lbl_mushaf_madani_desc': 'Hafs from Madinah',
+  'lbl_mushaf_shemerly_desc': 'Egyptian script',
+  'lbl_mushaf_naskh_desc': 'Naskh script',
+  'lbl_mushaf_warsh_desc': 'Warsh from North Africa',
+
+  // Connectivity
+  'msg_no_internet_connection': 'No Internet Connection',
+
+  // Verse Study
+  'lbl_verse_study_title': 'Verse Study: {key}',
+  'lbl_retry': 'Retry',
+  'lbl_arabic': 'Arabic',
+  'lbl_translation': 'Translation',
+  'lbl_show_translation': 'Show Translation',
+  'lbl_hide_translation': 'Hide Translation',
+  'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
+  'lbl_study': 'Study',
+
+  // Recitation feedback
+  'lbl_keep_practicing': 'Keep Practicing',
+  'msg_keep_practicing':
+      'Every effort counts. Try again to improve your score!',
+
+  // Mushaf rendering modes
+
+  // Delete My Data
+  'lbl_delete_my_data': 'Delete My Data',
+  'lbl_delete_data': 'Delete',
+  'msg_delete_data_confirm':
+      'This will revoke your Quran Foundation access, remove your synced bookmarks, and sign you out. This cannot be undone.',
+
+  // General
+  'msg_operation_failed': 'Something went wrong. Please try again.',
+  'lbl_loading_app': 'Loading Hafiz...',
+  'lbl_qf_attribution': 'Quran Foundation — code_v2',
+
+  // Voice Verification
+  'msg_custom_asr_empty':
+      'Custom ASR endpoint is not configured. Please set it in Settings.',
+  'lbl_tajweed': 'Tajweed',
+  'lbl_provider_qrc': 'Qurani.ai QRC',
+  'lbl_provider_custom': 'Custom ASR',
+  'lbl_qrc_tajweed_level': 'Tajweed Level',
+  'lbl_qrc_tajweed_level_desc': 'Strictness of tajweed checking (1-5)',
+  'lbl_qrc_hafz_level': 'Hifz Level',
+  'lbl_qrc_hafz_level_desc': 'Memorization checking level (1-3)',
+  'lbl_qrc_level_1': '1 - Basic',
+  'lbl_qrc_level_2': '2 - Moderate',
+  'lbl_qrc_level_3': '3 - Standard',
+  'lbl_qrc_level_4': '4 - Strict',
+  'lbl_qrc_level_5': '5 - Very Strict',
+  'lbl_custom_asr_endpoint': 'ASR Endpoint URL',
+  'msg_custom_asr_not_set': 'Not configured',
+  'msg_no_arabic_detected': 'No Arabic speech detected. Please try again.',
+  'lbl_save': 'Save',
+
+  // Verse unavailable
+  'lbl_verse_unavailable': 'Verse unavailable',
+
+  // Cloud Sync
+  'lbl_cloud_synced': 'Cloud Synced',
+  'lbl_cloud_streak': 'Cloud Streak',
+  'lbl_local_streak': 'Local Streak',
+  'msg_synced_to_qf': 'Synced to Quran Foundation',
+
+  // Reflections
+  'lbl_add_reflection': 'Add Reflection',
+  'lbl_reflections': 'Reflections',
+  'lbl_write_reflection': 'Write your reflection...',
+  'lbl_no_reflections': 'No reflections yet',
+  'lbl_submit_reflection': 'Save Reflection',
+  'lbl_reflection_saved': 'Reflection saved',
+
+  // Daily Verse Notification
+  'lbl_daily_verse_notification': 'Daily Verse Notification',
+  'msg_daily_verse_desc':
+      'Receive a daily Quran verse to start your day with reflection',
 };

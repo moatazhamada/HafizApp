@@ -1,19 +1,40 @@
+import 'package:hafiz_app/core/i18n/locale_controller.dart';
+
 class ApiConfig {
   // Whether to prefer Quran.Foundation content endpoints. Keep false to use existing Quran.com v4.
-  static const bool useQfContent = bool.fromEnvironment('QF_USE_CONTENT', defaultValue: false);
-
-  // OAuth2 issuer base (no trailing slash), e.g. https://prelive-oauth2.quran.foundation or https://oauth2.quran.foundation
-  static const String oauthBase = String.fromEnvironment(
-    'QF_OAUTH_BASE',
-    defaultValue: 'https://prelive-oauth2.quran.foundation',
+  static const bool useQfContent = bool.fromEnvironment(
+    'QF_USE_CONTENT',
+    defaultValue: false,
   );
 
-  // Client credentials (DO NOT hardcode in source; pass via --dart-define)
-  static const String clientId = String.fromEnvironment('QF_CLIENT_ID', defaultValue: '');
-  static const String clientSecret = String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: '');
+  // Detect whether this is a production build from the flavor name.
+  // Flutter passes --dart-define=flavor=<name> automatically when --flavor is used.
+  // Prelive flavor → not production; everything else → production.
+  static const String _flavor = String.fromEnvironment(
+    'flavor',
+    defaultValue: 'production',
+  );
+  static const bool _isProduction = _flavor != 'prelive';
+  static const String oauthBase = _isProduction
+      ? 'https://oauth2.quran.foundation'
+      : 'https://prelive-oauth2.quran.foundation';
+
+  // Machine-to-machine client credentials for Content API (client_credentials flow).
+  // Prefer explicit content credentials; fall back to PKCE credentials if not set.
+  static const String clientId = String.fromEnvironment(
+    'QF_CONTENT_CLIENT_ID',
+    defaultValue: String.fromEnvironment('QF_CLIENT_ID', defaultValue: ''),
+  );
+  static const String clientSecret = String.fromEnvironment(
+    'QF_CONTENT_CLIENT_SECRET',
+    defaultValue: String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: ''),
+  );
 
   // Optional audience/scope if required in the future
-  static const String scope = String.fromEnvironment('QF_SCOPE', defaultValue: '');
+  static const String scope = String.fromEnvironment(
+    'QF_SCOPE',
+    defaultValue: '',
+  );
 
   // Content API base (if using Quran.Foundation content APIs)
   static const String qfContentBase = String.fromEnvironment(
@@ -38,6 +59,26 @@ class ApiConfig {
     'QRC_WS_BASE',
     defaultValue: 'wss://api.qurani.ai',
   );
-  static const String qrcApiKey =
-      String.fromEnvironment('QRC_API_KEY', defaultValue: '');
+  static const String qrcApiKey = String.fromEnvironment(
+    'QRC_API_KEY',
+    defaultValue: '',
+  );
+
+  // --- Runtime locale-aware resource IDs ---
+
+  static bool get _isArabic {
+    try {
+      return LocaleController.notifier.value.languageCode == 'ar';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Tafsir resource ID based on current locale.
+  /// Arabic → 91 (Al-Sa'di), English → 169 (Ibn Kathir English).
+  static String get tafsirId => _isArabic ? '91' : '169';
+
+  /// Translation resource ID (English only — skipped when locale is Arabic).
+  /// 85 = The Clear Quran by Dr. Mustafa Khattab.
+  static const int translationId = 85;
 }

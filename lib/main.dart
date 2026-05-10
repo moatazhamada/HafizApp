@@ -1,31 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:hafiz_app/core/services/app_initializer.dart';
 
 import 'core/app_export.dart';
+import 'core/network/connectivity_cubit.dart';
+import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-// Just in case, though safe
-// Just in case
-// Just in case
+import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
+import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
-import 'package:flutter/foundation.dart';
-
-var globalMessengerKey = GlobalKey<ScaffoldMessengerState>();
+import 'core/services/remote_config_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'presentation/force_update/force_update_screen.dart';
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
@@ -68,10 +61,6 @@ Future<void> main() async {
   runApp(const BootstrapApp());
 }
 
-Future<void> initFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-}
-
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
@@ -85,6 +74,7 @@ class MyApp extends StatelessWidget {
   final themeBloc = sl<ThemeBloc>();
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
+  final cloudSyncBloc = sl<CloudSyncBloc>();
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +87,11 @@ class MyApp extends StatelessWidget {
         BlocProvider.value(
           value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
         ),
+        BlocProvider.value(
+          value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
+        ),
+        BlocProvider.value(value: sl<ConnectivityCubit>()),
+        BlocProvider.value(value: cloudSyncBloc),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -109,7 +104,6 @@ class MyApp extends StatelessWidget {
               locale: locale,
               title: 'Hafiz',
               navigatorKey: NavigatorService.navigatorKey,
-              scaffoldMessengerKey: globalMessengerKey,
               navigatorObservers: [sl<AnalyticsRouteObserver>()],
               debugShowCheckedModeBanner: false,
               localizationsDelegates: const [
@@ -123,6 +117,8 @@ class MyApp extends StatelessWidget {
                   ? AppRoutes.homeScreen
                   : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
+              // Silently handle unknown routes from navigation state restoration.
+              onUnknownRoute: (_) => null,
             ),
           );
         },
@@ -140,6 +136,9 @@ class BootstrapApp extends StatefulWidget {
 
 class _BootstrapAppState extends State<BootstrapApp> {
   bool _ready = false;
+  bool _forceUpdate = false;
+  bool _initFailed = false;
+  String _initError = '';
 
   @override
   void initState() {
@@ -148,136 +147,76 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 
   Future<void> _init() async {
-    // 1. Critical functional initialization (fast)
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
+    final initializer = AppInitializer();
+    final success = await initializer.init();
 
-    try {
-      await PrefUtils().init();
+    if (!mounted) return;
 
-      // Hive boxes must be open before di.init() because DI reads Hive.box(...)
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('recitation_sessions');
-      await Hive.openBox('memorization_progress');
-      await Hive.openBox('reading_logs');
-      await Hive.openBox('reading_goal');
-
-      await di.init();
-
-      final orientationMode = PrefUtils().getOrientationMode();
-      List<DeviceOrientation> orientations;
-      switch (orientationMode) {
-        case 'portrait':
-          orientations = [DeviceOrientation.portraitUp];
-          break;
-        case 'landscape':
-          orientations = [
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ];
-          break;
-        default:
-          orientations = [
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ];
-      }
-      await SystemChrome.setPreferredOrientations(orientations);
-
-      final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
-        ),
-      );
-      HydratedBloc.storage = storage;
-    } catch (e) {
-      debugPrint('Critical init failed: $e');
-      // If critical init fails, we might still want to try showing the app
-      // or at least not stuck on splash forever, though likely it will crash later.
+    if (!success) {
+      setState(() {
+        _initFailed = true;
+        _initError = initializer.error ?? 'Unknown error';
+      });
+      return;
     }
 
-    // 2. Heavy/External services (can be slow, prone to network issues)
-    // We don't want to block the UI forever if Firebase/Hive hangs.
     try {
-      await _postInitHeavyTasks().timeout(const Duration(seconds: 3));
+      await initializer.postInitHeavyTasks().timeout(
+        const Duration(seconds: 3),
+      );
     } catch (e) {
       debugPrint('Heavy init failed or timed out: $e');
-      // Continue anyway so the user sees the app
     }
 
     if (mounted) {
-      setState(() => _ready = true);
-    }
-  }
-
-  Future<void> _postInitHeavyTasks() async {
-    try {
-      await initFirebase();
-
-      final crashlytics = FirebaseCrashlytics.instance;
-      Logger.init(
-        kDebugMode ? LogMode.debug : LogMode.live,
-        crashlytics: crashlytics,
-      );
-
-      await Hive.initFlutter();
-      await Hive.openBox('surah_cache');
-      await Hive.openBox('bookmarks');
-      await Hive.openBox('recitation_errors');
-      await Hive.openBox('recitation_sessions');
-      await Hive.openBox('memorization_progress');
-      await Hive.openBox('reading_logs');
-      await Hive.openBox('reading_goal');
-      await Hive.openBox('qiraat_cache');
-      await Hive.openBox('audio_cache');
-
-      FlutterError.onError = (errorDetails) {
-        Logger.error(
-          'Flutter error: ${errorDetails.exception}',
-          feature: 'Flutter',
-          error: errorDetails.exception,
-          stackTrace: errorDetails.stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      };
-
-      ui.PlatformDispatcher.instance.onError = (error, stack) {
-        Logger.error(
-          'Platform error: $error',
-          feature: 'Platform',
-          error: error,
-          stackTrace: stack,
-          fatal: true,
-        );
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-
-      unawaited(FirebaseAnalytics.instance.logAppOpen());
-    } catch (e, stackTrace) {
-      Logger.error(
-        'Firebase initialization failed: $e',
-        feature: 'Firebase',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow; // Re-throw to trigger the timeout catch in _init if needed
+      setState(() {
+        _ready = true;
+        _forceUpdate = initializer.forceUpdate;
+      });
+      Future.delayed(const Duration(seconds: 2), () {
+        AppReviewService.maybeRequestReview();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_initFailed) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Initialization Failed',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _initError,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    if (_forceUpdate) {
+      return ForceUpdateScreen(
+        message: sl.isRegistered<RemoteConfigService>()
+            ? sl<RemoteConfigService>().forceUpdateMessage
+            : '',
+      );
+    }
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
@@ -287,8 +226,38 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 }
 
-class _ReadyApp extends StatelessWidget {
+class _ReadyApp extends StatefulWidget {
   const _ReadyApp();
+
+  @override
+  State<_ReadyApp> createState() => _ReadyAppState();
+}
+
+class _ReadyAppState extends State<_ReadyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _maybeShowChangelog();
+  }
+
+  Future<void> _maybeShowChangelog() async {
+    final version = (await PackageInfo.fromPlatform()).version;
+    final key = 'changelog_seen_${version.replaceAll('.', '_')}';
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(key) ?? false;
+    if (!seen) {
+      await prefs.setBool(key, true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final context = NavigatorService.navigatorKey.currentContext;
+          if (context != null) {
+            NavigatorService.pushNamed(AppRoutes.changelogScreen);
+          }
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) => MyApp();
 }
@@ -317,7 +286,7 @@ class _SplashScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Loading Hafiz...',
+                'Loading...',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   color: isDark ? Colors.white70 : Colors.black54,

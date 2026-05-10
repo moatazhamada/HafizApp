@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+
+import 'debug_log_interceptor.dart';
 
 abstract class NetworkManagerI {
   Future<Response> get(String url, {Map<String, dynamic>? params});
@@ -16,19 +16,7 @@ class NetworkManagerImpl extends NetworkManagerI {
   final Dio _dio;
 
   NetworkManagerImpl(this._dio) {
-    if (kDebugMode) {
-      _dio.interceptors.add(
-        PrettyDioLogger(
-          requestHeader: false,
-          requestBody: false,
-          responseBody: false,
-          responseHeader: false,
-          error: true,
-          compact: true,
-          maxWidth: 90,
-        ),
-      );
-    }
+    _dio.interceptors.add(DebugLogInterceptor());
   }
 
   @override

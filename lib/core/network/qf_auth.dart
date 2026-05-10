@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/api_config.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class QfAuthService {
   final Dio _dio; // a lightweight Dio for token calls
@@ -38,16 +39,12 @@ class QfAuthService {
     _refreshing = true;
     _refreshCompleter = Completer<void>();
     try {
-      final tokenUrl = '${ApiConfig.oauthBase}/token';
+      final tokenUrl = '${ApiConfig.oauthBase}/oauth2/token';
       final authHeader =
           'Basic ${base64Encode(utf8.encode('${ApiConfig.clientId}:${ApiConfig.clientSecret}'))}';
-      final form = {
-        'grant_type': 'client_credentials',
-        if (ApiConfig.scope.isNotEmpty) 'scope': ApiConfig.scope,
-      };
       final resp = await _dio.post(
         tokenUrl,
-        data: FormData.fromMap(form),
+        data: 'grant_type=client_credentials&scope=content',
         options: Options(
           headers: {
             'Authorization': authHeader,
@@ -83,23 +80,47 @@ class QfAuthInterceptor extends Interceptor {
 
   QfAuthInterceptor(this.auth);
 
-  bool _isQfHost(RequestOptions options) {
+  /// Only match machine-to-machine OAuth token endpoint and content API paths.
+  bool _shouldInjectToken(RequestOptions options) {
     final host = options.uri.host.toLowerCase();
-    return host.endsWith('quran.foundation');
+    final path = options.uri.path.toLowerCase();
+
+    // Machine-to-machine OAuth token endpoint (production + prelive)
+    if ((host.contains('oauth2.quran.foundation') ||
+            host.contains('prelive-oauth2.quran.foundation')) &&
+        path.contains('/token')) {
+      return true;
+    }
+
+    // Content API paths (production, prelive, or api.quran.com)
+    if ((host.contains('apis.quran.foundation') ||
+            host.contains('api.quran.foundation') ||
+            host.contains('apis-prelive.quran.foundation') ||
+            host.contains('api.quran.com')) &&
+        path.contains('/content/')) {
+      return true;
+    }
+
+    return false;
   }
 
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
-    if (_isQfHost(options)) {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    if (_shouldInjectToken(options)) {
       try {
         await auth.ensureToken();
         final token = auth.accessToken;
         if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+          options.headers['x-auth-token'] = token;
         }
-      } catch (_) {
-        // Proceed without token if retrieval failed; server may still accept
+        if (ApiConfig.clientId.isNotEmpty) {
+          options.headers['x-client-id'] = ApiConfig.clientId;
+        }
+      } catch (e) {
+        Logger.warning('QF auth token injection failed: $e', feature: 'Auth');
       }
     }
     super.onRequest(options, handler);
@@ -107,7 +128,8 @@ class QfAuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401 && _isQfHost(err.requestOptions)) {
+    if (err.response?.statusCode == 401 &&
+        _shouldInjectToken(err.requestOptions)) {
       try {
         await auth.ensureToken();
         final token = auth.accessToken;
@@ -115,13 +137,17 @@ class QfAuthInterceptor extends Interceptor {
           final clone = await _retryWithToken(err.requestOptions, token);
           return handler.resolve(clone);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('QF auth 401 retry failed: $e', feature: 'Auth');
+      }
     }
     super.onError(err, handler);
   }
 
   Future<Response<dynamic>> _retryWithToken(
-      RequestOptions requestOptions, String token) async {
+    RequestOptions requestOptions,
+    String token,
+  ) async {
     final dio = Dio();
     // Copy base options
     dio.options = BaseOptions(
@@ -131,7 +157,10 @@ class QfAuthInterceptor extends Interceptor {
       validateStatus: (_) => true,
     );
     final headers = Map<String, dynamic>.from(requestOptions.headers);
-    headers['Authorization'] = 'Bearer $token';
+    headers['x-auth-token'] = token;
+    if (ApiConfig.clientId.isNotEmpty) {
+      headers['x-client-id'] = ApiConfig.clientId;
+    }
     return dio.request(
       requestOptions.path,
       data: requestOptions.data,

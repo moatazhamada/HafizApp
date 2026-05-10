@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/network/connectivity_cubit.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 
 import '../../core/app_export.dart';
-import '../../injection_container.dart';
 import 'bloc/onboarding_bloc.dart';
 import 'models/onboarding_model.dart';
 
@@ -25,10 +25,6 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
-  final networkInfo = sl<NetworkInfo>();
-  bool isConnected = true;
-  late final StreamSubscription<List<ConnectivityResult>>?
-  _connectivitySubscription;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -36,20 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
-    _setupConnectivity();
     _setupAnimations();
-  }
-
-  void _setupConnectivity() {
-    _connectivitySubscription = networkInfo.onConnectivityChanged.listen((
-      List<ConnectivityResult> results,
-    ) {
-      if (mounted) {
-        setState(() {
-          isConnected = results.any((r) => r != ConnectivityResult.none);
-        });
-      }
-    });
   }
 
   void _setupAnimations() {
@@ -73,7 +56,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
-    _connectivitySubscription?.cancel();
     _animationController.dispose();
     super.dispose();
   }
@@ -98,31 +80,35 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   colors: [
                     colorScheme.primary.withValues(alpha: 0.8),
                     colorScheme.primary,
-                    const Color(0xFF00332c), // Deep rich green for footer
+                    AppColors.of(context).primaryDark,
                   ],
                 ),
               ),
               child: Stack(
                 children: [
                   // Internet Status Indicator
-                  if (!isConnected)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        color: Colors.redAccent.withValues(alpha: 0.9),
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'No Internet Connection',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                  BlocBuilder<ConnectivityCubit, ConnectivityState>(
+                    builder: (context, connState) {
+                      if (connState.isOnline) return const SizedBox.shrink();
+                      return Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          color: Colors.redAccent.withValues(alpha: 0.9),
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'msg_no_internet_connection'.tr,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                  ),
 
                   // Decorative Background Element
                   Positioned(
@@ -183,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             Text(
                               'app_name'.tr,
                               style: theme.textTheme.displayMedium?.copyWith(
-                                color: const Color(0xFFE0F2F1), // Light Mint
+                                color: AppColors.of(context).primaryLight,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
                               ),
@@ -219,8 +205,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   },
                                   text: 'lbl_get_started'.tr,
                                   buttonStyle: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFAF6EB),
-                                    foregroundColor: const Color(0xFF004B40),
+                                    backgroundColor: AppColors.of(
+                                      context,
+                                    ).badgeGradient[0],
+                                    foregroundColor: AppColors.of(
+                                      context,
+                                    ).bismillahColor,
                                     elevation: 5,
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 16,
@@ -229,18 +219,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                       borderRadius: BorderRadius.circular(30.0),
                                     ),
                                   ),
-                                  buttonTextStyle: const TextStyle(
+                                  buttonTextStyle: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
-                                    color: Color(0xFF004B40),
+                                    color: AppColors.of(context).bismillahColor,
                                   ),
-                                  rightIcon: const Padding(
-                                    padding: EdgeInsets.only(left: 12.0),
+                                  rightIcon: Padding(
+                                    padding: const EdgeInsets.only(left: 12.0),
                                     child: Icon(
                                       Icons.arrow_forward_rounded,
                                       size: 20,
-                                      color: Color(0xFF004B40),
+                                      color: AppColors.of(
+                                        context,
+                                      ).bismillahColor,
                                     ),
                                   ),
                                 ),

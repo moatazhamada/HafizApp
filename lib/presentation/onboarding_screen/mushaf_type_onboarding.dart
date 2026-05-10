@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-
-enum MushafType {
-  madani('Madani', 'مدني', 'Hafs from Madinah', Colors.teal),
-  egyptian('Egyptian', 'مصري', 'Hafs from Egypt', Colors.blueAccent),
-  indopak('Indo-Pak', 'هندي/باكستاني', 'Nastaleeq script', Colors.orange),
-  warsh('Warsh', 'ورش', 'Warsh from North Africa', Colors.purple);
-
-  const MushafType(this.nameEn, this.nameAr, this.description, this.color);
-  final String nameEn;
-  final String nameAr;
-  final String description;
-  final Color color;
-}
+import '../../core/quran_index/mushaf_types.dart';
 
 class MushafTypeOnboarding extends StatefulWidget {
-  const MushafTypeOnboarding({super.key});
+  final bool fromSettings;
+
+  const MushafTypeOnboarding({super.key, this.fromSettings = false});
 
   @override
   State<MushafTypeOnboarding> createState() => _MushafTypeOnboardingState();
@@ -28,12 +18,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   void initState() {
     super.initState();
     final saved = PrefUtils().getMushafType();
-    if (saved != null) {
-      _selected = MushafType.values.firstWhere(
-        (t) => t.name == saved,
-        orElse: () => MushafType.madani,
-      );
-    }
+    _selected = MushafType.fromString(saved);
   }
 
   void _select(MushafType type) {
@@ -43,22 +28,29 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
 
   void _skip() {
     PrefUtils().setMushafType(MushafType.madani.name);
-    PrefUtils().setOnboardingCompleted(true);
-    NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    if (widget.fromSettings) {
+      NavigatorService.goBack();
+    } else {
+      PrefUtils().setOnboardingCompleted(true);
+      NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    }
   }
 
   void _continue() {
     if (_selected == null) {
       PrefUtils().setMushafType(MushafType.madani.name);
     }
-    PrefUtils().setOnboardingCompleted(true);
-    NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    if (widget.fromSettings) {
+      NavigatorService.goBack();
+    } else {
+      PrefUtils().setOnboardingCompleted(true);
+      NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       body: SafeArea(
@@ -93,10 +85,11 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                itemCount: MushafType.values.length,
+                itemCount: MushafType.all.length,
                 itemBuilder: (context, index) {
-                  final type = MushafType.values[index];
+                  final type = MushafType.all[index];
                   final isSelected = _selected == type;
+                  final color = Color(type.colorValue);
 
                   return GestureDetector(
                     onTap: () => _select(type),
@@ -104,11 +97,11 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? type.color.withValues(alpha: 0.1)
+                            ? color.withValues(alpha: 0.1)
                             : theme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? type.color : theme.dividerColor,
+                          color: isSelected ? color : theme.dividerColor,
                           width: isSelected ? 2.5 : 1,
                         ),
                       ),
@@ -121,26 +114,26 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: type.color.withValues(alpha: 0.15),
+                                color: color.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.menu_book_rounded,
-                                color: type.color,
+                                color: color,
                                 size: 28,
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              isArabic ? type.nameAr : type.nameEn,
+                              type.label.tr,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? type.color : null,
+                                color: isSelected ? color : null,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              type.description,
+                              type.descriptionKey.tr,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.5,

@@ -20,6 +20,7 @@ class VoiceVerificationDialog extends StatefulWidget {
   final Verse aya;
   final String expectedText;
   final VoidCallback onCorrect;
+  final VoidCallback onSaveForPractice;
   final Function(BuildContext context) onWrong;
 
   const VoiceVerificationDialog({
@@ -28,6 +29,7 @@ class VoiceVerificationDialog extends StatefulWidget {
     required this.aya,
     required this.expectedText,
     required this.onCorrect,
+    required this.onSaveForPractice,
     required this.onWrong,
   });
 
@@ -47,7 +49,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   bool _isListening = false;
 
   // UI State
-  String _spokenText = 'lbl_listening'.tr;
+  String _spokenText = '';
   Color _statusColor = Colors.blueAccent;
   String _feedbackTitle = '';
   String _scoreText = '';
@@ -55,9 +57,10 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   String _hintWord = '';
   List<String> _issueLines = [];
   bool _showFeedback = false;
+  bool _isCorrect = false;
+  bool _isWrong = false;
 
   // QRC State
-  String _qrcStatus = '';
   bool _qrcConnecting = false;
   int _qrcWordIndex = 0;
   List<QrcTajweedMistake> _qrcMistakes = [];
@@ -71,8 +74,6 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   String? _customFilePath;
   bool _whisperTranscribing = false;
   late WhisperModel _whisperModel;
-
-  bool _autoAdvanced = false;
 
   @override
   void initState() {
@@ -88,9 +89,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
 
   @override
   void dispose() {
-    if (!_autoAdvanced) {
-      _cleanup();
-    }
+    _cleanup();
     super.dispose();
   }
 
@@ -115,14 +114,34 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     }
   }
 
+  void _resetState() {
+    _isListening = false;
+    _spokenText = '';
+    _statusColor = Colors.blueAccent;
+    _feedbackTitle = '';
+    _scoreText = '';
+    _hintLabel = '';
+    _hintWord = '';
+    _issueLines = [];
+    _showFeedback = false;
+    _isCorrect = false;
+    _isWrong = false;
+    _qrcWordIndex = 0;
+    _qrcMistakes = [];
+    _qrcMistakeIndices = {};
+    _qrcMistakeLines = [];
+    _repeatLabel = '';
+    _repeatWord = '';
+    _whisperTranscribing = false;
+  }
+
   Future<void> _startListening() async {
     if (_isListening) return;
 
     setState(() {
+      _resetState();
       _isListening = true;
-
       _statusColor = Colors.blueAccent;
-      _spokenText = 'lbl_listening'.tr;
     });
 
     final provider = PrefUtils().getRecitationProvider();
@@ -134,7 +153,6 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     if (useQrc) {
       setState(() {
         _qrcConnecting = true;
-        _qrcStatus = 'lbl_connecting'.tr;
       });
 
       final connected = await _qrcService.connect();
@@ -153,14 +171,11 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _qrcSub = _qrcService.events.listen((event) {
         if (!mounted) return;
         if (event is QrcStatusEvent) {
-          setState(() {
-            _qrcStatus = event.status;
-            if (event.status == 'connected' ||
-                event.status == 'check_tilawa' ||
-                event.status == 'CheckTilawaResponse') {
-              _qrcConnecting = false;
-            }
-          });
+          if (event.status == 'connected' ||
+              event.status == 'check_tilawa' ||
+              event.status == 'CheckTilawaResponse') {
+            setState(() => _qrcConnecting = false);
+          }
         } else if (event is QrcCheckEvent) {
           _handleQrcCheck(event.data);
         } else if (event is QrcErrorEvent) {
@@ -190,9 +205,6 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         numChannels: 1,
         sampleRate: 16000,
       );
-      setState(() {
-        _spokenText = 'lbl_listening'.tr;
-      });
     } else {
       if (useCustom) {
         if (customEndpoint.isEmpty) {
@@ -201,18 +213,18 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             _feedbackTitle = 'msg_custom_asr_empty'.tr;
             _showFeedback = true;
           });
-        } else {
-          await _customRecorder.openRecorder();
-          final dir = await getTemporaryDirectory();
-          _customFilePath =
-              '${dir.path}/recite_${widget.surah.id}_${widget.aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
-          await _customRecorder.startRecorder(
-            toFile: _customFilePath,
-            codec: Codec.pcm16WAV,
-            numChannels: 1,
-            sampleRate: 16000,
-          );
+          return;
         }
+        await _customRecorder.openRecorder();
+        final dir = await getTemporaryDirectory();
+        _customFilePath =
+            '${dir.path}/recite_${widget.surah.id}_${widget.aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
+        await _customRecorder.startRecorder(
+          toFile: _customFilePath,
+          codec: Codec.pcm16WAV,
+          numChannels: 1,
+          sampleRate: 16000,
+        );
       }
 
       await _voiceService.listen(
@@ -249,19 +261,24 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   }
 
   void _handleQrcCheck(QrcCheckTilawa data) {
+    final expectedTokens = _expectedText
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
+    final expectedCount = expectedTokens.length;
+
     setState(() {
       _qrcWordIndex = data.wordIndex ?? _qrcWordIndex;
       _qrcMistakes = data.tajweedMistakes;
       _qrcMistakeIndices = _qrcMistakes.map((m) => m.wordIndex ?? -1).toSet();
-      _qrcMistakeLines = _qrcMistakes
-          .map((m) => '${m.name ?? 'Tajweed'} (${m.wordIndex ?? '-'})')
-          .toList();
+      _qrcMistakeLines = _qrcMistakes.map((m) {
+        final wordIdx = (m.wordIndex ?? 1) - 1;
+        final wordText = (wordIdx >= 0 && wordIdx < expectedTokens.length)
+            ? expectedTokens[wordIdx]
+            : '-';
+        return '${m.name ?? 'lbl_tajweed'.tr}: $wordText';
+      }).toList();
       _showFeedback = true;
-      final expectedTokens = _expectedText
-          .split(RegExp(r'\s+'))
-          .where((t) => t.isNotEmpty)
-          .toList();
-      final expectedCount = expectedTokens.length;
       final progress = expectedCount == 0
           ? 0
           : ((_qrcWordIndex / expectedCount) * 100).round();
@@ -287,7 +304,13 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           _qrcMistakes.isEmpty) {
         _statusColor = Colors.green;
         _feedbackTitle = 'lbl_congrats'.tr;
-        _handleSuccess();
+        _isCorrect = true;
+        _isListening = false;
+      } else if (_qrcWordIndex >= expectedCount && _qrcMistakes.isNotEmpty) {
+        _statusColor = Colors.redAccent;
+        _feedbackTitle = 'msg_incorrect_recitation'.tr;
+        _isWrong = true;
+        _isListening = false;
       }
     });
   }
@@ -345,39 +368,21 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (analysis.passed) {
         _statusColor = Colors.green;
         _feedbackTitle = 'lbl_congrats'.tr;
-        _handleSuccess();
+        _isCorrect = true;
       } else {
         _statusColor = Colors.redAccent;
         _feedbackTitle = 'msg_incorrect_recitation'.tr;
-        _handleFailure();
+        _isWrong = true;
       }
     });
   }
 
-  void _handleSuccess() {
-    unawaited(
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted && Navigator.canPop(context)) {
-          _autoAdvanced = true;
-          Navigator.pop(context);
-          widget.onCorrect();
-        }
-      }),
-    );
-  }
-
-  void _handleFailure() {
-    unawaited(
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted && Navigator.canPop(context)) {
-          _autoAdvanced = true;
-          Navigator.pop(context); // Close dialog
-          widget.onWrong(
-            context,
-          ); // Pass context if needed, but callback handles it
-        }
-      }),
-    );
+  String get _dialogTitle {
+    if (_isCorrect) return 'lbl_congrats'.tr;
+    if (_isWrong) return 'msg_incorrect_recitation'.tr;
+    if (_isListening) return 'lbl_listening'.tr;
+    if (_showFeedback) return _feedbackTitle;
+    return 'lbl_recite_verify'.tr;
   }
 
   Future<void> _stopListening() async {
@@ -428,7 +433,6 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (mounted) {
         setState(() {
           _statusColor = Colors.grey;
-          _spokenText = 'msg_tap_to_resume'.tr;
         });
       }
     }
@@ -441,186 +445,210 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     final bool useWhisper = provider == 'local_whisper';
 
     return AlertDialog(
-      title: Semantics(header: true, child: Text('lbl_recite_verify'.tr)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Semantics(
-            button: true,
-            label: _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-            child: GestureDetector(
-              onTap: () {
-                if (_isListening) {
-                  _stopListening();
-                } else {
-                  _startListening();
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _isListening
-                      ? Colors.redAccent.withValues(alpha: 0.1)
-                      : Colors.blueAccent.withValues(alpha: 0.1),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Icon(
-                  _isListening ? Icons.mic : Icons.mic_off,
-                  size: 48,
-                  color: _isListening ? Colors.redAccent : Colors.blueAccent,
+      title: Semantics(header: true, child: Text(_dialogTitle)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              button: true,
+              label: _isListening
+                  ? 'msg_tap_to_stop'.tr
+                  : 'lbl_tap_to_speak'.tr,
+              child: GestureDetector(
+                onTap: () {
+                  if (_isListening) {
+                    _stopListening();
+                  } else if (!_isCorrect && !_isWrong) {
+                    _startListening();
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isListening
+                        ? Colors.redAccent.withValues(alpha: 0.1)
+                        : _isCorrect
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : _isWrong
+                        ? Colors.orangeAccent.withValues(alpha: 0.1)
+                        : Colors.blueAccent.withValues(alpha: 0.1),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Icon(
+                    _isListening
+                        ? Icons.mic
+                        : _isCorrect
+                        ? Icons.check_circle
+                        : _isWrong
+                        ? Icons.refresh
+                        : Icons.mic_none,
+                    size: 48,
+                    color: _isListening
+                        ? Colors.redAccent
+                        : _isCorrect
+                        ? Colors.green
+                        : _isWrong
+                        ? Colors.orangeAccent
+                        : Colors.blueAccent,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          if (!useQrc) ...[
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                _spokenText,
-                textAlign: TextAlign.center,
+            const SizedBox(height: 16),
+            if (!useQrc && _spokenText.isNotEmpty) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _spokenText,
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: 'NotoNaskhArabic',
+                    color: _statusColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (!_showFeedback && !_isCorrect && !_isWrong)
+              Text(
+                _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            if (useQrc) ...[
+              const SizedBox(height: 12),
+              if (_qrcConnecting)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              const SizedBox(height: 8),
+              Directionality(
                 textDirection: TextDirection.rtl,
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _expectedText
+                      .split(RegExp(r'\s+'))
+                      .where((t) => t.isNotEmpty)
+                      .toList()
+                      .asMap()
+                      .entries
+                      .map((entry) {
+                        final idx = entry.key + 1;
+                        final word = entry.value;
+                        final isCorrect = _qrcWordIndex >= idx;
+                        final isMistake = _qrcMistakeIndices.contains(idx);
+                        Color color = Colors.black87;
+                        if (isCorrect) color = Colors.green;
+                        if (isMistake) color = Colors.redAccent;
+                        return Text(
+                          word,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontFamily: 'NotoNaskhArabic',
+                            color: color,
+                            fontWeight: isCorrect
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        );
+                      })
+                      .toList(),
+                ),
+              ),
+              if (_qrcMistakeLines.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                for (final line in _qrcMistakeLines)
+                  Text(
+                    line,
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+              ],
+            ],
+            if (useWhisper && _whisperTranscribing) ...[
+              const SizedBox(height: 12),
+              const CircularProgressIndicator(strokeWidth: 2),
+            ],
+            if (_showFeedback) ...[
+              const SizedBox(height: 12),
+              Text(
+                _feedbackTitle,
                 style: TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'Amiri',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                   color: _statusColor,
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Text(
-            _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          if (useQrc) ...[
-            const SizedBox(height: 12),
-            if (_qrcConnecting)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            if (_qrcStatus.isNotEmpty)
+              const SizedBox(height: 6),
               Text(
-                _qrcStatus,
+                _scoreText,
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
-            const SizedBox(height: 8),
-            Directionality(
-              textDirection: TextDirection.rtl,
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: _expectedText
-                    .split(RegExp(r'\s+'))
-                    .where((t) => t.isNotEmpty)
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map((entry) {
-                      final idx = entry.key + 1;
-                      final word = entry.value;
-                      final isCorrect = _qrcWordIndex >= idx;
-                      final isMistake = _qrcMistakeIndices.contains(idx);
-                      Color color = Colors.black87;
-                      if (isCorrect) color = Colors.green;
-                      if (isMistake) color = Colors.redAccent;
-                      return Text(
-                        word,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: 'Amiri',
-                          color: color,
-                          fontWeight: isCorrect
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      );
-                    })
-                    .toList(),
-              ),
-            ),
-            if (_qrcMistakeLines.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              for (final line in _qrcMistakeLines)
+              if (_issueLines.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                for (final line in _issueLines)
+                  Text(line, style: const TextStyle(fontSize: 12)),
+              ],
+              if (_hintLabel.isNotEmpty) ...[
+                const SizedBox(height: 6),
                 Text(
-                  line,
-                  style: const TextStyle(fontSize: 12, color: Colors.red),
+                  _hintLabel,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
+                Text(
+                  _hintWord,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'NotoNaskhArabic',
+                  ),
+                ),
+              ],
+              if (_repeatLabel.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _repeatLabel,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                Text(
+                  _repeatWord,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'NotoNaskhArabic',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+              if (_isWrong && !_isListening) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'msg_coach_tip_slow'.tr,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ],
-          ],
-          if (useWhisper && _whisperTranscribing) ...[
-            const SizedBox(height: 12),
-            const CircularProgressIndicator(strokeWidth: 2),
-          ],
-          if (_showFeedback) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            const Divider(),
             Text(
-              _feedbackTitle,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: _statusColor,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _scoreText,
+              'lbl_original'.tr,
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
-            if (_issueLines.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              for (final line in _issueLines)
-                Text(line, style: const TextStyle(fontSize: 12)),
-            ],
-            if (_hintLabel.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                _hintLabel,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                _hintWord,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(fontSize: 14, fontFamily: 'Amiri'),
-              ),
-            ],
-            if (_repeatLabel.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                _repeatLabel,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                _repeatWord,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Amiri',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
-              'msg_coach_tip_slow'.tr,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              _expectedText,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(
+                fontSize: 18,
+                fontFamily: 'NotoNaskhArabic',
+              ),
             ),
           ],
-          const SizedBox(height: 16),
-          const Divider(),
-          Text(
-            'lbl_original'.tr,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _expectedText,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.rtl,
-            style: const TextStyle(fontSize: 18, fontFamily: 'Amiri'),
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -637,13 +665,38 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           },
           child: Text('lbl_listen_sheikh'.tr),
         ),
-        TextButton(
-          onPressed: () {
-            _stopListening();
-            Navigator.pop(context);
-          },
-          child: Text('lbl_close'.tr),
-        ),
+        if (_isCorrect)
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onCorrect();
+            },
+            child: Text('lbl_continue'.tr),
+          )
+        else if (_isWrong) ...[
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onSaveForPractice();
+            },
+            child: Text('lbl_save_practice'.tr),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await _cleanup();
+              setState(() => _resetState());
+              await _startListening();
+            },
+            child: Text('lbl_try_again'.tr),
+          ),
+        ] else
+          TextButton(
+            onPressed: () {
+              _stopListening();
+              Navigator.pop(context);
+            },
+            child: Text('lbl_close'.tr),
+          ),
       ],
     );
   }

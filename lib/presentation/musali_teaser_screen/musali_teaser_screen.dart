@@ -1,7 +1,38 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
+import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import 'bloc/musali_teaser_bloc.dart';
+
+/// Single source of truth for musali teaser slide data.
+/// Used by both [_MusaliTeaserScreenState] and [MainContent].
+List<Map<String, String>> musaliTeaserSlides() => [
+  {
+    'title_en': 'musali_teaser_slide1_title'.tr,
+    'title_ar': 'musali_teaser_slide1_title_ar'.tr,
+    'sub_en': '',
+    'sub_ar': '',
+  },
+  {
+    'title_en': 'musali_teaser_slide2_title'.tr,
+    'title_ar': 'musali_teaser_slide2_title_ar'.tr,
+    'sub_en': '',
+    'sub_ar': '',
+  },
+  {
+    'title_en': 'musali_teaser_slide3_title'.tr,
+    'title_ar': 'musali_teaser_slide3_title_ar'.tr,
+    'sub_en': '',
+    'sub_ar': '',
+  },
+  {
+    'title_en': 'musali_app_name'.tr,
+    'title_ar': 'musali_app_name'.tr,
+    'sub_en': 'musali_teaser_slide4_sub'.tr,
+    'sub_ar': 'musali_teaser_slide4_sub_ar'.tr,
+  },
+];
 
 class MusaliTeaserScreen extends StatefulWidget {
   const MusaliTeaserScreen({super.key});
@@ -59,33 +90,6 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
 
-  List<Map<String, String>> get _slides => [
-    {
-      'title_en': 'musali_teaser_slide1_title'.tr,
-      'title_ar': 'musali_teaser_slide1_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_teaser_slide2_title'.tr,
-      'title_ar': 'musali_teaser_slide2_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_teaser_slide3_title'.tr,
-      'title_ar': 'musali_teaser_slide3_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_app_name'.tr,
-      'title_ar': 'musali_app_name'.tr,
-      'sub_en': 'musali_teaser_slide4_sub'.tr,
-      'sub_ar': 'musali_teaser_slide4_sub_ar'.tr,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -94,12 +98,12 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
     final currentSlideIndex = state is TeaserSlideUpdated
         ? state.slideIndex
         : 0;
-    final isLastSlide = currentSlideIndex == _slides.length - 1;
+    final isLastSlide = currentSlideIndex == musaliTeaserSlides().length - 1;
 
     return Scaffold(
       backgroundColor: _isArabic
-          ? const Color(0xFF0D3B2C)
-          : const Color(0xFF004B40),
+          ? AppColors.of(context).primaryDark
+          : AppColors.of(context).bismillahColor,
       body: SafeArea(
         child: Container(
           width: double.maxFinite,
@@ -111,7 +115,9 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
               colors: [
                 colorScheme.primary.withValues(alpha: 0.9),
                 colorScheme.primary,
-                _isArabic ? const Color(0xFF0D3B2C) : const Color(0xFF00201A),
+                _isArabic
+                    ? AppColors.of(context).primaryDark
+                    : AppColors.of(context).primaryDark,
               ],
             ),
           ),
@@ -197,37 +203,11 @@ class MainContent extends StatelessWidget {
     required this.onSkip,
   });
 
-  List<Map<String, String>> get _slides => [
-    {
-      'title_en': 'musali_teaser_slide1_title'.tr,
-      'title_ar': 'musali_teaser_slide1_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_teaser_slide2_title'.tr,
-      'title_ar': 'musali_teaser_slide2_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_teaser_slide3_title'.tr,
-      'title_ar': 'musali_teaser_slide3_title_ar'.tr,
-      'sub_en': '',
-      'sub_ar': '',
-    },
-    {
-      'title_en': 'musali_app_name'.tr,
-      'title_ar': 'musali_app_name'.tr,
-      'sub_en': 'musali_teaser_slide4_sub'.tr,
-      'sub_ar': 'musali_teaser_slide4_sub_ar'.tr,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentSlide = _slides[currentSlideIndex];
+    final slides = musaliTeaserSlides();
+    final currentSlide = slides[currentSlideIndex];
     final subtitle = currentSlide['sub_${isArabic ? 'ar' : 'en'}']!;
 
     return FadeTransition(
@@ -275,7 +255,7 @@ class MainContent extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.95),
-                  fontFamily: 'Poppins',
+                  fontFamily: AppTextStyles.latinFont,
                   fontSize: isArabic ? 24 : 18,
                   height: 1.5,
                 ),

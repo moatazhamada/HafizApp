@@ -14,11 +14,16 @@ class SearchLoading extends SearchState {}
 class SearchLoaded extends SearchState {
   final List<Surah> results;
   final List<Verse> verseResults;
+  final bool isSemantic;
 
-  const SearchLoaded(this.results, {this.verseResults = const []});
+  const SearchLoaded(
+    this.results, {
+    this.verseResults = const [],
+    this.isSemantic = false,
+  });
 
   @override
-  List<Object> get props => [results, verseResults];
+  List<Object> get props => [results, verseResults, isSemantic];
 }
 
 class SearchEmpty extends SearchState {

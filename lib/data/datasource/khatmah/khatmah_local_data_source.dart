@@ -6,6 +6,10 @@ abstract class KhatmahLocalDataSource {
   Future<DailyReadingLogModel?> getLog(DateTime date);
   Future<void> saveLog(DailyReadingLogModel log);
   Future<List<DailyReadingLogModel>> getRecentLogs(int days);
+  Future<Map<String, DailyReadingLogModel>> getLogsBatch(
+    DateTime from,
+    DateTime to,
+  );
   Future<ReadingGoalModel?> getGoal();
   Future<void> saveGoal(ReadingGoalModel goal);
 }
@@ -60,6 +64,38 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
         }
       }
       return logs;
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<Map<String, DailyReadingLogModel>> getLogsBatch(
+    DateTime from,
+    DateTime to,
+  ) async {
+    try {
+      final Map<String, DailyReadingLogModel> result = {};
+      final allEntries = logBox.toMap();
+
+      // Generate all date keys in the range
+      for (int i = 0; i <= to.difference(from).inDays; i++) {
+        final date = DateTime(
+          from.year,
+          from.month,
+          from.day,
+        ).add(Duration(days: i));
+        final key = _dateKey(date);
+        final raw = allEntries[key];
+        if (raw is Map) {
+          try {
+            result[key] = DailyReadingLogModel.fromJson(
+              Map<String, dynamic>.from(raw),
+            );
+          } catch (_) {}
+        }
+      }
+      return result;
     } catch (e) {
       throw CacheException();
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -55,7 +56,9 @@ class HelpScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
+        color: isDark
+            ? AppColors.of(context).surface
+            : AppColors.of(context).surfaceVariant,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),

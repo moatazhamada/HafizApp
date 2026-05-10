@@ -33,7 +33,7 @@ class SurahBloc extends Bloc<SurahEvent, SurahState> {
               errorMessage: 'msg_connection_error',
             );
           } else {
-            return InitialSurahState();
+            return const FailureSurahState(errorMessage: 'msg_unexpected_error');
           }
         }, (data) => SuccessSurahState(chapters: data)),
       );

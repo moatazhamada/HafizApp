@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
@@ -19,7 +20,8 @@ class RecitationSessionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
       appBar: AppBar(title: Text('lbl_session_history'.tr)),
       body: BlocBuilder<RecitationSessionBloc, RecitationSessionState>(
         builder: (context, state) {
@@ -27,26 +29,47 @@ class RecitationSessionScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is RecitationSessionError) {
-            return Center(child: Text(state.message));
-          }
-          if (state is RecitationSessionLoaded && state.sessions.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                  Text(state.message.tr),
                   const SizedBox(height: 16),
-                  Text(
-                    'msg_no_sessions'.tr,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  FilledButton.tonal(
+                    onPressed: () => context.read<RecitationSessionBloc>().add(
+                      LoadSessions(),
+                    ),
+                    child: Text('lbl_retry'.tr),
                   ),
                 ],
               ),
             );
           }
+          if (state is RecitationSessionLoaded && state.sessions.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'msg_no_sessions'.tr,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           if (state is RecitationSessionLoaded) {
             return ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               itemCount: state.sessions.length,
               itemBuilder: (context, index) {
                 return _SessionCard(
@@ -58,6 +81,7 @@ class RecitationSessionScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
       ),
     );
   }
@@ -78,9 +102,9 @@ class _SessionCard extends StatelessWidget {
         : Colors.red;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       elevation: 2,
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? AppColors.of(context).surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),

@@ -7,7 +7,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
-    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -16,6 +15,7 @@ android {
     ndkVersion = "29.0.13113456"
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -30,15 +30,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "hafizapp")
     }
-    
+
     // Fix for firebase_app_distribution_android flavor ambiguity
     flavorDimensions.add("default")
-    
+
     productFlavors {
         create("production") {
             dimension = "default"
+        }
+        create("prelive") {
+            dimension = "default"
+            applicationIdSuffix = ".prelive"
+            manifestPlaceholders += mapOf("appAuthRedirectScheme" to "hafizapp-prelive")
         }
     }
 
@@ -76,13 +81,18 @@ android {
 
     buildTypes {
         release {
-            // Check if release signing config has the necessary properties
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // Fail the build if signing config is incomplete — never silently use debug keys
             val config = signingConfigs.getByName("release")
-            if (config.keyAlias != null && config.keyPassword != null && config.storeFile != null && config.storePassword != null) {
-                signingConfig = config
-            } else {
-                signingConfig = signingConfigs.getByName("debug")
+            require(config.keyAlias != null && config.keyPassword != null && config.storeFile != null && config.storePassword != null) {
+                "Release signing config is incomplete. Set KEY_ALIAS, KEY_PASSWORD, KEYSTORE_PASSWORD env vars or create keystore.properties."
             }
+            signingConfig = config
         }
     }
     
@@ -94,7 +104,7 @@ android {
     // Support 16 KB page sizes for Android 15+
     packagingOptions {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
         }
     }
 }
@@ -104,6 +114,6 @@ flutter {
 }
 
 dependencies {
-    implementation("androidx.multidex:multidex:2.0.1")
     implementation("com.google.android.material:material:1.12.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

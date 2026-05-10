@@ -95,7 +95,8 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
     await _playerSub?.cancel();
     _playerSub = _player.playerStateStream.listen((state) {
       if (!mounted) return;
-      final buffering = state.processingState == ProcessingState.loading ||
+      final buffering =
+          state.processingState == ProcessingState.loading ||
           state.processingState == ProcessingState.buffering;
       setState(() => _isBuffering = buffering);
     });
@@ -170,10 +171,11 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                         textDirection: TextDirection.rtl,
                         style: TextStyle(
                           fontSize: 18,
-                          fontFamily: 'Amiri',
+                          fontFamily: 'NotoNaskhArabic',
                           color: highlight ? Colors.green : Colors.black87,
-                          fontWeight:
-                              highlight ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: highlight
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       );
                     }),
@@ -184,13 +186,13 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed:
-                          _isLoading || _isBuffering ? null : _isPlaying ? _stop : _play,
-                      icon:
-                          Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                      label: Text(
-                        _isPlaying ? 'lbl_pause'.tr : 'lbl_play'.tr,
-                      ),
+                      onPressed: _isLoading || _isBuffering
+                          ? null
+                          : _isPlaying
+                          ? _stop
+                          : _play,
+                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                      label: Text(_isPlaying ? 'lbl_pause'.tr : 'lbl_play'.tr),
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton(
