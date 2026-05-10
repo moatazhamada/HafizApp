@@ -154,6 +154,8 @@ final Map<String, String> arEg = {
   'lbl_verses': 'الآيات',
   'msg_no_results': 'لا توجد نتائج',
   'msg_search_hint': 'ابحث عن سورة أو آية',
+  'msg_search_online': 'يتضمن نتائج عبر الإنترنت',
+  'msg_results_count': 'نتيجة',
   'lbl_error': 'خطأ',
   'msg_error_prefix': '',
   'msg_could_not_open': 'تعذر فتح الرابط: ',

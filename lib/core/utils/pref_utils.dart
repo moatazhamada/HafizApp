@@ -9,10 +9,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PrefUtils {
   static SharedPreferences? _sharedPreferences;
   static Completer<SharedPreferences>? _initCompleter;
+  static String? _cachedAppVersion;
 
   PrefUtils() {
     init();
   }
+
+  /// Cache the current app version for synchronous access during route setup.
+  void setCachedAppVersion(String version) => _cachedAppVersion = version;
+
+  String? getCachedAppVersion() => _cachedAppVersion;
 
   /// Initialise SharedPreferences. Safe to call multiple times; concurrent
   /// callers will coalesce on the same Completer.
@@ -351,16 +357,27 @@ class PrefUtils {
   Future<void> setMushafLastPageForType(String type, int page) async =>
       _requirePrefs().setInt('mushafLastPage_$type', page);
 
+  /// Returns true if onboarding has been completed for the current app version.
   bool getOnboardingCompleted() {
     try {
-      return _requirePrefs().getBool('onboardingCompleted') ?? false;
+      final completedVersion = _requirePrefs().getString('onboardingCompletedVersion');
+      if (completedVersion == null) return false;
+      final currentVersion = _cachedAppVersion;
+      if (currentVersion == null) return completedVersion.isNotEmpty;
+      return completedVersion == currentVersion;
     } catch (e) {
       return false;
     }
   }
 
+  /// Marks onboarding as completed for the current app version.
   Future<void> setOnboardingCompleted(bool value) async {
-    await _requirePrefs().setBool('onboardingCompleted', value);
+    if (value) {
+      final version = _cachedAppVersion ?? '';
+      await _requirePrefs().setString('onboardingCompletedVersion', version);
+    } else {
+      await _requirePrefs().remove('onboardingCompletedVersion');
+    }
   }
 
   // Quran Font Size

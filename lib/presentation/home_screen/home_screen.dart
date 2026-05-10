@@ -382,28 +382,28 @@ class _HomeScreenState extends State<HomeScreen>
         Navigator.of(context).pop();
         switch (index) {
           case 0:
-            NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+            NavigatorService.pushNamed(AppRoutes.mushafScreen);
             break;
           case 1:
-            NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
-            break;
-          case 2:
-            NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
-            break;
-          case 3:
-            NavigatorService.pushNamed(AppRoutes.memorizationPage);
-            break;
-          case 4:
-            NavigatorService.pushNamed(AppRoutes.khatmahPage);
-            break;
-          case 5:
             NavigatorService.pushNamed(AppRoutes.goalsPage);
             break;
+          case 2:
+            NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+            break;
+          case 3:
+            NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+            break;
+          case 4:
+            NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
+            break;
+          case 5:
+            NavigatorService.pushNamed(AppRoutes.memorizationPage);
+            break;
           case 6:
-            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+            NavigatorService.pushNamed(AppRoutes.khatmahPage);
             break;
           case 7:
-            NavigatorService.pushNamed(AppRoutes.mushafScreen);
+            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
             break;
           case 8:
             NavigatorService.pushNamed(AppRoutes.settingsScreen);
@@ -417,6 +417,16 @@ class _HomeScreenState extends State<HomeScreen>
         _buildDrawerAuthHeader(context, theme),
         const Divider(height: 1),
         const SizedBox(height: 12),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.auto_stories_outlined),
+          selectedIcon: const Icon(Icons.auto_stories_rounded),
+          label: Text('lbl_mushaf'.tr),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.event_note_outlined),
+          selectedIcon: const Icon(Icons.event_note_rounded),
+          label: Text('goals_title'.tr),
+        ),
         NavigationDrawerDestination(
           icon: const Icon(Icons.bookmark_outline_rounded),
           selectedIcon: const Icon(Icons.bookmark_rounded),
@@ -443,19 +453,9 @@ class _HomeScreenState extends State<HomeScreen>
           label: Text('lbl_khatmah_tracker'.tr),
         ),
         NavigationDrawerDestination(
-          icon: const Icon(Icons.event_note_outlined),
-          selectedIcon: const Icon(Icons.event_note_rounded),
-          label: Text('goals_title'.tr),
-        ),
-        NavigationDrawerDestination(
           icon: const Icon(Icons.trending_up_outlined),
           selectedIcon: const Icon(Icons.trending_up_rounded),
           label: Text('stats_title'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.auto_stories_outlined),
-          selectedIcon: const Icon(Icons.auto_stories_rounded),
-          label: Text('lbl_mushaf'.tr),
         ),
         const Divider(height: 24),
         NavigationDrawerDestination(

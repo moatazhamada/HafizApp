@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/data/datasource/qf_search/qf_search_remote_data_source.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
@@ -50,105 +49,73 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       }).toList();
 
       List<Verse> verseResults = [];
-      Failure? verseSearchFailure;
+      bool usedOnlineSearch = false;
 
-      // 2. Determine if this is a semantic/natural language query
-      final isSemanticQuery = _isSemanticQuery(query);
-
-      // 3. Search Verses (local first)
+      // 2. Search local verses (offline) for queries > 2 chars
       if (query.length > 2) {
         final result = await repository.searchVerses(query);
-        result.fold(
-          (failure) => verseSearchFailure = failure,
-          (verses) => verseResults = verses,
-        );
+        result.fold((failure) {
+          Logger.warning('Local search failed: $failure', feature: 'Search');
+        }, (verses) => verseResults = List.of(verses));
       }
 
-      // 4. If local search yielded no results and query looks semantic, try QF search
-      if (verseResults.isEmpty &&
-          surahResults.isEmpty &&
-          isSemanticQuery &&
-          query.length > 3) {
+      // 3. If local search returned few/no results, try online search
+      if (verseResults.length < 5 && query.length > 2) {
         try {
-          final qfResults = await searchRemoteDataSource.search(
+          final isArabicQuery = RegExp(r'[\u0600-\u06FF]').hasMatch(query);
+          final onlineResults = await searchRemoteDataSource.search(
             event.query,
             size: 20,
+            language: isArabicQuery ? null : 'en',
           );
-          if (qfResults.isNotEmpty) {
-            // QF search results include verse_key which we map to Verse objects
-            final semanticVerses = _mapQfResultsToVerses(qfResults);
-            if (semanticVerses.isNotEmpty) {
-              emit(
-                SearchLoaded(
-                  surahResults,
-                  verseResults: semanticVerses,
-                  isSemantic: true,
-                ),
-              );
-              return;
+          if (onlineResults.isNotEmpty) {
+            final onlineVerses = _mapSearchResultsToVerses(onlineResults);
+            if (onlineVerses.isNotEmpty) {
+              // Merge with local results, avoiding duplicates
+              final existingKeys = verseResults
+                  .map((v) => '${v.chapterNumber}:${v.verseNumber}')
+                  .toSet();
+              for (final v in onlineVerses) {
+                final key = '${v.chapterNumber}:${v.verseNumber}';
+                if (!existingKeys.contains(key)) {
+                  verseResults.add(v);
+                  existingKeys.add(key);
+                }
+              }
+              usedOnlineSearch = true;
             }
           }
         } catch (e) {
           Logger.warning(
-            'QF semantic search failed, using local fallback: $e',
+            'Online search failed, using local results: $e',
             feature: 'Search',
           );
         }
       }
 
       if (surahResults.isEmpty && verseResults.isEmpty) {
-        if (verseSearchFailure != null) {
-          emit(SearchError(verseSearchFailure.toString()));
-        } else {
-          emit(const SearchEmpty());
-        }
+        emit(const SearchEmpty());
       } else {
-        emit(SearchLoaded(surahResults, verseResults: verseResults));
+        emit(
+          SearchLoaded(
+            surahResults,
+            verseResults: verseResults,
+            isSemantic: usedOnlineSearch,
+          ),
+        );
       }
     } catch (e) {
       emit(SearchError(e.toString()));
     }
   }
 
-  /// Detect if a query is a natural language / semantic query rather than
-  /// an exact Arabic text search or surah reference.
-  bool _isSemanticQuery(String query) {
-    // If query contains Latin letters and spaces, likely a semantic query
-    final hasLatin = RegExp(r'[a-zA-Z]').hasMatch(query);
-    final hasSpaces = query.contains(' ');
-    final hasLatinWords = hasLatin && hasSpaces && query.split(' ').length >= 2;
-
-    // Common semantic query patterns in English
-    final semanticPatterns = [
-      RegExp(r'\b(verse|verses|about|surah|chapter)\b', caseSensitive: false),
-      RegExp(
-        r'\b(patience|mercy|forgiveness|prayer|faith|peace|love)\b',
-        caseSensitive: false,
-      ),
-      RegExp(
-        r'\b(hardship|guidance|heaven|hell|paradise|grace)\b',
-        caseSensitive: false,
-      ),
-    ];
-
-    if (hasLatinWords) return true;
-    for (final pattern in semanticPatterns) {
-      if (pattern.hasMatch(query)) return true;
-    }
-    return false;
-  }
-
-  /// Map QF search API results to Verse objects.
-  List<Verse> _mapQfResultsToVerses(List<Map<String, dynamic>> results) {
+  /// Map search API results to Verse objects.
+  /// Handles both Quran.com v4 format and generic formats.
+  List<Verse> _mapSearchResultsToVerses(List<Map<String, dynamic>> results) {
     final verses = <Verse>[];
     for (final result in results) {
       try {
         final verseKey = result['verse_key'] ?? result['verseKey'] ?? '';
-        final text =
-            result['text'] ??
-            result['verse_text'] ??
-            result['textUthmani'] ??
-            '';
         if (verseKey.isEmpty) continue;
 
         final parts = verseKey.split(':');
@@ -158,17 +125,36 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         final verseNum = int.tryParse(parts[1]) ?? 0;
         if (surahId < 1 || surahId > 114) continue;
 
+        // Extract Arabic text
+        final text =
+            result['text'] ??
+            result['verse_text'] ??
+            result['textUthmani'] ??
+            '';
+
+        // Extract translation from nested translations array (Quran.com v4)
+        String? translation;
+        final translations = result['translations'];
+        if (translations is List && translations.isNotEmpty) {
+          final first = translations[0];
+          if (first is Map<String, dynamic>) {
+            translation = first['text'] as String?;
+          }
+        }
+        // Fallback to flat field
+        translation ??= result['translation'] ?? result['translated_text'];
+
         verses.add(
           Verse(
             chapterNumber: surahId,
             verseNumber: verseNum,
-            arabicText: text,
-            translationText: result['translation'] ?? result['translated_text'],
+            arabicText: text as String,
+            translationText: translation,
             audioTimestampMs: 0,
           ),
         );
       } catch (e) {
-        Logger.warning('Failed to map QF search result: $e', feature: 'Search');
+        Logger.warning('Failed to map search result: $e', feature: 'Search');
       }
     }
     return verses;

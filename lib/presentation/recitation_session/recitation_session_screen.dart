@@ -20,7 +20,8 @@ class RecitationSessionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
       appBar: AppBar(title: Text('lbl_session_history'.tr)),
       body: BlocBuilder<RecitationSessionBloc, RecitationSessionState>(
         builder: (context, state) {
@@ -61,7 +62,10 @@ class RecitationSessionScreen extends StatelessWidget {
           }
           if (state is RecitationSessionLoaded) {
             return ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               itemCount: state.sessions.length,
               itemBuilder: (context, index) {
                 return _SessionCard(
@@ -73,6 +77,7 @@ class RecitationSessionScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
       ),
     );
   }
@@ -93,7 +98,7 @@ class _SessionCard extends StatelessWidget {
         : Colors.red;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       elevation: 2,
       color: isDark ? AppColors.of(context).surface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

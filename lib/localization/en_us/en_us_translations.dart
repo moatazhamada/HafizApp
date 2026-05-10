@@ -155,6 +155,8 @@ final Map<String, String> enUs = {
   'lbl_verses': 'Verses',
   'msg_no_results': 'No results found',
   'msg_search_hint': 'Search for a Surah or verse',
+  'msg_search_online': 'Includes online results',
+  'msg_results_count': 'results found',
   'lbl_error': 'Error',
   'msg_error_prefix': '',
   'msg_could_not_open': 'Could not open: ',

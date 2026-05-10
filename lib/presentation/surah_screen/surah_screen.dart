@@ -1761,7 +1761,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
       spans.add(
         TextSpan(
-          text: verseText,
+          text: '$verseText‏',
           style: TextStyle(
             fontFamily: 'NotoNaskhArabic',
             fontSize: PrefUtils().getQuranFontSize(),
@@ -1775,7 +1775,7 @@ class _SurahScreenState extends State<SurahScreen> {
           ),
         ),
       );
-      currentOffset += verseText.length;
+      currentOffset += verseText.length + 1; // +1 for trailing RLM
 
       // Verse End Badge Span
       verseRanges.add(
@@ -1792,34 +1792,42 @@ class _SurahScreenState extends State<SurahScreen> {
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: badgeGradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: badgeGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(color: badgeBorder, width: 1.2),
                 ),
-                border: Border.all(color: badgeBorder, width: 1.2),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                aya.verseNumber.toLocalizedNumber(context),
-                style: TextStyle(
-                  fontFamily: 'NotoNaskhArabic',
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: badgeText,
+                alignment: Alignment.center,
+                child: Text(
+                  aya.verseNumber.toLocalizedNumber(context),
+                  style: TextStyle(
+                    fontFamily: 'NotoNaskhArabic',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: badgeText,
+                  ),
                 ),
               ),
             ),
           ),
         ),
       );
+      currentOffset += 1;
+
+      // RLM after badge ensures strong RTL boundary before next ayah's text,
+      // preventing bidi reordering when two ayahs share the same visual line.
+      spans.add(const TextSpan(text: '‏'));
       currentOffset += 1;
 
       // Translation text below the verse
@@ -2099,17 +2107,22 @@ class _SurahScreenState extends State<SurahScreen> {
                   ),
                   if (_showTranslation &&
                       _translations[aya.verseNumber] != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        _translations[aya.verseNumber]!,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 13,
-                          color: AppColors.of(context).textSecondary,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                        child: Text(
+                          _translations[aya.verseNumber]!,
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 13,
+                            height: 1.5,
+                            color: AppColors.of(context).textSecondary,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                 ],

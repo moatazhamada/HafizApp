@@ -157,7 +157,7 @@ class RecitationErrorScreen extends StatelessWidget {
                                           .copyWith(
                                             color: AppColors.of(
                                               context,
-                                            ).surfaceVariant,
+                                            ).onSurface,
                                           ),
                                     ),
                                     const SizedBox(height: 4),

@@ -41,6 +41,13 @@ class AppInitializer {
     }
 
     try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      PrefUtils().setCachedAppVersion(packageInfo.version);
+    } catch (e) {
+      debugPrint('PackageInfo init failed: $e');
+    }
+
+    try {
       final storage = await HydratedStorage.build(
         storageDirectory: HydratedStorageDirectory(
           (await getTemporaryDirectory()).path,

@@ -7,6 +7,8 @@ PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
 DART_DEFINES_FILE = File.join(PROJECT_ROOT, ".dart_defines.production.json")
 DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
 
+AAB_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+
 default_platform(:android)
 
 platform :android do
@@ -103,7 +105,7 @@ platform :android do
     end
 
     UI.success("✅ AAB built successfully!")
-    UI.message("Output: ../build/app/outputs/bundle/release/app-release.aab")
+    UI.message("Output: #{AAB_PATH}")
   end
 
   desc "Deploy to Google Play Internal Testing"
@@ -113,7 +115,7 @@ platform :android do
 
     upload_to_play_store(
       track: "internal",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: AAB_PATH,
       release_status: "completed",
       skip_upload_metadata: false,
       skip_upload_images: false,
@@ -131,7 +133,7 @@ platform :android do
 
     upload_to_play_store(
       track: "beta",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: AAB_PATH,
       release_status: "completed",
     )
 
@@ -146,11 +148,9 @@ platform :android do
 
     build_aab_no_tests
 
-    aab_path = "../build/app/outputs/bundle/release/app-release.aab"
-
     upload_to_play_store(
       track: "production",
-      aab: aab_path,
+      aab: AAB_PATH,
       release_status: "draft",
     )
 
