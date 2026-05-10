@@ -1,4 +1,6 @@
-# Miscellaneous
+# ===========================================
+# OS & Editor
+# ===========================================
 *.class
 *.log
 *.pyc
@@ -18,17 +20,18 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# Test logs (local only)
-test_error.log
-test_output.log
-test_results.log
-
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related (expanded)
+# Editors
+.idea
+.vscode/
+
+# ===========================================
+# Flutter / Dart / Pub
+# ===========================================
 .dart_tool/
 .packages
 .pub/
@@ -36,9 +39,7 @@ test_results.log
 .flutter-plugins
 .flutter-plugins-dependencies
 **/doc/api/
-ios/Flutter/.last_build_id
-ios/Flutter/Generated.xcconfig
-
+.metadata
 
 # Symbolication related
 app.*.symbols
@@ -46,28 +47,18 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android/Gradle
+# Test logs (local only)
+test_error.log
+test_output.log
+test_results.log
+
+# ===========================================
+# Android / Gradle
+# ===========================================
 .gradle/
 local.properties
 **/.cxx/
 **/captures/
-
-# Xcode
-**/DerivedData/
-*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
-**/*.xcuserstate
-**/*.xcuserdatad/
-
-# Editors
-.idea
-.vscode/
-
-# Fastlane
-android/fastlane/report.xml
-android/fastlane/Preview.html
-android/fastlane/screenshots/**/*.png
-android/fastlane/test_output
-android/fastlane/service-account.json
 
 # Keystore files (DO NOT COMMIT)
 **/*.jks
@@ -83,10 +74,55 @@ keystore.properties
 qf_credentials.properties
 android/qf_credentials.properties
 
+# Build artifacts
+/appbundle/
+
+# ===========================================
+# iOS / macOS / Xcode
+# ===========================================
+**/DerivedData/
+**/*.xcuserstate
+**/xcuserdata/
+**/*.xcuserdatad/
+**/xcshareddata/WorkspaceSettings.xcsettings
+ios/Flutter/.last_build_id
+ios/Flutter/Generated.xcconfig
+
+# Lock files (regenerate per machine)
+ios/Podfile.lock
+macos/Podfile.lock
+
+# ===========================================
+# Fastlane
+# ===========================================
+android/fastlane/report.xml
+android/fastlane/Preview.html
+android/fastlane/screenshots/**/*.png
+android/fastlane/test_output
+android/fastlane/service-account.json
+android/fastlane/Gemfile.lock
+
+# ===========================================
 # Ruby
+# ===========================================
 android/vendor/
 android/.bundle/
-android/Gemfile.lock
-/appbundle/13.aab
-/appbundle/14.aab
-/appbundle/14.apk
+
+# ===========================================
+# Firebase Hosting cache
+# ===========================================
+**/.firebase/hosting.*.cache
+
+# ===========================================
+# AI Tool Config (personal/local only)
+# ===========================================
+.claude/
+.qwen/
+.qoder/
+.kilo/
+.specify/
+
+# ===========================================
+# Test reports (local only)
+# ===========================================
+testing/test-report-*.md
