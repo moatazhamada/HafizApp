@@ -16,7 +16,21 @@ class QfApiConfig {
     defaultValue: '',
   );
 
-  static const String redirectUri = 'hafizapp://oauth/callback';
+  // Derive environment from the flavor dart-define (set automatically by
+  // Flutter's --flavor flag).  This is the single source of truth — no
+  // separate QF_PRODUCTION flag needed.
+  static const String _flavor = String.fromEnvironment(
+    'flavor',
+    defaultValue: 'production',
+  );
+  static const bool defaultIsProduction = _flavor != 'prelive';
+
+  // Redirect URI must match the app-auth scheme registered in
+  // AndroidManifest / Info.plist.  The prelive flavor uses a separate scheme
+  // so both builds can coexist on the same device.
+  static const String redirectUri = defaultIsProduction
+      ? 'hafizapp://oauth/callback'
+      : 'hafizapp-prelive://oauth/callback';
 
   static const List<String> scopes = [
     'openid',
@@ -25,15 +39,10 @@ class QfApiConfig {
     'collection',
   ];
 
-  static const bool defaultIsProduction = bool.fromEnvironment(
-    'QF_PRODUCTION',
-    defaultValue: true,
-  );
-
   final bool isProduction;
 
   const QfApiConfig({bool? isProduction})
-      : isProduction = isProduction ?? defaultIsProduction;
+    : isProduction = isProduction ?? defaultIsProduction;
 
   String get authBaseUrl =>
       isProduction ? productionAuthBaseUrl : preliveAuthBaseUrl;

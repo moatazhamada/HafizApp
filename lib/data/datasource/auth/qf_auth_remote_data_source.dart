@@ -29,31 +29,38 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     FlutterAppAuth? appAuth,
     FlutterSecureStorage? secureStorage,
     QfApiConfig? config,
-  })  : _appAuth = appAuth ?? const FlutterAppAuth(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _config = config ?? const QfApiConfig();
+  }) : _appAuth = appAuth ?? const FlutterAppAuth(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _config = config ?? const QfApiConfig();
 
   @override
   Future<bool> login() async {
     try {
-      final AuthorizationTokenResponse result =
-          await _appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(
-          QfApiConfig.clientId,
-          QfApiConfig.redirectUri,
-          serviceConfiguration: AuthorizationServiceConfiguration(
-            authorizationEndpoint: _config.authorizationEndpoint,
-            tokenEndpoint: _config.tokenEndpoint,
-          ),
-          scopes: QfApiConfig.scopes,
-        ),
-      );
+      final AuthorizationTokenResponse result = await _appAuth
+          .authorizeAndExchangeCode(
+            AuthorizationTokenRequest(
+              QfApiConfig.clientId,
+              QfApiConfig.redirectUri,
+              clientSecret: QfApiConfig.clientSecret.isNotEmpty
+                  ? QfApiConfig.clientSecret
+                  : null,
+              serviceConfiguration: AuthorizationServiceConfiguration(
+                authorizationEndpoint: _config.authorizationEndpoint,
+                tokenEndpoint: _config.tokenEndpoint,
+              ),
+              scopes: QfApiConfig.scopes,
+            ),
+          );
 
-      if (result.accessToken != null) {        await _saveTokens(result);
+      if (result.accessToken != null) {
+        await _saveTokens(result);
         Logger.info('Successfully logged in via QF OAuth', feature: 'QfAuth');
         return true;
       }
-      Logger.warning('Login returned null response — user may have cancelled', feature: 'QfAuth');
+      Logger.warning(
+        'Login returned null response — user may have cancelled',
+        feature: 'QfAuth',
+      );
       return false;
     } on FlutterAppAuthUserCancelledException {
       Logger.info('User cancelled login', feature: 'QfAuth');
@@ -103,6 +110,9 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
           QfApiConfig.clientId,
           QfApiConfig.redirectUri,
           refreshToken: refreshToken,
+          clientSecret: QfApiConfig.clientSecret.isNotEmpty
+              ? QfApiConfig.clientSecret
+              : null,
           serviceConfiguration: AuthorizationServiceConfiguration(
             authorizationEndpoint: _config.authorizationEndpoint,
             tokenEndpoint: _config.tokenEndpoint,
@@ -111,7 +121,8 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
         ),
       );
 
-      if (result.accessToken != null) {        await _saveTokens(result);
+      if (result.accessToken != null) {
+        await _saveTokens(result);
         Logger.info('Successfully refreshed QF tokens', feature: 'QfAuth');
         return true;
       }
@@ -149,15 +160,15 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
         await Dio().post(
           '${_config.authBaseUrl}/oauth2/revoke',
           data: 'token=$token&client_id=${QfApiConfig.clientId}',
-          options: Options(
-            contentType: Headers.formUrlEncodedContentType,
-          ),
+          options: Options(contentType: Headers.formUrlEncodedContentType),
         );
         Logger.info('QF token revoked', feature: 'QfAuth');
       }
     } catch (e) {
-      Logger.warning('Token revocation failed (continuing with local cleanup): $e',
-          feature: 'QfAuth');
+      Logger.warning(
+        'Token revocation failed (continuing with local cleanup): $e',
+        feature: 'QfAuth',
+      );
     }
 
     // Clear all local tokens regardless of revocation result
@@ -179,10 +190,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
       );
     }
     if (response.idToken != null) {
-      await _secureStorage.write(
-        key: _idTokenKey,
-        value: response.idToken,
-      );
+      await _secureStorage.write(key: _idTokenKey, value: response.idToken);
     }
   }
 }

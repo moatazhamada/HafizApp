@@ -7,7 +7,11 @@ PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
 DART_DEFINES_FILE = File.join(PROJECT_ROOT, ".dart_defines.production.json")
 DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
 
+DART_DEFINES_PRELIVE_FILE = File.join(PROJECT_ROOT, ".dart_defines.prelive.json")
+DART_DEFINES_PRELIVE_ARG = "--dart-define-from-file=#{DART_DEFINES_PRELIVE_FILE}"
+
 AAB_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+AAB_PRELIVE_PATH = File.join(PROJECT_ROOT, "build/app/outputs/bundle/preliveRelease/app-prelive-release.aab")
 
 default_platform(:android)
 
@@ -39,6 +43,7 @@ platform :android do
     if client_id && client_secret
       require 'json'
       defines = {
+        "flavor" => "production",
         "QF_CLIENT_ID" => client_id,
         "QF_CLIENT_SECRET" => client_secret,
         "QF_PRODUCTION" => "true"
@@ -241,5 +246,26 @@ platform :android do
     )
 
     UI.success("🚀 Uploaded to Firebase App Distribution!")
+  end
+
+  # --- Prelive (staging) environment lanes ---
+
+  desc "Build APK for prelive environment"
+  lane :build_prelive_apk do
+    UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build apk --release --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
+    end
+    UI.success("✅ Prelive APK built successfully!")
+  end
+
+  desc "Build AAB for prelive environment"
+  lane :build_prelive_aab do
+    UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build appbundle --release --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
+    end
+    UI.success("✅ Prelive AAB built successfully!")
+    UI.message("Output: #{AAB_PRELIVE_PATH}")
   end
 end
