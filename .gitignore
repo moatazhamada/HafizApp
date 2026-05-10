@@ -126,3 +126,4 @@ android/.bundle/
 # Test reports (local only)
 # ===========================================
 testing/test-report-*.md
+android/Gemfile.lock
