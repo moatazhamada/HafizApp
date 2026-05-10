@@ -59,11 +59,7 @@ class _StatsBody extends StatelessWidget {
 
           final isLoading =
               memState is MemorizationInitial ||
-              memState is MemorizationLoading ||
-              bookmarkState is BookmarkInitial ||
-              bookmarkState is BookmarkLoading ||
-              errorState is RecitationErrorInitial ||
-              errorState is RecitationErrorLoading;
+              memState is MemorizationLoading;
 
           if (isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -326,7 +322,9 @@ class _StreakCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
-                streak > 0 ? Icons.local_fire_department_rounded : Icons.local_fire_department_outlined,
+                streak > 0
+                    ? Icons.local_fire_department_rounded
+                    : Icons.local_fire_department_outlined,
                 color: streak > 0 ? Colors.orange : Colors.grey,
                 size: 32,
               ),
@@ -352,9 +350,10 @@ class _StreakCard extends StatelessWidget {
                   ),
                   if (cloudStreak > 0)
                     Text(
-                      'stats_cloud_streak'
-                          .tr
-                          .replaceAll('{count}', '$cloudStreak'),
+                      'stats_cloud_streak'.tr.replaceAll(
+                        '{count}',
+                        '$cloudStreak',
+                      ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colors.textSecondary,
                       ),
@@ -471,7 +470,9 @@ class _LegendDot extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -496,7 +497,8 @@ class _StackedBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0);
+    final bgPaint = Paint()
+      ..color = isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0);
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.width, size.height),
       const Radius.circular(12),
@@ -510,7 +512,10 @@ class _StackedBarPainter extends CustomPainter {
       final memPaint = Paint()..color = const Color(0xFF4CAF50);
       canvas.drawRRect(
         RRect.fromLTRBAndCorners(
-          0, 0, size.width * memFrac, size.height,
+          0,
+          0,
+          size.width * memFrac,
+          size.height,
           topLeft: const Radius.circular(12),
           bottomLeft: const Radius.circular(12),
           topRight: progFrac == 0 && memFrac == 1
@@ -528,8 +533,10 @@ class _StackedBarPainter extends CustomPainter {
       final progPaint = Paint()..color = const Color(0xFFFF9800);
       canvas.drawRRect(
         RRect.fromLTRBAndCorners(
-          size.width * memFrac, 0,
-          size.width * (memFrac + progFrac), size.height,
+          size.width * memFrac,
+          0,
+          size.width * (memFrac + progFrac),
+          size.height,
           topLeft: memFrac == 0 ? const Radius.circular(12) : Radius.zero,
           bottomLeft: memFrac == 0 ? const Radius.circular(12) : Radius.zero,
           topRight: (memFrac + progFrac) >= 0.999
