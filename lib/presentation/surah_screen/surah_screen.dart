@@ -475,6 +475,7 @@ class _SurahScreenState extends State<SurahScreen> {
       child: SafeArea(
         top: false,
         child: Row(
+          textDirection: TextDirection.ltr,
           children: [
             // Next surah – always LEFT, icon AFTER text
             if (hasNext)
@@ -482,7 +483,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 child: Semantics(
                   button: true,
                   label:
-                  '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
+                      '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
                   child: TextButton(
                     onPressed: () => _navigateToSurah(surah!.id + 1),
                     style: TextButton.styleFrom(
@@ -492,6 +493,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     ),
                     child: Row(
+                      textDirection: TextDirection.ltr,
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -499,7 +501,9 @@ class _SurahScreenState extends State<SurahScreen> {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            isArabic ? nextSurah.nameArabic : nextSurah.nameEnglish,
+                            isArabic
+                                ? nextSurah.nameArabic
+                                : nextSurah.nameEnglish,
                             textDirection: TextDirection.rtl,
                             style: const TextStyle(fontSize: 13),
                             overflow: TextOverflow.ellipsis,
@@ -521,7 +525,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 child: Semantics(
                   button: true,
                   label:
-                  '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
+                      '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
                   child: TextButton(
                     onPressed: () => _navigateToSurah(surah!.id - 1),
                     style: TextButton.styleFrom(
@@ -531,12 +535,15 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     ),
                     child: Row(
+                      textDirection: TextDirection.ltr,
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
                           child: Text(
-                            isArabic ? prevSurah.nameArabic : prevSurah.nameEnglish,
+                            isArabic
+                                ? prevSurah.nameArabic
+                                : prevSurah.nameEnglish,
                             textDirection: TextDirection.rtl,
                             style: const TextStyle(fontSize: 13),
                             overflow: TextOverflow.ellipsis,
@@ -1024,7 +1031,9 @@ class _SurahScreenState extends State<SurahScreen> {
                     return Row(
                       children: [
                         Icon(
-                          isSurahBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                          isSurahBookmarked
+                              ? Icons.bookmark
+                              : Icons.bookmark_border,
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -1813,14 +1822,16 @@ class _SurahScreenState extends State<SurahScreen> {
       // Translation text below the verse
       if (_showTranslation && _translations[aya.verseNumber] != null) {
         final translationText = _translations[aya.verseNumber]!;
-        verseRanges.add(_VerseRange(
-          start: currentOffset,
-          end: currentOffset + 1,
-          verse: aya,
-          isBadge: false,
-          isBookmarked: isBookmarked,
-          isError: isRecitationError,
-        ));
+        verseRanges.add(
+          _VerseRange(
+            start: currentOffset,
+            end: currentOffset + 1,
+            verse: aya,
+            isBadge: false,
+            isBookmarked: isBookmarked,
+            isError: isRecitationError,
+          ),
+        );
         spans.add(
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
@@ -2090,8 +2101,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: Padding(
-                        padding:
-                            const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
                         child: Text(
                           _translations[aya.verseNumber]!,
                           textDirection: TextDirection.ltr,

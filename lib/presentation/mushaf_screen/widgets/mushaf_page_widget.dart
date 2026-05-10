@@ -4,10 +4,26 @@ import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 
 const _invertMatrix = <double>[
-  -1,  0,  0, 0, 255,
-   0, -1,  0, 0, 255,
-   0,  0, -1, 0, 255,
-   0,  0,  0, 1,   0,
+  -1,
+  0,
+  0,
+  0,
+  255,
+  0,
+  -1,
+  0,
+  0,
+  255,
+  0,
+  0,
+  -1,
+  0,
+  255,
+  0,
+  0,
+  0,
+  1,
+  0,
 ];
 
 class MushafPageWidget extends StatefulWidget {
@@ -31,6 +47,7 @@ class MushafPageWidget extends StatefulWidget {
 class _MushafPageWidgetState extends State<MushafPageWidget> {
   final TransformationController _transformController =
       TransformationController();
+  bool _isZoomedIn = false;
 
   @override
   void initState() {
@@ -40,7 +57,12 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
 
   void _onTransformChanged() {
     final scale = _transformController.value.getMaxScaleOnAxis();
-    widget.onZoomChanged?.call(scale > 1.05);
+    final zoomed = scale > 1.05;
+    if (_isZoomedIn != zoomed) {
+      _isZoomedIn = zoomed;
+      widget.onZoomChanged?.call(zoomed);
+      setState(() {});
+    }
   }
 
   @override
@@ -109,6 +131,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
       color: colors.mushafPageBg,
       child: InteractiveViewer(
         transformationController: _transformController,
+        panEnabled: _isZoomedIn,
         minScale: 0.5,
         maxScale: 4.0,
         child: imageWidget,

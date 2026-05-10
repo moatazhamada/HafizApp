@@ -39,6 +39,7 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final linkStyle = theme.textTheme.bodyMedium?.copyWith(
       color: isDark
@@ -295,6 +296,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ListTile(
                   leading: const Icon(Icons.public),
                   title: Text('about_source_quran_api'.tr, style: linkStyle),
+                  subtitle: Text('about_source_quran_api_desc'.tr),
                   onTap: () => openExternal('https://api.quran.com/api/v4'),
                   onLongPress: () => copy('https://api.quran.com/api/v4'),
                   trailing: const Icon(Icons.open_in_new),
@@ -302,9 +304,73 @@ class _AboutScreenState extends State<AboutScreen> {
                 ListTile(
                   leading: const Icon(Icons.public),
                   title: Text('about_source_tanzil'.tr, style: linkStyle),
+                  subtitle: Text('about_source_tanzil_desc'.tr),
                   onTap: () => openExternal('https://tanzil.net/download/'),
                   onLongPress: () => copy('https://tanzil.net/download/'),
                   trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cloud_outlined),
+                  title: Text('about_source_qf_content'.tr, style: linkStyle),
+                  subtitle: Text('about_source_qf_content_desc'.tr),
+                  onTap: () => openExternal('https://api.quran.foundation'),
+                  onLongPress: () => copy('https://api.quran.foundation'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.sync_outlined),
+                  title: Text('about_source_qf_sync'.tr, style: linkStyle),
+                  subtitle: Text('about_source_qf_sync_desc'.tr),
+                  onTap: () => openExternal('https://oauth2.quran.foundation'),
+                  onLongPress: () => copy('https://oauth2.quran.foundation'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.record_voice_over_outlined),
+                  title: Text('about_source_quranhub'.tr, style: linkStyle),
+                  subtitle: Text('about_source_quranhub_desc'.tr),
+                  onTap: () => openExternal('https://quranhub.com'),
+                  onLongPress: () => copy('https://quranhub.com'),
+                  trailing: const Icon(Icons.open_in_new),
+                ),
+                ListTile(
+                  leading: Icon(Icons.mic_outlined, color: theme.disabledColor),
+                  title: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'about_source_qurani'.tr,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.disabledColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'lbl_coming_soon'.tr,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Text(
+                    'about_source_qurani_desc'.tr,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.disabledColor,
+                    ),
+                  ),
+                  trailing: Icon(Icons.open_in_new, color: theme.disabledColor),
                 ),
               ],
             ),
@@ -317,8 +383,9 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
-          const SizedBox(height: 24),
-          const MusaliComingSoonCard(),
+          // TODO: Uncomment when Musali is ready to announce
+          // const SizedBox(height: 24),
+          // const MusaliComingSoonCard(),
         ],
       ),
     );

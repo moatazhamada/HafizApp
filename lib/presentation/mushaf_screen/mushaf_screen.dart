@@ -56,10 +56,15 @@ class _MushafScreenState extends State<MushafScreen> {
     if (type.totalPages == 604) {
       return MushafPageIndex.getPageForSurah(surahId).clamp(1, 604);
     }
-    final madaniStart = MushafPageIndex.surahStartPages[surahId - 1];
-    return (madaniStart / 604.0 * type.totalPages)
-        .round()
-        .clamp(1, type.totalPages);
+    // Verse-proportional mapping: compute the cumulative verse fraction
+    // up to this surah's start, and map to target type pages.
+    const totalVerses = 6236;
+    int cumulativeVerses = 0;
+    for (int i = 0; i < surahId - 1; i++) {
+      cumulativeVerses += MushafPageIndex.surahVerseCounts[i];
+    }
+    final fraction = cumulativeVerses / totalVerses;
+    return (fraction * (type.totalPages - 1)).round().clamp(1, type.totalPages);
   }
 
   // ─── Page Precaching ────────────────────────────────────────────
@@ -159,7 +164,10 @@ class _MushafScreenState extends State<MushafScreen> {
       return _localTextCache[pageNumber]!;
     }
 
-    final ranges = MushafPageVerseMap.getVersesForPage(pageNumber);
+    final ranges = MushafPageVerseMap.getVersesForPage(
+      pageNumber,
+      totalPages: _mushafType.totalPages,
+    );
     final isWarsh = _mushafType == MushafType.warsh;
     final List<_VerseText> entries = [];
 
@@ -218,6 +226,7 @@ class _MushafScreenState extends State<MushafScreen> {
 
   void _goToPage(int page) {
     final target = page.clamp(1, _mushafType.totalPages);
+    setState(() => _currentPage = target);
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 300),
@@ -235,6 +244,8 @@ class _MushafScreenState extends State<MushafScreen> {
       builder: (_) => MushafJumpDialog(
         currentPage: _currentPage,
         totalPages: _mushafType.totalPages,
+        mushafType: _mushafType,
+        surahToPage: _surahToPageInType,
       ),
     ).then((page) {
       if (page != null && page != _currentPage) {
@@ -267,7 +278,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 controller: _pageController,
                 physics: _isZoomed
                     ? const NeverScrollableScrollPhysics()
-                    : null,
+                    : const ClampingScrollPhysics(),
                 itemCount: _mushafType.totalPages,
                 onPageChanged: (index) {
                   final page = _pageIndexToNumber(index);

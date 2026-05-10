@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
 class MushafJumpDialog extends StatefulWidget {
   final int currentPage;
   final int totalPages;
+  final MushafType mushafType;
+  final int Function(int surahId, MushafType type) surahToPage;
 
   const MushafJumpDialog({
     super.key,
     required this.currentPage,
     this.totalPages = 604,
+    required this.mushafType,
+    required this.surahToPage,
   });
 
   @override
@@ -141,9 +146,9 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
       itemCount: 114,
       itemBuilder: (context, index) {
         final surah = QuranIndex.quranSurahs[index];
-        final page = MushafPageIndex.getPageForSurah(
-          surah.id,
-        ).clamp(1, widget.totalPages);
+        final page = widget
+            .surahToPage(surah.id, widget.mushafType)
+            .clamp(1, widget.totalPages);
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
         return ListTile(
           leading: CircleAvatar(
@@ -181,9 +186,10 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
       itemCount: 30,
       itemBuilder: (context, index) {
         final juz = index + 1;
-        final page = MushafPageIndex.getPageForJuz(
-          juz,
-        ).clamp(1, widget.totalPages);
+        final surahId = MushafPageIndex.getSurahForJuz(juz);
+        final page = widget
+            .surahToPage(surahId, widget.mushafType)
+            .clamp(1, widget.totalPages);
         final isActive = MushafPageIndex.getJuzForPage(_selectedPage) == juz;
         return GestureDetector(
           onTap: () => Navigator.pop(context, page),

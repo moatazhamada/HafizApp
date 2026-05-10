@@ -47,6 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           elevation: 0,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           leading: Semantics(
             button: true,
             label: 'lbl_back'.tr,

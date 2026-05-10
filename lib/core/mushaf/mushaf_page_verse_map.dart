@@ -6,9 +6,25 @@ class MushafPageVerseMap {
   /// Returns the verse ranges that appear on [page].
   /// Uses the loaded JSON index when available; falls back to a
   /// proportional estimation from the hardcoded arrays otherwise.
-  static List<MushafPageRange> getVersesForPage(int page) {
-    if (page < 1 || page > MushafPageIndex.totalPages) return [];
+  /// [totalPages] is the page count of the active mushaf type (default 604).
+  static List<MushafPageRange> getVersesForPage(
+    int page, {
+    int totalPages = 604,
+  }) {
+    if (page < 1 || page > totalPages) return [];
 
+    // For non-Madani types, map the page to a Madani-equivalent page
+    if (totalPages != MushafPageIndex.totalPages) {
+      final madaniPage = (page / totalPages * MushafPageIndex.totalPages)
+          .round()
+          .clamp(1, MushafPageIndex.totalPages);
+      return _getVersesInternal(madaniPage);
+    }
+
+    return _getVersesInternal(page);
+  }
+
+  static List<MushafPageRange> _getVersesInternal(int page) {
     if (MushafPageIndex.isLoaded) return _fromJson(page);
     return _fromFallback(page);
   }
