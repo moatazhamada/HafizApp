@@ -5,6 +5,7 @@
 **Maintain your daily connection with the Quran — read, memorize, perfect your recitation, and track your progress.**
 
 [![Google Play](https://img.shields.io/badge/Google_Play-Download-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app)
+[![YouTube](https://img.shields.io/badge/YouTube-Demo_Video-red?logo=youtube)](https://youtu.be/A9g0FEGydnY)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
 

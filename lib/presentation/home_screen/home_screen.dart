@@ -57,8 +57,6 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -281,95 +279,94 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         body: OfflineIndicator(
           child: BlocProvider<HomeBloc>.value(
-          value: homeBloc,
-          child: BlocBuilder<HomeBloc, HomeState>(
-            builder: (context, state) {
-              return SizedBox(
-                width: double.maxFinite,
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  key: const PageStorageKey('home-scroll'),
-                  slivers: [
+            value: homeBloc,
+            child: BlocBuilder<HomeBloc, HomeState>(
+              builder: (context, state) {
+                return SizedBox(
+                  width: double.maxFinite,
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    key: const PageStorageKey('home-scroll'),
+                    slivers: [
+                      if (state is UpdateLastReadSurah && state.surah != null)
+                        SliverToBoxAdapter(
+                          child: _buildCardLastRead(state.surah, theme),
+                        ),
 
-                    if (state is UpdateLastReadSurah && state.surah != null)
-                      SliverToBoxAdapter(
-                        child: _buildCardLastRead(state.surah, theme),
-                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        sliver: SliverList.builder(
+                          key: const PageStorageKey('home-list'),
+                          itemCount: QuranIndex.quranSurahs.length,
+                          itemBuilder: (context, index) {
+                            final surah = QuranIndex.quranSurahs[index];
 
-                    SliverPadding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      sliver: SliverList.builder(
-                        key: const PageStorageKey('home-list'),
-                        itemCount: QuranIndex.quranSurahs.length,
-                        itemBuilder: (context, index) {
-                          final surah = QuranIndex.quranSurahs[index];
+                            // Simple staggered animation logic
+                            return TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeOutQuad,
+                              // Delay based on index, capped to prevent long waits for bottom items
+                              builder: (context, value, child) {
+                                // Only animate the first 10 items to save performance/time
+                                final shouldAnimate = index < 10;
+                                final opacity = shouldAnimate ? value : 1.0;
+                                final offset = shouldAnimate
+                                    ? Offset(0, 50 * (1 - value))
+                                    : Offset.zero;
 
-                          // Simple staggered animation logic
-                          return TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeOutQuad,
-                            // Delay based on index, capped to prevent long waits for bottom items
-                            builder: (context, value, child) {
-                              // Only animate the first 10 items to save performance/time
-                              final shouldAnimate = index < 10;
-                              final opacity = shouldAnimate ? value : 1.0;
-                              final offset = shouldAnimate
-                                  ? Offset(0, 50 * (1 - value))
-                                  : Offset.zero;
-
-                              return Opacity(
-                                opacity: opacity,
-                                child: Transform.translate(
-                                  offset: offset,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: Semantics(
-                              button: true,
-                              label:
-                                  '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                              child: InkWell(
-                                onTap: () {
-                                  PrefUtils().saveLastReadSurah(surah);
-                                  homeBloc.add(HomeShowLastSurahEvent());
-                                  final defaultView = PrefUtils()
-                                      .getDefaultQuranView();
-                                  if (defaultView == 'mushaf') {
-                                    NavigatorService.pushNamed(
-                                      AppRoutes.mushafScreen,
-                                      arguments: {
-                                        'initialPage':
-                                            MushafPageIndex.getPageForSurah(
-                                              surah.id,
-                                            ),
-                                      },
-                                    );
-                                  } else {
-                                    NavigatorService.pushNamed(
-                                      AppRoutes.surahPage,
-                                      arguments: surah,
-                                    );
-                                  }
-                                },
-                                child: SurahListItem(
-                                  surahId: surah.id,
-                                  nameEnglish: surah.nameEnglish,
-                                  nameArabic: surah.nameArabic,
+                                return Opacity(
+                                  opacity: opacity,
+                                  child: Transform.translate(
+                                    offset: offset,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Semantics(
+                                button: true,
+                                label:
+                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+                                child: InkWell(
+                                  onTap: () {
+                                    PrefUtils().saveLastReadSurah(surah);
+                                    homeBloc.add(HomeShowLastSurahEvent());
+                                    final defaultView = PrefUtils()
+                                        .getDefaultQuranView();
+                                    if (defaultView == 'mushaf') {
+                                      NavigatorService.pushNamed(
+                                        AppRoutes.mushafScreen,
+                                        arguments: {
+                                          'initialPage':
+                                              MushafPageIndex.getPageForSurah(
+                                                surah.id,
+                                              ),
+                                        },
+                                      );
+                                    } else {
+                                      NavigatorService.pushNamed(
+                                        AppRoutes.surahPage,
+                                        arguments: surah,
+                                      );
+                                    }
+                                  },
+                                  child: SurahListItem(
+                                    surahId: surah.id,
+                                    nameEnglish: surah.nameEnglish,
+                                    nameArabic: surah.nameArabic,
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -502,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
           );
           title = 'msg_qf_account'.tr;
-          subtitle = state.userId ?? '';
+          subtitle = 'msg_qf_logged_in'.tr;
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(
             radius: 22,

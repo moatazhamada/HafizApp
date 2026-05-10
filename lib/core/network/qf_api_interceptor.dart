@@ -23,7 +23,9 @@ class QfApiInterceptor extends Interceptor {
     final path = options.uri.path.toLowerCase();
 
     if (host.contains('quran.foundation') &&
-        (path.contains('/auth/') || path.contains('/api/') || path.contains('/content/'))) {
+        (path.contains('/auth/') ||
+            path.contains('/api/') ||
+            path.contains('/content/'))) {
       return true;
     }
 
@@ -55,23 +57,23 @@ class QfApiInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401 &&
+    final statusCode = err.response?.statusCode;
+
+    // Retry on 401 (expired token) or 403 (insufficient auth) for user API.
+    if ((statusCode == 401 || statusCode == 403) &&
         _isUserApiRequest(err.requestOptions)) {
       try {
         final newToken = await _refreshOrQueue();
 
         if (newToken != null && newToken.isNotEmpty) {
-          // Update the original request with the new token
           final options = err.requestOptions;
           options.headers['x-auth-token'] = newToken;
 
-          // Retry the request
           final response = await _dio.fetch(options);
           return handler.resolve(response);
         } else {
-          // Refresh failed, token might be revoked or expired
           Logger.warning(
-            'Token refresh returned null during interceptor retry',
+            'Token refresh returned null; user may need to re-login',
             feature: 'QfApiInterceptor',
           );
           return super.onError(err, handler);
@@ -94,17 +96,15 @@ class QfApiInterceptor extends Interceptor {
   /// just awaits its result. Otherwise it kicks off a new refresh and
   /// populates the completer so subsequent callers can piggyback.
   Future<String?> _refreshOrQueue() async {
-    // If a refresh is already in progress, wait for it.
     if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
       return _refreshCompleter!.future;
     }
 
-    // Start a new refresh.
     _refreshCompleter = Completer<String?>();
 
     try {
       Logger.info(
-        'Received 401 from QF API, attempting to refresh token',
+        'Received auth error from QF API, attempting to refresh token',
         feature: 'QfApiInterceptor',
       );
 
@@ -118,7 +118,6 @@ class QfApiInterceptor extends Interceptor {
       return newToken;
     } catch (e) {
       _refreshCompleter!.completeError(e);
-      // Reset so the next attempt can retry
       _refreshCompleter = null;
       rethrow;
     }

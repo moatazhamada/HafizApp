@@ -23,8 +23,6 @@ class _GoalsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = AppColors.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: Text('goals_title'.tr)),
@@ -33,41 +31,7 @@ class _GoalsView extends StatelessWidget {
           final isAuth = authState is QfAuthAuthenticated;
 
           if (!isAuth) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.login_rounded,
-                      size: 64,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'msg_login_to_sync'.tr,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => context
-                          .read<QfAuthBloc>()
-                          .add(QfAuthLoginRequested()),
-                      icon: const Icon(Icons.login),
-                      label: Text('msg_qf_login'.tr),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _AuthPrompt(theme: theme);
           }
 
           return BlocBuilder<GoalsBloc, GoalsState>(
@@ -77,88 +41,14 @@ class _GoalsView extends StatelessWidget {
               }
 
               if (state is GoalsError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          size: 64,
-                          color: theme.colorScheme.error.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          state.message.tr,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton.tonal(
-                          onPressed: () =>
-                              context.read<GoalsBloc>().add(LoadTodaysPlan()),
-                          child: Text('lbl_retry'.tr),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _ErrorView(theme: theme, message: state.message);
               }
 
               if (state is GoalsLoaded) {
                 if (state.items.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.event_note_rounded,
-                            size: 64,
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'goals_no_plan'.tr,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'goals_no_plan_hint'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.4,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _EmptyPlanView(theme: theme);
                 }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<GoalsBloc>().add(LoadTodaysPlan());
-                  },
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _SummaryHeader(items: state.items, colors: colors, isDark: isDark),
-                      const SizedBox(height: 12),
-                      ...state.items.map(
-                        (item) => _PlanItemCard(item: item, isDark: isDark, colors: colors),
-                      ),
-                    ],
-                  ),
-                );
+                return _PlanList(items: state.items, theme: theme);
               }
 
               return const SizedBox.shrink();
@@ -170,19 +60,195 @@ class _GoalsView extends StatelessWidget {
   }
 }
 
+class _AuthPrompt extends StatelessWidget {
+  final ThemeData theme;
+  const _AuthPrompt({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.login_rounded,
+              size: 64,
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'goals_auth_required'.tr,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'goals_auth_hint'.tr,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () =>
+                  context.read<QfAuthBloc>().add(QfAuthLoginRequested()),
+              icon: const Icon(Icons.login),
+              label: Text('msg_qf_login'.tr),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final ThemeData theme;
+  final String message;
+  const _ErrorView({required this.theme, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: theme.colorScheme.error.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'goals_error_title'.tr,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message.tr,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.tonal(
+              onPressed: () => context.read<GoalsBloc>().add(LoadTodaysPlan()),
+              child: Text('lbl_retry'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyPlanView extends StatelessWidget {
+  final ThemeData theme;
+  const _EmptyPlanView({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_note_rounded,
+              size: 64,
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'goals_no_plan'.tr,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'goals_no_plan_hint'.tr,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanList extends StatelessWidget {
+  final List<PlanItem> items;
+  final ThemeData theme;
+  const _PlanList({required this.items, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<GoalsBloc>().add(LoadTodaysPlan());
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SummaryHeader(items: items, colors: colors, theme: theme),
+          const SizedBox(height: 12),
+          ...items.map(
+            (item) => _PlanItemCard(
+              item: item,
+              isDark: isDark,
+              colors: colors,
+              theme: theme,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SummaryHeader extends StatelessWidget {
   final List<PlanItem> items;
   final AppColors colors;
-  final bool isDark;
-
+  final ThemeData theme;
   const _SummaryHeader({
     required this.items,
     required this.colors,
-    required this.isDark,
+    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final completed = items.where((i) {
+      final p = i.progress ?? 0;
+      final d = i.duration ?? 0;
+      return d > 0 && p >= d;
+    }).length;
+
     return Card(
       elevation: 0,
       color: colors.primaryLight,
@@ -199,20 +265,31 @@ class _SummaryHeader extends StatelessWidget {
                 children: [
                   Text(
                     'lbl_today_reading'.tr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colors.primaryDark,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'goals_items_count'
-                        .tr
-                        .replaceAll('{count}', '${items.length}'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    'goals_items_count'.tr.replaceAll(
+                      '{count}',
+                      '${items.length}',
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.primaryDark.withValues(alpha: 0.7),
                     ),
                   ),
+                  if (completed > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '$completed ${'goals_completed'.tr.toLowerCase()}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -227,35 +304,40 @@ class _PlanItemCard extends StatelessWidget {
   final PlanItem item;
   final bool isDark;
   final AppColors colors;
-
+  final ThemeData theme;
   const _PlanItemCard({
     required this.item,
     required this.isDark,
     required this.colors,
+    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final progress = item.progress ?? 0;
     final duration = item.duration ?? 0;
-    final progressFrac =
-        duration > 0 ? (progress / duration).clamp(0.0, 1.0) : 0.0;
+    final progressFrac = duration > 0
+        ? (progress / duration).clamp(0.0, 1.0)
+        : 0.0;
+    final isComplete = duration > 0 && progress >= duration;
 
-    final label = item.name ?? item.category;
-    final amountStr =
-        item.amount != null ? '${item.amount}' : '';
-    final subtitle = [
-      item.type.isNotEmpty ? item.type : null,
-      amountStr.isNotEmpty ? amountStr : null,
-    ].whereType<String>().join(' \u2022 ');
+    final label = item.name ?? _categoryLabel(item.category);
+    final progressText = duration > 0
+        ? 'goals_progress_label'.tr
+              .replaceAll('{done}', '$progress')
+              .replaceAll('{total}', '$duration')
+        : null;
 
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colors.mushafPageBorder.withValues(alpha: 0.2)),
+        side: BorderSide(
+          color: isComplete
+              ? Colors.green.withValues(alpha: 0.3)
+              : colors.mushafPageBorder.withValues(alpha: 0.2),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -268,12 +350,16 @@ class _PlanItemCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.1),
+                    color: isComplete
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : colors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    Icons.task_alt_rounded,
-                    color: colors.primary,
+                    isComplete
+                        ? Icons.check_circle_rounded
+                        : Icons.task_alt_rounded,
+                    color: isComplete ? Colors.green : colors.primary,
                     size: 20,
                   ),
                 ),
@@ -289,9 +375,9 @@ class _PlanItemCard extends StatelessWidget {
                           color: colors.textPrimary,
                         ),
                       ),
-                      if (subtitle.isNotEmpty)
+                      if (item.amount != null)
                         Text(
-                          subtitle,
+                          '${item.amount}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -299,12 +385,12 @@ class _PlanItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (duration > 0)
+                if (progressText != null)
                   Text(
-                    '$progress / $duration',
+                    progressText,
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: colors.primary,
+                      color: isComplete ? Colors.green : colors.primary,
                     ),
                   ),
               ],
@@ -316,14 +402,18 @@ class _PlanItemCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progressFrac,
                   minHeight: 6,
-                  backgroundColor: isDark
-                      ? Colors.grey[800]
-                      : Colors.grey[200],
+                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    progressFrac >= 1.0
-                        ? Colors.green
-                        : colors.primary,
+                    isComplete ? Colors.green : colors.primary,
                   ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isComplete ? 'goals_completed'.tr : 'goals_in_progress'.tr,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: isComplete ? Colors.green : colors.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -331,5 +421,13 @@ class _PlanItemCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _categoryLabel(String category) {
+    if (category.isEmpty) return 'goals_title'.tr;
+    return category
+        .split('_')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 }

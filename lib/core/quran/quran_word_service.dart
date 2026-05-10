@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
+import '../network/debug_log_interceptor.dart';
 import '../network/qf_auth.dart';
 import 'quran_word_models.dart';
 
@@ -13,17 +14,19 @@ class QuranWordService {
   final Dio _dio;
   static final Map<String, VerseWordData> _memoryCache = {};
 
-  QuranWordService([Dio? dio])
-      : _dio = dio ?? _buildDio();
+  QuranWordService([Dio? dio]) : _dio = dio ?? _buildDio();
 
   static Dio _buildDio() {
-    final dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.useQfContent
-          ? ApiConfig.qfContentBase
-          : ApiConfig.quranComBase,
-      connectTimeout: const Duration(seconds: 7),
-      receiveTimeout: const Duration(seconds: 12),
-    ));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.useQfContent
+            ? ApiConfig.qfContentBase
+            : ApiConfig.quranComBase,
+        connectTimeout: const Duration(seconds: 7),
+        receiveTimeout: const Duration(seconds: 12),
+      ),
+    );
+    dio.interceptors.add(DebugLogInterceptor());
     if (ApiConfig.clientId.isNotEmpty && ApiConfig.clientSecret.isNotEmpty) {
       dio.interceptors.add(QfAuthInterceptor(QfAuthService()));
     }

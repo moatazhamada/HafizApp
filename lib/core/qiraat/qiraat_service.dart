@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
+import '../network/debug_log_interceptor.dart';
 import 'qiraat_models.dart';
 
 class QiraatService {
@@ -13,13 +14,18 @@ class QiraatService {
   static final Map<String, String> _ayahCache = {};
 
   QiraatService([Dio? dio])
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               baseUrl: ApiConfig.quranHubBase,
               connectTimeout: const Duration(seconds: 7),
               receiveTimeout: const Duration(seconds: 12),
               maxRedirects: 5,
-            ));
+            ),
+          ) {
+    if (dio == null) _dio.interceptors.add(DebugLogInterceptor());
+  }
 
   Future<List<QiraatEdition>> fetchEditions() async {
     if (_editionsCache != null && _editionsCache!.isNotEmpty) {
@@ -77,7 +83,8 @@ class QiraatService {
         final ayahData = data['data'];
         if (ayahData is List && ayahData.isNotEmpty) {
           final ayah = QiraatAyah.fromJson(
-              ayahData.first as Map<String, dynamic>);
+            ayahData.first as Map<String, dynamic>,
+          );
           _ayahCache[key] = ayah.text;
           _writeCachedAyah(key, ayah.text);
           return ayah.text;

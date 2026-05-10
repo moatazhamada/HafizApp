@@ -1,15 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/network/debug_log_interceptor.dart';
+
 class CustomAsrService {
   final Dio _dio;
 
   CustomAsrService([Dio? dio])
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               connectTimeout: const Duration(seconds: 12),
               receiveTimeout: const Duration(seconds: 20),
-            ));
+            ),
+          ) {
+    if (dio == null) _dio.interceptors.add(DebugLogInterceptor());
+  }
 
   Future<String?> transcribe({
     required String endpoint,

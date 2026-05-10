@@ -15,8 +15,8 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
   final QfApiConfig _config;
 
   QfUserApiRemoteDataSourceImpl({required Dio dio, QfApiConfig? config})
-      : _dio = dio,
-        _config = config ?? const QfApiConfig();
+    : _dio = dio,
+      _config = config ?? const QfApiConfig();
 
   @override
   Future<List<dynamic>> getCollections() async {
@@ -28,6 +28,9 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
         return response.data['collections'] ?? [];
       }
       return [];
+    } on DioException catch (e) {
+      Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
+      rethrow;
     } catch (e) {
       Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
       rethrow;
@@ -61,6 +64,9 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
         return response.data['bookmarks'] ?? [];
       }
       return [];
+    } on DioException catch (e) {
+      Logger.error('Failed to get QF bookmarks: $e', feature: 'QfUserApi');
+      rethrow;
     } catch (e) {
       Logger.error('Failed to get QF bookmarks: $e', feature: 'QfUserApi');
       rethrow;
@@ -70,16 +76,11 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
   @override
   Future<void> addBookmark(int verseId, {String? collectionId}) async {
     try {
-      final data = <String, dynamic>{
-        'verse_id': verseId,
-      };
+      final data = <String, dynamic>{'verse_id': verseId};
       if (collectionId != null) {
         data['collection_id'] = collectionId;
       }
-      await _dio.post(
-        '${_config.apiBaseUrl}/auth/v1/bookmarks',
-        data: data,
-      );
+      await _dio.post('${_config.apiBaseUrl}/auth/v1/bookmarks', data: data);
     } catch (e) {
       Logger.error('Failed to add QF bookmark: $e', feature: 'QfUserApi');
       rethrow;
@@ -89,11 +90,9 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
   @override
   Future<void> removeBookmark(int verseId) async {
     try {
-      // Assuming DELETE accepts verse_id or bookmark_id. 
+      // Assuming DELETE accepts verse_id or bookmark_id.
       // Adjust according to the actual field reference in QF docs.
-      await _dio.delete(
-        '${_config.apiBaseUrl}/auth/v1/bookmarks/$verseId',
-      );
+      await _dio.delete('${_config.apiBaseUrl}/auth/v1/bookmarks/$verseId');
     } catch (e) {
       Logger.error('Failed to remove QF bookmark: $e', feature: 'QfUserApi');
       rethrow;

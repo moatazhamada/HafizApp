@@ -50,17 +50,14 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
   final Dio _dio;
   final QfApiConfig _config;
 
-  QfGoalsRemoteDataSourceImpl({
-    required Dio dio,
-    QfApiConfig? config,
-  })  : _dio = dio,
-        _config = config ?? const QfApiConfig();
+  QfGoalsRemoteDataSourceImpl({required Dio dio, QfApiConfig? config})
+    : _dio = dio,
+      _config = config ?? const QfApiConfig();
 
   String get _baseUrl => '${_config.apiBaseUrl}/auth/v1';
 
-  Options get _tzOptions => Options(
-        headers: {'x-timezone': DateTime.now().timeZoneName},
-      );
+  Options get _tzOptions =>
+      Options(headers: {'x-timezone': DateTime.now().timeZoneName});
 
   @override
   Future<Map<String, dynamic>?> createGoal({
@@ -161,9 +158,20 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         return response.data['data'] as Map<String, dynamic>?;
       }
       return null;
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 401 || statusCode == 403) {
+        Logger.warning(
+          'Auth error fetching today\'s plan: $statusCode',
+          feature: 'QfGoals',
+        );
+      } else {
+        Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
+      }
+      rethrow;
     } catch (e) {
       Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
-      return null;
+      rethrow;
     }
   }
 
@@ -205,17 +213,17 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
     try {
       await _dio.post(
         '$_baseUrl/reading-sessions',
-        data: {
-          'chapterNumber': chapterNumber,
-          'verseNumber': verseNumber,
-        },
+        data: {'chapterNumber': chapterNumber, 'verseNumber': verseNumber},
       );
       Logger.info(
         'Posted reading session $chapterNumber:$verseNumber to QF',
         feature: 'QfGoals',
       );
     } catch (e) {
-      Logger.warning('Failed to post QF reading session: $e', feature: 'QfGoals');
+      Logger.warning(
+        'Failed to post QF reading session: $e',
+        feature: 'QfGoals',
+      );
     }
   }
 
@@ -235,7 +243,10 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
       }
       return [];
     } catch (e) {
-      Logger.warning('Failed to get QF reading sessions: $e', feature: 'QfGoals');
+      Logger.warning(
+        'Failed to get QF reading sessions: $e',
+        feature: 'QfGoals',
+      );
       return [];
     }
   }

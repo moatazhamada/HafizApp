@@ -370,6 +370,13 @@ final Map<String, String> arEg = {
   'goals_no_plan_hint':
       'أنشئ هدف قراءة في متتبع الختمة لرؤية خطتك اليومية هنا.',
   'goals_items_count': '{count} عناصر في خطتك',
+  'goals_auth_required': 'سجّل الدخول لعرض خطتك اليومية',
+  'goals_auth_hint': 'اربط حسابك في Quran.com لمزامنة الأهداف وتتبع تقدمك.',
+  'goals_error_title': 'تعذر تحميل الخطة',
+  'goals_error_auth': 'يرجى تسجيل الدخول مرة أخرى للمتابعة.',
+  'goals_progress_label': '{done} من {total}',
+  'goals_completed': 'مكتمل',
+  'goals_in_progress': 'قيد التنفيذ',
   'lbl_minutes_ago': 'منذ {count} دقيقة',
   'lbl_hours_ago': 'منذ {count} ساعة',
 

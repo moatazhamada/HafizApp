@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/notifications/notification_service.dart';
 
 import '../../core/i18n/locale_controller.dart';
 import '../../core/qiraat/qiraat_models.dart';
@@ -175,9 +176,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Text(
                           '${(_downloadProgress! * 100).round()}%',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       )
                     : const Icon(Icons.chevron_right),
@@ -232,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
           );
           title = 'msg_qf_account'.tr;
-          subtitle = state.userId ?? '';
+          subtitle = 'msg_qf_logged_in'.tr;
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(
             radius: 26,
@@ -550,6 +550,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onChanged: (val) {
         setState(() => _dailyVerseEnabled = val);
         PrefUtils().setDailyVerseEnabled(val);
+        final notificationService = DailyVerseNotificationService();
+        if (val) {
+          notificationService.scheduleDailyVerse();
+        } else {
+          notificationService.cancelAll();
+        }
       },
     );
   }
@@ -713,7 +719,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           for (final model in models)
             ListTile(
               selected: _whisperModel == model.key,
-              selectedTileColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+              selectedTileColor: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.1),
               title: Row(
                 children: [
                   Text(model.titleKey.tr),
@@ -721,13 +729,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     model.sizeKey.tr,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   if (model.recommended) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(4),
@@ -749,8 +760,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               trailing: _whisperModel == model.key
-                  ? Icon(Icons.check_circle,
-                      color: Theme.of(context).colorScheme.primary)
+                  ? Icon(
+                      Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
                   : null,
               onTap: () => Navigator.pop(context, model.key),
             ),

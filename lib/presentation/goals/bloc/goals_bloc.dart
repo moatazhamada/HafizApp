@@ -18,24 +18,38 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     Emitter<GoalsState> emit,
   ) async {
     emit(GoalsLoading());
-    final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
+    final result = await getTodaysPlan(
+      const GetTodaysPlanParams(type: 'QURAN'),
+    );
     result.fold(
       (failure) {
-        Logger.warning('Failed to load today\'s plan', feature: 'Goals');
-        emit(GoalsError(failure.errorMessage));
+        Logger.warning(
+          'Failed to load today\'s plan: ${failure.errorMessage}',
+          feature: 'Goals',
+        );
+
+        // Distinguish auth errors from general failures
+        final msg = failure.errorMessage;
+        if (_isAuthError(msg)) {
+          emit(const GoalsError('goals_error_auth'));
+        } else {
+          emit(const GoalsError('msg_operation_failed'));
+        }
       },
       (data) {
         final items = _parsePlanItems(data);
-        if (items.isEmpty && data == null) {
-          emit(const GoalsError('msg_operation_failed'));
-        } else {
-          emit(GoalsLoaded(
-            items: items,
-            rawData: data,
-          ));
-        }
+        emit(GoalsLoaded(items: items, rawData: data));
       },
     );
+  }
+
+  bool _isAuthError(String? message) {
+    if (message == null) return false;
+    final lower = message.toLowerCase();
+    return lower.contains('403') ||
+        lower.contains('401') ||
+        lower.contains('unauthorized') ||
+        lower.contains('forbidden');
   }
 
   List<PlanItem> _parsePlanItems(Map<String, dynamic>? data) {

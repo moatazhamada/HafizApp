@@ -377,6 +377,14 @@ final Map<String, String> enUs = {
   'goals_no_plan_hint':
       'Create a reading goal in the Khatmah tracker to see your daily plan here.',
   'goals_items_count': '{count} items on your plan',
+  'goals_auth_required': 'Sign in to view your daily plan',
+  'goals_auth_hint':
+      'Connect your Quran.com account to sync goals and track progress.',
+  'goals_error_title': 'Could not load plan',
+  'goals_error_auth': 'Please sign in again to continue.',
+  'goals_progress_label': '{done} of {total}',
+  'goals_completed': 'Completed',
+  'goals_in_progress': 'In progress',
   'lbl_minutes_ago': '{count}m ago',
   'lbl_hours_ago': '{count}h ago',
 
