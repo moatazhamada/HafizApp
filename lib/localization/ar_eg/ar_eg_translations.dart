@@ -349,7 +349,8 @@ final Map<String, String> arEg = {
   // Goals
   'goals_title': 'خطة اليوم',
   'goals_no_plan': 'لا توجد خطة لليوم',
-  'goals_no_plan_hint': 'أنشئ هدف قراءة في متتبع الختمة لرؤية خطتك اليومية هنا.',
+  'goals_no_plan_hint':
+      'أنشئ هدف قراءة في متتبع الختمة لرؤية خطتك اليومية هنا.',
   'goals_items_count': '{count} عناصر في خطتك',
   'lbl_minutes_ago': 'منذ {count} دقيقة',
   'lbl_hours_ago': 'منذ {count} ساعة',
@@ -407,6 +408,21 @@ final Map<String, String> arEg = {
   'msg_custom_asr_empty':
       'لم يتم تكوين نقطة نهاية ASR المخصصة. يرجى تعيينها في الإعدادات.',
   'lbl_tajweed': 'التجويد',
+  'lbl_provider_qrc': 'Qurani.ai QRC',
+  'lbl_provider_custom': 'ASR مخصص',
+  'lbl_qrc_tajweed_level': 'مستوى التجويد',
+  'lbl_qrc_tajweed_level_desc': 'صرامة فحص التجويد (1-5)',
+  'lbl_qrc_hafz_level': 'مستوى الحفظ',
+  'lbl_qrc_hafz_level_desc': 'مستوى فحص الحفظ (1-3)',
+  'lbl_qrc_level_1': '1 - أساسي',
+  'lbl_qrc_level_2': '2 - متوسط',
+  'lbl_qrc_level_3': '3 - قياسي',
+  'lbl_qrc_level_4': '4 - صارم',
+  'lbl_qrc_level_5': '5 - صارم جداً',
+  'lbl_custom_asr_endpoint': 'رابط خدمة التعرف على الكلام',
+  'msg_custom_asr_not_set': 'غير مضبوط',
+  'msg_no_arabic_detected': 'لم يتم اكتشاف كلام عربي. يرجى المحاولة مرة أخرى.',
+  'lbl_save': 'حفظ',
 
   // Verse unavailable
   'lbl_verse_unavailable': 'الآية غير متوفرة',

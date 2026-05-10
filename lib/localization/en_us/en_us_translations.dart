@@ -355,7 +355,8 @@ final Map<String, String> enUs = {
   // Goals
   'goals_title': "Today's Plan",
   'goals_no_plan': 'No plan for today',
-  'goals_no_plan_hint': 'Create a reading goal in the Khatmah tracker to see your daily plan here.',
+  'goals_no_plan_hint':
+      'Create a reading goal in the Khatmah tracker to see your daily plan here.',
   'goals_items_count': '{count} items on your plan',
   'lbl_minutes_ago': '{count}m ago',
   'lbl_hours_ago': '{count}h ago',
@@ -414,6 +415,21 @@ final Map<String, String> enUs = {
   'msg_custom_asr_empty':
       'Custom ASR endpoint is not configured. Please set it in Settings.',
   'lbl_tajweed': 'Tajweed',
+  'lbl_provider_qrc': 'Qurani.ai QRC',
+  'lbl_provider_custom': 'Custom ASR',
+  'lbl_qrc_tajweed_level': 'Tajweed Level',
+  'lbl_qrc_tajweed_level_desc': 'Strictness of tajweed checking (1-5)',
+  'lbl_qrc_hafz_level': 'Hifz Level',
+  'lbl_qrc_hafz_level_desc': 'Memorization checking level (1-3)',
+  'lbl_qrc_level_1': '1 - Basic',
+  'lbl_qrc_level_2': '2 - Moderate',
+  'lbl_qrc_level_3': '3 - Standard',
+  'lbl_qrc_level_4': '4 - Strict',
+  'lbl_qrc_level_5': '5 - Very Strict',
+  'lbl_custom_asr_endpoint': 'ASR Endpoint URL',
+  'msg_custom_asr_not_set': 'Not configured',
+  'msg_no_arabic_detected': 'No Arabic speech detected. Please try again.',
+  'lbl_save': 'Save',
 
   // Verse unavailable
   'lbl_verse_unavailable': 'Verse unavailable',

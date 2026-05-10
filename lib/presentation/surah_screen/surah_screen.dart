@@ -1673,9 +1673,7 @@ class _SurahScreenState extends State<SurahScreen> {
   ) {
     final colors = AppColors.of(context);
     final textColor = colors.textColor;
-    final badgeBorder = colors.badgeBorder;
     final badgeText = colors.badgeText;
-    final badgeGradient = colors.badgeGradient;
 
     final verseStates = _getVerseStates(bookmarkState, errorState);
     final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
@@ -1777,11 +1775,15 @@ class _SurahScreenState extends State<SurahScreen> {
       );
       currentOffset += verseText.length + 1; // +1 for trailing RLM
 
-      // Verse End Badge Span
+      // Verse End Badge Span — rendered as ۝ + verse number (TextSpan)
+      // Use TextSpan with ۝ (U+06DD Arabic End of Ayah) instead of WidgetSpan.
+      // WidgetSpan inserts bidi-neutral U+FFFC which causes verse numbers to
+      // swap when two ayahs share a line. TextSpan with RTL characters doesn't.
+      final verseMarker = ' ۝${aya.verseNumber.toLocalizedNumber(context)} ';
       verseRanges.add(
         _VerseRange(
           start: currentOffset,
-          end: currentOffset + 1,
+          end: currentOffset + verseMarker.length,
           verse: aya,
           isBadge: true,
           isBookmarked: isBookmarked,
@@ -1790,40 +1792,18 @@ class _SurahScreenState extends State<SurahScreen> {
       );
 
       spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: badgeGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: badgeBorder, width: 1.2),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  aya.verseNumber.toLocalizedNumber(context),
-                  style: TextStyle(
-                    fontFamily: 'NotoNaskhArabic',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: badgeText,
-                  ),
-                ),
-              ),
-            ),
+        TextSpan(
+          text: verseMarker,
+          style: TextStyle(
+            fontFamily: 'NotoNaskhArabic',
+            fontSize: PrefUtils().getQuranFontSize() - 4,
+            fontWeight: FontWeight.bold,
+            color: badgeText,
+            height: 2.2,
           ),
         ),
       );
-      currentOffset += 1;
+      currentOffset += verseMarker.length;
 
       // RLM after badge ensures strong RTL boundary before next ayah's text,
       // preventing bidi reordering when two ayahs share the same visual line.
