@@ -6,9 +6,17 @@ import 'package:hafiz_app/core/utils/navigator_service.dart';
 import 'package:hafiz_app/routes/app_routes.dart';
 
 class DeepLinkHandler {
-  StreamSubscription? _widgetClickSub;
+  StreamSubscription<Uri?>? _widgetClickSub;
 
   Future<void> initialize() async {
+    // Handle the case where the app was cold-started via a widget click.
+    // The widgetClicked stream event would have fired before this listener
+    // was registered, so we check the initial launch URI.
+    final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+    if (initialUri != null) {
+      _handleUri(initialUri);
+    }
+
     _widgetClickSub = HomeWidget.widgetClicked.listen((uri) {
       if (uri != null) _handleUri(uri);
     });
@@ -36,10 +44,7 @@ class DeepLinkHandler {
 
     NavigatorService.pushNamed(
       AppRoutes.surahPage,
-      arguments: {
-        'surah': surah,
-        'verseIndex': verseNumber - 1,
-      },
+      arguments: {'surah': surah, 'verseIndex': verseNumber - 1},
     );
   }
 

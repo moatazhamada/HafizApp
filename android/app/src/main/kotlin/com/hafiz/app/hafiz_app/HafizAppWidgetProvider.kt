@@ -1,14 +1,13 @@
 package com.hafiz.app.hafiz_app
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
-import java.util.Locale
+import es.antonborri.home_widget.HomeWidgetLaunchIntent
 
 class HafizAppWidgetProvider : AppWidgetProvider() {
 
@@ -22,15 +21,15 @@ class HafizAppWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(context: Context, intent: android.content.Intent) {
         super.onReceive(context, intent)
-        if (intent.action == "es.antonborri.home_widget.UPDATE_WIDGET" ||
-            intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        ) {
+        // Only handle the home_widget plugin broadcast here;
+        // super.onReceive() already dispatches ACTION_APPWIDGET_UPDATE → onUpdate().
+        if (intent.action == "es.antonborri.home_widget.UPDATE_WIDGET") {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
                 ?: appWidgetManager.getAppWidgetIds(
-                    android.content.ComponentName(context, HafizAppWidgetProvider::class.java)
+                    ComponentName(context, HafizAppWidgetProvider::class.java)
                 )
             onUpdate(context, appWidgetManager, appWidgetIds)
         }
@@ -73,16 +72,13 @@ private fun updateAppWidget(
         views.setTextViewText(R.id.widget_verse_ref, verseRef)
     }
 
-    // Deep link: tapping opens the surah screen at this verse
+    // Use HomeWidgetLaunchIntent so clicks are routed through
+    // HomeWidget.widgetClicked on the Dart side (DeepLinkHandler).
     val deepLink = Uri.parse("hafiz://verse/$chapterId/$verseNumber")
-    val intent = Intent(Intent.ACTION_VIEW, deepLink).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-    }
-    val pendingIntent = PendingIntent.getActivity(
+    val pendingIntent = HomeWidgetLaunchIntent.getActivity(
         context,
-        0,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        MainActivity::class.java,
+        deepLink
     )
     views.setOnClickPendingIntent(R.id.widget_verse_text, pendingIntent)
     views.setOnClickPendingIntent(R.id.widget_verse_ref, pendingIntent)

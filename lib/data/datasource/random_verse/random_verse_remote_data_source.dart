@@ -32,15 +32,20 @@ class RandomVerseRemoteDataSource {
         queryParameters: {
           'translations': '${ApiConfig.translationId}',
           'words': 'true',
+          'fields': 'text_uthmani',
         },
       );
 
       final verse = response.data['verse'] as Map<String, dynamic>?;
       if (verse == null) return null;
 
-      final words =
-          (verse['words'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      final arabicText = words.map((w) => w['text_uthmani'] ?? '').join(' ');
+      final verseKey = verse['verse_key'] as String? ?? '';
+      final chapterId =
+          verse['chapter_id'] as int? ??
+          int.tryParse(verseKey.split(':').first) ??
+          1;
+
+      final arabicText = verse['text_uthmani'] as String? ?? '';
 
       // Translation text comes via the verse.translations array.
       final translations = (verse['translations'] as List?)
@@ -51,12 +56,10 @@ class RandomVerseRemoteDataSource {
 
       return RandomVerseData(
         verseId: verse['id'] as int? ?? 0,
-        chapterId: verse['chapter_id'] as int? ?? 1,
+        chapterId: chapterId,
         verseNumber: verse['verse_number'] as int? ?? 1,
-        verseKey: verse['verse_key'] as String? ?? '',
-        arabicText: arabicText.isNotEmpty
-            ? arabicText
-            : verse['text_uthmani'] as String? ?? '',
+        verseKey: verseKey,
+        arabicText: arabicText,
         englishText: englishText,
       );
     } catch (e) {

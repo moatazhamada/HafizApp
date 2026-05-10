@@ -43,6 +43,10 @@
 # Dio interceptors may be accessed reflectively
 -keep class * extends com.squareup.okhttp3.Interceptor { *; }
 
+# ── Home Widget ───────────────────────────────────────
+# home_widget plugin uses Class.forName() to resolve the provider
+-keep class com.hafiz.app.hafiz_app.HafizAppWidgetProvider { *; }
+
 # ── General Flutter safety ────────────────────────────
 # Keep all serializable classes
 -keepclassmembers class * implements java.io.Serializable {
