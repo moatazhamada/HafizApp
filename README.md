@@ -1,6 +1,6 @@
 # Hafiz — Quran Memorization Assistant
 
-![image](https://github.com/abualgait/HafizApp/assets/38107393/aaa45a94-030c-40fc-afb6-108bd43f8742)
+![image](https://drive.google.com/file/d/1PQIdQ5D6T23VDe_HgUWX0WiiiO4dSgYD/view?usp=sharing)
 
 **Maintain your daily connection with the Quran — read, memorize, perfect your recitation, and track your progress.**
 
