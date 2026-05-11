@@ -22,16 +22,45 @@ class VerseStudyLoaded extends VerseStudyState {
   final String arabicText;
   final String translation;
   final String tafsir;
+  final List<Map<String, dynamic>> reflections;
+  final bool reflectionsLoading;
 
   const VerseStudyLoaded({
     required this.arabicText,
     required this.translation,
     required this.tafsir,
     required String verseKey,
+    this.reflections = const [],
+    this.reflectionsLoading = false,
   }) : super(verseKey: verseKey);
 
+  VerseStudyLoaded copyWith({
+    String? arabicText,
+    String? translation,
+    String? tafsir,
+    String? verseKey,
+    List<Map<String, dynamic>>? reflections,
+    bool? reflectionsLoading,
+  }) {
+    return VerseStudyLoaded(
+      arabicText: arabicText ?? this.arabicText,
+      translation: translation ?? this.translation,
+      tafsir: tafsir ?? this.tafsir,
+      verseKey: verseKey ?? this.verseKey!,
+      reflections: reflections ?? this.reflections,
+      reflectionsLoading: reflectionsLoading ?? this.reflectionsLoading,
+    );
+  }
+
   @override
-  List<Object?> get props => [arabicText, translation, tafsir, verseKey];
+  List<Object?> get props => [
+    arabicText,
+    translation,
+    tafsir,
+    verseKey,
+    reflections,
+    reflectionsLoading,
+  ];
 }
 
 class VerseStudyError extends VerseStudyState {

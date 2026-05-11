@@ -449,7 +449,7 @@ class _SearchScreenState extends State<SearchScreen> {
       text: TextSpan(
         style: TextStyle(
           fontFamily: 'NotoNaskhArabic',
-          fontSize: 18,
+          fontSize: PrefUtils().getQuranFontSize(),
           color: textColor,
         ),
         children: [
@@ -493,7 +493,7 @@ class _SearchScreenState extends State<SearchScreen> {
       textDirection: TextDirection.rtl,
       style: TextStyle(
         fontFamily: 'NotoNaskhArabic',
-        fontSize: 18,
+        fontSize: PrefUtils().getQuranFontSize(),
         color: isDark ? Colors.white : null,
       ),
     );

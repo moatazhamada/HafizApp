@@ -321,6 +321,18 @@ class PrefUtils {
     }
   }
 
+  bool isAdaptiveQrc() {
+    try {
+      return _requirePrefs().getBool('adaptive_qrc') ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> setAdaptiveQrc(bool enabled) async {
+    await _requirePrefs().setBool('adaptive_qrc', enabled);
+  }
+
   DateTime? getQfLastSyncAt() {
     try {
       final s = _requirePrefs().getString('qf_last_sync_at');
@@ -360,7 +372,9 @@ class PrefUtils {
   /// Returns true if onboarding has been completed for the current app version.
   bool getOnboardingCompleted() {
     try {
-      final completedVersion = _requirePrefs().getString('onboardingCompletedVersion');
+      final completedVersion = _requirePrefs().getString(
+        'onboardingCompletedVersion',
+      );
       if (completedVersion == null) return false;
       final currentVersion = _cachedAppVersion;
       if (currentVersion == null) return completedVersion.isNotEmpty;

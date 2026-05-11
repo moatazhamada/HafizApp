@@ -429,7 +429,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650\n',
               style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
-                fontSize: 16,
+                fontSize: PrefUtils().getQuranFontSize() - 8,
                 color: colors.textSecondary,
               ),
             ),

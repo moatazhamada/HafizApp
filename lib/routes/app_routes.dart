@@ -21,6 +21,7 @@ import '../presentation/goals/goals_screen.dart';
 import '../presentation/statistics_screen/statistics_screen.dart';
 import '../presentation/verse_study/verse_study_screen.dart';
 import '../presentation/changelog/changelog_screen.dart';
+import '../presentation/tajweed_roadmap/tajweed_roadmap_screen.dart';
 
 class AppRoutes {
   static const String onboardingScreen = '/OnboardingScreen';
@@ -45,6 +46,7 @@ class AppRoutes {
   static const String statisticsScreen = '/statistics';
   static const String verseStudyScreen = '/verse_study';
   static const String changelogScreen = '/changelog';
+  static const String tajweedRoadmapScreen = '/tajweed_roadmap';
 
   static Map<String, WidgetBuilder> routes = {
     // Changed from get routes =>
@@ -97,5 +99,6 @@ class AppRoutes {
       return VerseStudyScreen(verseKey: args['verseKey'] as String? ?? '1:1');
     },
     changelogScreen: (context) => const ChangelogScreen(),
+    tajweedRoadmapScreen: TajweedRoadmapScreen.builder,
   };
 }

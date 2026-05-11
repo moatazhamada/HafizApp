@@ -318,6 +318,8 @@ final Map<String, String> arEg = {
   // Auto-scroll
   'lbl_start_autoscroll': 'بدء التمرير التلقائي',
   'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
+  'lbl_start_listening': 'وضع الاستماع',
+  'lbl_stop_listening': 'إيقاف الاستماع',
 
   // Settings Enhancements
   'lbl_quran_font': 'حجم خط القرآن',
@@ -467,10 +469,44 @@ final Map<String, String> arEg = {
   'lbl_reflections': 'تأملات',
   'lbl_write_reflection': 'اكتب تأملك...',
   'lbl_no_reflections': 'لا توجد تأملات بعد',
+  'lbl_post_reflection': 'نشر',
   'lbl_submit_reflection': 'حفظ التأمل',
   'lbl_reflection_saved': 'تم حفظ التأمل',
 
   // Daily Verse Notification
   'lbl_daily_verse_notification': 'إشعار الآية اليومية',
   'msg_daily_verse_desc': 'استلم آية قرآنية يومية لبدء يومك بتأمل',
+
+  // SRS / Spaced Repetition
+  'lbl_interval': 'الفترة',
+  'lbl_days': 'يوم',
+  'lbl_review_urgency_upcoming': 'قادم',
+  'lbl_review_urgency_tomorrow': 'غداً',
+  'lbl_review_urgency_today': 'اليوم',
+  'lbl_review_urgency_yesterday': 'أمس',
+  'lbl_review_urgency_overdue_days': 'متأخر {days} يوم',
+  'lbl_next_review': 'المراجعة التالية',
+
+  // Tajweed Roadmap
+  'lbl_tajweed_roadmap': 'خريطة التجويد',
+  'lbl_tajweed_accuracy': 'دقة التجويد',
+  'lbl_weak_areas': 'نقاط الضعف',
+  'lbl_practice_verses': 'آيات للتدريب',
+  'lbl_no_tajweed_data': 'أكمل جلسة QRC لرؤية تحليل التجويد',
+  'lbl_tajweed_rule': 'القاعدة',
+  'lbl_error_count': 'الأخطاء',
+  'lbl_suggested_practice': 'التدريب المقترح',
+
+  // Adaptive QRC
+  'lbl_adaptive_qrc': 'صعوبة تلقائية',
+  'msg_adaptive_qrc_desc': 'تعديل مستوى الصعوبة تلقائياً بناءً على أدائك',
+  'lbl_current_hafz_level': 'مستوى الحفظ',
+  'lbl_current_tajweed_level': 'مستوى التجويد',
+
+  // Listening Mode
+  'lbl_listening_mode': 'وضع الاستماع',
+  'msg_listening_mode_desc': 'تابع القراءة أثناء استماع القارئ',
+
+  // Deep Link
+  'msg_opening_verse': 'فتح الآية',
 };
