@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/auth/qf_backend_proxy.dart';
+import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
@@ -56,6 +58,10 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       } else {
         emit(const QfAuthError(message: 'msg_login_cancelled'));
       }
+    } on QfTokenValidationError catch (e) {
+      emit(QfAuthError(message: e.message));
+    } on QfBackendTokenExchangeException {
+      emit(const QfAuthError(message: 'msg_backend_auth_failed'));
     } on PlatformException catch (e) {
       final code = e.code;
       if (code.contains('cancelled') || code.contains('cancel')) {
@@ -97,7 +103,6 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     emit(QfAuthLoading());
     try {
       await _authRemoteDataSource.revokeAndDeleteData();
-      // Clear sync timestamp
       await PrefUtils().setQfLastSyncAt(DateTime(2000));
       emit(QfAuthUnauthenticated());
     } catch (e) {

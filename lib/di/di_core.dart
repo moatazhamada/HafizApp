@@ -3,7 +3,10 @@ import 'package:dio/dio.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
+import '../../core/auth/qf_backend_proxy.dart';
+import '../../core/auth/qf_oidc_config.dart';
 import '../../core/config/api_config.dart';
+import '../../core/config/qf_api_config.dart';
 import '../../core/network/connectivity_cubit.dart';
 import '../../core/network/debug_log_interceptor.dart';
 import '../../core/network/network_info.dart';
@@ -19,8 +22,34 @@ import '../../core/services/deep_link_handler.dart';
 import '../injection_container.dart';
 
 void registerCoreDependencies() {
+  sl.registerLazySingleton<QfOidcConfig>(
+    () => QfOidcConfig.fromQfApiConfig(const QfApiConfig()),
+  );
+
+  sl.registerLazySingleton<QfBackendTokenProxy>(() {
+    final oidcConfig = sl<QfOidcConfig>();
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+    ));
+
+    if (QfApiConfig.backendExchangeUrl.isNotEmpty) {
+      return QfDioBackendTokenProxy(dio: dio, config: oidcConfig);
+    }
+
+    if (oidcConfig.isConfidential) {
+      dio.options.baseUrl = oidcConfig.endpoints.apiBaseUrl;
+      return QfDioBackendTokenProxy(dio: dio, config: oidcConfig);
+    }
+
+    return QfNoopBackendTokenProxy();
+  });
+
   sl.registerLazySingleton<QfAuthRemoteDataSource>(
-    () => QfAuthRemoteDataSourceImpl(),
+    () => QfAuthRemoteDataSourceImpl(
+      oidcConfig: sl<QfOidcConfig>(),
+      backendProxy: sl<QfBackendTokenProxy>(),
+    ),
   );
 
   sl.registerLazySingleton<QfAuthService>(() => QfAuthService());
@@ -35,7 +64,6 @@ void registerCoreDependencies() {
     dio.options.connectTimeout = const Duration(seconds: 7);
     dio.options.receiveTimeout = const Duration(seconds: 10);
 
-    // Debug logging — no-op in release builds
     dio.interceptors.add(DebugLogInterceptor());
 
     dio.interceptors.add(QfApiInterceptor(sl<QfAuthRemoteDataSource>(), dio));

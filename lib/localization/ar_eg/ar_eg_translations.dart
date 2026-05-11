@@ -202,6 +202,8 @@ final Map<String, String> arEg = {
   'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
   'msg_login_not_configured':
       'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
+  'msg_backend_auth_failed':
+      'فشلت المصادقة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
   'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
   'msg_re_login_required':
       'يرجى تسجيل الدخول مرة أخرى لمنح الأذونات المطلوبة من الخادم.',
