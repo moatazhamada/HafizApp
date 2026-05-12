@@ -72,6 +72,7 @@ class QfApiConfig {
     'streak',
     'activity_day',
     'post',
+    'preference',
     'content',
     'search',
   ];

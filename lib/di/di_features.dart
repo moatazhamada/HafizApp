@@ -92,7 +92,10 @@ void registerFeatureDependencies() {
   );
 
   sl.registerLazySingleton<BookmarkRepository>(
-    () => BookmarkRepositoryImpl(localDataSource: sl()),
+    () => BookmarkRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
   );
 
   sl.registerLazySingleton<RecitationErrorRepository>(

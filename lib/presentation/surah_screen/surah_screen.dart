@@ -38,6 +38,7 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart'
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
+import '../../domain/repository/khatmah_repository.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../core/theme/app_colors.dart';
@@ -516,6 +517,11 @@ class _SurahScreenState extends State<SurahScreen> {
       RecordReview(surahId: surah!.id, score: percentage),
     );
     sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
+
+    // Fire-and-forget: report reading session to Quran.Foundation
+    unawaited(
+      sl<KhatmahRepository>().reportReadingSession(surah!.id, 1),
+    );
 
     // Adaptive QRC: evaluate and adjust levels after each session
     if (PrefUtils().isAdaptiveQrc()) {
