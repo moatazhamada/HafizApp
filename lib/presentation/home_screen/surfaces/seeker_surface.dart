@@ -162,6 +162,23 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
           ),
         ),
 
+        // Quran Reflect Community
+        StaggeredListItem(
+          index: 4,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: _DiscoveryCard(
+              icon: Icons.forum_outlined,
+              title: 'lbl_quran_reflect'.tr,
+              subtitle: 'msg_quran_reflect_desc'.tr,
+              color: Colors.indigo,
+              onTap: () => NavigatorService.pushNamed(
+                AppRoutes.quranReflectFeed,
+              ),
+            ),
+          ),
+        ),
+
         const SizedBox(height: 8),
 
         // Surah Index Section

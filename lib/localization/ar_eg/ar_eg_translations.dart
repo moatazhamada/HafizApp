@@ -17,8 +17,8 @@ final Map<String, String> arEg = {
       'نص القرآن الكريم مدمج محلياً من مصادر موثوقة (Tanzil) لضمان الدقة والعمل دون إنترنت. يُرجى الإبلاغ عن أي ملاحظات فوراً.',
   'about_language_title': 'اللغة',
   'about_sources_title': 'المصادر',
-  'about_source_quran_api': 'واجهة Quran.com v4',
-  'about_source_quran_api_desc': 'بيانات السور والترجمات والتلاوات الصوتية',
+  'about_source_quran_api': 'واجهة محتوى مؤسسة القرآن الكريم',
+  'about_source_quran_api_desc': 'الآيات والترجمات والتفسير والتلاوات الصوتية عبر Quran.Foundation',
   'about_source_tanzil': 'مجمع تنزيل (نص عثماني موثق)',
   'about_source_tanzil_desc': 'نص القرآن المحفوظ محلياً للقراءة بدون إنترنت',
   'about_source_qf_content': 'واجهة محتوى مؤسسة القرآن الكريم',
@@ -546,4 +546,8 @@ final Map<String, String> arEg = {
   'lbl_more': 'أكثر',
   'lbl_no_reading': 'لا يوجد قراءة',
   'lbl_verses_read': 'آية مقروءة',
+
+  // Quran Reflect
+  'lbl_quran_reflect': 'تأملات القرآن',
+  'msg_quran_reflect_desc': 'تأملات ودروس المجتمع',
 };

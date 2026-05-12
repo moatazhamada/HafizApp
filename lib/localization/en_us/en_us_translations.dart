@@ -17,9 +17,9 @@ final Map<String, String> enUs = {
       'The Quranic text is sourced from verified repositories to ensure accuracy and offline availability. Please report any discrepancies immediately.',
   'about_language_title': 'Language',
   'about_sources_title': 'Data Sources',
-  'about_source_quran_api': 'Quran.com API v4',
+  'about_source_quran_api': 'Quran Foundation Content API',
   'about_source_quran_api_desc':
-      'Surah metadata, translations, and audio recitations',
+      'Verses, translations, tafsirs, and audio recitations via Quran.Foundation',
   'about_source_tanzil': 'Tanzil (Verified Uthmani Text)',
   'about_source_tanzil_desc': 'Local Quran text for offline reading',
   'about_source_qf_content': 'Quran Foundation Content API',
@@ -557,4 +557,8 @@ final Map<String, String> enUs = {
   'lbl_more': 'More',
   'lbl_no_reading': 'No reading',
   'lbl_verses_read': 'verses read',
+
+  // Quran Reflect
+  'lbl_quran_reflect': 'Quran Reflect',
+  'msg_quran_reflect_desc': 'Community reflections & lessons',
 };

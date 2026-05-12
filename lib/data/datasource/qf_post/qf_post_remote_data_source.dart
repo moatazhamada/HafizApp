@@ -8,6 +8,7 @@ abstract class QfPostRemoteDataSource {
     required String text,
   });
   Future<List<Map<String, dynamic>>> getReflections(String verseKey);
+  Future<List<Map<String, dynamic>>> getFeed({int first = 20});
   Future<void> deletePost(String postId);
 }
 
@@ -65,6 +66,24 @@ class QfPostRemoteDataSourceImpl implements QfPostRemoteDataSource {
       return [];
     } catch (e) {
       Logger.warning('Failed to get reflections: $e', feature: 'QfPost');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getFeed({int first = 20}) async {
+    try {
+      final response = await _dio.get(
+        '$_baseUrl/posts/feed',
+        queryParameters: {'first': first},
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as List? ?? [];
+        return data.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (e) {
+      Logger.warning('Failed to get Quran Reflect feed: $e', feature: 'QfPost');
       return [];
     }
   }

@@ -297,8 +297,8 @@ class _AboutScreenState extends State<AboutScreen> {
                   leading: const Icon(Icons.public),
                   title: Text('about_source_quran_api'.tr, style: linkStyle),
                   subtitle: Text('about_source_quran_api_desc'.tr),
-                  onTap: () => openExternal('https://api.quran.com/api/v4'),
-                  onLongPress: () => copy('https://api.quran.com/api/v4'),
+                  onTap: () => openExternal('https://api.quran.foundation'),
+                  onLongPress: () => copy('https://api.quran.foundation'),
                   trailing: const Icon(Icons.open_in_new),
                 ),
                 ListTile(
