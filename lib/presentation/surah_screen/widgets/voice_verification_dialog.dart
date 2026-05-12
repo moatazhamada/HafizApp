@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
+import 'package:hafiz_app/core/audio/whisper_platform.dart'
+    if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
 import '../../../core/app_export.dart';
 

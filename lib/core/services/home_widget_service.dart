@@ -17,23 +17,27 @@ class HomeWidgetService {
   static const _refreshInterval = Duration(hours: 1);
 
   Future<void> initialize() async {
-    await HomeWidget.setAppGroupId('group.com.hafiz.app');
-
-    HomeWidget.widgetClicked.listen(_onWidgetClicked);
-
     try {
-      await _refreshWidget();
+      await HomeWidget.setAppGroupId('group.com.hafiz.app');
+
+      HomeWidget.widgetClicked.listen(_onWidgetClicked);
+
+      try {
+        await _refreshWidget();
+      } catch (e) {
+        Logger.warning('HomeWidget init failed: $e', feature: 'HomeWidget');
+        await _setPlaceholder();
+      }
+
+      Timer.periodic(_refreshInterval, (_) {
+        _refreshWidget();
+      });
+
+      // Also refresh when locale changes (user may switch language)
+      LocaleController.notifier.addListener(_onLocaleChanged);
     } catch (e) {
-      Logger.warning('HomeWidget init failed: $e', feature: 'HomeWidget');
-      await _setPlaceholder();
+      Logger.warning('HomeWidget not available on this platform: $e', feature: 'HomeWidget');
     }
-
-    Timer.periodic(_refreshInterval, (_) {
-      _refreshWidget();
-    });
-
-    // Also refresh when locale changes (user may switch language)
-    LocaleController.notifier.addListener(_onLocaleChanged);
   }
 
   void _onLocaleChanged() {

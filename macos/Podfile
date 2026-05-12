@@ -26,6 +26,18 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_macos_podfile_setup
 
+# Workaround: flutter_sound macOS podspec is named taudio.podspec instead of flutter_sound.podspec
+flutter_sound_macos = File.expand_path(File.join('Flutter', 'ephemeral', '.symlinks', 'plugins', 'flutter_sound', 'macos'), __dir__)
+if File.exist?(flutter_sound_macos)
+  taudio_podspec = File.join(flutter_sound_macos, 'taudio.podspec')
+  flutter_sound_podspec = File.join(flutter_sound_macos, 'flutter_sound.podspec')
+  if File.exist?(taudio_podspec) && !File.exist?(flutter_sound_podspec)
+    content = File.read(taudio_podspec)
+    content = content.sub("s.name             = 'taudio'", "s.name             = 'flutter_sound'")
+    File.write(flutter_sound_podspec, content)
+  end
+end
+
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
@@ -41,6 +53,15 @@ post_install do |installer|
     flutter_additional_macos_build_settings(target)
     target.build_configurations.each do |config|
       config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
+      config.build_settings['EXCLUDED_ARCHS[sdk=macosx*]'] = 'x86_64'
+      config.build_settings['SYSTEM_FRAMEWORK_SEARCH_PATHS'] ||= []
+      config.build_settings['SYSTEM_FRAMEWORK_SEARCH_PATHS'] << '/opt/homebrew/opt/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64'
     end
+  end
+  # Also exclude x86_64 from the main Runner target
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['EXCLUDED_ARCHS[sdk=macosx*]'] = 'x86_64'
+    config.build_settings['SYSTEM_FRAMEWORK_SEARCH_PATHS'] ||= []
+    config.build_settings['SYSTEM_FRAMEWORK_SEARCH_PATHS'] << '/opt/homebrew/opt/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64'
   end
 end

@@ -49,9 +49,11 @@ class AppInitializer {
 
     try {
       final storage = await HydratedStorage.build(
-        storageDirectory: HydratedStorageDirectory(
-          (await getTemporaryDirectory()).path,
-        ),
+        storageDirectory: kIsWeb
+            ? HydratedStorageDirectory.web
+            : HydratedStorageDirectory(
+                (await getTemporaryDirectory()).path,
+              ),
       );
       HydratedBloc.storage = storage;
     } catch (e) {
@@ -128,55 +130,115 @@ class AppInitializer {
   }
 
   Future<void> postInitHeavyTasks() async {
+    // 1. Firebase Core – required, works on all platforms
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-
-      final crashlytics = FirebaseCrashlytics.instance;
-      Logger.init(
-        kDebugMode ? LogMode.debug : LogMode.live,
-        crashlytics: crashlytics,
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Firebase Core init failed: $e',
+        feature: 'Firebase',
+        error: e,
+        stackTrace: stackTrace,
       );
+    }
 
+    // 2. Crashlytics – iOS / Android / macOS only
+    FirebaseCrashlytics? crashlytics;
+    try {
+      crashlytics = FirebaseCrashlytics.instance;
+    } catch (e) {
+      debugPrint('Crashlytics not available on this platform: $e');
+    }
+    Logger.init(
+      kDebugMode ? LogMode.debug : LogMode.live,
+      crashlytics: crashlytics,
+    );
+
+    // Open Hive cache boxes
+    try {
       await Hive.openBox('qiraat_cache');
       await Hive.openBox('audio_cache');
+    } catch (e) {
+      debugPrint('Hive cache open failed: $e');
+    }
 
-      FlutterError.onError = (errorDetails) {
-        Logger.error(
-          'Flutter error: ${errorDetails.exception}',
-          feature: 'Flutter',
-          error: errorDetails.exception,
-          stackTrace: errorDetails.stack,
-          fatal: true,
-        );
+    // 3. Global error handlers
+    FlutterError.onError = (errorDetails) {
+      Logger.error(
+        'Flutter error: ${errorDetails.exception}',
+        feature: 'Flutter',
+        error: errorDetails.exception,
+        stackTrace: errorDetails.stack,
+        fatal: true,
+      );
+      try {
         FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      };
+      } catch (_) {
+        // Crashlytics not available on this platform
+      }
+    };
 
-      ui.PlatformDispatcher.instance.onError = (error, stack) {
-        Logger.error(
-          'Platform error: $error',
-          feature: 'Platform',
-          error: error,
-          stackTrace: stack,
-          fatal: true,
-        );
+    ui.PlatformDispatcher.instance.onError = (error, stack) {
+      Logger.error(
+        'Platform error: $error',
+        feature: 'Platform',
+        error: error,
+        stackTrace: stack,
+        fatal: true,
+      );
+      try {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
+      } catch (_) {
+        // Crashlytics not available on this platform
+      }
+      return true;
+    };
 
+    // 4. Analytics – web, iOS, Android, macOS only
+    try {
       unawaited(FirebaseAnalytics.instance.logAppOpen());
+    } catch (e) {
+      debugPrint('Analytics not available on this platform: $e');
+    }
 
+    // 5. Local notifications – not available on web
+    try {
       final notificationService = DailyVerseNotificationService();
       await notificationService.initialize();
-      unawaited(notificationService.scheduleDailyVerse());
+      await notificationService.scheduleDailyVerse();
+    } catch (e) {
+      Logger.warning(
+        'Notifications not available on this platform: $e',
+        feature: 'Notifications',
+      );
+    }
 
+    // 6. Home Widget – iOS / Android / macOS only
+    try {
       final homeWidgetService = sl<HomeWidgetService>();
       unawaited(homeWidgetService.initialize());
+    } catch (e) {
+      Logger.warning(
+        'HomeWidget not available on this platform: $e',
+        feature: 'HomeWidget',
+      );
+    }
 
+    // 7. Deep Link – iOS / Android / macOS only
+    try {
       final deepLinkHandler = sl<DeepLinkHandler>();
       unawaited(deepLinkHandler.initialize());
+    } catch (e) {
+      Logger.warning(
+        'DeepLink not available on this platform: $e',
+        feature: 'DeepLink',
+      );
+    }
 
+    // 8. Remote Config – web, iOS, Android, macOS only
+    try {
       final remoteConfigService = RemoteConfigService();
       await remoteConfigService.init();
       if (!sl.isRegistered<RemoteConfigService>()) {
@@ -195,12 +257,11 @@ class AppInitializer {
       }
     } catch (e, stackTrace) {
       Logger.error(
-        'Firebase initialization failed: $e',
-        feature: 'Firebase',
+        'Remote Config initialization failed: $e',
+        feature: 'RemoteConfig',
         error: e,
         stackTrace: stackTrace,
       );
-      rethrow;
     }
   }
 }
