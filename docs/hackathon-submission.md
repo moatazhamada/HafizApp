@@ -33,15 +33,15 @@ All content APIs route through **`api.quran.foundation`** (switched from legacy 
 
 | API Category | Endpoints Used | Feature |
 |-------------|----------------|---------|
-| **Bookmarks** | `GET/POST/DELETE /auth/v1/bookmarks` | Synced verse bookmarks |
-| **Collections** | `GET/POST /auth/v1/collections` | Bookmark collections |
+| **Bookmarks** | `GET/POST/DELETE /auth/v1/bookmarks` | Real-time sync on add/remove + batch sync |
+| **Collections** | `GET/POST /auth/v1/collections` | Bookmark collections (auto-created 'Hafiz Bookmarks') |
 | **Streak Tracking** | `GET /auth/v1/streaks/current-streak-days` | Reading streak counter |
 | | `GET /auth/v1/streaks` | Streak history |
 | **Activity & Goals** | `POST /auth/v1/activity-days` | Log daily reading activity |
 | | `GET /auth/v1/activity-days` | Activity history for heatmap |
 | | `GET/POST /auth/v1/goals` | Reading goals & plans |
 | | `GET /auth/v1/goals/get-todays-plan` | Today's reading plan |
-| **Reading Sessions** | `POST /auth/v1/reading-sessions` | Track reading sessions |
+| **Reading Sessions** | `POST /auth/v1/reading-sessions` | Track reading sessions (fired after each recitation) |
 | | `GET /auth/v1/reading-sessions` | Session history |
 | **Posts** | `POST /auth/v1/posts` | Share reflections |
 | | `GET /auth/v1/posts/feed` | Community reflections feed |
@@ -133,7 +133,7 @@ static const String productionAuthBaseUrl = 'https://oauth2.quran.foundation';
   'openid', 'offline_access', 'user',
   'bookmark', 'collection', 'reading_session',
   'goal', 'streak', 'activity_day', 'post',
-  'content', 'search'
+  'preference', 'content', 'search'
 ]
 ```
 
