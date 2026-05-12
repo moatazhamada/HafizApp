@@ -25,7 +25,7 @@ class QfTranslationRemoteDataSource {
     try {
       final allItems = await _fetchAllPages(
         (page) => _dio.get(
-          '${ApiConfig.quranComBase}/translations/${ApiConfig.translationId}/by_chapter/$surahId',
+          '${ApiConfig.contentBase}/translations/${ApiConfig.translationId}/by_chapter/$surahId',
           queryParameters: {'per_page': 50, 'page': page},
         ),
         'translations',

@@ -28,7 +28,7 @@ class RandomVerseRemoteDataSource {
   Future<RandomVerseData?> fetchRandomVerse() async {
     try {
       final response = await _dio.get(
-        '${ApiConfig.quranComBase}/verses/random',
+        '${ApiConfig.contentBase}/verses/random',
         queryParameters: {
           'translations': '${ApiConfig.translationId}',
           'words': 'true',

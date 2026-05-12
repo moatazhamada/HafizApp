@@ -133,13 +133,15 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
   @override
   Future<MushafPageData?> fetchPage(int pageNumber) async {
     try {
-      final url =
-          'https://api.quran.com/api/v4/verses/by_page/$pageNumber'
-          '?fields=code_v1,code_v2,v2_page,page_number'
-          '&words=true'
-          '&word_fields=code_v1,code_v2,position,v2_page,line_v2,page_number'
-          '&per_page=300';
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/verses/by_page/$pageNumber',
+        queryParameters: {
+          'fields': 'code_v1,code_v2,v2_page,page_number',
+          'words': 'true',
+          'word_fields': 'code_v1,code_v2,position,v2_page,line_v2,page_number',
+          'per_page': 300,
+        },
+      );
 
       if (response.statusCode != 200) return null;
 

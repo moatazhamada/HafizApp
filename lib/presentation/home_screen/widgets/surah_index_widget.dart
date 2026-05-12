@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/tracking/behavior_tracker.dart';
 import '../../../widgets/surah_list_item.dart';
 
 class SurahIndexWidget extends StatelessWidget {
@@ -121,6 +122,7 @@ class SurahIndexWidget extends StatelessWidget {
   }
 
   void _navigateToSurah(BuildContext context, Surah surah) {
+    BehaviorTracker.recordSession('read');
     PrefUtils().saveLastReadSurah(surah);
     // Notify home bloc about last read update if needed
     final defaultView = PrefUtils().getDefaultQuranView();

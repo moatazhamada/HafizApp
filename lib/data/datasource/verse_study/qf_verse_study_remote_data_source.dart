@@ -50,7 +50,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchArabic(String verseKey) async {
     try {
       final verseResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
         queryParameters: {'fields': 'text_uthmani'},
       );
       final verse = verseResponse.data['verse'] as Map<String, dynamic>?;
@@ -71,7 +71,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
 
     try {
       final translationResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
         queryParameters: {
           'translations': '${ApiConfig.translationId}',
           'fields': 'text_uthmani',
@@ -94,7 +94,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchTafsir(String verseKey) async {
     try {
       final tafsirResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/tafsirs/${ApiConfig.tafsirId}/by_ayah/$verseKey',
+        '${ApiConfig.contentBase}/tafsirs/${ApiConfig.tafsirId}/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {

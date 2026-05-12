@@ -20,6 +20,8 @@ import 'surfaces/reader_surface.dart';
 import 'surfaces/student_surface.dart';
 import 'surfaces/seeker_surface.dart';
 import '../../core/models/surface_type.dart';
+import '../../core/tracking/behavior_tracker.dart';
+import 'widgets/surface_suggestion_banner.dart';
 
 import '../auth/bloc/qf_auth_bloc.dart';
 
@@ -285,14 +287,43 @@ class _HomeScreenState extends State<HomeScreen>
 
                 return BlocBuilder<AdaptiveHomeBloc, AdaptiveHomeState>(
                   builder: (context, adaptiveState) {
-                    return switch (adaptiveState.surfaceType) {
-                      SurfaceType.reader => ReaderSurface(
-                          lastReadSurah: lastReadSurah,
-                          lastVerseIndex: lastVerseIndex,
+                    final suggested = BehaviorTracker.suggestSurfaceType();
+                    final showBanner = suggested != null &&
+                        suggested != adaptiveState.surfaceType.name &&
+                        !BehaviorTracker.isSuggestionDismissed();
+
+                    return Column(
+                      children: [
+                        if (showBanner)
+                          SurfaceSuggestionBanner(
+                            suggestedSurface: suggested,
+                            onDismiss: () {
+                              BehaviorTracker.dismissSuggestion();
+                              context
+                                  .read<AdaptiveHomeBloc>()
+                                  .add(AdaptiveHomeDismissSuggestion());
+                            },
+                            onAccept: () {
+                              BehaviorTracker.dismissSuggestion();
+                              context.read<AdaptiveHomeBloc>().add(
+                                    AdaptiveHomeChangeSurface(
+                                      SurfaceType.fromString(suggested),
+                                    ),
+                                  );
+                            },
+                          ),
+                        Expanded(
+                          child: switch (adaptiveState.surfaceType) {
+                            SurfaceType.reader => ReaderSurface(
+                                lastReadSurah: lastReadSurah,
+                                lastVerseIndex: lastVerseIndex,
+                              ),
+                            SurfaceType.student => const StudentSurface(),
+                            SurfaceType.seeker => const SeekerSurface(),
+                          },
                         ),
-                      SurfaceType.student => const StudentSurface(),
-                      SurfaceType.seeker => const SeekerSurface(),
-                    };
+                      ],
+                    );
                   },
                 );
               },
