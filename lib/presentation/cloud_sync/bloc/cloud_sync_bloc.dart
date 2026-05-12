@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/usecase/usecase.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
+import 'package:hafiz_app/injection_container.dart';
 
 part 'cloud_sync_event.dart';
 part 'cloud_sync_state.dart';
@@ -24,6 +27,10 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
       (failure) => emit(QfSyncError(_mapFailureToMessage(failure))),
       (syncResult) {
         PrefUtils().setQfLastSyncAt(DateTime.now());
+        unawaited(sl<AnalyticsService>().logCloudSync(
+          pushed: syncResult.pushed,
+          pulled: syncResult.pulled,
+        ));
         emit(QfSyncSuccess(pushed: syncResult.pushed, pulled: syncResult.pulled));
       },
     );

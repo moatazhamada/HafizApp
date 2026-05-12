@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../core/models/user_archetype.dart';
+import '../../injection_container.dart';
 
 
 class ArchetypeSelectionPage extends StatefulWidget {
@@ -23,6 +25,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
     final archetype = _selected ?? UserArchetype.reader;
     PrefUtils().setUserArchetype(archetype.name);
     PrefUtils().setSurfaceType(archetype.name);
+    sl<AnalyticsService>().logArchetypeSelected(archetype.name);
     widget.onContinue();
   }
 

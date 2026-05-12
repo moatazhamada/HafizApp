@@ -16,6 +16,7 @@ import 'widgets/verse_menu_sheet.dart';
 import 'widgets/verse_range.dart';
 import 'widgets/voice_verification_dialog.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -521,6 +522,12 @@ class _SurahScreenState extends State<SurahScreen> {
     // Fire-and-forget: report reading session to Quran.Foundation
     unawaited(
       sl<KhatmahRepository>().reportReadingSession(surah!.id, 1),
+    );
+    unawaited(
+      sl<AnalyticsService>().logReadingSession(
+        chapterNumber: surah!.id,
+        versesRead: _sessionTotalCount,
+      ),
     );
 
     // Adaptive QRC: evaluate and adjust levels after each session

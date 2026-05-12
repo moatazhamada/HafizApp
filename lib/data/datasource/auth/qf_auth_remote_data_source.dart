@@ -8,6 +8,7 @@ import 'package:hafiz_app/core/auth/qf_pkce.dart';
 import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/domain/entities/qf_user_profile.dart';
 
 abstract class QfAuthRemoteDataSource {
   Future<bool> login();
@@ -15,6 +16,7 @@ abstract class QfAuthRemoteDataSource {
   Future<String?> getAccessToken();
   Future<String?> getRefreshToken();
   Future<String?> getUserId();
+  Future<QfUserProfile?> getUserProfile();
   Future<bool> refreshToken();
   Future<bool> isAuthenticated();
   Future<void> revokeAndDeleteData();
@@ -257,6 +259,22 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     if (idToken != null) {
       Map<String, dynamic> decodedToken = JwtDecoder.decode(idToken);
       return decodedToken['sub'] as String?;
+    }
+    return null;
+  }
+
+  @override
+  Future<QfUserProfile?> getUserProfile() async {
+    final idToken = await _secureStorage.read(key: _idTokenKey);
+    if (idToken != null) {
+      try {
+        final claims = JwtDecoder.decode(idToken);
+        return QfUserProfile.fromIdTokenClaims(claims);
+      } catch (e) {
+        Logger.warning('Failed to decode user profile from ID token: $e',
+            feature: 'QfAuth');
+        return null;
+      }
     }
     return null;
   }

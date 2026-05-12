@@ -12,6 +12,8 @@ import '../../data/datasource/mushaf/quranhub_page_data_source.dart';
 import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../data/datasource/random_verse/random_verse_remote_data_source.dart';
 import '../../data/datasource/verse_media/verse_media_remote_data_source.dart';
+import '../../data/datasource/qf_preference/qf_preference_remote_data_source.dart';
+import '../../core/services/preference_sync_service.dart';
 import '../injection_container.dart';
 
 void registerQfDataSources() {
@@ -65,5 +67,13 @@ void registerQfDataSources() {
 
   sl.registerLazySingleton<VerseMediaRemoteDataSource>(
     () => VerseMediaRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerLazySingleton<QfPreferenceRemoteDataSource>(
+    () => QfPreferenceRemoteDataSource(dio: sl()),
+  );
+
+  sl.registerLazySingleton<PreferenceSyncService>(
+    () => PreferenceSyncService(),
   );
 }

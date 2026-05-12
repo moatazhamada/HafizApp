@@ -91,4 +91,137 @@ class AnalyticsService {
       parameters: {'method': method},
     );
   }
+
+  // ── Quran.Foundation OAuth2 ──
+
+  Future<void> logQfLogin({String? userId}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'qf_login',
+      parameters: userId != null ? {'user_id_hash': userId.hashCode} : {},
+    );
+  }
+
+  Future<void> logQfLogout() async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'qf_logout');
+  }
+
+  // ── Bookmarks ──
+
+  Future<void> logBookmarkAdded({required int surahId, required int verseNumber}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'bookmark_added',
+      parameters: {'surah_id': surahId, 'verse_number': verseNumber},
+    );
+  }
+
+  Future<void> logBookmarkRemoved({required int surahId, required int verseNumber}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'bookmark_removed',
+      parameters: {'surah_id': surahId, 'verse_number': verseNumber},
+    );
+  }
+
+  // ── Cloud Sync ──
+
+  Future<void> logCloudSync({required int pushed, required int pulled}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'cloud_sync',
+      parameters: {'pushed': pushed, 'pulled': pulled},
+    );
+  }
+
+  // ── Preference Sync ──
+
+  Future<void> logPreferenceSync({required String direction, required int count}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'preference_sync',
+      parameters: {'direction': direction, 'count': count},
+    );
+  }
+
+  // ── Reading Sessions ──
+
+  Future<void> logReadingSession({required int chapterNumber, required int versesRead}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'reading_session',
+      parameters: {'chapter_number': chapterNumber, 'verses_read': versesRead},
+    );
+  }
+
+  // ── Goals ──
+
+  Future<void> logGoalUpdated(String goalId) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'goal_updated', parameters: {'goal_id': goalId});
+  }
+
+  Future<void> logGoalDeleted(String goalId) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'goal_deleted', parameters: {'goal_id': goalId});
+  }
+
+  // ── Quran Reflect ──
+
+  Future<void> logReflectFeedViewed() async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'reflect_feed_viewed');
+  }
+
+  Future<void> logReflectPostTapped(String postId) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'reflect_post_tapped', parameters: {'post_id': postId});
+  }
+
+  // ── Verse Media ──
+
+  Future<void> logVerseMediaViewed(int verseId) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'verse_media_viewed', parameters: {'verse_id': verseId});
+  }
+
+  // ── Search ──
+
+  Future<void> logSearch(String query) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'search', parameters: {'query': query});
+  }
+
+  // ── Recitation ──
+
+  Future<void> logRecitationVerified({required int surahId, required double accuracy}) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(
+      name: 'recitation_verified',
+      parameters: {'surah_id': surahId, 'accuracy': accuracy},
+    );
+  }
+
+  // ── User archetype selection ──
+
+  Future<void> logArchetypeSelected(String archetype) async {
+    final a = _analytics;
+    if (a == null) return;
+    await a.logEvent(name: 'archetype_selected', parameters: {'archetype': archetype});
+  }
 }

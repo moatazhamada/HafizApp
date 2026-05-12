@@ -529,4 +529,39 @@ class PrefUtils {
   Future<void> clearRecentSearches() async {
     await _requirePrefs().remove(_recentSearchesKey);
   }
+
+  // ── QF Preference Sync Tracking ──
+
+  static const String _qfPrefSyncPromptedKey = 'qf_pref_sync_prompted';
+  static const String _qfPrefSyncDirectionKey = 'qf_pref_sync_direction';
+
+  /// Whether the user has already been prompted to sync preferences on login.
+  bool getQfPrefSyncPrompted() {
+    try {
+      return _requirePrefs().getBool(_qfPrefSyncPromptedKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> setQfPrefSyncPrompted(bool value) async {
+    await _requirePrefs().setBool(_qfPrefSyncPromptedKey, value);
+  }
+
+  /// The last chosen sync direction: 'pull' (QF → local), 'push' (local → QF), or null.
+  String? getQfPrefSyncDirection() {
+    try {
+      return _requirePrefs().getString(_qfPrefSyncDirectionKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setQfPrefSyncDirection(String? direction) async {
+    if (direction == null) {
+      await _requirePrefs().remove(_qfPrefSyncDirectionKey);
+    } else {
+      await _requirePrefs().setString(_qfPrefSyncDirectionKey, direction);
+    }
+  }
 }

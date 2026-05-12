@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -6,6 +7,9 @@ import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
+import 'package:hafiz_app/domain/entities/qf_user_profile.dart';
+import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 
 part 'qf_auth_event.dart';
 part 'qf_auth_state.dart';
@@ -31,7 +35,8 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       final isAuthenticated = await _authRemoteDataSource.isAuthenticated();
       if (isAuthenticated) {
         final userId = await _authRemoteDataSource.getUserId();
-        emit(QfAuthAuthenticated(userId: userId));
+        final profile = await _authRemoteDataSource.getUserProfile();
+        emit(QfAuthAuthenticated(userId: userId, profile: profile));
       } else {
         emit(QfAuthUnauthenticated());
       }
@@ -54,7 +59,9 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       final success = await _authRemoteDataSource.login();
       if (success) {
         final userId = await _authRemoteDataSource.getUserId();
-        emit(QfAuthAuthenticated(userId: userId));
+        final profile = await _authRemoteDataSource.getUserProfile();
+        unawaited(sl<AnalyticsService>().logQfLogin(userId: userId));
+        emit(QfAuthAuthenticated(userId: userId, isNewLogin: true, profile: profile));
       } else {
         emit(const QfAuthError(message: 'msg_login_cancelled'));
       }
@@ -90,6 +97,9 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     emit(QfAuthLoading());
     try {
       await _authRemoteDataSource.logout();
+      // Reset preference sync prompt on logout so user is asked again next login.
+      await PrefUtils().setQfPrefSyncPrompted(false);
+      unawaited(sl<AnalyticsService>().logQfLogout());
       emit(QfAuthUnauthenticated());
     } catch (e) {
       emit(const QfAuthError(message: 'msg_unexpected_error'));

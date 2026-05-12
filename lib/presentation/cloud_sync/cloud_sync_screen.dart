@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../core/services/preference_sync_service.dart';
+import '../../core/utils/pref_utils.dart';
+import '../../injection_container.dart';
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
 
@@ -19,22 +23,35 @@ class _CloudSyncView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('lbl_cloud_sync'.tr)),
-      body: BlocListener<CloudSyncBloc, CloudSyncState>(
-        listener: (context, state) {
-          if (state is QfSyncSuccess) {
-            final msg = 'msg_sync_complete'
-                .tr
-                .replaceAll('{pushed}', '${state.pushed}')
-                .replaceAll('{pulled}', '${state.pulled}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(msg)),
-            );
-          } else if (state is QfSyncError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<CloudSyncBloc, CloudSyncState>(
+            listener: (context, state) {
+              if (state is QfSyncSuccess) {
+                final msg = 'msg_sync_complete'
+                    .tr
+                    .replaceAll('{pushed}', '${state.pushed}')
+                    .replaceAll('{pulled}', '${state.pulled}');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(msg)),
+                );
+              } else if (state is QfSyncError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              }
+            },
+          ),
+          BlocListener<QfAuthBloc, QfAuthState>(
+            listener: (context, state) {
+              if (state is QfAuthAuthenticated &&
+                  state.isNewLogin &&
+                  !PrefUtils().getQfPrefSyncPrompted()) {
+                _showPrefSyncDialog(context);
+              }
+            },
+          ),
+        ],
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
@@ -42,9 +59,62 @@ class _CloudSyncView extends StatelessWidget {
             SizedBox(height: 24),
             _SyncSection(),
             SizedBox(height: 24),
+            _PreferenceSyncSection(),
+            SizedBox(height: 24),
             _LocalDataNote(),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showPrefSyncDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('pref_sync_title'.tr),
+        content: Text('pref_sync_body'.tr),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              PrefUtils().setQfPrefSyncPrompted(true);
+              PrefUtils().setQfPrefSyncDirection('skip');
+            },
+            child: Text('lbl_skip'.tr),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await PrefUtils().setQfPrefSyncPrompted(true);
+              await PrefUtils().setQfPrefSyncDirection('push');
+              final service = sl<PreferenceSyncService>();
+              unawaited(service.pushLocalToRemote());
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('pref_sync_push_started'.tr)),
+                );
+              }
+            },
+            child: Text('pref_sync_use_local'.tr),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await PrefUtils().setQfPrefSyncPrompted(true);
+              await PrefUtils().setQfPrefSyncDirection('pull');
+              final service = sl<PreferenceSyncService>();
+              unawaited(service.pullRemoteToLocal());
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('pref_sync_pull_started'.tr)),
+                );
+              }
+            },
+            child: Text('pref_sync_use_qf'.tr),
+          ),
+        ],
       ),
     );
   }
@@ -92,14 +162,32 @@ class _AuthCard extends StatelessWidget {
                                 : 'msg_qf_not_logged_in'.tr,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          if (isAuth && state.userId != null)
-                            Text(
-                              '${'lbl_user'.tr}: ${state.userId}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: Colors.grey),
-                            ),
+                          if (isAuth) ...[
+                            if (state.profile?.displayName != null)
+                              Text(
+                                state.profile!.displayName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: Colors.grey),
+                              ),
+                            if (state.profile?.email != null)
+                              Text(
+                                state.profile!.email!,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: Colors.grey),
+                              ),
+                            if (state.profile == null && state.userId != null)
+                              Text(
+                                '${'lbl_user'.tr}: ${state.userId}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: Colors.grey),
+                              ),
+                          ],
                           if (errorMsg != null)
                             Text(
                               errorMsg.tr,
@@ -277,6 +365,129 @@ class _SyncSection extends StatelessWidget {
       return 'lbl_hours_ago'.tr.replaceAll('{count}', '${diff.inHours}');
     }
     return '${dt.day}/${dt.month}/${dt.year}';
+  }
+}
+
+class _PreferenceSyncSection extends StatelessWidget {
+  const _PreferenceSyncSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<QfAuthBloc, QfAuthState>(
+      builder: (context, authState) {
+        final isAuth = authState is QfAuthAuthenticated;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'pref_sync_section_title'.tr,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.settings_suggest_outlined,
+                          color: isAuth ? Colors.teal : Colors.grey,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            isAuth
+                                ? 'pref_sync_ready'.tr
+                                : 'pref_sync_login_required'.tr,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isAuth) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final service = sl<PreferenceSyncService>();
+                                final pushed = await service.pushLocalToRemote();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'pref_sync_pushed_count'
+                                            .tr
+                                            .replaceAll('{count}', '$pushed'),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.upload_outlined, size: 18),
+                              label: Text('pref_sync_upload'.tr),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final service = sl<PreferenceSyncService>();
+                                final pulled = await service.pullRemoteToLocal();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'pref_sync_pulled_count'
+                                            .tr
+                                            .replaceAll('{count}', '$pulled'),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.download_outlined, size: 18),
+                              label: Text('pref_sync_download'.tr),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final service = sl<PreferenceSyncService>();
+                          final (pulled, pushed) = await service.twoWaySync();
+                          if (context.mounted) {
+                            final msg = 'pref_sync_two_way_result'
+                                .tr
+                                .replaceAll('{pulled}', '$pulled')
+                                .replaceAll('{pushed}', '$pushed');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(msg)),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.sync_alt, size: 18),
+                        label: Text('pref_sync_two_way'.tr),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

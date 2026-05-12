@@ -242,29 +242,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final String subtitle;
 
         if (state is QfAuthAuthenticated) {
-          final initial = state.userId?.isNotEmpty == true
-              ? state.userId![0].toUpperCase()
-              : null;
+          final profile = state.profile;
+          final initials = profile?.initials ??
+              (state.userId?.isNotEmpty == true
+                  ? state.userId![0].toUpperCase()
+                  : '?');
           avatar = CircleAvatar(
             radius: 26,
             backgroundColor: theme.colorScheme.primary,
-            child: initial != null
-                ? Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  )
-                : const Icon(
-                    Icons.account_circle,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
           );
-          title = 'msg_qf_account'.tr;
-          subtitle = 'msg_qf_logged_in'.tr;
+          title = profile?.displayName ?? 'msg_qf_account'.tr;
+          subtitle = profile?.email ?? 'msg_qf_logged_in'.tr;
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(
             radius: 26,

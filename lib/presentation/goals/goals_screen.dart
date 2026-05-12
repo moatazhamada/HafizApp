@@ -26,35 +26,44 @@ class _GoalsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('goals_title'.tr)),
-      body: BlocBuilder<QfAuthBloc, QfAuthState>(
-        builder: (context, authState) {
-          final isAuth = authState is QfAuthAuthenticated;
-
-          if (!isAuth) {
-            return _AuthPrompt(theme: theme);
+      body: BlocListener<GoalsBloc, GoalsState>(
+        listener: (context, state) {
+          if (state is GoalsActionError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
           }
-
-          return BlocBuilder<GoalsBloc, GoalsState>(
-            builder: (context, state) {
-              if (state is GoalsLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (state is GoalsError) {
-                return _ErrorView(theme: theme, message: state.message);
-              }
-
-              if (state is GoalsLoaded) {
-                if (state.items.isEmpty) {
-                  return _EmptyPlanView(theme: theme);
-                }
-                return _PlanList(items: state.items, theme: theme);
-              }
-
-              return const SizedBox.shrink();
-            },
-          );
         },
+        child: BlocBuilder<QfAuthBloc, QfAuthState>(
+          builder: (context, authState) {
+            final isAuth = authState is QfAuthAuthenticated;
+
+            if (!isAuth) {
+              return _AuthPrompt(theme: theme);
+            }
+
+            return BlocBuilder<GoalsBloc, GoalsState>(
+              builder: (context, state) {
+                if (state is GoalsLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is GoalsError) {
+                  return _ErrorView(theme: theme, message: state.message);
+                }
+
+                if (state is GoalsLoaded) {
+                  if (state.items.isEmpty) {
+                    return _EmptyPlanView(theme: theme);
+                  }
+                  return _PlanList(items: state.items, theme: theme);
+                }
+
+                return const SizedBox.shrink();
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -385,6 +394,34 @@ class _PlanItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: colors.textSecondary),
+                  onSelected: (value) => _onMenuSelected(value, context),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'update',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_outlined, size: 18),
+                          const SizedBox(width: 8),
+                          Text('lbl_edit'.tr),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 18, color: theme.colorScheme.error),
+                          const SizedBox(width: 8),
+                          Text('lbl_delete'.tr,
+                              style: TextStyle(color: theme.colorScheme.error)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 if (progressText != null)
                   Text(
                     progressText,
@@ -419,6 +456,85 @@ class _PlanItemCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _onMenuSelected(String value, BuildContext context) {
+    if (value == 'update') {
+      _showUpdateDialog(context);
+    } else if (value == 'delete') {
+      _showDeleteConfirm(context);
+    }
+  }
+
+  void _showUpdateDialog(BuildContext context) {
+    final durationCtrl = TextEditingController(
+      text: item.duration?.toString() ?? '',
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('goals_edit_title'.tr),
+        content: TextField(
+          controller: durationCtrl,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'goals_duration_label'.tr,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('lbl_cancel'.tr),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              final newDuration = int.tryParse(durationCtrl.text);
+              if (newDuration != null) {
+                context.read<GoalsBloc>().add(UpdateGoalEvent(
+                  id: item.id,
+                  type: item.type,
+                  amount: item.amount,
+                  category: item.category,
+                  duration: newDuration,
+                ));
+              }
+            },
+            child: Text('lbl_save'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('goals_delete_title'.tr),
+        content: Text('goals_delete_body'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('lbl_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<GoalsBloc>().add(DeleteGoalEvent(
+                id: item.id,
+                category: item.category,
+              ));
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            child: Text('lbl_delete'.tr),
+          ),
+        ],
       ),
     );
   }

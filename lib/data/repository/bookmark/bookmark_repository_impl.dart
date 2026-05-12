@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/quran_index/mushaf_page_index.dart';
 import '../../../core/utils/logger.dart';
+import '../../../injection_container.dart';
 import '../../datasource/qf_user_api_remote_data_source.dart';
 import '../../model/bookmark_model.dart';
 import '../../datasource/bookmark/bookmark_local_data_source.dart';
@@ -41,6 +43,11 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
       final model = BookmarkModel.fromEntity(bookmark);
       final result = await localDataSource.addBookmark(model);
 
+      unawaited(sl<AnalyticsService>().logBookmarkAdded(
+        surahId: bookmark.surahId,
+        verseNumber: bookmark.verseNumber,
+      ));
+
       // Fire-and-forget: sync to QF if authenticated
       unawaited(_syncAddToRemote(bookmark));
 
@@ -63,6 +70,11 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
   ) async {
     try {
       final result = await localDataSource.removeBookmark(surahId, verseNumber);
+
+      unawaited(sl<AnalyticsService>().logBookmarkRemoved(
+        surahId: surahId,
+        verseNumber: verseNumber,
+      ));
 
       // Fire-and-forget: sync to QF if authenticated
       unawaited(_syncRemoveToRemote(surahId, verseNumber));

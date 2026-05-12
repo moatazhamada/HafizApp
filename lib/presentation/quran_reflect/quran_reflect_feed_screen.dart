@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../injection_container.dart';
@@ -19,6 +20,7 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
   @override
   void initState() {
     super.initState();
+    sl<AnalyticsService>().logReflectFeedViewed();
     _loadFeed();
   }
 

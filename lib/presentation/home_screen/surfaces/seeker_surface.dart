@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
+import '../../../injection_container.dart';
 import '../widgets/surah_index_widget.dart';
 import '../widgets/staggered_list_item.dart';
 import '../../../widgets/random_verse_card.dart';
@@ -37,11 +39,13 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
 
   void _onSearchTap() {
     BehaviorTracker.recordSession('search');
+    sl<AnalyticsService>().logSearch('tap');
     NavigatorService.pushNamed(AppRoutes.searchPage);
   }
 
   void _onSearchChipTap(String query) {
     PrefUtils().addRecentSearch(query);
+    sl<AnalyticsService>().logSearch(query);
     _loadRecentSearches();
     NavigatorService.pushNamed(AppRoutes.searchPage);
   }
