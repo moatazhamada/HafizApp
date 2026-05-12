@@ -25,6 +25,7 @@
 | | `GET /auth/v1/posts?verseKey={key}` | Verse-specific reflections |
 | | `POST /auth/v1/posts` | Create reflections |
 | **Search API** | `GET /search?q={query}` | Quran text search |
+| **Verse Media** | `GET /verses/media?verse_key={key}` | Verse-related images/media |
 
 All content APIs route through **`api.quran.foundation`** (switched from legacy `api.quran.com`).
 
@@ -97,7 +98,13 @@ All content APIs route through **`api.quran.foundation`** (switched from legacy 
 
 **Activity Heatmap** — GitHub-style visualization of reading activity using Quran.Foundation Activity Day data.
 
+**Reading Session Insights** — Today's duration + weekly bar chart showing verses read per day.
+
 **Quran Reflect Feed** — Community reflections feed demonstrating deep Post API integration.
+
+**Verse Media** — Image carousel in Random Verse card showing verse-related media from Content API.
+
+**Real Recent Search History** — SharedPreferences-backed search history with functional clear button.
 
 ### Effective Use of APIs (15 points)
 
@@ -141,8 +148,8 @@ static const String productionAuthBaseUrl = 'https://oauth2.quran.foundation';
 
 ### Home Screens
 - **Reader**: Large search bar, continue reading card, full Surah index with Juz headers
-- **Student**: Memorization progress, activity heatmap, streak card, stats grid, quick actions
-- **Seeker**: Smart search, discovery cards (Verse of Day, Today's Juz, Quran Reflect), topic chips
+- **Student**: Memorization progress, activity heatmap, reading insights, streak card, stats grid, quick actions
+- **Seeker**: Smart search, discovery cards (Verse of Day, Today's Juz, Quran Reflect), real recent search history
 
 ### Tablet Workspace
 - NavigationRail with 10 destinations on screens >900px
@@ -168,16 +175,17 @@ Key commits:
 5. `refactor: route all content APIs through Quran.Foundation`
 6. `feat: add Activity Heatmap and wire Verse of the Day to RandomVerseCard`
 7. `feat: add Quran Reflect feed screen and update About screen for hackathon`
+8. `feat: reading insights, verse media, and Quran Reflect animations`
+9. `feat: real recent search history + Quran Reflect i18n + final polish`
 
 ---
 
 ## Future Enhancements (Post-Hackathon)
 
-- **Reading Session Insights**: Weekly/monthly reading analytics dashboard
-- **Verse Media**: Images and media attached to verses via Content API
 - **Hadith References**: Show hadiths related to specific ayahs
 - **Rooms/Groups**: Community reading groups via Quran.Foundation Rooms API
 - **Advanced Search**: Semantic search using Search API v1
+- **Notes API**: Personal verse notes with Quran.Foundation sync
 
 ---
 
