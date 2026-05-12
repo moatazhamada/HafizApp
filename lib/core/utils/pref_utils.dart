@@ -499,4 +499,34 @@ class PrefUtils {
   Future<void> setSurfaceType(String surface) async {
     await _requirePrefs().setString('surfaceType', surface);
   }
+
+  // Recent Search History
+  static const String _recentSearchesKey = 'recent_searches';
+  static const int _maxRecentSearches = 10;
+
+  List<String> getRecentSearches() {
+    try {
+      final jsonStr = _requirePrefs().getString(_recentSearchesKey);
+      if (jsonStr == null || jsonStr.isEmpty) return [];
+      final list = jsonDecode(jsonStr) as List<dynamic>?;
+      return list?.cast<String>() ?? [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> addRecentSearch(String query) async {
+    if (query.trim().isEmpty) return;
+    final searches = getRecentSearches();
+    searches.remove(query.trim());
+    searches.insert(0, query.trim());
+    while (searches.length > _maxRecentSearches) {
+      searches.removeLast();
+    }
+    await _requirePrefs().setString(_recentSearchesKey, jsonEncode(searches));
+  }
+
+  Future<void> clearRecentSearches() async {
+    await _requirePrefs().remove(_recentSearchesKey);
+  }
 }

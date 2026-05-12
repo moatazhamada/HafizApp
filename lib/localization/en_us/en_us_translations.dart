@@ -565,4 +565,10 @@ final Map<String, String> enUs = {
   // Reading Insights
   'lbl_reading_insights': 'Reading Insights',
   'lbl_this_week': 'This Week',
+
+  // Quran Reflect Feed
+  'lbl_quran_reflect_feed': 'Quran Reflect',
+  'msg_feed_load_error': 'Failed to load feed',
+  'msg_no_reflections': 'No reflections yet',
+  'msg_be_first_reflection': 'Be the first to share a reflection!',
 };

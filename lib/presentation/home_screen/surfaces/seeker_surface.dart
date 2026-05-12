@@ -17,6 +17,13 @@ class SeekerSurface extends StatefulWidget {
 class _SeekerSurfaceState extends State<SeekerSurface> {
   final TextEditingController _searchController = TextEditingController();
   String? _searchQuery;
+  List<String> _recentSearches = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentSearches();
+  }
 
   @override
   void dispose() {
@@ -24,9 +31,24 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     super.dispose();
   }
 
+  void _loadRecentSearches() {
+    setState(() => _recentSearches = PrefUtils().getRecentSearches());
+  }
+
   void _onSearchTap() {
     BehaviorTracker.recordSession('search');
     NavigatorService.pushNamed(AppRoutes.searchPage);
+  }
+
+  void _onSearchChipTap(String query) {
+    PrefUtils().addRecentSearch(query);
+    _loadRecentSearches();
+    NavigatorService.pushNamed(AppRoutes.searchPage);
+  }
+
+  void _clearRecentSearches() {
+    PrefUtils().clearRecentSearches();
+    _loadRecentSearches();
   }
 
   @override
@@ -123,44 +145,75 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
           ),
         ),
 
-        // Recent Searches (placeholder)
-        StaggeredListItem(
-          index: 2,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'lbl_recent'.tr,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+        // Recent Searches
+        if (_recentSearches.isNotEmpty)
+          StaggeredListItem(
+            index: 2,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'lbl_recent'.tr,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text('lbl_clear'.tr),
-                ),
-              ],
+                  TextButton(
+                    onPressed: _clearRecentSearches,
+                    child: Text('lbl_clear'.tr),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        const StaggeredListItem(
-          index: 3,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _SearchChip(label: 'الرحمة'),
-                _SearchChip(label: 'mercy'),
-                _SearchChip(label: 'الصيام'),
-                _SearchChip(label: 'patience'),
-              ],
+        if (_recentSearches.isNotEmpty)
+          StaggeredListItem(
+            index: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _recentSearches
+                    .map((q) => _SearchChip(
+                          label: q,
+                          onTap: () => _onSearchChipTap(q),
+                        ))
+                    .toList(),
+              ),
             ),
           ),
-        ),
+        if (_recentSearches.isEmpty)
+          StaggeredListItem(
+            index: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _SearchChip(
+                    label: 'الرحمة',
+                    onTap: () => _onSearchChipTap('الرحمة'),
+                  ),
+                  _SearchChip(
+                    label: 'mercy',
+                    onTap: () => _onSearchChipTap('mercy'),
+                  ),
+                  _SearchChip(
+                    label: 'الصيام',
+                    onTap: () => _onSearchChipTap('الصيام'),
+                  ),
+                  _SearchChip(
+                    label: 'patience',
+                    onTap: () => _onSearchChipTap('patience'),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         // Quran Reflect Community
         StaggeredListItem(
@@ -321,15 +374,16 @@ class _DiscoveryCard extends StatelessWidget {
 
 class _SearchChip extends StatelessWidget {
   final String label;
+  final VoidCallback? onTap;
 
-  const _SearchChip({required this.label});
+  const _SearchChip({required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
       avatar: const Icon(Icons.history, size: 16),
       label: Text(label),
-      onPressed: () => NavigatorService.pushNamed(AppRoutes.searchPage),
+      onPressed: onTap ?? () => NavigatorService.pushNamed(AppRoutes.searchPage),
     );
   }
 }

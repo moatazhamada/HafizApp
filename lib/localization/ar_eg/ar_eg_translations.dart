@@ -554,4 +554,10 @@ final Map<String, String> arEg = {
   // Reading Insights
   'lbl_reading_insights': 'إحصائيات القراءة',
   'lbl_this_week': 'هذا الأسبوع',
+
+  // Quran Reflect Feed
+  'lbl_quran_reflect_feed': 'تأملات القرآن',
+  'msg_feed_load_error': 'فشل تحميل التأملات',
+  'msg_no_reflections': 'لا توجد تأملات بعد',
+  'msg_be_first_reflection': 'كن أول من يشارك تأملاً!',
 };

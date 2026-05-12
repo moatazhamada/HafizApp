@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../injection_container.dart';
-import '../../core/utils/logger.dart';
 import '../home_screen/widgets/staggered_list_item.dart';
 
 class QuranReflectFeedScreen extends StatefulWidget {
@@ -52,7 +51,7 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quran Reflect'),
+        title: Text('lbl_quran_reflect_feed'.tr),
         centerTitle: true,
       ),
       body: RefreshIndicator(
@@ -75,13 +74,13 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
             Icon(Icons.error_outline, size: 48, color: colorScheme.error),
             const SizedBox(height: 16),
             Text(
-              'Failed to load feed',
+              'msg_feed_load_error'.tr,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: _loadFeed,
-              child: const Text('Retry'),
+              child: Text('lbl_retry'.tr),
             ),
           ],
         ),
@@ -100,12 +99,12 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No reflections yet',
+              'msg_no_reflections'.tr,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Be the first to share a reflection!',
+              'msg_be_first_reflection'.tr,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -228,8 +227,8 @@ class _ReflectionCard extends StatelessWidget {
       final date = DateTime.parse(isoDate);
       final now = DateTime.now();
       final diff = now.difference(date);
-      if (diff.inDays == 0) return 'Today';
-      if (diff.inDays == 1) return 'Yesterday';
+      if (diff.inDays == 0) return 'lbl_today'.tr;
+      if (diff.inDays == 1) return 'lbl_yesterday'.tr;
       if (diff.inDays < 7) return '${diff.inDays} days ago';
       return '${date.day}/${date.month}/${date.year}';
     } catch (_) {
