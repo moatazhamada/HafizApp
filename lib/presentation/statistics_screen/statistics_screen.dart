@@ -141,9 +141,14 @@ class _StatsBody extends StatelessWidget {
               context.read<MemorizationBloc>().add(LoadMemorizationProgress());
               context.read<KhatmahBloc>().add(LoadKhatmahDashboard());
             },
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isLarge = constraints.maxWidth > 900;
+                final horizontalPadding = isLarge ? 32.0 : 16.0;
+
+                Widget content = ListView(
+                  padding: EdgeInsets.all(horizontalPadding),
+                  children: [
                 _StreakCard(
                   streak: streak,
                   cloudStreak: cloudStreak,
@@ -215,8 +220,21 @@ class _StatsBody extends StatelessWidget {
                     ),
                   ),
               ],
-            ),
-          );
+            );
+
+            if (isLarge) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: content,
+                ),
+              );
+            }
+
+            return content;
+          },
+        ),
+      );
         },
       ),
     );

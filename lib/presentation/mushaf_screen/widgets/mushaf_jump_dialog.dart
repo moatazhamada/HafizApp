@@ -175,16 +175,20 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
   }
 
   Widget _buildJuzList() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: 30,
-      itemBuilder: (context, index) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final crossAxisCount = width > 600 ? 6 : (width > 400 ? 5 : 4);
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1,
+          ),
+          itemCount: 30,
+          itemBuilder: (context, index) {
         final juz = index + 1;
         final surahId = MushafPageIndex.getSurahForJuz(juz);
         final page = widget
@@ -216,6 +220,8 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }

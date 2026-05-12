@@ -90,9 +90,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text('lbl_settings'.tr)),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLarge = constraints.maxWidth > 900;
+          final horizontalPadding = isLarge ? 32.0 : 16.0;
+
+          Widget content = ListView(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+            children: [
           _buildProfileCard(theme),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_appearance'.tr),
@@ -212,8 +217,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
           const SizedBox(height: 20),
         ],
-      ),
-    );
+      );
+
+      if (isLarge) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: content,
+          ),
+        );
+      }
+
+      return content;
+    },
+  ),
+);
   }
 
   Widget _buildProfileCard(ThemeData theme) {
