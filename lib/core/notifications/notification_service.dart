@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
@@ -23,6 +23,8 @@ class DailyVerseNotificationService {
       _instance ??= DailyVerseNotificationService._();
 
   Future<void> initialize() async {
+    if (kIsWeb) return;
+
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
@@ -41,7 +43,7 @@ class DailyVerseNotificationService {
   /// Request notification permission on Android 13+ (API 33).
   /// Returns true if permission is granted.
   Future<bool> requestPermission() async {
-    if (!Platform.isAndroid) return true;
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
 
     try {
       final androidPlugin = _plugin
@@ -62,6 +64,8 @@ class DailyVerseNotificationService {
   }
 
   Future<void> scheduleDailyVerse() async {
+    if (kIsWeb) return;
+
     final pref = PrefUtils();
     if (!pref.isDailyVerseEnabled()) {
       await _plugin.cancelAll();
@@ -73,7 +77,7 @@ class DailyVerseNotificationService {
     }
 
     // Request permission before scheduling on Android
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       final hasPermission = await requestPermission();
       if (!hasPermission) {
         Logger.warning(
@@ -119,6 +123,7 @@ class DailyVerseNotificationService {
 
   /// Cancel all scheduled daily verse notifications.
   Future<void> cancelAll() async {
+    if (kIsWeb) return;
     await _plugin.cancelAll();
     Logger.info('All notifications cancelled', feature: 'Notifications');
   }

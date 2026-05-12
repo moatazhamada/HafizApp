@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
@@ -12,7 +11,10 @@ import '../../core/qiraat/qiraat_models.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/audio/recitation_models.dart';
 import '../../core/audio/recitation_service.dart';
-import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
+import 'package:hafiz_app/core/audio/whisper_platform.dart'
+    if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
+import 'package:hafiz_app/core/utils/platform_file_utils.dart'
+    if (dart.library.html) 'package:hafiz_app/core/utils/platform_file_utils_web.dart';
 import '../../injection_container.dart' as di;
 import '../auth/bloc/qf_auth_bloc.dart';
 
@@ -794,19 +796,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _downloadWhisperModel(String value) async {
+    if (kIsWeb) return;
+
     final model = _mapWhisperModel(value);
-    final modelDir = await WhisperController.getModelDir();
-    final localPath = '$modelDir/ggml-${model.modelName}.bin';
+    final modelDir = await getWhisperModelDir();
+    final localPath = '$modelDir/ggml-${getWhisperModelName(model)}.bin';
 
     // Skip download if model already exists
-    if (File(localPath).existsSync()) return;
+    if (platformFileExists(localPath)) return;
 
     setState(() => _downloadProgress = 0.0);
 
     try {
       final dio = Dio();
       await dio.download(
-        model.modelUri.toString(),
+        getWhisperModelUri(model).toString(),
         localPath,
         onReceiveProgress: (received, total) {
           if (total > 0 && mounted) {
@@ -816,9 +820,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     } catch (e) {
       // Clean up partial download on failure
-      if (File(localPath).existsSync()) {
-        File(localPath).deleteSync();
-      }
+      platformDeleteFile(localPath);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

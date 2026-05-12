@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:in_app_review/in_app_review.dart';
 
@@ -10,28 +11,33 @@ class AppReviewService {
   /// Call this on app launch. Triggers the in-app review dialog when
   /// conditions are met (minimum launches + cooldown period).
   static Future<void> maybeRequestReview() async {
-    final prefs = PrefUtils();
+    try {
+      final prefs = PrefUtils();
 
-    final count = prefs.getInt(_launchCountKey) ?? 0;
-    final newCount = count + 1;
-    await prefs.setInt(_launchCountKey, newCount);
+      final count = prefs.getInt(_launchCountKey) ?? 0;
+      final newCount = count + 1;
+      await prefs.setInt(_launchCountKey, newCount);
 
-    if (newCount < _minLaunches) return;
+      if (newCount < _minLaunches) return;
 
-    final lastAsked = prefs.getInt(_lastAskedKey);
-    if (lastAsked != null) {
-      final lastDate = DateTime.fromMillisecondsSinceEpoch(lastAsked);
-      final daysSince = DateTime.now().difference(lastDate).inDays;
-      if (daysSince < _minDaysBetweenPrompts) return;
-    }
+      final lastAsked = prefs.getInt(_lastAskedKey);
+      if (lastAsked != null) {
+        final lastDate = DateTime.fromMillisecondsSinceEpoch(lastAsked);
+        final daysSince = DateTime.now().difference(lastDate).inDays;
+        if (daysSince < _minDaysBetweenPrompts) return;
+      }
 
-    final inAppReview = InAppReview.instance;
-    if (await inAppReview.isAvailable()) {
-      await prefs.setInt(
-        _lastAskedKey,
-        DateTime.now().millisecondsSinceEpoch,
-      );
-      await inAppReview.requestReview();
+      final inAppReview = InAppReview.instance;
+      if (await inAppReview.isAvailable()) {
+        await prefs.setInt(
+          _lastAskedKey,
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        await inAppReview.requestReview();
+      }
+    } catch (e) {
+      // In-app review not available on this platform (web, desktop)
+      debugPrint('App review not available: $e');
     }
   }
 }

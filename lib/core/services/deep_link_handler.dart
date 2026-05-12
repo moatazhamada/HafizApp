@@ -9,17 +9,21 @@ class DeepLinkHandler {
   StreamSubscription<Uri?>? _widgetClickSub;
 
   Future<void> initialize() async {
-    // Handle the case where the app was cold-started via a widget click.
-    // The widgetClicked stream event would have fired before this listener
-    // was registered, so we check the initial launch URI.
-    final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-    if (initialUri != null) {
-      _handleUri(initialUri);
-    }
+    try {
+      // Handle the case where the app was cold-started via a widget click.
+      // The widgetClicked stream event would have fired before this listener
+      // was registered, so we check the initial launch URI.
+      final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+      if (initialUri != null) {
+        _handleUri(initialUri);
+      }
 
-    _widgetClickSub = HomeWidget.widgetClicked.listen((uri) {
-      if (uri != null) _handleUri(uri);
-    });
+      _widgetClickSub = HomeWidget.widgetClicked.listen((uri) {
+        if (uri != null) _handleUri(uri);
+      });
+    } catch (e) {
+      Logger.warning('Deep link handler not available on this platform: $e', feature: 'DeepLink');
+    }
   }
 
   void _handleUri(Uri uri) {
