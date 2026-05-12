@@ -1,274 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/network/connectivity_cubit.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
-import 'package:hafiz_app/widgets/custom_elevated_button.dart';
-
 import '../../core/app_export.dart';
-import 'bloc/onboarding_bloc.dart';
-import 'models/onboarding_model.dart';
+import 'archetype_selection_page.dart';
+import 'language_selection_page.dart';
+import 'onboarding_welcome_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider<OnboardingBloc>(
-      create: (context) => OnboardingBloc(
-        OnboardingState(onboardingModel: const OnboardingModel()),
-      ),
-      child: const OnboardingScreen(),
-    );
+    return const OnboardingScreen();
   }
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _setupAnimations();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
-
-    _animationController.forward();
+  void _nextPage() {
+    if (_currentPage < 2) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      setState(() => _currentPage++);
+    } else {
+      // After archetype selection, go to mushaf type onboarding
+      NavigatorService.pushNamedAndRemoveUntil(
+        AppRoutes.mushafTypeOnboarding,
+      );
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    mediaQueryData = MediaQuery.of(context);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return BlocBuilder<OnboardingBloc, OnboardingState>(
-      builder: (context, state) {
-        return SafeArea(
-          child: Scaffold(
-            body: Container(
-              width: double.maxFinite,
-              height: double.maxFinite,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.8),
-                    colorScheme.primary,
-                    AppColors.of(context).primaryDark,
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Internet Status Indicator
-                  BlocBuilder<ConnectivityCubit, ConnectivityState>(
-                    builder: (context, connState) {
-                      if (connState.isOnline) return const SizedBox.shrink();
-                      return Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          color: Colors.redAccent.withValues(alpha: 0.9),
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'msg_no_internet_connection'.tr,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Decorative Background Element
-                  Positioned(
-                    left: -20,
-                    top: -20,
-                    child: Opacity(
-                      opacity: 0.1,
-                      child: CustomImageView(
-                        imagePath: ImageConstant.imgGroupCircles,
-                        height: 150.adaptSize,
-                        width: 150.adaptSize,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  // Main Content
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isLarge = constraints.maxWidth > 900;
-                      final imageHeight = isLarge ? 450.adaptSize : 350.adaptSize;
-                      final imageWidth = isLarge ? 400.adaptSize : 300.adaptSize;
-
-                      Widget content = Padding(
-                        padding: EdgeInsets.symmetric(horizontal: isLarge ? 48.0 : 24.0),
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Spacer(flex: 2),
-
-                                // Hero Image Card
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(30),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 10),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(30),
-                                    child: Container(
-                                      color: Colors.white.withValues(alpha: 0.1),
-                                      child: CustomImageView(
-                                        imagePath: ImageConstant.imgQuranOnboarding,
-                                        height: imageHeight,
-                                        width: imageWidth,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                const Spacer(),
-
-                                // Title
-                                Text(
-                                  'app_name'.tr,
-                                  style: theme.textTheme.displayMedium?.copyWith(
-                                    color: AppColors.of(context).primaryLight,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
-                                SizedBox(height: 16.adaptSize),
-
-                                // Subtitle
-                                Text(
-                                  'lbl_learn_quran'.tr,
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontFamily: 'Poppins',
-                                    height: 1.5,
-                                  ),
-                                ),
-
-                                const Spacer(flex: 2),
-
-                                // Action Button
-                                SizedBox(
-                                  width: double.maxFinite,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: isLarge ? 64.0 : 32.0,
-                                    ),
-                                    child: CustomElevatedButton(
-                                      key: const ValueKey('get_started_key'),
-                                      onPressed: () {
-                                        NavigatorService.pushNamedAndRemoveUntil(
-                                          AppRoutes.mushafTypeOnboarding,
-                                        );
-                                      },
-                                      text: 'lbl_get_started'.tr,
-                                      buttonStyle: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.of(
-                                          context,
-                                        ).badgeGradient[0],
-                                        foregroundColor: AppColors.of(
-                                          context,
-                                        ).bismillahColor,
-                                        elevation: 5,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(30.0),
-                                        ),
-                                      ),
-                                      buttonTextStyle: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                        color: AppColors.of(context).bismillahColor,
-                                      ),
-                                      rightIcon: Padding(
-                                        padding: const EdgeInsets.only(left: 12.0),
-                                        child: Icon(
-                                          Icons.arrow_forward_rounded,
-                                          size: 20,
-                                          color: AppColors.of(
-                                            context,
-                                          ).bismillahColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-
-                      if (isLarge) {
-                        return Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 800),
-                            child: content,
-                          ),
-                        );
-                      }
-
-                      return content;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    return Scaffold(
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          LanguageSelectionPage(onContinue: _nextPage),
+          OnboardingWelcomePage(onContinue: _nextPage),
+          ArchetypeSelectionPage(onContinue: _nextPage),
+        ],
+      ),
     );
   }
 }

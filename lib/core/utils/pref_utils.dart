@@ -58,12 +58,28 @@ class PrefUtils {
     await _requirePrefs().clear();
   }
 
-  // Generic int access
+  // Generic accessors for dynamic keys
+  Future<void> setString(String key, String value) async {
+    await _requirePrefs().setString(key, value);
+  }
+
+  String? getString(String key) => _requirePrefs().getString(key);
+
+  Future<void> setBool(String key, bool value) async {
+    await _requirePrefs().setBool(key, value);
+  }
+
+  bool? getBool(String key) => _requirePrefs().getBool(key);
+
   Future<void> setInt(String key, int value) async {
     await _requirePrefs().setInt(key, value);
   }
 
   int? getInt(String key) => _requirePrefs().getInt(key);
+
+  Future<void> remove(String key) async {
+    await _requirePrefs().remove(key);
+  }
 
   // Theme Mode: 'system', 'light', 'dark'
   Future<void> setThemeMode(String mode) async {
@@ -456,5 +472,31 @@ class PrefUtils {
 
   Future<void> setDailyVerseEnabled(bool enabled) async {
     await _requirePrefs().setBool('dailyVerseEnabled', enabled);
+  }
+
+  // ── User Archetype & Surface ──
+
+  String? getUserArchetype() {
+    try {
+      return _requirePrefs().getString('userArchetype');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setUserArchetype(String archetype) async {
+    await _requirePrefs().setString('userArchetype', archetype);
+  }
+
+  String? getSurfaceType() {
+    try {
+      return _requirePrefs().getString('surfaceType');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setSurfaceType(String surface) async {
+    await _requirePrefs().setString('surfaceType', surface);
   }
 }

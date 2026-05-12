@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
-import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 
@@ -10,13 +10,17 @@ import '../../core/analytics/analytics_route_observer.dart';
 
 import '../../core/app_export.dart';
 
-import '../../core/scroll/scroll_position_cubit.dart';
+
 import '../../injection_container.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/offline_indicator.dart';
-import 'package:hafiz_app/widgets/surah_list_item.dart';
 import 'bloc/home_bloc.dart';
-import '../../core/utils/number_converter.dart';
+import 'bloc/adaptive_home_bloc.dart';
+import 'surfaces/reader_surface.dart';
+import 'surfaces/student_surface.dart';
+import 'surfaces/seeker_surface.dart';
+import '../../core/models/surface_type.dart';
+
 import '../auth/bloc/qf_auth_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -38,23 +42,9 @@ class _HomeScreenState extends State<HomeScreen>
     with WidgetsBindingObserver, RouteAware {
   final homeBloc = sl<HomeBloc>();
   final themeBloc = sl<ThemeBloc>();
-  final scrollCubit = sl<ScrollPositionCubit>();
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final saved = scrollCubit.getOffset('home');
-      if (saved != null && _scrollController.hasClients) {
-        try {
-          _scrollController.jumpTo(saved);
-        } catch (_) {}
-      }
-    });
-    _scrollController.addListener(() {
-      scrollCubit.saveOffset('home', _scrollController.offset);
-    });
   }
 
   @override
@@ -81,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
     } catch (_) {}
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -278,91 +267,33 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
         body: OfflineIndicator(
-          child: BlocProvider<HomeBloc>.value(
-            value: homeBloc,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<HomeBloc>.value(value: homeBloc),
+              BlocProvider<AdaptiveHomeBloc>(
+                create: (_) => AdaptiveHomeBloc()..add(AdaptiveHomeLoad()),
+              ),
+            ],
             child: BlocBuilder<HomeBloc, HomeState>(
-              builder: (context, state) {
-                return SizedBox(
-                  width: double.maxFinite,
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    key: const PageStorageKey('home-scroll'),
-                    slivers: [
-                      if (state is UpdateLastReadSurah && state.surah != null)
-                        SliverToBoxAdapter(
-                          child: _buildCardLastRead(state.surah, theme),
+              builder: (context, homeState) {
+                final lastReadSurah = homeState is UpdateLastReadSurah
+                    ? homeState.surah
+                    : null;
+                final lastVerseIndex = lastReadSurah != null
+                    ? PrefUtils().getSurahVerseIndex(lastReadSurah.id)
+                    : null;
+
+                return BlocBuilder<AdaptiveHomeBloc, AdaptiveHomeState>(
+                  builder: (context, adaptiveState) {
+                    return switch (adaptiveState.surfaceType) {
+                      SurfaceType.reader => ReaderSurface(
+                          lastReadSurah: lastReadSurah,
+                          lastVerseIndex: lastVerseIndex,
                         ),
-
-                      SliverPadding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        sliver: SliverList.builder(
-                          key: const PageStorageKey('home-list'),
-                          itemCount: QuranIndex.quranSurahs.length,
-                          itemBuilder: (context, index) {
-                            final surah = QuranIndex.quranSurahs[index];
-
-                            // Simple staggered animation logic
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutQuad,
-                              // Delay based on index, capped to prevent long waits for bottom items
-                              builder: (context, value, child) {
-                                // Only animate the first 10 items to save performance/time
-                                final shouldAnimate = index < 10;
-                                final opacity = shouldAnimate ? value : 1.0;
-                                final offset = shouldAnimate
-                                    ? Offset(0, 50 * (1 - value))
-                                    : Offset.zero;
-
-                                return Opacity(
-                                  opacity: opacity,
-                                  child: Transform.translate(
-                                    offset: offset,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Semantics(
-                                button: true,
-                                label:
-                                    '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-                                child: InkWell(
-                                  onTap: () {
-                                    PrefUtils().saveLastReadSurah(surah);
-                                    homeBloc.add(HomeShowLastSurahEvent());
-                                    final defaultView = PrefUtils()
-                                        .getDefaultQuranView();
-                                    if (defaultView == 'mushaf') {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.mushafScreen,
-                                        arguments: {
-                                          'initialPage':
-                                              MushafPageIndex.getPageForSurah(
-                                                surah.id,
-                                              ),
-                                        },
-                                      );
-                                    } else {
-                                      NavigatorService.pushNamed(
-                                        AppRoutes.surahPage,
-                                        arguments: surah,
-                                      );
-                                    }
-                                  },
-                                  child: SurahListItem(
-                                    surahId: surah.id,
-                                    nameEnglish: surah.nameEnglish,
-                                    nameArabic: surah.nameArabic,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                      SurfaceType.student => const StudentSurface(),
+                      SurfaceType.seeker => const SeekerSurface(),
+                    };
+                  },
                 );
               },
             ),
@@ -576,218 +507,5 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildCardLastRead(Surah? lastReadSurah, ThemeData theme) {
-    if (lastReadSurah == null) return const SizedBox.shrink();
 
-    final int? lastVerseIndex = PrefUtils().getSurahVerseIndex(
-      lastReadSurah.id,
-    );
-
-    return Semantics(
-      container: true,
-      label:
-          '${'lbl_last_read'.tr}: ${lastReadSurah.nameEnglish}${lastVerseIndex != null ? ', ${'lbl_ayah'.tr} ${lastVerseIndex + 1}' : ''}',
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24.0),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary,
-                AppColors.of(context).primaryDark,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Decorative circle - exclude from semantics
-              Positioned(
-                right: -30,
-                bottom: -30,
-                child: ExcludeSemantics(
-                  child: Opacity(
-                    opacity: 0.1,
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 150,
-                      color: AppColors.of(context).onPrimary,
-                    ),
-                  ),
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        ExcludeSemantics(
-                          child: Icon(
-                            Icons.menu_book,
-                            color: AppColors.of(
-                              context,
-                            ).onPrimary.withValues(alpha: 0.7),
-                            size: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'lbl_last_read'.tr,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.of(
-                              context,
-                            ).onPrimary.withValues(alpha: 0.7),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (Localizations.localeOf(
-                                    context,
-                                  ).languageCode !=
-                                  'ar')
-                                Text(
-                                  lastReadSurah.nameEnglish,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: AppColors.of(context).onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              Text(
-                                lastReadSurah.nameArabic,
-                                textDirection: TextDirection.rtl,
-                                style: AppTextStyles.quranMedium.copyWith(
-                                  color: AppColors.of(
-                                    context,
-                                  ).onPrimary.withValues(alpha: 0.9),
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (lastVerseIndex != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.of(
-                                context,
-                              ).onPrimary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.of(
-                                  context,
-                                ).onPrimary.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Text(
-                              '${"lbl_ayah".tr} ${(lastVerseIndex + 1).toLocalizedNumber(context)}',
-                              style: TextStyle(
-                                color: AppColors.of(context).onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Semantics(
-                      button: true,
-                      label: 'lbl_continue'.tr,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final offset =
-                                PrefUtils().getSurahOffset(lastReadSurah.id) ??
-                                sl<ScrollPositionCubit>().getOffset(
-                                  'surah-${lastReadSurah.id}',
-                                );
-
-                            sl<AnalyticsService>().logContinueReading(
-                              lastReadSurah.id,
-                              offset ?? 0.0,
-                            );
-
-                            final defaultView = PrefUtils()
-                                .getDefaultQuranView();
-                            if (defaultView == 'mushaf') {
-                              NavigatorService.pushNamed(
-                                AppRoutes.mushafScreen,
-                                arguments: {
-                                  'initialPage':
-                                      MushafPageIndex.getPageForSurah(
-                                        lastReadSurah.id,
-                                      ),
-                                },
-                              );
-                            } else {
-                              NavigatorService.pushNamed(
-                                AppRoutes.surahPage,
-                                arguments: {
-                                  'surah': lastReadSurah,
-                                  'offset': offset,
-                                  'verseIndex': lastVerseIndex,
-                                },
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.of(context).onPrimary,
-                            foregroundColor: theme.colorScheme.primary,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'lbl_continue'.tr,
-                                style: AppTextStyles.headingSmall,
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward_rounded, size: 20),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

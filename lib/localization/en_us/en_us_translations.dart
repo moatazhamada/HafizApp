@@ -487,6 +487,23 @@ final Map<String, String> enUs = {
   'msg_daily_verse_desc':
       'Receive a daily Quran verse to start your day with reflection',
 
+  // Onboarding — Language & Archetype
+  'lbl_choose_language': 'Choose Your Language',
+  'msg_language_desc': 'Select the language you prefer to use the app in',
+  'lbl_how_use_app': 'How will you use the app?',
+  'msg_archetype_desc': 'We will personalize your experience based on your choice. You can always change this later.',
+  'lbl_archetype_reader': 'Read & Reflect',
+  'msg_archetype_reader_desc': 'A clean, simple experience focused on reading the Quran comfortably',
+  'lbl_archetype_student': 'Memorize & Learn',
+  'msg_archetype_student_desc': 'Track your progress, practice verses, and achieve your memorization goals',
+  'lbl_archetype_seeker': 'Search & Explore',
+  'msg_archetype_seeker_desc': 'Look up verses, explore meanings, and dive deeper into the Quran',
+  'lbl_archetype_devotee': 'Daily Practice',
+  'msg_archetype_devotee_desc': 'Follow a Khatmah, keep your streak, and maintain a daily reading habit',
+  'lbl_surface_reader': 'Reader View',
+  'lbl_surface_student': 'Student View',
+  'lbl_surface_seeker': 'Seeker View',
+
   // SRS / Spaced Repetition
   'lbl_interval': 'Interval',
   'lbl_days': 'd',

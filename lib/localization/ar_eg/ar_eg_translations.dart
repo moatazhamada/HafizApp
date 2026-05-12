@@ -477,6 +477,23 @@ final Map<String, String> arEg = {
   'lbl_daily_verse_notification': 'إشعار الآية اليومية',
   'msg_daily_verse_desc': 'استلم آية قرآنية يومية لبدء يومك بتأمل',
 
+  // Onboarding — Language & Archetype
+  'lbl_choose_language': 'اختر لغتك',
+  'msg_language_desc': 'اختر اللغة التي تفضل استخدام التطبيق بها',
+  'lbl_how_use_app': 'كيف ستستخدم التطبيق؟',
+  'msg_archetype_desc': 'سنخصص تجربتك بناءً على اختيارك. يمكنك تغيير هذا لاحقاً في أي وقت.',
+  'lbl_archetype_reader': 'القراءة والتدبر',
+  'msg_archetype_reader_desc': 'تجربة بسيطة ونظيفة تركز على قراءة القرآن بارتياح',
+  'lbl_archetype_student': 'الحفظ والتعلم',
+  'msg_archetype_student_desc': 'تتبع تقدمك، تدرب على الآيات، وحقق أهدافك في الحفظ',
+  'lbl_archetype_seeker': 'البحث والاستكشاف',
+  'msg_archetype_seeker_desc': 'ابحث عن الآيات، استكشف المعاني، وغص أعمق في القرآن',
+  'lbl_archetype_devotee': 'الممارسة اليومية',
+  'msg_archetype_devotee_desc': 'اتبع ختمة، حافظ على سلسلتك، وداوم على القراءة اليومية',
+  'lbl_surface_reader': 'وضع القارئ',
+  'lbl_surface_student': 'وضع الطالب',
+  'lbl_surface_seeker': 'وضع الباحث',
+
   // SRS / Spaced Repetition
   'lbl_interval': 'الفترة',
   'lbl_days': 'يوم',
