@@ -70,6 +70,10 @@ class QfApiConfig {
     'reading_session',
     'goal',
     'streak',
+    'activity_day',
+    'post',
+    'content',
+    'search',
   ];
 
   static const List<String> coreScopes = [

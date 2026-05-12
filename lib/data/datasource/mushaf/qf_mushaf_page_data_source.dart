@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class PageVerse {
