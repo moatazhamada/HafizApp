@@ -550,4 +550,11 @@ final Map<String, String> enUs = {
 
   // Deep Link
   'msg_opening_verse': 'Opening verse',
+
+  // Activity Heatmap
+  'lbl_activity_heatmap': 'Reading Activity',
+  'lbl_less': 'Less',
+  'lbl_more': 'More',
+  'lbl_no_reading': 'No reading',
+  'lbl_verses_read': 'verses read',
 };

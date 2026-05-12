@@ -539,4 +539,11 @@ final Map<String, String> arEg = {
 
   // Deep Link
   'msg_opening_verse': 'فتح الآية',
+
+  // Activity Heatmap
+  'lbl_activity_heatmap': 'نشاط القراءة',
+  'lbl_less': 'أقل',
+  'lbl_more': 'أكثر',
+  'lbl_no_reading': 'لا يوجد قراءة',
+  'lbl_verses_read': 'آية مقروءة',
 };

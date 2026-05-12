@@ -5,6 +5,7 @@ import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../widgets/surah_index_widget.dart';
 import '../widgets/staggered_list_item.dart';
+import '../../../widgets/random_verse_card.dart';
 
 class SeekerSurface extends StatefulWidget {
   const SeekerSurface({super.key});
@@ -198,13 +199,25 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
   }
 
   void _showVerseOfDay(BuildContext context) {
-    // Placeholder: will show a daily verse dialog or navigate to verse study
-    final random = DateTime.now().day;
-    final surahId = (random % 114) + 1;
-    final surah = QuranIndex.quranSurahs.firstWhere((s) => s.id == surahId);
-    NavigatorService.pushNamed(
-      AppRoutes.surahPage,
-      arguments: surah,
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (context, scrollController) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(16),
+            child: const RandomVerseCard(),
+          );
+        },
+      ),
     );
   }
 

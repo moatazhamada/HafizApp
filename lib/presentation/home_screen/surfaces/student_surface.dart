@@ -12,6 +12,7 @@ import '../../memorization/bloc/memorization_event.dart';
 import '../../memorization/bloc/memorization_state.dart';
 import '../../recitation_error/bloc/recitation_error_bloc.dart';
 import '../widgets/staggered_list_item.dart';
+import '../widgets/activity_heatmap.dart';
 
 
 class StudentSurface extends StatelessWidget {
@@ -79,6 +80,27 @@ class _StudentBody extends StatelessWidget {
                     if (khatmahState is KhatmahDashboardLoaded &&
                         khatmahState.streak > 0) {
                       return _StreakCard(streak: khatmahState.streak);
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+
+              // Activity Heatmap
+              SliverToBoxAdapter(
+                child: BlocBuilder<KhatmahBloc, KhatmahState>(
+                  builder: (context, khatmahState) {
+                    if (khatmahState is KhatmahDashboardLoaded &&
+                        khatmahState.recentLogs.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: ActivityHeatmap(
+                          logs: khatmahState.recentLogs,
+                        ),
+                      );
                     }
                     return const SizedBox.shrink();
                   },
