@@ -156,6 +156,21 @@ class AudioPlayerHandler {
     await _player.setSpeed(speed);
   }
 
+  /// Jump to a specific verse index and start playing from there.
+  Future<void> seekToVerse(int verseIndex) async {
+    if (_isDisposed || _verseUrls == null) return;
+    if (verseIndex < 0 || verseIndex >= _verseUrls!.length) return;
+    _currentVerseIndex = verseIndex;
+    await _completionSub?.cancel();
+    _completionSub = null;
+    if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+      _verseCompleter!.complete();
+    }
+    _verseCompleter = null;
+    await _player.stop();
+    await _playCurrentVerse();
+  }
+
   Future<void> dispose() async {
     if (_isDisposed) return;
     _isDisposed = true;

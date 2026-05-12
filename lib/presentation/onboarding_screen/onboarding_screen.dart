@@ -3,6 +3,7 @@ import '../../core/app_export.dart';
 import 'archetype_selection_page.dart';
 import 'language_selection_page.dart';
 import 'onboarding_welcome_page.dart';
+import 'theme_selection_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -20,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   void _nextPage() {
-    if (_currentPage < 2) {
+    if (_currentPage < 3) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -48,6 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           LanguageSelectionPage(onContinue: _nextPage),
+          ThemeSelectionPage(onContinue: _nextPage),
           OnboardingWelcomePage(onContinue: _nextPage),
           ArchetypeSelectionPage(onContinue: _nextPage),
         ],

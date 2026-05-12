@@ -44,11 +44,15 @@ class _GoalsView extends StatelessWidget {
 
             return BlocBuilder<GoalsBloc, GoalsState>(
               builder: (context, state) {
-                if (state is GoalsLoading) {
+                if (state is GoalsLoading || state is GoalsActionLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (state is GoalsError) {
+                  return _ErrorView(theme: theme, message: state.message);
+                }
+
+                if (state is GoalsActionError) {
                   return _ErrorView(theme: theme, message: state.message);
                 }
 

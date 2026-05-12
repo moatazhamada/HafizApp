@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/quran_index/mushaf_types.dart';
+import 'widgets/onboarding_buttons.dart';
+import 'widgets/onboarding_scaffold.dart';
 
 class MushafTypeOnboarding extends StatefulWidget {
   final bool fromSettings;
@@ -28,18 +30,17 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
 
   void _skip() {
     PrefUtils().setMushafType(MushafType.madani.name);
-    if (widget.fromSettings) {
-      NavigatorService.goBack();
-    } else {
-      PrefUtils().setOnboardingCompleted(true);
-      NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen);
-    }
+    _finish();
   }
 
   void _continue() {
     if (_selected == null) {
       PrefUtils().setMushafType(MushafType.madani.name);
     }
+    _finish();
+  }
+
+  void _finish() {
     if (widget.fromSettings) {
       NavigatorService.goBack();
     } else {
@@ -52,8 +53,9 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
+    return OnboardingScaffold(
+      maxContentWidth: 1000,
+      child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final maxWidth = constraints.maxWidth;
@@ -77,6 +79,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 Text(
                   'lbl_select_mushaf_type'.tr,
                   style: theme.textTheme.headlineSmall?.copyWith(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
@@ -87,7 +90,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                   child: Text(
                     'msg_mushaf_type_desc'.tr,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -106,61 +109,46 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                     itemBuilder: (context, index) {
                       final type = MushafType.all[index];
                       final isSelected = _selected == type;
-                      final color = Color(type.colorValue);
 
-                      return GestureDetector(
+                      return OnboardingSelectionCard(
+                        isSelected: isSelected,
                         onTap: () => _select(type),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? color.withValues(alpha: 0.1)
-                                : theme.cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected ? color : theme.dividerColor,
-                              width: isSelected ? 2.5 : 1,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: iconSize,
+                              height: iconSize,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(iconRadius),
+                              ),
+                              child: Icon(
+                                Icons.menu_book_rounded,
+                                color: Colors.white,
+                                size: iconIconSize,
+                              ),
                             ),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(cardPadding),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: iconSize,
-                                  height: iconSize,
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(iconRadius),
-                                  ),
-                                  child: Icon(
-                                    Icons.menu_book_rounded,
-                                    color: color,
-                                    size: iconIconSize,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  type.label.tr,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? color : null,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  type.descriptionKey.tr,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface.withValues(
-                                      alpha: 0.5,
-                                    ),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                            const SizedBox(height: 12),
+                            Text(
+                              type.label.tr,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 15,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              type.descriptionKey.tr,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -170,26 +158,21 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                   padding: const EdgeInsets.all(24),
                   child: Row(
                     children: [
-                      TextButton(onPressed: _skip, child: Text('lbl_skip'.tr)),
+                      OnboardingSecondaryButton(
+                        text: 'lbl_skip'.tr,
+                        onPressed: _skip,
+                      ),
                       const Spacer(),
-                      FilledButton(
+                      OnboardingPrimaryButton(
+                        text: 'lbl_next'.tr,
                         onPressed: _continue,
-                        child: Text('lbl_next'.tr),
+                        width: 120,
                       ),
                     ],
                   ),
                 ),
               ],
             );
-
-            if (isLarge) {
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: content,
-                ),
-              );
-            }
 
             return content;
           },

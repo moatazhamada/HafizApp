@@ -530,6 +530,21 @@ class PrefUtils {
     await _requirePrefs().remove(_recentSearchesKey);
   }
 
+  // ── Audio Playback Position ──
+
+  /// Returns the last played verse index (0-based) for a given surah, or null.
+  int? getLastAudioVerse(int surahId) {
+    try {
+      return _requirePrefs().getInt('last_audio_verse_$surahId');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setLastAudioVerse(int surahId, int verseIndex) async {
+    await _requirePrefs().setInt('last_audio_verse_$surahId', verseIndex);
+  }
+
   // ── QF Preference Sync Tracking ──
 
   static const String _qfPrefSyncPromptedKey = 'qf_pref_sync_prompted';
@@ -563,5 +578,37 @@ class PrefUtils {
     } else {
       await _requirePrefs().setString(_qfPrefSyncDirectionKey, direction);
     }
+  }
+
+  // ── Widget Promo ──
+
+  static const String _widgetPromoDismissedKey = 'widget_promo_dismissed';
+
+  bool hasDismissedWidgetPromo() {
+    try {
+      return _requirePrefs().getBool(_widgetPromoDismissedKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> dismissWidgetPromo() async {
+    await _requirePrefs().setBool(_widgetPromoDismissedKey, true);
+  }
+
+  // ── Notification Preferences ──
+
+  static const String _readingReminderEnabledKey = 'reading_reminder_enabled';
+
+  bool isReadingReminderEnabled() {
+    try {
+      return _requirePrefs().getBool(_readingReminderEnabledKey) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> setReadingReminderEnabled(bool value) async {
+    await _requirePrefs().setBool(_readingReminderEnabledKey, value);
   }
 }

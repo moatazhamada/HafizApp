@@ -428,6 +428,7 @@ class _SurahScreenState extends State<SurahScreen> {
       });
       if (verseIndex >= 0) {
         _scrollToVerse(verseIndex + 1, chapters);
+        PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
       }
     });
 
@@ -804,6 +805,11 @@ class _SurahScreenState extends State<SurahScreen> {
                   if (surah == null) return;
                   final isArabic =
                       Localizations.localeOf(context).languageCode == 'ar';
+                  // If a verse is currently highlighted (listening mode),
+                  // pass it as the start verse.
+                  final startVerse = _highlightedVerse != null
+                      ? _highlightedVerse! + 1
+                      : null;
                   NavigatorService.pushNamed(
                     AppRoutes.audioPlayerScreen,
                     arguments: {
@@ -811,6 +817,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       'surahName': isArabic
                           ? surah!.nameArabic
                           : surah!.nameEnglish,
+                      if (startVerse != null) 'startVerse': startVerse,
                     },
                   );
                   break;

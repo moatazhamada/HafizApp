@@ -205,9 +205,10 @@ class AppInitializer {
 
     // 5. Local notifications – not available on web
     try {
-      final notificationService = DailyVerseNotificationService();
+      final notificationService = NotificationService();
       await notificationService.initialize();
       await notificationService.scheduleDailyVerse();
+      await notificationService.scheduleReadingReminder();
     } catch (e) {
       Logger.warning(
         'Notifications not available on this platform: $e',

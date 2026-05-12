@@ -307,6 +307,11 @@ final Map<String, String> enUs = {
   'lbl_minutes': 'minutes',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
+  'lbl_select_verse': 'Select Ayah',
+  'lbl_previous_verse': 'Previous Ayah',
+  'lbl_next_verse': 'Next Ayah',
+  'msg_resume_audio': 'Resume Listening',
+  'msg_resume_from_verse': 'Continue from Ayah {verse}',
 
   // Mushaf Screen
   'lbl_mushaf': 'Mushaf',
@@ -379,6 +384,26 @@ final Map<String, String> enUs = {
       'Quran Foundation Content API integration for tafsir and verse data.',
   'changelog_3_1_0_6':
       'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
+  'changelog_3_3_0_1':
+      'Home screen widget \u2014 get daily Quran verses right on your launcher.',
+  'changelog_3_3_0_2':
+      'Reading reminders and streak milestone notifications to keep you on track.',
+  'changelog_3_3_0_3':
+      'Audio player overhaul \u2014 resume from last verse, verse picker, and prev/next controls.',
+  'changelog_3_3_0_4':
+      'Redesigned onboarding with theme selection and consistent gradient scaffolds.',
+  'changelog_3_3_0_5':
+      'Quran.Foundation preference sync \u2014 bidirectional sync of bookmarks and settings.',
+  'changelog_3_3_0_6':
+      'Goal editing and deletion \u2014 update or remove reading goals directly from Goals screen.',
+  'changelog_3_3_0_7':
+      'User profile from Quran.Foundation \u2014 display name and email across the app.',
+  'changelog_3_3_0_8':
+      'Expanded analytics \u2014 17 new events covering reading sessions, bookmarks, goals, and more.',
+  'changelog_3_3_0_9':
+      'Reading insights with activity heatmap \u2014 visualize your weekly Quran reading habits.',
+  'changelog_3_3_0_10':
+      'Performance fixes \u2014 eliminated 4.5-second staggered animation delay on Surah list.',
   'changelog_3_1_0_7':
       'Force update mechanism for critical text accuracy fixes.',
   'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
@@ -507,6 +532,16 @@ final Map<String, String> enUs = {
   'msg_daily_verse_desc':
       'Receive a daily Quran verse to start your day with reflection',
 
+  // Onboarding — Theme
+  'lbl_choose_theme': 'Choose Your Theme',
+  'msg_theme_desc': 'Select the appearance you prefer for the app',
+  'lbl_light_mode': 'Light Mode',
+  'msg_light_mode_desc': 'Clean and bright interface',
+  'lbl_dark_mode': 'Dark Mode',
+  'msg_dark_mode_desc': 'Easy on the eyes in low light',
+  'lbl_system_mode': 'System Default',
+  'msg_system_mode_desc': 'Follows your device settings',
+
   // Onboarding — Language & Archetype
   'lbl_choose_language': 'Choose Your Language',
   'msg_language_desc': 'Select the language you prefer to use the app in',
@@ -591,4 +626,15 @@ final Map<String, String> enUs = {
   'msg_feed_load_error': 'Failed to load feed',
   'msg_no_reflections': 'No reflections yet',
   'msg_be_first_reflection': 'Be the first to share a reflection!',
+
+  // Widget Promo
+  'lbl_home_widget': 'Home Widget',
+  'msg_home_widget_desc': 'Get daily verses on your home screen',
+  'lbl_got_it': 'Got it',
+  'lbl_add_widget': 'Add Widget',
+  'msg_widget_added': 'Long-press your home screen and select Hafiz widget',
+
+  // Reading Reminder
+  'lbl_reading_reminder': 'Reading Reminder',
+  'msg_reading_reminder_desc': 'Gentle nudge to keep your daily Quran habit',
 };

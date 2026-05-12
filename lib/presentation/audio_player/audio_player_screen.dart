@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
+import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/quran_index/quran_verse_utils.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
   final int surahId;
@@ -28,19 +30,42 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   String? _errorMessage;
   int _currentVerse = -1;
   StreamSubscription<int>? _verseSub;
+  int? _resumeFromVerse;
 
   static const List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+  /// Reciter CDN ID mapping — kept in sync with SurahScreen.
+  static const Map<int, String> _reciterCdnIds = {
+    7: 'ar.alafasy',
+    1: 'ar.abdulbasitmurattal',
+    5: 'ar.husary',
+    9: 'ar.abdurrahmaansudais',
+    17: 'ar.minshawi',
+  };
 
   @override
   void initState() {
     super.initState();
     _verseSub = _handler.currentVerseStream.listen((verseIndex) {
       if (mounted) {
-        setState(() {
-          _currentVerse = verseIndex;
-        });
+        setState(() => _currentVerse = verseIndex);
+        // Persist last played verse for resume functionality
+        if (verseIndex >= 0) {
+          PrefUtils().setLastAudioVerse(widget.surahId, verseIndex);
+        }
       }
     });
+    // Check if we have a saved position to resume from
+    final saved = PrefUtils().getLastAudioVerse(widget.surahId);
+    if (saved != null &&
+        saved > 0 &&
+        saved < _getVerseCount(widget.surahId) - 1) {
+      _resumeFromVerse = saved;
+    }
+    // Auto-play if a startVerse was explicitly provided
+    if (widget.startVerse != null) {
+      _play(startVerse: (widget.startVerse!) - 1);
+    }
   }
 
   @override
@@ -49,18 +74,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     _handler.stop();
     super.dispose();
   }
-
-  static const Map<int, String> _reciterCdnIds = {
-    7: 'ar.alafasy',
-    1: 'ar.abdulbasitmurattal',
-    2: 'ar.husary',
-    3: 'ar.minshawi',
-    4: 'ar.abdurrahmaansudais',
-    5: 'ar.hudhaify',
-    6: 'ar.saaborimuneer',
-    8: 'ar.ahmedajamy',
-    9: 'ar.alijabir',
-  };
 
   String _getReciterCdnId() {
     final id = PrefUtils().getReciterId();
@@ -71,15 +84,18 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     final reciter = _getReciterCdnId();
     return List.generate(
       verseCount,
-      (i) =>
-          'https://cdn.islamic.network/quran/audio/128/$reciter/${(surahId * 1000 + i + 1)}.mp3',
+      (i) {
+        final absolute = absoluteVerseNumber(surahId, i + 1);
+        return 'https://cdn.islamic.network/quran/audio/128/$reciter/$absolute.mp3';
+      },
     );
   }
 
-  Future<void> _play() async {
+  Future<void> _play({int? startVerse}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _resumeFromVerse = null;
     });
     try {
       final verseCount = _getVerseCount(widget.surahId);
@@ -87,7 +103,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       await _handler.playSurah(
         surahId: widget.surahId,
         verseAudioUrls: urls,
-        startVerse: (widget.startVerse ?? 1) - 1,
+        startVerse: startVerse ?? 0,
       );
     } catch (e) {
       setState(() => _errorMessage = 'msg_audio_load_error'.tr);
@@ -96,124 +112,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     }
   }
 
+  Future<void> _resumeFromSaved() async {
+    if (_resumeFromVerse == null) return;
+    await _play(startVerse: _resumeFromVerse);
+  }
+
   int _getVerseCount(int surahId) {
-    const counts = <int, int>{
-      1: 7,
-      2: 286,
-      3: 200,
-      4: 176,
-      5: 120,
-      6: 165,
-      7: 206,
-      8: 75,
-      9: 129,
-      10: 109,
-      11: 123,
-      12: 111,
-      13: 43,
-      14: 52,
-      15: 99,
-      16: 128,
-      17: 111,
-      18: 110,
-      19: 98,
-      20: 135,
-      21: 112,
-      22: 78,
-      23: 118,
-      24: 64,
-      25: 77,
-      26: 227,
-      27: 93,
-      28: 88,
-      29: 69,
-      30: 60,
-      31: 34,
-      32: 30,
-      33: 73,
-      34: 54,
-      35: 45,
-      36: 83,
-      37: 182,
-      38: 88,
-      39: 75,
-      40: 85,
-      41: 54,
-      42: 53,
-      43: 89,
-      44: 59,
-      45: 37,
-      46: 35,
-      47: 38,
-      48: 29,
-      49: 18,
-      50: 45,
-      51: 60,
-      52: 49,
-      53: 62,
-      54: 55,
-      55: 78,
-      56: 96,
-      57: 29,
-      58: 22,
-      59: 24,
-      60: 13,
-      61: 14,
-      62: 11,
-      63: 11,
-      64: 18,
-      65: 12,
-      66: 12,
-      67: 30,
-      68: 52,
-      69: 52,
-      70: 44,
-      71: 28,
-      72: 28,
-      73: 20,
-      74: 56,
-      75: 40,
-      76: 31,
-      77: 50,
-      78: 40,
-      79: 46,
-      80: 42,
-      81: 29,
-      82: 19,
-      83: 36,
-      84: 25,
-      85: 22,
-      86: 17,
-      87: 19,
-      88: 26,
-      89: 30,
-      90: 20,
-      91: 15,
-      92: 21,
-      93: 11,
-      94: 8,
-      95: 8,
-      96: 19,
-      97: 5,
-      98: 8,
-      99: 8,
-      100: 11,
-      101: 11,
-      102: 8,
-      103: 3,
-      104: 9,
-      105: 5,
-      106: 4,
-      107: 7,
-      108: 3,
-      109: 6,
-      110: 3,
-      111: 5,
-      112: 4,
-      113: 5,
-      114: 6,
-    };
-    return counts[surahId] ?? 7;
+    return MushafPageIndex.getVerseCount(surahId);
   }
 
   void _showSleepTimerDialog() {
@@ -285,10 +190,97 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
+  void _showVersePicker() {
+    final totalVerses = _getVerseCount(widget.surahId);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        maxChildSize: 0.8,
+        builder: (_, scrollController) => SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'lbl_select_verse'.tr,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: totalVerses,
+                  itemBuilder: (context, index) {
+                    final isCurrent = _currentVerse == index;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: isCurrent
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isCurrent ? Colors.white : null,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        '${'lbl_verse'.tr} ${index + 1}',
+                        style: TextStyle(
+                          fontWeight:
+                              isCurrent ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: isCurrent
+                          ? Icon(
+                              Icons.volume_up,
+                              color: Theme.of(context).colorScheme.primary,
+                            )
+                          : null,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _handler.seekToVerse(index);
+                      },
+                      selected: isCurrent,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _previousVerse() {
+    if (_currentVerse > 0) {
+      _handler.seekToVerse(_currentVerse - 1);
+    }
+  }
+
+  void _nextVerse() {
+    final total = _getVerseCount(widget.surahId);
+    if (_currentVerse < total - 1) {
+      _handler.seekToVerse(_currentVerse + 1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final surah = QuranIndex.quranSurahs[widget.surahId - 1];
+    final totalVerses = _getVerseCount(widget.surahId);
+    final isPlaying =
+        _handler.currentSurahId == widget.surahId && _currentVerse >= 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -301,6 +293,14 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (totalVerses > 1)
+            IconButton(
+              icon: const Icon(Icons.format_list_numbered),
+              tooltip: 'lbl_select_verse'.tr,
+              onPressed: _showVersePicker,
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -323,8 +323,67 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 32),
-            _buildVerseProgress(theme),
+            const SizedBox(height: 16),
+
+            // Resume prompt
+            if (_resumeFromVerse != null && !isPlaying)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Card(
+                  child: InkWell(
+                    onTap: _resumeFromSaved,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.play_circle_fill,
+                            color: theme.colorScheme.primary,
+                            size: 32,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'msg_resume_audio'.tr,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'msg_resume_from_verse'
+                                      .tr
+                                      .replaceAll(
+                                        '{verse}',
+                                        '${_resumeFromVerse! + 1}',
+                                      ),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            _buildVerseProgress(theme, totalVerses, isPlaying),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -333,7 +392,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
-            _buildControls(theme),
+            _buildControls(theme, isPlaying),
             const Spacer(),
             _buildBottomActions(theme),
             const Spacer(),
@@ -343,10 +402,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
-  Widget _buildVerseProgress(ThemeData theme) {
-    final totalVerses = _getVerseCount(widget.surahId);
-    final isPlaying =
-        _handler.currentSurahId == widget.surahId && _currentVerse >= 0;
+  Widget _buildVerseProgress(
+    ThemeData theme,
+    int totalVerses,
+    bool isPlaying,
+  ) {
     if (!isPlaying) return const SizedBox.shrink();
 
     final displayVerse = _currentVerse + 1;
@@ -368,10 +428,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 4,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor:
+                  theme.brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[300],
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -379,23 +445,38 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
-  Widget _buildControls(ThemeData theme) {
+  Widget _buildControls(ThemeData theme, bool isPlaying) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Previous verse
+        Semantics(
+          button: true,
+          label: 'lbl_previous_verse'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.skip_previous, size: 32),
+            tooltip: 'lbl_previous_verse'.tr,
+            onPressed: isPlaying ? _previousVerse : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Rewind 10s
         Semantics(
           button: true,
           label: 'lbl_rewind_10'.tr,
           child: IconButton(
-            icon: const Icon(Icons.replay_10, size: 32),
+            icon: const Icon(Icons.replay_10, size: 28),
             tooltip: 'lbl_rewind_10'.tr,
-            onPressed: () {
-              _handler.seekRelative(const Duration(seconds: -10));
-              setState(() {});
-            },
+            onPressed: isPlaying
+                ? () {
+                    _handler.seekRelative(const Duration(seconds: -10));
+                    setState(() {});
+                  }
+                : null,
           ),
         ),
-        const SizedBox(width: 24),
+        const SizedBox(width: 16),
+        // Play/Pause
         Container(
           width: 72,
           height: 72,
@@ -436,17 +517,31 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                   ),
                 ),
         ),
-        const SizedBox(width: 24),
+        const SizedBox(width: 16),
+        // Forward 10s
         Semantics(
           button: true,
           label: 'lbl_forward_10'.tr,
           child: IconButton(
-            icon: const Icon(Icons.forward_10, size: 32),
+            icon: const Icon(Icons.forward_10, size: 28),
             tooltip: 'lbl_forward_10'.tr,
-            onPressed: () {
-              _handler.seekRelative(const Duration(seconds: 10));
-              setState(() {});
-            },
+            onPressed: isPlaying
+                ? () {
+                    _handler.seekRelative(const Duration(seconds: 10));
+                    setState(() {});
+                  }
+                : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Next verse
+        Semantics(
+          button: true,
+          label: 'lbl_next_verse'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.skip_next, size: 32),
+            tooltip: 'lbl_next_verse'.tr,
+            onPressed: isPlaying ? _nextVerse : null,
           ),
         ),
       ],

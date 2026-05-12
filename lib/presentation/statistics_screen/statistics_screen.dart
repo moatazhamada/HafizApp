@@ -21,7 +21,10 @@ class StatisticsScreen extends StatelessWidget {
           create: (context) =>
               sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
         ),
-        BlocProvider.value(value: sl<KhatmahBloc>()),
+        BlocProvider(
+          create: (context) =>
+              sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
+        ),
       ],
       child: const _StatsBody(),
     );
@@ -59,7 +62,9 @@ class _StatsBody extends StatelessWidget {
 
           final isLoading =
               memState is MemorizationInitial ||
-              memState is MemorizationLoading;
+              memState is MemorizationLoading ||
+              khatmahState is KhatmahInitial ||
+              khatmahState is KhatmahLoading;
 
           if (isLoading) {
             return const Center(child: CircularProgressIndicator());

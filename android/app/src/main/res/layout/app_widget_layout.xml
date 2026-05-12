@@ -15,11 +15,11 @@
         android:textSize="16sp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:textColor="#1A1A1A"
+        android:textColor="@color/widget_text_primary"
         android:maxLines="6"
         android:ellipsize="end"
         android:lineSpacingExtra="4dp"
-        android:text="بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" />
+        android:text="بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" />
 
     <TextView
         android:id="@+id/widget_verse_ref"
@@ -28,7 +28,7 @@
         android:textSize="11sp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:textColor="#999999"
+        android:textColor="@color/widget_text_secondary"
         android:layout_marginTop="4dp"
         android:text="— 1:1" />
 

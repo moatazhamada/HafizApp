@@ -39,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultQuranView;
   late String _mushafType;
   late bool _dailyVerseEnabled;
+  late bool _readingReminderEnabled;
   double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -63,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
+    _readingReminderEnabled = PrefUtils().isReadingReminderEnabled();
     _loadRecitationResources();
   }
 
@@ -121,6 +123,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1, indent: 16, endIndent: 16),
 
             _buildDailyVerseTile(),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildReadingReminderTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),
@@ -578,11 +582,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onChanged: (val) {
         setState(() => _dailyVerseEnabled = val);
         PrefUtils().setDailyVerseEnabled(val);
-        final notificationService = DailyVerseNotificationService();
+        final notificationService = NotificationService();
         if (val) {
           notificationService.scheduleDailyVerse();
         } else {
-          notificationService.cancelAll();
+          notificationService.cancelRecurring();
+        }
+      },
+    );
+  }
+
+  Widget _buildReadingReminderTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.access_time),
+      title: Text('lbl_reading_reminder'.tr),
+      subtitle: Text('msg_reading_reminder_desc'.tr),
+      value: _readingReminderEnabled,
+      onChanged: (val) {
+        setState(() => _readingReminderEnabled = val);
+        PrefUtils().setReadingReminderEnabled(val);
+        final notificationService = NotificationService();
+        if (val) {
+          notificationService.scheduleReadingReminder();
+        } else {
+          notificationService.cancelRecurring();
         }
       },
     );

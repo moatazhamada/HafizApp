@@ -12,8 +12,25 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: const [
           _VersionCard(
-            version: '3.1.0',
+            version: '3.3.0',
             isLatest: true,
+            itemKeys: [
+              'changelog_3_3_0_1',
+              'changelog_3_3_0_2',
+              'changelog_3_3_0_3',
+              'changelog_3_3_0_4',
+              'changelog_3_3_0_5',
+              'changelog_3_3_0_6',
+              'changelog_3_3_0_7',
+              'changelog_3_3_0_8',
+              'changelog_3_3_0_9',
+              'changelog_3_3_0_10',
+            ],
+          ),
+          SizedBox(height: 16),
+          _VersionCard(
+            version: '3.1.0',
+            isLatest: false,
             itemKeys: [
               'changelog_3_1_0_1',
               'changelog_3_1_0_2',

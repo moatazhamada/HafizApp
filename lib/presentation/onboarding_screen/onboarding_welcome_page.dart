@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/network/connectivity_cubit.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
-import 'package:hafiz_app/widgets/custom_elevated_button.dart';
 import '../../core/app_export.dart';
+import 'widgets/onboarding_buttons.dart';
+import 'widgets/onboarding_scaffold.dart';
 
 class OnboardingWelcomePage extends StatefulWidget {
   final VoidCallback onContinue;
@@ -56,196 +57,142 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      body: Container(
-        width: double.maxFinite,
-        height: double.maxFinite,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              colorScheme.primary.withValues(alpha: 0.8),
-              colorScheme.primary,
-              AppColors.of(context).primaryDark,
-            ],
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Internet Status Indicator
-            BlocBuilder<ConnectivityCubit, ConnectivityState>(
-              builder: (context, connState) {
-                if (connState.isOnline) return const SizedBox.shrink();
-                return Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    color: Colors.redAccent.withValues(alpha: 0.9),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'msg_no_internet_connection'.tr,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+    return OnboardingScaffold(
+      maxContentWidth: 800,
+      child: Stack(
+        children: [
+          // Internet Status Indicator
+          BlocBuilder<ConnectivityCubit, ConnectivityState>(
+            builder: (context, connState) {
+              if (connState.isOnline) return const SizedBox.shrink();
+              return Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: Container(
+                  color: Colors.redAccent.withValues(alpha: 0.9),
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'msg_no_internet_connection'.tr,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                );
-              },
-            ),
-
-            // Decorative Background Element
-            Positioned(
-              left: -20,
-              top: -20,
-              child: Opacity(
-                opacity: 0.1,
-                child: CustomImageView(
-                  imagePath: ImageConstant.imgGroupCircles,
-                  height: 150.adaptSize,
-                  width: 150.adaptSize,
-                  color: Colors.white,
                 ),
+              );
+            },
+          ),
+
+          // Decorative Background Element
+          Positioned(
+            left: -20,
+            top: -20,
+            child: Opacity(
+              opacity: 0.1,
+              child: CustomImageView(
+                imagePath: ImageConstant.imgGroupCircles,
+                height: 150.adaptSize,
+                width: 150.adaptSize,
+                color: Colors.white,
               ),
             ),
+          ),
 
-            // Main Content
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isLarge = constraints.maxWidth > 900;
-                final imageHeight = isLarge ? 450.adaptSize : 350.adaptSize;
-                final imageWidth = isLarge ? 400.adaptSize : 300.adaptSize;
+          // Main Content
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isLarge = constraints.maxWidth > 900;
+              final imageHeight = isLarge ? 450.adaptSize : 350.adaptSize;
+              final imageWidth = isLarge ? 400.adaptSize : 300.adaptSize;
 
-                Widget content = Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isLarge ? 48.0 : 24.0,
-                  ),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Spacer(flex: 2),
+              Widget content = Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLarge ? 48.0 : 24.0,
+                ),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Spacer(flex: 2),
 
-                          // Hero Image Card
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(30),
-                              child: Container(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                child: CustomImageView(
-                                  imagePath: ImageConstant.imgQuranOnboarding,
-                                  height: imageHeight,
-                                  width: imageWidth,
-                                  fit: BoxFit.contain,
-                                ),
+                        // Hero Image Card
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: Container(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              child: CustomImageView(
+                                imagePath: ImageConstant.imgQuranOnboarding,
+                                height: imageHeight,
+                                width: imageWidth,
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
+                        ),
 
-                          const Spacer(),
+                        const Spacer(),
 
-                          // Title
-                          Text(
-                            'app_name'.tr,
-                            style: theme.textTheme.displayMedium?.copyWith(
-                              color: AppColors.of(context).primaryLight,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
+                        // Title
+                        Text(
+                          'app_name'.tr,
+                          style: theme.textTheme.displayMedium?.copyWith(
+                            color: AppColors.of(context).primaryLight,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
                           ),
-                          SizedBox(height: 16.adaptSize),
+                        ),
+                        SizedBox(height: 16.adaptSize),
 
-                          // Subtitle
-                          Text(
-                            'lbl_learn_quran'.tr,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontFamily: 'Poppins',
-                              height: 1.5,
-                            ),
+                        // Subtitle
+                        Text(
+                          'lbl_learn_quran'.tr,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontFamily: 'Poppins',
+                            height: 1.5,
                           ),
+                        ),
 
-                          const Spacer(flex: 2),
+                        const Spacer(flex: 2),
 
-                          // Action Button
-                          SizedBox(
-                            width: double.maxFinite,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isLarge ? 64.0 : 32.0,
-                              ),
-                              child: CustomElevatedButton(
-                                key: const ValueKey('get_started_key'),
-                                onPressed: widget.onContinue,
-                                text: 'lbl_get_started'.tr,
-                                buttonStyle: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      AppColors.of(context).badgeGradient[0],
-                                  foregroundColor:
-                                      AppColors.of(context).bismillahColor,
-                                  elevation: 5,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30.0),
-                                  ),
-                                ),
-                                buttonTextStyle: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                  color: AppColors.of(context).bismillahColor,
-                                ),
-                                rightIcon: Padding(
-                                  padding: const EdgeInsets.only(left: 12.0),
-                                  child: Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                    color: AppColors.of(context).bismillahColor,
-                                  ),
-                                ),
-                              ),
-                            ),
+                        // Action Button
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isLarge ? 64.0 : 32.0,
                           ),
-                          const Spacer(),
-                        ],
-                      ),
+                          child: OnboardingPrimaryButton(
+                            text: 'lbl_get_started'.tr,
+                            onPressed: widget.onContinue,
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
                     ),
                   ),
-                );
+                ),
+              );
 
-                if (isLarge) {
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 800),
-                      child: content,
-                    ),
-                  );
-                }
-
-                return content;
-              },
-            ),
-          ],
-        ),
+              return content;
+            },
+          ),
+        ],
       ),
     );
   }

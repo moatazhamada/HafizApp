@@ -149,6 +149,18 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
           ),
         ),
 
+        // Widget Promo
+        if (!PrefUtils().hasDismissedWidgetPromo())
+          StaggeredListItem(
+            index: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: _WidgetPromoCard(
+                onDismiss: () => setState(() {}),
+              ),
+            ),
+          ),
+
         // Recent Searches
         if (_recentSearches.isNotEmpty)
           StaggeredListItem(
@@ -371,6 +383,118 @@ class _DiscoveryCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WidgetPromoCard extends StatelessWidget {
+  final VoidCallback onDismiss;
+
+  const _WidgetPromoCard({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.15),
+            colorScheme.secondary.withValues(alpha: 0.10),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.widgets_outlined,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    PrefUtils().dismissWidgetPromo();
+                    onDismiss();
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'lbl_home_widget'.tr,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'msg_home_widget_desc'.tr,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: () {
+                  _showWidgetAddDialog(context);
+                  PrefUtils().dismissWidgetPromo();
+                  onDismiss();
+                },
+                child: Text('lbl_add_widget'.tr),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWidgetAddDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('lbl_add_widget'.tr),
+        content: Text('msg_widget_added'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('lbl_got_it'.tr),
+          ),
+        ],
       ),
     );
   }
