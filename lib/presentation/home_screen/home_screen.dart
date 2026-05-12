@@ -22,8 +22,10 @@ import 'surfaces/seeker_surface.dart';
 import '../../core/models/surface_type.dart';
 import '../../core/tracking/behavior_tracker.dart';
 import 'widgets/surface_suggestion_banner.dart';
+import 'widgets/adaptive_navigation.dart';
+import 'widgets/animated_surface_switcher.dart';
 
-import '../auth/bloc/qf_auth_bloc.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -195,347 +197,217 @@ class _HomeScreenState extends State<HomeScreen>
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        drawer: _buildDrawer(context, theme),
-        appBar: CustomAppBar(
-          title: Semantics(
-            header: true,
-            child: Text(
-              'app_name'.tr,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ),
-          leading: Builder(
-            builder: (scaffoldContext) => Semantics(
-              button: true,
-              label: 'lbl_open_nav_menu'.tr,
-              child: IconButton(
-                icon: Icon(
-                  Icons.menu,
-                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
-                ),
-                onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-                tooltip: 'lbl_open_nav_menu'.tr,
-              ),
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            Semantics(
-              button: true,
-              label: 'lbl_toggle_theme'.tr,
-              child: IconButton(
-                icon: Icon(
-                  isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
-                ),
-                onPressed: () {
-                  themeBloc.add(ToggleThemeEvent());
-                  sl<AnalyticsService>().logThemeChange(!isDarkMode);
-                },
-                tooltip: 'lbl_toggle_theme'.tr,
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_juz_index'.tr,
-              child: IconButton(
-                icon: Icon(
-                  Icons.menu_book_rounded,
-                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
-                ),
-                onPressed: () => _showJuzSelector(context),
-                tooltip: 'lbl_juz_index'.tr,
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_search_tooltip'.tr,
-              child: IconButton(
-                icon: Icon(
-                  Icons.search_rounded,
-                  color: isDarkMode ? Colors.white : theme.colorScheme.primary,
-                ),
-                onPressed: () =>
-                    NavigatorService.pushNamed(AppRoutes.searchPage),
-                tooltip: 'lbl_search_tooltip'.tr,
-              ),
-            ),
-          ],
-        ),
-        body: OfflineIndicator(
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<HomeBloc>.value(value: homeBloc),
-              BlocProvider<AdaptiveHomeBloc>(
-                create: (_) => AdaptiveHomeBloc()..add(AdaptiveHomeLoad()),
-              ),
-            ],
-            child: BlocBuilder<HomeBloc, HomeState>(
-              builder: (context, homeState) {
-                final lastReadSurah = homeState is UpdateLastReadSurah
-                    ? homeState.surah
-                    : null;
-                final lastVerseIndex = lastReadSurah != null
-                    ? PrefUtils().getSurahVerseIndex(lastReadSurah.id)
-                    : null;
-
-                return BlocBuilder<AdaptiveHomeBloc, AdaptiveHomeState>(
-                  builder: (context, adaptiveState) {
-                    final suggested = BehaviorTracker.suggestSurfaceType();
-                    final showBanner = suggested != null &&
-                        suggested != adaptiveState.surfaceType.name &&
-                        !BehaviorTracker.isSuggestionDismissed();
-
-                    return Column(
-                      children: [
-                        if (showBanner)
-                          SurfaceSuggestionBanner(
-                            suggestedSurface: suggested,
-                            onDismiss: () {
-                              BehaviorTracker.dismissSuggestion();
-                              context
-                                  .read<AdaptiveHomeBloc>()
-                                  .add(AdaptiveHomeDismissSuggestion());
-                            },
-                            onAccept: () {
-                              BehaviorTracker.dismissSuggestion();
-                              context.read<AdaptiveHomeBloc>().add(
-                                    AdaptiveHomeChangeSurface(
-                                      SurfaceType.fromString(suggested),
-                                    ),
-                                  );
-                            },
-                          ),
-                        Expanded(
-                          child: switch (adaptiveState.surfaceType) {
-                            SurfaceType.reader => ReaderSurface(
-                                lastReadSurah: lastReadSurah,
-                                lastVerseIndex: lastVerseIndex,
-                              ),
-                            SurfaceType.student => const StudentSurface(),
-                            SurfaceType.seeker => const SeekerSurface(),
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
+    final appBar = CustomAppBar(
+      title: Semantics(
+        header: true,
+        child: Text(
+          'app_name'.tr,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context, ThemeData theme) {
-    return NavigationDrawer(
-      selectedIndex: null,
-      onDestinationSelected: (index) {
-        Navigator.of(context).pop();
-        switch (index) {
-          case 0:
-            NavigatorService.pushNamed(AppRoutes.mushafScreen);
-            break;
-          case 1:
-            NavigatorService.pushNamed(AppRoutes.goalsPage);
-            break;
-          case 2:
-            NavigatorService.pushNamed(AppRoutes.bookmarksPage);
-            break;
-          case 3:
-            NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
-            break;
-          case 4:
-            NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
-            break;
-          case 5:
-            NavigatorService.pushNamed(AppRoutes.memorizationPage);
-            break;
-          case 6:
-            NavigatorService.pushNamed(AppRoutes.khatmahPage);
-            break;
-          case 7:
-            NavigatorService.pushNamed(AppRoutes.statisticsScreen);
-            break;
-          case 8:
-            NavigatorService.pushNamed(AppRoutes.settingsScreen);
-            break;
-          case 9:
-            NavigatorService.pushNamed(AppRoutes.aboutPage);
-            break;
-        }
-      },
-      children: [
-        _buildDrawerAuthHeader(context, theme),
-        const Divider(height: 1),
-        const SizedBox(height: 12),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.auto_stories_outlined),
-          selectedIcon: const Icon(Icons.auto_stories_rounded),
-          label: Text('lbl_mushaf'.tr),
+      leading: Builder(
+        builder: (scaffoldContext) => Semantics(
+          button: true,
+          label: 'lbl_open_nav_menu'.tr,
+          child: IconButton(
+            icon: Icon(
+              Icons.menu,
+              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+            ),
+            onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+            tooltip: 'lbl_open_nav_menu'.tr,
+          ),
         ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.event_note_outlined),
-          selectedIcon: const Icon(Icons.event_note_rounded),
-          label: Text('goals_title'.tr),
+      ),
+      centerTitle: true,
+      actions: [
+        Semantics(
+          button: true,
+          label: 'lbl_toggle_theme'.tr,
+          child: IconButton(
+            icon: Icon(
+              isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+            ),
+            onPressed: () {
+              themeBloc.add(ToggleThemeEvent());
+              sl<AnalyticsService>().logThemeChange(!isDarkMode);
+            },
+            tooltip: 'lbl_toggle_theme'.tr,
+          ),
         ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.bookmark_outline_rounded),
-          selectedIcon: const Icon(Icons.bookmark_rounded),
-          label: Text('lbl_bookmarks'.tr),
+        Semantics(
+          button: true,
+          label: 'lbl_juz_index'.tr,
+          child: IconButton(
+            icon: Icon(
+              Icons.menu_book_rounded,
+              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+            ),
+            onPressed: () => _showJuzSelector(context),
+            tooltip: 'lbl_juz_index'.tr,
+          ),
         ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.playlist_add_check_outlined),
-          selectedIcon: const Icon(Icons.playlist_add_check_rounded),
-          label: Text('lbl_practice_list'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.history_outlined),
-          selectedIcon: const Icon(Icons.history_rounded),
-          label: Text('lbl_session_history'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.school_outlined),
-          selectedIcon: const Icon(Icons.school_rounded),
-          label: Text('lbl_memorization'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.auto_stories_outlined),
-          selectedIcon: const Icon(Icons.auto_stories_rounded),
-          label: Text('lbl_khatmah_tracker'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.trending_up_outlined),
-          selectedIcon: const Icon(Icons.trending_up_rounded),
-          label: Text('stats_title'.tr),
-        ),
-        const Divider(height: 24),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.settings_outlined),
-          selectedIcon: const Icon(Icons.settings_rounded),
-          label: Text('lbl_settings'.tr),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.info_outline_rounded),
-          selectedIcon: const Icon(Icons.info_rounded),
-          label: Text('about_title'.tr),
+        Semantics(
+          button: true,
+          label: 'lbl_search_tooltip'.tr,
+          child: IconButton(
+            icon: Icon(
+              Icons.search_rounded,
+              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+            ),
+            onPressed: () =>
+                NavigatorService.pushNamed(AppRoutes.searchPage),
+            tooltip: 'lbl_search_tooltip'.tr,
+          ),
         ),
       ],
     );
-  }
 
-  Widget _buildDrawerAuthHeader(BuildContext context, ThemeData theme) {
-    return BlocBuilder<QfAuthBloc, QfAuthState>(
-      builder: (context, state) {
-        final Widget avatar;
-        final String title;
-        final String subtitle;
+    final bodyContent = OfflineIndicator(
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<HomeBloc>.value(value: homeBloc),
+          BlocProvider<AdaptiveHomeBloc>(
+            create: (_) => AdaptiveHomeBloc()..add(AdaptiveHomeLoad()),
+          ),
+        ],
+        child: BlocBuilder<HomeBloc, HomeState>(
+          builder: (context, homeState) {
+            final lastReadSurah = homeState is UpdateLastReadSurah
+                ? homeState.surah
+                : null;
+            final lastVerseIndex = lastReadSurah != null
+                ? PrefUtils().getSurahVerseIndex(lastReadSurah.id)
+                : null;
 
-        if (state is QfAuthAuthenticated) {
-          final initial = state.userId?.isNotEmpty == true
-              ? state.userId![0].toUpperCase()
-              : null;
-          avatar = CircleAvatar(
-            radius: 22,
-            backgroundColor: theme.colorScheme.primary,
-            child: initial != null
-                ? Text(
-                    initial,
-                    style: TextStyle(
-                      color: AppColors.of(context).onPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+            return BlocBuilder<AdaptiveHomeBloc, AdaptiveHomeState>(
+              builder: (context, adaptiveState) {
+                final suggested = BehaviorTracker.suggestSurfaceType();
+                final showBanner = suggested != null &&
+                    suggested != adaptiveState.surfaceType.name &&
+                    !BehaviorTracker.isSuggestionDismissed();
+
+                return Column(
+                  children: [
+                    if (showBanner)
+                      SurfaceSuggestionBanner(
+                        suggestedSurface: suggested,
+                        onDismiss: () {
+                          BehaviorTracker.dismissSuggestion();
+                          context
+                              .read<AdaptiveHomeBloc>()
+                              .add(AdaptiveHomeDismissSuggestion());
+                        },
+                        onAccept: () {
+                          BehaviorTracker.dismissSuggestion();
+                          context.read<AdaptiveHomeBloc>().add(
+                                AdaptiveHomeChangeSurface(
+                                  SurfaceType.fromString(suggested),
+                                ),
+                              );
+                        },
+                      ),
+                    Expanded(
+                      child: AnimatedSurfaceSwitcher(
+                        surfaceType: adaptiveState.surfaceType,
+                        child: switch (adaptiveState.surfaceType) {
+                          SurfaceType.reader => ReaderSurface(
+                              lastReadSurah: lastReadSurah,
+                              lastVerseIndex: lastVerseIndex,
+                            ),
+                          SurfaceType.student => const StudentSurface(),
+                          SurfaceType.seeker => const SeekerSurface(),
+                        },
+                      ),
                     ),
-                  )
-                : Icon(
-                    Icons.account_circle,
-                    color: AppColors.of(context).onPrimary,
-                    size: 24,
-                  ),
-          );
-          title = 'msg_qf_account'.tr;
-          subtitle = 'msg_qf_logged_in'.tr;
-        } else if (state is QfAuthLoading || state is QfAuthInitial) {
-          avatar = CircleAvatar(
-            radius: 22,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            child: SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          );
-          title = 'lbl_not_signed_in'.tr;
-          subtitle = 'lbl_tap_to_sign_in'.tr;
-        } else {
-          // QfAuthUnauthenticated, QfAuthError, or any other state
-          avatar = CircleAvatar(
-            radius: 22,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            child: Icon(
-              Icons.account_circle_outlined,
-              color: theme.colorScheme.onSurfaceVariant,
-              size: 24,
-            ),
-          );
-          title = 'lbl_not_signed_in'.tr;
-          subtitle = 'lbl_tap_to_sign_in'.tr;
-        }
-
-        return InkWell(
-          onTap: () {
-            Navigator.of(context).pop();
-            NavigatorService.pushNamed(AppRoutes.cloudSyncPage);
+                  ],
+                );
+              },
+            );
           },
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-            child: Row(
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isLarge = constraints.maxWidth > 900;
+
+        if (isLarge) {
+          return Scaffold(
+            body: Row(
               children: [
-                avatar,
-                const SizedBox(width: 14),
+                AdaptiveNavigationRail(
+                  selectedIndex: -1,
+                  onDestinationSelected: (index) =>
+                      _onNavDestinationSelected(context, index),
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      appBar,
+                      Expanded(child: bodyContent),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  size: 18,
-                ),
               ],
             ),
+          );
+        }
+
+        return SafeArea(
+          child: Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            drawer: AdaptiveNavigationDrawer(
+              onDestinationSelected: (index) =>
+                  _onNavDestinationSelected(context, index),
+            ),
+            appBar: appBar,
+            body: bodyContent,
           ),
         );
       },
     );
+  }
+
+  void _onNavDestinationSelected(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        NavigatorService.pushNamed(AppRoutes.mushafScreen);
+        break;
+      case 1:
+        NavigatorService.pushNamed(AppRoutes.goalsPage);
+        break;
+      case 2:
+        NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+        break;
+      case 3:
+        NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+        break;
+      case 4:
+        NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
+        break;
+      case 5:
+        NavigatorService.pushNamed(AppRoutes.memorizationPage);
+        break;
+      case 6:
+        NavigatorService.pushNamed(AppRoutes.khatmahPage);
+        break;
+      case 7:
+        NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+        break;
+      case 8:
+        NavigatorService.pushNamed(AppRoutes.settingsScreen);
+        break;
+      case 9:
+        NavigatorService.pushNamed(AppRoutes.aboutPage);
+        break;
+    }
   }
 
 

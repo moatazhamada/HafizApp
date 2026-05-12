@@ -4,6 +4,7 @@ import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../../../widgets/surah_list_item.dart';
+import 'staggered_list_item.dart';
 
 class SurahIndexWidget extends StatelessWidget {
   final String? searchQuery;
@@ -91,33 +92,39 @@ class SurahIndexWidget extends StatelessWidget {
           itemBuilder: (context, index) {
             final entry = entries[index];
 
-            if (entry.isJuz) {
-              return _JuzHeader(
-                juz: entry.juz!,
-                isArabic: isArabic,
-              );
-            }
+            final widget = entry.isJuz
+                ? _JuzHeader(
+                    juz: entry.juz!,
+                    isArabic: isArabic,
+                  )
+                : _buildSurahItem(context, entry.surah!);
 
-            final surah = entry.surah!;
-            return Semantics(
-              button: true,
-              label:
-                  '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-              child: InkWell(
-                onTap: onSurahTap != null
-                    ? () => onSurahTap!()
-                    : () => _navigateToSurah(context, surah),
-                child: SurahListItem(
-                  surahId: surah.id,
-                  nameEnglish: surah.nameEnglish,
-                  nameArabic: surah.nameArabic,
-                ),
-              ),
+            return StaggeredSliverListItem(
+              index: index,
+              child: widget,
             );
           },
         ),
         const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
       ],
+    );
+  }
+
+  Widget _buildSurahItem(BuildContext context, Surah surah) {
+    return Semantics(
+      button: true,
+      label:
+          '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+      child: InkWell(
+        onTap: onSurahTap != null
+            ? () => onSurahTap!()
+            : () => _navigateToSurah(context, surah),
+        child: SurahListItem(
+          surahId: surah.id,
+          nameEnglish: surah.nameEnglish,
+          nameArabic: surah.nameArabic,
+        ),
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../widgets/surah_index_widget.dart';
+import '../widgets/staggered_list_item.dart';
 
 class SeekerSurface extends StatefulWidget {
   const SeekerSurface({super.key});
@@ -36,9 +37,11 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     return Column(
       children: [
         // Prominent Search
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: GestureDetector(
+        StaggeredListItem(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: GestureDetector(
             onTap: _onSearchTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -86,83 +89,96 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
             ),
           ),
         ),
+        ),
 
         // Discovery Cards
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: _DiscoveryCard(
-                  icon: Icons.wb_sunny_outlined,
-                  title: 'lbl_verse_of_day'.tr,
-                  subtitle: 'msg_verse_of_day_desc'.tr,
-                  color: Colors.orange,
-                  onTap: () => _showVerseOfDay(context),
+        StaggeredListItem(
+          index: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _DiscoveryCard(
+                    icon: Icons.wb_sunny_outlined,
+                    title: 'lbl_verse_of_day'.tr,
+                    subtitle: 'msg_verse_of_day_desc'.tr,
+                    color: Colors.orange,
+                    onTap: () => _showVerseOfDay(context),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _DiscoveryCard(
-                  icon: Icons.auto_stories_outlined,
-                  title: 'lbl_todays_juz'.tr,
-                  subtitle: _todayJuzLabel(isArabic),
-                  color: Colors.teal,
-                  onTap: () => _navigateToTodayJuz(context),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _DiscoveryCard(
+                    icon: Icons.auto_stories_outlined,
+                    title: 'lbl_todays_juz'.tr,
+                    subtitle: _todayJuzLabel(isArabic),
+                    color: Colors.teal,
+                    onTap: () => _navigateToTodayJuz(context),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
         // Recent Searches (placeholder)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'lbl_recent'.tr,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+        StaggeredListItem(
+          index: 2,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'lbl_recent'.tr,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text('lbl_clear'.tr),
-              ),
-            ],
+                TextButton(
+                  onPressed: () {},
+                  child: Text('lbl_clear'.tr),
+                ),
+              ],
+            ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              const _SearchChip(label: 'الرحمة'),
-              const _SearchChip(label: 'mercy'),
-              const _SearchChip(label: 'الصيام'),
-              const _SearchChip(label: 'patience'),
-            ],
+        const StaggeredListItem(
+          index: 3,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _SearchChip(label: 'الرحمة'),
+                _SearchChip(label: 'mercy'),
+                _SearchChip(label: 'الصيام'),
+                _SearchChip(label: 'patience'),
+              ],
+            ),
           ),
         ),
 
         const SizedBox(height: 8),
 
         // Surah Index Section
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'lbl_surah'.tr,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+        StaggeredListItem(
+          index: 4,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'lbl_surah'.tr,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 

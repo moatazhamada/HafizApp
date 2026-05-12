@@ -11,6 +11,7 @@ import '../../memorization/bloc/memorization_bloc.dart';
 import '../../memorization/bloc/memorization_event.dart';
 import '../../memorization/bloc/memorization_state.dart';
 import '../../recitation_error/bloc/recitation_error_bloc.dart';
+import '../widgets/staggered_list_item.dart';
 
 
 class StudentSurface extends StatelessWidget {
@@ -103,7 +104,10 @@ class _StudentBody extends StatelessWidget {
                 itemCount: QuranIndex.quranSurahs.length,
                 itemBuilder: (context, index) {
                   final surah = QuranIndex.quranSurahs[index];
-                  return _CompactSurahTile(surah: surah);
+                  return StaggeredSliverListItem(
+                    index: index,
+                    child: _CompactSurahTile(surah: surah),
+                  );
                 },
               ),
 

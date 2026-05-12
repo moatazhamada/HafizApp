@@ -5,6 +5,7 @@ import '../../../core/scroll/scroll_position_cubit.dart';
 import '../../../injection_container.dart';
 import '../widgets/continue_reading_card.dart';
 import '../widgets/surah_index_widget.dart';
+import '../widgets/staggered_list_item.dart';
 
 class ReaderSurface extends StatefulWidget {
   final Surah? lastReadSurah;
@@ -84,52 +85,58 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
     return Column(
       children: [
         // Search Bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            textDirection: TextDirection.ltr,
-            decoration: InputDecoration(
-              hintText: 'lbl_search_surah'.tr,
-              hintStyle: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
+        StaggeredListItem(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              textDirection: TextDirection.ltr,
+              decoration: InputDecoration(
+                hintText: 'lbl_search_surah'.tr,
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: colorScheme.primary,
+                ),
+                suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = null);
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: colorScheme.primary,
-              ),
-              suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = null);
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.5,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              onChanged: (value) => setState(() => _searchQuery = value),
             ),
-            onChanged: (value) => setState(() => _searchQuery = value),
           ),
         ),
 
         // Continue Reading Card
         if (widget.lastReadSurah != null)
-          ContinueReadingCard(
-            surah: widget.lastReadSurah,
-            lastVerseIndex: widget.lastVerseIndex,
-            onContinue: _onContinueReading,
+          StaggeredListItem(
+            index: 1,
+            child: ContinueReadingCard(
+              surah: widget.lastReadSurah,
+              lastVerseIndex: widget.lastVerseIndex,
+              onContinue: _onContinueReading,
+            ),
           ),
 
         // Surah Index
