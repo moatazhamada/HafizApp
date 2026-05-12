@@ -13,6 +13,7 @@ import '../../memorization/bloc/memorization_state.dart';
 import '../../recitation_error/bloc/recitation_error_bloc.dart';
 import '../widgets/staggered_list_item.dart';
 import '../widgets/activity_heatmap.dart';
+import '../widgets/reading_session_insights.dart';
 
 
 class StudentSurface extends StatelessWidget {
@@ -99,6 +100,27 @@ class _StudentBody extends StatelessWidget {
                         ),
                         child: ActivityHeatmap(
                           logs: khatmahState.recentLogs,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+
+              // Reading Session Insights
+              SliverToBoxAdapter(
+                child: BlocBuilder<KhatmahBloc, KhatmahState>(
+                  builder: (context, khatmahState) {
+                    if (khatmahState is KhatmahDashboardLoaded &&
+                        khatmahState.recentLogs.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: ReadingSessionInsights(
+                          recentLogs: khatmahState.recentLogs,
                         ),
                       );
                     }

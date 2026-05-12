@@ -561,4 +561,8 @@ final Map<String, String> enUs = {
   // Quran Reflect
   'lbl_quran_reflect': 'Quran Reflect',
   'msg_quran_reflect_desc': 'Community reflections & lessons',
+
+  // Reading Insights
+  'lbl_reading_insights': 'Reading Insights',
+  'lbl_this_week': 'This Week',
 };

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_spacing.dart';
 import 'package:hafiz_app/data/datasource/random_verse/random_verse_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/verse_media/verse_media_remote_data_source.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
@@ -16,6 +17,7 @@ class RandomVerseCard extends StatefulWidget {
 class _RandomVerseCardState extends State<RandomVerseCard>
     with AutomaticKeepAliveClientMixin {
   RandomVerseData? _data;
+  List<VerseMediaItem> _media = [];
   bool _loading = true;
   String? _error;
 
@@ -38,6 +40,10 @@ class _RandomVerseCardState extends State<RandomVerseCard>
           _loading = false;
         });
       }
+      // Fetch verse media after verse is loaded
+      if (verse != null) {
+        await _loadMedia(verse.verseKey);
+      }
     } catch (e) {
       Logger.warning('RandomVerseCard load error: $e', feature: 'RandomVerse');
       if (mounted) {
@@ -46,6 +52,18 @@ class _RandomVerseCardState extends State<RandomVerseCard>
           _loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadMedia(String verseKey) async {
+    try {
+      final ds = sl<VerseMediaRemoteDataSource>();
+      final media = await ds.getVerseMedia(verseKey);
+      if (mounted) {
+        setState(() => _media = media);
+      }
+    } catch (e) {
+      Logger.warning('Verse media load error: $e', feature: 'RandomVerse');
     }
   }
 
@@ -148,6 +166,10 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                 ),
               ),
             ],
+            if (_media.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              _buildMediaCarousel(),
+            ],
             const SizedBox(height: AppSpacing.md),
             TextButton.icon(
               onPressed: () {
@@ -167,6 +189,54 @@ class _RandomVerseCardState extends State<RandomVerseCard>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMediaCarousel() {
+    return SizedBox(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _media.length,
+        itemBuilder: (context, index) {
+          final item = _media[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                item.url,
+                width: 160,
+                height: 120,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    width: 160,
+                    height: 120,
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 160,
+                    height: 120,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }

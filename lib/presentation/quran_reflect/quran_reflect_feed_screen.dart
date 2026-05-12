@@ -3,6 +3,7 @@ import '../../core/app_export.dart';
 import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../injection_container.dart';
 import '../../core/utils/logger.dart';
+import '../home_screen/widgets/staggered_list_item.dart';
 
 class QuranReflectFeedScreen extends StatefulWidget {
   const QuranReflectFeedScreen({super.key});
@@ -119,7 +120,10 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
       itemCount: _posts.length,
       itemBuilder: (context, index) {
         final post = _posts[index];
-        return _ReflectionCard(post: post);
+        return StaggeredListItem(
+          index: index,
+          child: _ReflectionCard(post: post),
+        );
       },
     );
   }

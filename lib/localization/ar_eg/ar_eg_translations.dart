@@ -550,4 +550,8 @@ final Map<String, String> arEg = {
   // Quran Reflect
   'lbl_quran_reflect': 'تأملات القرآن',
   'msg_quran_reflect_desc': 'تأملات ودروس المجتمع',
+
+  // Reading Insights
+  'lbl_reading_insights': 'إحصائيات القراءة',
+  'lbl_this_week': 'هذا الأسبوع',
 };
