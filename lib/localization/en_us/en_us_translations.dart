@@ -322,6 +322,8 @@ final Map<String, String> enUs = {
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
   'lbl_stop_autoscroll': 'Stop Auto-scroll',
+  'lbl_start_listening': 'Listening Mode',
+  'lbl_stop_listening': 'Stop Listening',
 
   // Settings Enhancements
   'lbl_quran_font': 'Quran Font Size',
@@ -476,6 +478,7 @@ final Map<String, String> enUs = {
   'lbl_reflections': 'Reflections',
   'lbl_write_reflection': 'Write your reflection...',
   'lbl_no_reflections': 'No reflections yet',
+  'lbl_post_reflection': 'Post',
   'lbl_submit_reflection': 'Save Reflection',
   'lbl_reflection_saved': 'Reflection saved',
 
@@ -483,4 +486,38 @@ final Map<String, String> enUs = {
   'lbl_daily_verse_notification': 'Daily Verse Notification',
   'msg_daily_verse_desc':
       'Receive a daily Quran verse to start your day with reflection',
+
+  // SRS / Spaced Repetition
+  'lbl_interval': 'Interval',
+  'lbl_days': 'd',
+  'lbl_review_urgency_upcoming': 'upcoming',
+  'lbl_review_urgency_tomorrow': 'tomorrow',
+  'lbl_review_urgency_today': 'today',
+  'lbl_review_urgency_yesterday': 'yesterday',
+  'lbl_review_urgency_overdue_days': '{days}d overdue',
+  'lbl_next_review': 'Next review',
+
+  // Tajweed Roadmap
+  'lbl_tajweed_roadmap': 'Tajweed Roadmap',
+  'lbl_tajweed_accuracy': 'Tajweed Accuracy',
+  'lbl_weak_areas': 'Weak Areas',
+  'lbl_practice_verses': 'Practice Verses',
+  'lbl_no_tajweed_data': 'Complete a QRC session to see your tajweed analysis',
+  'lbl_tajweed_rule': 'Rule',
+  'lbl_error_count': 'Errors',
+  'lbl_suggested_practice': 'Suggested Practice',
+
+  // Adaptive QRC
+  'lbl_adaptive_qrc': 'Adaptive Difficulty',
+  'msg_adaptive_qrc_desc':
+      'Automatically adjust recitation difficulty based on your performance',
+  'lbl_current_hafz_level': 'Hafz Level',
+  'lbl_current_tajweed_level': 'Tajweed Level',
+
+  // Listening Mode
+  'lbl_listening_mode': 'Listening Mode',
+  'msg_listening_mode_desc': 'Follow along as the reciter reads',
+
+  // Deep Link
+  'msg_opening_verse': 'Opening verse',
 };

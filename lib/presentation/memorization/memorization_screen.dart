@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
@@ -205,28 +206,63 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final urgencyKey = SrsAlgorithm.urgencyLabel(progress);
+    final daysUntil = SrsAlgorithm.daysUntilReview(progress);
+    final urgency = urgencyKey == 'lbl_review_urgency_overdue_days'
+        ? urgencyKey.tr.replaceAll('{days}', '${-daysUntil}')
+        : urgencyKey.tr;
+    final isOverdue = daysUntil < 0;
+    final urgencyColor = isOverdue ? Colors.red : Colors.orange;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.orange.withValues(alpha: 0.1),
+      color: urgencyColor.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: const Icon(Icons.notifications_active, color: Colors.orange),
+        leading: Icon(
+          isOverdue ? Icons.alarm : Icons.notifications_active,
+          color: urgencyColor,
+        ),
         title: Text(progress.surahName),
         subtitle: Text(
-          '${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}%',
+          '${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}% • '
+          '${'lbl_interval'.tr}: ${progress.interval}${'lbl_days'.tr}',
         ),
-        trailing: IconButton(
-          icon: Icon(Icons.play_arrow, color: AppColors.of(context).primary),
-          onPressed: () {
-            final surah = QuranIndex.quranSurahs.firstWhere(
-              (s) => s.id == progress.surahId,
-              orElse: () => Surah(progress.surahId, '', ''),
-            );
-            NavigatorService.popAndPushNamed(
-              AppRoutes.surahPage,
-              arguments: {'surah': surah},
-            );
-          },
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: urgencyColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                urgency,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: urgencyColor,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.play_arrow,
+                color: AppColors.of(context).primary,
+              ),
+              onPressed: () {
+                final surah = QuranIndex.quranSurahs.firstWhere(
+                  (s) => s.id == progress.surahId,
+                  orElse: () => Surah(progress.surahId, '', ''),
+                );
+                NavigatorService.popAndPushNamed(
+                  AppRoutes.surahPage,
+                  arguments: {'surah': surah},
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

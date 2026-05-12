@@ -33,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _whisperModel;
   late double _quranFontSize;
   late String _orientationMode;
+  late bool _adaptiveQrc;
   late String _defaultQuranView;
   late String _mushafType;
   late bool _dailyVerseEnabled;
@@ -56,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _whisperModel = PrefUtils().getWhisperModel();
     _quranFontSize = PrefUtils().getQuranFontSize();
     _orientationMode = PrefUtils().getOrientationMode();
+    _adaptiveQrc = PrefUtils().isAdaptiveQrc();
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
@@ -141,6 +143,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: _loadingReciters ? null : _selectReciter,
+            ),
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            SwitchListTile(
+              title: Text('lbl_adaptive_qrc'.tr),
+              subtitle: Text('msg_adaptive_qrc_desc'.tr),
+              value: _adaptiveQrc,
+              onChanged: (val) async {
+                await PrefUtils().setAdaptiveQrc(val);
+                setState(() => _adaptiveQrc = val);
+              },
             ),
             if (_recitationProvider == 'local_whisper') ...[
               const Divider(height: 1, indent: 16, endIndent: 16),

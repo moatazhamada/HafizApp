@@ -7,14 +7,22 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
+import 'widgets/auto_scroll_speed_sheet.dart';
+import 'widgets/bismillah_widget.dart';
+import 'widgets/completion_dialog.dart';
+import 'widgets/surah_navigation_bar.dart';
+import 'widgets/tafsir_sheet.dart';
+import 'widgets/verse_menu_sheet.dart';
+import 'widgets/verse_range.dart';
 import 'widgets/voice_verification_dialog.dart';
 
 import '../../core/app_export.dart';
+import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
+import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
-
+import '../../core/quran_index/quran_verse_utils.dart';
 import '../../domain/entities/verse.dart';
-import '../../widgets/verse_share_sheet.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -24,8 +32,8 @@ import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bl
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_state.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
-import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
@@ -67,7 +75,7 @@ class _SurahScreenState extends State<SurahScreen> {
   // Scroll Keys
   final Map<int, GlobalKey> _verseKeys = {};
   final Map<int, GlobalKey> _richTextVerseKeys = {};
-  List<_VerseRange> _currentVerseRanges = [];
+  List<VerseRange> _currentVerseRanges = [];
 
   // Voice Verification
   final VoiceVerificationService _voiceService = VoiceVerificationService();
@@ -77,6 +85,11 @@ class _SurahScreenState extends State<SurahScreen> {
   bool _isAutoScrolling = false;
   Timer? _autoScrollTimer;
   double _autoScrollSpeed = 0.5;
+
+  // Listening Mode (audio-coupled auto-scroll)
+  bool _isListeningMode = false;
+  StreamSubscription<int>? _listeningSubscription;
+  List<Verse> _chapters = []; // Cached for listening mode toggle
 
   int _sessionCorrectCount = 0;
   int _sessionTotalCount = 0;
@@ -371,6 +384,8 @@ class _SurahScreenState extends State<SurahScreen> {
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
     _autoScrollTimer?.cancel();
+    _listeningSubscription?.cancel();
+    if (_isListeningMode) AudioPlayerHandler().stop();
     _voiceService.stop();
 
     _scrollControllerForInit?.dispose();
@@ -386,6 +401,59 @@ class _SurahScreenState extends State<SurahScreen> {
     } else {
       _autoScrollTimer?.cancel();
     }
+  }
+
+  // ─── Listening Mode ───
+
+  void _toggleListeningMode() {
+    if (_isListeningMode) {
+      _stopListeningMode();
+    } else {
+      if (_chapters.isEmpty) return;
+      _startListeningMode(_chapters);
+    }
+  }
+
+  void _startListeningMode(List<Verse> chapters) {
+    if (surah == null) return;
+    final handler = AudioPlayerHandler();
+    setState(() => _isListeningMode = true);
+
+    _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
+      if (!_isListeningMode || !mounted) return;
+      setState(() {
+        _highlightedVerse = verseIndex >= 0 ? verseIndex + 1 : null;
+      });
+      if (verseIndex >= 0) {
+        _scrollToVerse(verseIndex + 1, chapters);
+      }
+    });
+
+    final reciterId = PrefUtils().getReciterId();
+    final reciterCdnIds = {
+      7: 'ar.alafasy',
+      9: 'ar.abdurrahmaansudais',
+      1: 'ar.abdulbasitmurattal',
+      5: 'ar.husary',
+      17: 'ar.minshawi',
+    };
+    final cdnId = reciterCdnIds[reciterId] ?? 'ar.alafasy';
+    final totalVerses = chapters.length;
+    final urls = List.generate(totalVerses, (i) {
+      final absolute = absoluteVerseNumber(surah!.id, i + 1);
+      return 'https://cdn.islamic.network/quran/audio/128/$cdnId/$absolute.mp3';
+    });
+    handler.playSurah(surahId: surah!.id, verseAudioUrls: urls);
+  }
+
+  void _stopListeningMode() {
+    _listeningSubscription?.cancel();
+    _listeningSubscription = null;
+    AudioPlayerHandler().stop();
+    setState(() {
+      _isListeningMode = false;
+      _highlightedVerse = null;
+    });
   }
 
   void _startAutoScroll() {
@@ -405,44 +473,10 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   void _showAutoScrollSpeedDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'lbl_scroll_speed'.tr,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            ...[0.25, 0.5, 1.0, 1.5, 2.0, 3.0].map(
-              (speed) => ListTile(
-                title: Text(
-                  speed < 1
-                      ? '${(speed * 100).round()}% (${'lbl_slow'.tr})'
-                      : speed == 1.0
-                      ? '1.0x (${'lbl_normal'.tr})'
-                      : '${speed}x (${'lbl_fast'.tr})',
-                ),
-                trailing: _autoScrollSpeed == speed
-                    ? Icon(
-                        Icons.check,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  setState(() => _autoScrollSpeed = speed);
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    showAutoScrollSpeedPicker(
+      context,
+      currentSpeed: _autoScrollSpeed,
+      onSpeedSelected: (speed) => setState(() => _autoScrollSpeed = speed),
     );
   }
 
@@ -458,110 +492,10 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Widget _buildSurahNavigation(BuildContext context, AppColors colors) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final hasPrev = surah != null && surah!.id > 1;
-    final hasNext = surah != null && surah!.id < 114;
-    final prevSurah = hasPrev ? QuranIndex.quranSurahs[surah!.id - 2] : null;
-    final nextSurah = hasNext ? QuranIndex.quranSurahs[surah!.id] : null;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          textDirection: TextDirection.ltr,
-          children: [
-            // Next surah – always LEFT, icon AFTER text
-            if (hasNext)
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  label:
-                      '${'lbl_next_surah'.tr}: ${isArabic ? nextSurah!.nameArabic : nextSurah!.nameEnglish}',
-                  child: TextButton(
-                    onPressed: () => _navigateToSurah(surah!.id + 1),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                    ),
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.skip_previous, size: 18),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            isArabic
-                                ? nextSurah.nameArabic
-                                : nextSurah.nameEnglish,
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else
-              const Expanded(child: SizedBox.shrink()),
-
-            const SizedBox(width: 8),
-            // Previous surah – always RIGHT, arrow on RIGHT of text
-            if (hasPrev)
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  label:
-                      '${'lbl_previous_surah'.tr}: ${isArabic ? prevSurah!.nameArabic : prevSurah!.nameEnglish}',
-                  child: TextButton(
-                    onPressed: () => _navigateToSurah(surah!.id - 1),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                    ),
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            isArabic
-                                ? prevSurah.nameArabic
-                                : prevSurah.nameEnglish,
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.skip_next, size: 18),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else
-              const Expanded(child: SizedBox.shrink()),
-          ],
-        ),
-      ),
+    if (surah == null) return const SizedBox.shrink();
+    return SurahNavigationBar(
+      surah: surah!,
+      onNavigate: _navigateToSurah,
     );
   }
 
@@ -582,119 +516,31 @@ class _SurahScreenState extends State<SurahScreen> {
       RecordReview(surahId: surah!.id, score: percentage),
     );
     sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
+
+    // Adaptive QRC: evaluate and adjust levels after each session
+    if (PrefUtils().isAdaptiveQrc()) {
+      sl<RecitationSessionBloc>().add(LoadSessions());
+      sl<RecitationSessionBloc>()
+          .stream
+          .firstWhere((s) => s is RecitationSessionLoaded)
+          .timeout(const Duration(seconds: 5))
+          .then((state) {
+            if (state is RecitationSessionLoaded) {
+              AdaptiveQrc.evaluateAndAdjust(state.sessions);
+            }
+          })
+          .catchError((_) {});
+    }
   }
 
-  void _showTafsirSheet(Verse aya) async {
+  void _showTafsirSheet(Verse aya) {
     if (surah == null) return;
-    if (!mounted) return;
-
-    unawaited(
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        builder: (sheetContext) => DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.8,
-          expand: false,
-          builder: (context, scrollController) => FutureBuilder(
-            future: sl<TafsirRepository>().getTafsir(
-              surah!.id,
-              aya.verseNumber,
-            ),
-            builder: (context, snapshot) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${'lbl_tafsir'.tr}: ${surah?.localizedName(context)} - ${'lbl_ayah'.tr} ${aya.verseNumber.toLocalizedNumber(context)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          tooltip: 'lbl_close'.tr,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: snapshot.connectionState == ConnectionState.waiting
-                        ? const Center(child: CircularProgressIndicator())
-                        : snapshot.hasError || snapshot.data?.isLeft() == true
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    size: 48,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'msg_tafsir_error'.tr,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            controller: scrollController,
-                            padding: const EdgeInsets.all(16),
-                            child: snapshot.data!.fold(
-                              (failure) => Text(
-                                'msg_tafsir_error'.tr,
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              (tafsir) => Text(
-                                _stripHtmlTags(tafsir.text),
-                                textDirection: TextDirection.rtl,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  height: 1.8,
-                                  color: isDark
-                                      ? Colors.grey[300]
-                                      : Colors.black87,
-                                ),
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
+    showTafsirSheet(
+      context,
+      surahId: surah!.id,
+      surahName: surah!.localizedName(context),
+      verseNumber: aya.verseNumber,
     );
-  }
-
-  String _stripHtmlTags(String htmlText) {
-    final regExp = RegExp(r'<[^>]*>', multiLine: true);
-    return htmlText.replaceAll(regExp, '').trim();
   }
 
   Future<void> _loadTranslations() async {
@@ -817,6 +663,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     );
                   } else {
                     final chapters = (state as SuccessSurahState).chapters;
+                    _chapters = chapters;
                     // Trigger scroll if selectedVerse is set and not scrolled yet
                     if (_selectedVerse != null && chapters.isNotEmpty) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -910,6 +757,29 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ),
         ),
+        if (surah != null)
+          Semantics(
+            button: true,
+            label: _isListeningMode
+                ? 'lbl_stop_listening'.tr
+                : 'lbl_start_listening'.tr,
+            child: Tooltip(
+              message: _isListeningMode
+                  ? 'lbl_stop_listening'.tr
+                  : 'lbl_start_listening'.tr,
+              child: InkWell(
+                onTap: _toggleListeningMode,
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    _isListeningMode ? Icons.headset : Icons.headset_outlined,
+                    color: _isListeningMode ? Colors.amber : Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
         Semantics(
           button: true,
           label: 'lbl_more_options'.tr,
@@ -972,7 +842,9 @@ class _SurahScreenState extends State<SurahScreen> {
                       ),
                     );
                   }
-                  _triggerBookmarkSync(context);
+                  try {
+                    context.read<CloudSyncBloc>().add(SyncWithQfEvent());
+                  } catch (_) {}
                   break;
                 case 'translation':
                   setState(() {
@@ -1119,27 +991,7 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Widget _buildBismillah(bool isDark) {
-    if (surah?.id == 1 || surah?.id == 9) {
-      return const SizedBox.shrink();
-    }
-
-    return Semantics(
-      label: 'lbl_bismillah'.tr,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        alignment: Alignment.center,
-        child: Text(
-          'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-          textDirection: TextDirection.rtl,
-          style: TextStyle(
-            fontFamily: 'NotoNaskhArabic',
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: AppColors.of(context).bismillahColor,
-          ),
-        ),
-      ),
-    );
+    return BismillahWidget(surahId: surah?.id ?? 0);
   }
 
   void _showVerseMenu(
@@ -1149,148 +1001,15 @@ class _SurahScreenState extends State<SurahScreen> {
     bool isError,
   ) {
     if (surah == null) return;
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            Semantics(
-              button: true,
-              label: isBookmarked
-                  ? 'lbl_remove_bookmark'.tr
-                  : 'lbl_add_bookmark'.tr,
-              child: ListTile(
-                leading: Icon(
-                  isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
-                  color: Colors.teal,
-                ),
-                title: Text(
-                  isBookmarked
-                      ? 'lbl_remove_bookmark'.tr
-                      : 'lbl_add_bookmark'.tr,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (isBookmarked) {
-                    HapticFeedback.lightImpact();
-                    context.read<BookmarkBloc>().add(
-                      RemoveBookmarkEvent(surah!.id, aya.verseNumber),
-                    );
-                  } else {
-                    HapticFeedback.lightImpact();
-                    context.read<BookmarkBloc>().add(
-                      AddBookmarkEvent(
-                        BookmarkModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseNumber: aya.verseNumber,
-                          createdAt: DateTime.now(),
-                        ),
-                      ),
-                    );
-                  }
-                  _triggerBookmarkSync(context);
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: isError
-                  ? 'msg_unmark_practice'.tr
-                  : 'msg_mark_practice'.tr,
-              child: ListTile(
-                leading: Icon(
-                  isError ? Icons.playlist_remove : Icons.error_outline,
-                  color: Colors.redAccent,
-                ),
-                title: Text(
-                  isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
-                  style: const TextStyle(color: Colors.redAccent),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (isError) {
-                    context.read<RecitationErrorBloc>().add(
-                      RemoveRecitationErrorEvent(surah!.id, aya.verseNumber),
-                    );
-                  } else {
-                    context.read<RecitationErrorBloc>().add(
-                      AddRecitationErrorEvent(
-                        RecitationErrorModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseId: aya.verseNumber,
-                          createdAt: DateTime.now(),
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_verify_recitation'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.mic, color: Colors.blueAccent),
-                title: Text('lbl_verify_recitation'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showVoiceDialog(aya);
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_share_verse'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.share, color: Colors.teal),
-                title: Text('lbl_share_verse'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  VerseShareSheet.show(
-                    context: context,
-                    verseText: aya.arabicText,
-                    surahId: surah!.id,
-                    verseNumber: aya.verseNumber,
-                    surahName: surah!.nameEnglish,
-                  );
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_tafsir'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.menu_book, color: Colors.teal),
-                title: Text('lbl_tafsir'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showTafsirSheet(aya);
-                },
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_study'.tr,
-              child: ListTile(
-                leading: const Icon(Icons.school, color: Colors.deepPurple),
-                title: Text('lbl_study'.tr),
-                onTap: () {
-                  Navigator.pop(context);
-                  NavigatorService.pushNamed(
-                    AppRoutes.verseStudyScreen,
-                    arguments: {'verseKey': '${surah!.id}:${aya.verseNumber}'},
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    showVerseMenu(
+      context,
+      verse: aya,
+      surahId: surah!.id,
+      surahNameEnglish: surah!.nameEnglish,
+      isBookmarked: isBookmarked,
+      isError: isError,
+      onVerifyRecitation: () => _showVoiceDialog(aya),
+      onOpenTafsir: () => _showTafsirSheet(aya),
     );
   }
 
@@ -1523,83 +1242,14 @@ class _SurahScreenState extends State<SurahScreen> {
 
     _saveSession(percentage);
 
-    if (percentage >= 50 && mounted) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text('lbl_congrats'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ExcludeSemantics(
-                child: Icon(Icons.celebration, color: Colors.green, size: 50),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'msg_session_score'.tr.replaceAll(
-                  '{score}',
-                  percentage.toStringAsFixed(1),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _sessionCorrectCount = 0;
-                _sessionTotalCount = 0;
-                Navigator.pop(dialogContext);
-              },
-              child: Text('lbl_close'.tr),
-            ),
-          ],
-        ),
-      );
-    } else if (mounted) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text('lbl_keep_practicing'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const ExcludeSemantics(
-                child: Icon(
-                  Icons.fitness_center,
-                  color: Colors.orange,
-                  size: 50,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'msg_session_score'.tr.replaceAll(
-                  '{score}',
-                  percentage.toStringAsFixed(1),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'msg_keep_practicing'.tr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _sessionCorrectCount = 0;
-                _sessionTotalCount = 0;
-                Navigator.pop(dialogContext);
-              },
-              child: Text('lbl_close'.tr),
-            ),
-          ],
-        ),
-      );
-    }
+    showCompletionDialog(
+      context,
+      percentage: percentage,
+      onClose: () {
+        _sessionCorrectCount = 0;
+        _sessionTotalCount = 0;
+      },
+    );
   }
 
   ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates(
@@ -1689,7 +1339,7 @@ class _SurahScreenState extends State<SurahScreen> {
     final errorVerseIds = verseStates.errorVerses;
 
     List<InlineSpan> spans = [];
-    final List<_VerseRange> verseRanges = [];
+    final List<VerseRange> verseRanges = [];
     int currentOffset = 0;
 
     _currentVerseRanges = verseRanges;
@@ -1756,7 +1406,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
       // Record Range (Text)
       verseRanges.add(
-        _VerseRange(
+        VerseRange(
           start: currentOffset,
           end: currentOffset + verseText.length,
           verse: aya,
@@ -1790,7 +1440,7 @@ class _SurahScreenState extends State<SurahScreen> {
       // swap when two ayahs share a line. TextSpan with RTL characters doesn't.
       final verseMarker = ' ۝${aya.verseNumber.toLocalizedNumber(context)} ';
       verseRanges.add(
-        _VerseRange(
+        VerseRange(
           start: currentOffset,
           end: currentOffset + verseMarker.length,
           verse: aya,
@@ -1823,7 +1473,7 @@ class _SurahScreenState extends State<SurahScreen> {
       if (_showTranslation && _translations[aya.verseNumber] != null) {
         final translationText = _translations[aya.verseNumber]!;
         verseRanges.add(
-          _VerseRange(
+          VerseRange(
             start: currentOffset,
             end: currentOffset + 1,
             verse: aya,
@@ -1923,7 +1573,7 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
-  _VerseRange? _findRange(Offset localPosition, List<_VerseRange> ranges) {
+  VerseRange? _findRange(Offset localPosition, List<VerseRange> ranges) {
     final RenderObject? renderObject = _richTextKey.currentContext
         ?.findRenderObject();
     if (renderObject is RenderParagraph) {
@@ -2125,26 +1775,4 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 }
 
-class _VerseRange {
-  final int start;
-  final int end;
-  final Verse verse;
-  final bool isBadge;
-  final bool isBookmarked;
-  final bool isError;
 
-  _VerseRange({
-    required this.start,
-    required this.end,
-    required this.verse,
-    this.isBadge = false,
-    this.isBookmarked = false,
-    this.isError = false,
-  });
-}
-
-void _triggerBookmarkSync(BuildContext context) {
-  try {
-    context.read<CloudSyncBloc>().add(SyncWithQfEvent());
-  } catch (_) {}
-}

@@ -45,6 +45,7 @@ import '../../presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import '../../presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import '../../presentation/search/bloc/search_bloc.dart';
 import '../../presentation/surah_screen/bloc/surah_bloc.dart';
+import '../../presentation/tajweed_roadmap/bloc/tajweed_roadmap_bloc.dart';
 import '../injection_container.dart';
 
 void registerFeatureDependencies() {
@@ -63,6 +64,9 @@ void registerFeatureDependencies() {
   sl.registerFactory(() => GoalsBloc(getTodaysPlan: sl()));
   sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
+  sl.registerFactory(
+    () => TajweedRoadmapBloc(sessionRepository: sl(), errorRepository: sl()),
+  );
 
   // Use Cases
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
