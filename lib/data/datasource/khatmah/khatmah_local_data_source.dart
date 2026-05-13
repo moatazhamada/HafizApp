@@ -62,7 +62,7 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
               DailyReadingLogModel.fromJson(Map<String, dynamic>.from(raw)),
             );
           } catch (e) {
-            Logger.warning('Daily reading log parse failed: \$e', feature: 'Khatmah');
+            Logger.warning('Daily reading log parse failed: $e', feature: 'Khatmah');
           }
         }
       }
@@ -96,7 +96,7 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
               Map<String, dynamic>.from(raw),
             );
           } catch (e) {
-            Logger.warning('Daily reading log parse failed: \$e', feature: 'Khatmah');
+            Logger.warning('Daily reading log parse failed: $e', feature: 'Khatmah');
           }
         }
       }

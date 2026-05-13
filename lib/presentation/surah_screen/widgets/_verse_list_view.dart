@@ -763,7 +763,7 @@ extension _SurahScreenStateScroll on _SurahScreenState {
             visibleVerseNumber = range.verse.verseNumber;
           }
         } catch (e) {
-          Logger.warning('Finding visible verse failed: \$e', feature: 'Surah');
+          Logger.warning('Finding visible verse failed: $e', feature: 'Surah');
         }
       }
     }

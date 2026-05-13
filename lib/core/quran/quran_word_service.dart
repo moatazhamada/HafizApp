@@ -135,7 +135,7 @@ class QuranWordService {
           return VerseWordData.fromJson(decoded);
         }
       } catch (e) {
-        Logger.warning('Quran word cache read failed: \$e', feature: 'QuranWords');
+        Logger.warning('Quran word cache read failed: $e', feature: 'QuranWords');
       }
     }
     return null;

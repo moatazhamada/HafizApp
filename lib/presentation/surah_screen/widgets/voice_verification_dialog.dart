@@ -110,7 +110,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     try {
       await _customRecorder.closeRecorder();
     } catch (e) {
-      Logger.warning('Recorder close failed: \$e', feature: 'VoiceVerification');
+      Logger.warning('Recorder close failed: $e', feature: 'VoiceVerification');
     }
   }
 
@@ -257,7 +257,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             try {
               await _customRecorder.stopRecorder();
             } catch (e) {
-              Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+              Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
             }
             final remoteText = await _customAsrService.transcribe(
               endpoint: customEndpoint,
@@ -277,6 +277,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   }
 
   void _handleQrcCheck(QrcCheckTilawa data) {
+    if (!mounted) return;
     final expectedTokens = _expectedText
         .split(RegExp(r'\s+'))
         .where((t) => t.isNotEmpty)
@@ -415,7 +416,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         try {
           await _customRecorder.stopRecorder();
         } catch (e) {
-          Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+          Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
         }
         if (_customFilePath != null) {
           if (mounted) {
@@ -444,7 +445,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           try {
             await _customRecorder.stopRecorder();
           } catch (e) {
-            Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+            Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
           }
         }
         await _voiceService.stop();

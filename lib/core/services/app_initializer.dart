@@ -74,6 +74,7 @@ class AppInitializer {
       'memorization_progress',
       'reading_logs',
       'reading_goal',
+      'quran_word_cache',
     ];
     await Future.wait(
       boxes.map((box) async {

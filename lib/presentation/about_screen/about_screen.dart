@@ -35,7 +35,7 @@ class _AboutScreenState extends State<AboutScreen> {
         setState(() => _version = info.version);
       }
     } catch (e) {
-      Logger.warning('Version load failed: \$e', feature: 'About');
+      Logger.warning('Version load failed: $e', feature: 'About');
     }
   }
 

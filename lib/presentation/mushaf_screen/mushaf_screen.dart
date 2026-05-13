@@ -316,7 +316,7 @@ class _MushafScreenState extends State<MushafScreen>
           }
         }
       } catch (e) {
-        Logger.warning('Mushaf verse text load failed: \$e', feature: 'Mushaf');
+        Logger.warning('Mushaf verse text load failed: $e', feature: 'Mushaf');
         entries.add(
           _VerseText(
             surahId: range.surahId,

@@ -46,7 +46,7 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
           defaultCollectionId = created?['id']?.toString();
         }
       } catch (e) {
-        Logger.warning('QF bookmark collection setup failed: \$e', feature: 'CloudSync');
+        Logger.warning('QF bookmark collection setup failed: $e', feature: 'CloudSync');
       }
 
       final qfBookmarks = await qfUserApi.getBookmarks();

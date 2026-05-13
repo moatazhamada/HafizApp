@@ -115,7 +115,7 @@ class QiraatService {
               .toList();
         }
       } catch (e) {
-        Logger.warning('Qiraat cache read failed: \$e', feature: 'Qiraat');
+        Logger.warning('Qiraat cache read failed: $e', feature: 'Qiraat');
       }
     }
     return [];

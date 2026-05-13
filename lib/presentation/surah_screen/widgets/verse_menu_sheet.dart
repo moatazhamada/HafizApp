@@ -290,6 +290,6 @@ void _triggerBookmarkSync(BuildContext context) {
   try {
     context.read<CloudSyncBloc>().add(SyncWithQfEvent());
   } catch (e) {
-    Logger.warning('Bookmark sync trigger failed: \$e', feature: 'Bookmarks');
+    Logger.warning('Bookmark sync trigger failed: $e', feature: 'Bookmarks');
   }
 }

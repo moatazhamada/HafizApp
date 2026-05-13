@@ -28,7 +28,12 @@ class LoadVerseStudyWithSources extends VerseStudyEvent {
   });
 
   @override
-  List<Object?> get props => [verseKey, tafsirId, translationId];
+  List<Object> get props {
+    final list = <Object>[verseKey];
+    if (tafsirId != null) list.add(tafsirId!);
+    if (translationId != null) list.add(translationId!);
+    return list;
+  }
 }
 
 class LoadReflections extends VerseStudyEvent {

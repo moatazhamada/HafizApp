@@ -99,7 +99,7 @@ class RecitationService {
           return ChapterAudioFile.fromJson(decoded);
         }
       } catch (e) {
-        Logger.warning('Audio cache read failed: \$e', feature: 'Audio');
+        Logger.warning('Audio cache read failed: $e', feature: 'Audio');
       }
     }
     return null;

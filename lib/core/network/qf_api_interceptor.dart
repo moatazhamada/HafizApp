@@ -167,7 +167,7 @@ class QfApiInterceptor extends Interceptor {
             message.contains('insufficient scope');
       }
     } catch (e) {
-      Logger.warning('Insufficient scope check failed: \$e', feature: 'Auth');
+      Logger.warning('Insufficient scope check failed: $e', feature: 'Auth');
     }
     return false;
   }

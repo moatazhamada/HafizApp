@@ -327,7 +327,7 @@ class _SurahScreenState extends State<SurahScreen> {
     try {
       sl<QfTranslationRemoteDataSource>().clearCache();
     } catch (e) {
-      Logger.warning('Translation cache clear failed: \$e', feature: 'Translation');
+      Logger.warning('Translation cache clear failed: $e', feature: 'Translation');
     }
     if (!isArabic && PrefUtils().getShowTranslation()) {
       _showTranslation = true;
@@ -540,7 +540,7 @@ class _SurahScreenState extends State<SurahScreen> {
                                           .add(SyncWithQfEvent());
                                     } catch (e) {
                                       Logger.warning(
-                                        'Bookmark sync trigger failed: \$e',
+                                        'Bookmark sync trigger failed: $e',
                                         feature: 'Bookmarks',
                                       );
                                     }

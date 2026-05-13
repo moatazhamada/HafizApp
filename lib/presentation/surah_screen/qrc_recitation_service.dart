@@ -112,7 +112,7 @@ class QrcRecitationService {
       final sl = GetIt.instance;
       if (sl.isRegistered<QrcRepository>()) return sl<QrcRepository>();
     } catch (e) {
-      Logger.warning('QRC repository lookup failed: \$e', feature: 'QRC');
+      Logger.warning('QRC repository lookup failed: $e', feature: 'QRC');
     }
     return QrcRepositoryImpl(remoteDataSource: QrcRemoteDataSourceImpl());
   }

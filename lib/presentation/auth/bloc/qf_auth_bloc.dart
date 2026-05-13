@@ -107,12 +107,12 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     try {
       await PrefUtils().setQfPrefSyncPrompted(false);
     } catch (e) {
-      Logger.warning('QF pref sync reset failed: \$e', feature: 'Auth');
+      Logger.warning('QF pref sync reset failed: $e', feature: 'Auth');
     }
     try {
       unawaited(sl<AnalyticsService>().logQfLogout());
     } catch (e) {
-      Logger.warning('Analytics logout log failed: \$e', feature: 'Auth');
+      Logger.warning('Analytics logout log failed: $e', feature: 'Auth');
     }
   }
 

@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen>
       try {
         sl<AnalyticsRouteObserver>().subscribe(this, route);
       } catch (e) {
-        Logger.warning('Analytics subscribe failed: \$e', feature: 'Home');
+        Logger.warning('Analytics subscribe failed: $e', feature: 'Home');
       }
     }
   }
@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       homeBloc.add(HomeShowLastSurahEvent());
     } catch (e) {
-      Logger.warning('Home show last surah failed: \$e', feature: 'Home');
+      Logger.warning('Home show last surah failed: $e', feature: 'Home');
     }
     if (mounted) setState(() {});
   }
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen>
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
     } catch (e) {
-      Logger.warning('Analytics unsubscribe failed: \$e', feature: 'Home');
+      Logger.warning('Analytics unsubscribe failed: $e', feature: 'Home');
     }
     super.dispose();
   }
