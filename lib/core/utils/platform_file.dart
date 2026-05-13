@@ -15,7 +15,7 @@ Widget buildPlatformFileImage(
     width: width,
     fit: fit ?? BoxFit.cover,
     color: color,
-    errorBuilder: (_, __, ___) => Image.asset(
+    errorBuilder: (context, error, stackTrace) => Image.asset(
       placeHolder,
       height: height,
       width: width,

@@ -461,6 +461,10 @@ final Map<String, String> arEg = {
   'lbl_hide_translation': 'إخفاء الترجمة',
   'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
   'lbl_study': 'دراسة',
+  'lbl_overview': 'نظرة عامة',
+  'lbl_word_by_word': 'كلمة بكلمة',
+  'lbl_select_tafsir_source': 'اختر مصدر التفسير',
+  'lbl_select_translation_source': 'اختر مصدر الترجمة',
 
   // Recitation feedback
   'lbl_keep_practicing': 'واصل التدريب',
@@ -627,4 +631,36 @@ final Map<String, String> arEg = {
   // Reading Reminder
   'lbl_reading_reminder': 'تذكير القراءة',
   'msg_reading_reminder_desc': 'تنبيه خفيف للمحافظة على عادة القرآن اليومية',
+  'lbl_daily_verse_time': 'وقت الآية اليومية',
+  'lbl_reading_reminder_time': 'وقت تذكير القراءة',
+
+  // Wake Lock
+  'lbl_keep_screen_on': 'إبقاء الشاشة مضاءة',
+  'msg_keep_screen_on_desc': 'منع إطفاء الشاشة أثناء القراءة أو الاستماع',
+
+  // Surfaces
+  'lbl_surface_devotee': 'وضع المداوم',
+
+  // Sajdah
+  'lbl_sajdah': 'سجدة التلاوة — يجب السجود',
+
+  // Notifications Onboarding
+  'lbl_notifications': 'ابقَ على تواصل',
+  'msg_notifications_desc': 'اسمح بالإشعارات لتلقي تذكيرات خفيفة تساعدك على المحافظة على عادة القرآن اليومية.',
+  'lbl_enable_notifications': 'تفعيل الإشعارات',
+  'lbl_skip_for_now': 'تخطي الآن',
+  'lbl_setting_up': 'جاري الإعداد...',
+  'lbl_daily_verse': 'آية اليوم',
+  'msg_daily_verse_benefit': 'استلم آية للتأمل فيها كل يوم',
+  'lbl_streak_milestone': 'إنجازات السلسلة',
+  'msg_streak_milestone_benefit': 'احتفل بإنجازات سلسلة قراءتك اليومية',
+
+  // Devotee Surface
+  'lbl_todays_reading': 'قراءة اليوم',
+  'msg_todays_reading_desc': 'واصل رحلتك اليومية مع القرآن',
+  'lbl_continue_reading': 'مواصلة القراءة',
+  'lbl_streak': 'السلسلة',
+  'msg_streak_desc': 'حافظ على عادتك اليومية',
+  'lbl_khatmah': 'الختمة',
+  'msg_khatmah_desc': 'تتبع تقدمك في ختم القرآن',
 };

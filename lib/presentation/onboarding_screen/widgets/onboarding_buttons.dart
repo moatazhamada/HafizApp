@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 
 /// Primary action button for onboarding screens.
 ///
-/// White background with primary-colored text. Used on gradient backgrounds
-/// for maximum contrast and readability.
+/// Adapts its colors to the onboarding background (light or dark).
 class OnboardingPrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final double? width;
+  final bool isLightBackground;
 
   const OnboardingPrimaryButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.width,
+    this.isLightBackground = false,
   });
 
   @override
@@ -25,10 +26,18 @@ class OnboardingPrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: colorScheme.primary,
-          disabledBackgroundColor: Colors.white.withValues(alpha: 0.4),
-          disabledForegroundColor: colorScheme.primary.withValues(alpha: 0.5),
+          backgroundColor: isLightBackground
+              ? colorScheme.primary
+              : Colors.white,
+          foregroundColor: isLightBackground
+              ? Colors.white
+              : colorScheme.primary,
+          disabledBackgroundColor: isLightBackground
+              ? colorScheme.primary.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.4),
+          disabledForegroundColor: isLightBackground
+              ? Colors.white.withValues(alpha: 0.5)
+              : colorScheme.primary.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -50,23 +59,29 @@ class OnboardingPrimaryButton extends StatelessWidget {
 
 /// Secondary action button for onboarding screens.
 ///
-/// Transparent background with white text. Used for "Skip", "Back", etc.
+/// Transparent background with adaptive text color.
 class OnboardingSecondaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
+  final bool isLightBackground;
 
   const OnboardingSecondaryButton({
     super.key,
     required this.text,
     required this.onPressed,
+    this.isLightBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: Colors.white,
+        foregroundColor: isLightBackground
+            ? colorScheme.primary
+            : Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -85,25 +100,34 @@ class OnboardingSecondaryButton extends StatelessWidget {
 
 /// Selection card used in onboarding for choosing options.
 ///
-/// Semi-transparent white background that highlights when selected.
+/// Semi-transparent background that highlights when selected.
+/// Adapts colors for light or dark onboarding backgrounds.
 class OnboardingSelectionCard extends StatelessWidget {
   final Widget child;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool isLightBackground;
 
   const OnboardingSelectionCard({
     super.key,
     required this.child,
     required this.isSelected,
     required this.onTap,
+    this.isLightBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
       color: isSelected
-          ? Colors.white.withValues(alpha: 0.2)
-          : Colors.white.withValues(alpha: 0.1),
+          ? (isLightBackground
+              ? colorScheme.primary.withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.2))
+          : (isLightBackground
+              ? colorScheme.primary.withValues(alpha: 0.05)
+              : Colors.white.withValues(alpha: 0.1)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -115,7 +139,9 @@ class OnboardingSelectionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? Colors.white.withValues(alpha: 0.6)
+                  ? (isLightBackground
+                      ? colorScheme.primary.withValues(alpha: 0.4)
+                      : Colors.white.withValues(alpha: 0.6))
                   : Colors.transparent,
               width: 2,
             ),

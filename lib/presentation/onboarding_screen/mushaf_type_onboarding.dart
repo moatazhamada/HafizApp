@@ -67,7 +67,6 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
             final horizontalPadding = isLarge
                 ? 32.0
                 : (isMedium ? 24.0 : 16.0);
-            final cardPadding = isLarge ? 24.0 : 16.0;
             final iconSize = isLarge ? 72.0 : 56.0;
             final iconRadius = isLarge ? 16.0 : 12.0;
             final iconIconSize = isLarge ? 36.0 : 28.0;

@@ -7,8 +7,19 @@ import 'widgets/onboarding_scaffold.dart';
 
 class ThemeSelectionPage extends StatefulWidget {
   final VoidCallback onContinue;
+  final VoidCallback onBack;
+  final String? themeMode;
+  final bool isLightBackground;
+  final ValueChanged<String> onThemeModeChanged;
 
-  const ThemeSelectionPage({super.key, required this.onContinue});
+  const ThemeSelectionPage({
+    super.key,
+    required this.onContinue,
+    required this.onBack,
+    this.themeMode,
+    this.isLightBackground = false,
+    required this.onThemeModeChanged,
+  });
 
   @override
   State<ThemeSelectionPage> createState() => _ThemeSelectionPageState();
@@ -40,6 +51,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
 
   void _select(String mode) {
     setState(() => _selected = mode);
+    widget.onThemeModeChanged(mode);
   }
 
   void _continue() {
@@ -60,6 +72,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
     final isLarge = MediaQuery.of(context).size.width > 900;
 
     return OnboardingScaffold(
+      themeMode: widget.themeMode,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: isLarge ? 64 : 32),
         child: Column(
@@ -75,9 +88,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.palette_rounded,
-                color: Colors.white,
+                color: widget.isLightBackground ? Colors.black87 : Colors.white,
                 size: 40,
               ),
             ),
@@ -87,7 +100,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
             Text(
               'lbl_choose_theme'.tr,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+                color: widget.isLightBackground ? Colors.black87 : Colors.white,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -96,7 +109,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
             Text(
               'msg_theme_desc'.tr,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: widget.isLightBackground
+                    ? Colors.black.withValues(alpha: 0.6)
+                    : Colors.white.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -110,6 +125,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                 child: OnboardingSelectionCard(
                   isSelected: isSelected,
                   onTap: () => _select(option.mode),
+                  isLightBackground: widget.isLightBackground,
                   child: Row(
                     children: [
                       Container(
@@ -119,7 +135,13 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(option.icon, color: Colors.white, size: 24),
+                        child: Icon(
+                          option.icon,
+                          color: widget.isLightBackground
+                              ? option.iconColor
+                              : Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -128,8 +150,10 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                           children: [
                             Text(
                               option.labelKey.tr,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: widget.isLightBackground
+                                    ? Colors.black87
+                                    : Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -138,7 +162,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                             Text(
                               option.descKey.tr,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: widget.isLightBackground
+                                    ? Colors.black.withValues(alpha: 0.6)
+                                    : Colors.white.withValues(alpha: 0.7),
                                 fontSize: 13,
                               ),
                             ),
@@ -146,9 +172,11 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
-                          color: Colors.white,
+                          color: widget.isLightBackground
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.white,
                           size: 24,
                         ),
                     ],
@@ -163,6 +191,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
             OnboardingPrimaryButton(
               text: 'lbl_continue'.tr,
               onPressed: _continue,
+              isLightBackground: widget.isLightBackground,
             ),
             const SizedBox(height: 32),
           ],
@@ -184,4 +213,12 @@ class _ThemeOption {
     required this.labelKey,
     required this.descKey,
   });
+}
+
+extension on _ThemeOption {
+  Color get iconColor => switch (mode) {
+    'light' => Colors.orange,
+    'dark' => Colors.indigo,
+    _ => Colors.teal,
+  };
 }

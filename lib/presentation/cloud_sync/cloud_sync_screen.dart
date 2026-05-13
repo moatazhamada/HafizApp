@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/services/preference_sync_service.dart';
+import '../../core/theme/app_colors.dart';
 import '../../injection_container.dart';
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
@@ -144,8 +145,8 @@ class _AuthCard extends StatelessWidget {
                                 ? Icons.error_outline
                                 : Icons.no_accounts),
                       color: isAuth
-                          ? Colors.teal
-                          : (errorMsg != null ? Colors.redAccent : Colors.grey),
+                          ? AppColors.of(context).statBookmark
+                          : (errorMsg != null ? AppColors.of(context).needsReviewStatus : AppColors.of(context).notStartedStatus),
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -164,26 +165,26 @@ class _AuthCard extends StatelessWidget {
                               Text(
                                 state.profile!.displayName,
                                 style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey),
+                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
                               ),
                             if (state.profile?.email != null)
                               Text(
                                 state.profile!.email!,
                                 style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey),
+                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
                               ),
                             if (state.profile == null && state.userId != null)
                               Text(
                                 '${'lbl_user'.tr}: ${state.userId}',
                                 style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey),
+                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
                               ),
                           ],
                           if (errorMsg != null)
                             Text(
                               errorMsg.tr,
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.redAccent),
+                                  ?.copyWith(color: AppColors.of(context).needsReviewStatus),
                             ),
                         ],
                       ),
@@ -261,7 +262,7 @@ class _AuthCard extends StatelessWidget {
                     icon: const Icon(Icons.login),
                     label: Text('msg_qf_login'.tr),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                      backgroundColor: AppColors.of(context).statBookmark,
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -313,7 +314,7 @@ class _SyncSection extends StatelessWidget {
                       : const Icon(Icons.sync),
                   label: Text('lbl_bookmarks_sync'.tr),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: AppColors.of(context).statBookmark,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -326,7 +327,7 @@ class _SyncSection extends StatelessWidget {
                     ),
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.of(context).notStartedStatus),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -336,7 +337,7 @@ class _SyncSection extends StatelessWidget {
                     'msg_login_to_sync'.tr,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    ).textTheme.bodySmall?.copyWith(color: AppColors.of(context).notStartedStatus),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -389,7 +390,7 @@ class _PreferenceSyncSection extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.settings_suggest_outlined,
-                          color: isAuth ? Colors.teal : Colors.grey,
+                          color: isAuth ? AppColors.of(context).statBookmark : AppColors.of(context).notStartedStatus,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -475,7 +476,7 @@ class _PreferenceSyncSection extends StatelessWidget {
                         icon: const Icon(Icons.sync_alt, size: 18),
                         label: Text('pref_sync_two_way'.tr),
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.teal,
+                          backgroundColor: AppColors.of(context).statBookmark,
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -498,7 +499,7 @@ class _LocalDataNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.info_outline, color: Colors.grey),
+        leading: Icon(Icons.info_outline, color: AppColors.of(context).notStartedStatus),
         title: Text('msg_recitation_progress'.tr),
         subtitle: Text('msg_local_data_note'.tr),
       ),

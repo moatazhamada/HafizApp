@@ -1,4 +1,5 @@
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:flutter/foundation.dart';
 
 class VoiceVerificationService {
@@ -18,7 +19,7 @@ class VoiceVerificationService {
       );
       return _isAvailable;
     } catch (e) {
-      debugPrint('STT Init Failed: $e');
+      Logger.warning('STT Init Failed: $e', feature: 'VoiceVerification');
       return false;
     }
   }
@@ -46,7 +47,7 @@ class VoiceVerificationService {
     String localeId = 'ar_SA', // Default to Arabic
   }) async {
     if (!_isAvailable) {
-      debugPrint('STT not available');
+      Logger.warning('STT not available', feature: 'VoiceVerification');
       return;
     }
 

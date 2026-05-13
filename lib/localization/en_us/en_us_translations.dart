@@ -483,6 +483,10 @@ final Map<String, String> enUs = {
   'lbl_hide_translation': 'Hide Translation',
   'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
   'lbl_study': 'Study',
+  'lbl_overview': 'Overview',
+  'lbl_word_by_word': 'Word by Word',
+  'lbl_select_tafsir_source': 'Select Tafsir Source',
+  'lbl_select_translation_source': 'Select Translation Source',
 
   // Recitation feedback
   'lbl_keep_practicing': 'Keep Practicing',
@@ -652,4 +656,36 @@ final Map<String, String> enUs = {
   // Reading Reminder
   'lbl_reading_reminder': 'Reading Reminder',
   'msg_reading_reminder_desc': 'Gentle nudge to keep your daily Quran habit',
+  'lbl_daily_verse_time': 'Daily Verse Time',
+  'lbl_reading_reminder_time': 'Reading Reminder Time',
+
+  // Wake Lock
+  'lbl_keep_screen_on': 'Keep Screen On',
+  'msg_keep_screen_on_desc': 'Prevent screen from turning off while reading or listening',
+
+  // Surfaces
+  'lbl_surface_devotee': 'Devotee View',
+
+  // Sajdah
+  'lbl_sajdah': 'Sajdah tilawa — prostration required',
+
+  // Notifications Onboarding
+  'lbl_notifications': 'Stay Connected',
+  'msg_notifications_desc': 'Allow notifications to receive gentle reminders that help you maintain your daily Quran habit.',
+  'lbl_enable_notifications': 'Enable Notifications',
+  'lbl_skip_for_now': 'Skip for Now',
+  'lbl_setting_up': 'Setting up...',
+  'lbl_daily_verse': 'Daily Verse',
+  'msg_daily_verse_benefit': 'Receive a verse to reflect on every day',
+  'lbl_streak_milestone': 'Streak Milestones',
+  'msg_streak_milestone_benefit': 'Celebrate your reading streak achievements',
+
+  // Devotee Surface
+  'lbl_todays_reading': "Today's Reading",
+  'msg_todays_reading_desc': 'Continue your daily Quran journey',
+  'lbl_continue_reading': 'Continue Reading',
+  'lbl_streak': 'Streak',
+  'msg_streak_desc': 'Keep your daily habit alive',
+  'lbl_khatmah': 'Khatmah',
+  'msg_khatmah_desc': 'Track your Quran completion progress',
 };

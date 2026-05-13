@@ -43,3 +43,23 @@ class DeleteReflection extends VerseStudyEvent {
   @override
   List<Object> get props => [postId];
 }
+
+class ChangeTafsirSource extends VerseStudyEvent {
+  final String id;
+  final String verseKey;
+
+  const ChangeTafsirSource({required this.id, required this.verseKey});
+
+  @override
+  List<Object> get props => [id, verseKey];
+}
+
+class ChangeTranslationSource extends VerseStudyEvent {
+  final String id;
+  final String verseKey;
+
+  const ChangeTranslationSource({required this.id, required this.verseKey});
+
+  @override
+  List<Object> get props => [id, verseKey];
+}

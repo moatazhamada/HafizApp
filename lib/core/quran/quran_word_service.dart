@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
@@ -70,7 +70,7 @@ class QuranWordService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch verse words for $verseKey: $e');
+      Logger.warning('Failed to fetch verse words for $verseKey: $e', feature: 'QuranWords');
     }
     return null;
   }
@@ -107,7 +107,7 @@ class QuranWordService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch chapter words for $chapterNumber: $e');
+      Logger.warning('Failed to fetch chapter words for $chapterNumber: $e', feature: 'QuranWords');
     }
     return results;
   }
@@ -134,7 +134,9 @@ class QuranWordService {
         if (decoded is Map<String, dynamic>) {
           return VerseWordData.fromJson(decoded);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Quran word cache read failed: \$e', feature: 'QuranWords');
+      }
     }
     return null;
   }

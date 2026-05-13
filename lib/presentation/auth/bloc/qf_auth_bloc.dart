@@ -10,6 +10,7 @@ import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 import 'package:hafiz_app/domain/entities/qf_user_profile.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/analytics/analytics_service.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 part 'qf_auth_event.dart';
 part 'qf_auth_state.dart';
@@ -105,10 +106,14 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     // Best-effort cleanup after successful logout.
     try {
       await PrefUtils().setQfPrefSyncPrompted(false);
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('QF pref sync reset failed: \$e', feature: 'Auth');
+    }
     try {
       unawaited(sl<AnalyticsService>().logQfLogout());
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Analytics logout log failed: \$e', feature: 'Auth');
+    }
   }
 
   Future<void> _onAuthDeleteDataRequested(

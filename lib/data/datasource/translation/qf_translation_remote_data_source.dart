@@ -15,7 +15,10 @@ class QfTranslationRemoteDataSource {
 
   /// Returns a verse-number → text map for [surahId].
   /// Only fetches when the current UI locale is **not Arabic**.
-  Future<Map<int, String>> getTranslationsByChapter(int surahId) async {
+  Future<Map<int, String>> getTranslationsByChapter(
+    int surahId, {
+    String? translationId,
+  }) async {
     if (_isArabicLocale()) return {};
 
     if (_translationCache.containsKey(surahId)) {
@@ -23,9 +26,10 @@ class QfTranslationRemoteDataSource {
     }
 
     try {
+      final id = translationId ?? ApiConfig.translationId.toString();
       final allItems = await _fetchAllPages(
         (page) => _dio.get(
-          '${ApiConfig.contentBase}/translations/${ApiConfig.translationId}/by_chapter/$surahId',
+          '${ApiConfig.contentBase}/translations/$id/by_chapter/$surahId',
           queryParameters: {'per_page': 50, 'page': page},
         ),
         'translations',

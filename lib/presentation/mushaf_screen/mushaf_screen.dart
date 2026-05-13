@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
@@ -27,7 +28,7 @@ class _MushafScreenState extends State<MushafScreen>
     with WidgetsBindingObserver {
   // late final → cannot be reassigned; survives rebuilds, orientation flips,
   // and any lifecycle event that does NOT fully dispose the State.
-  late final PageController _pageController;
+  late PageController _pageController;
   late int _currentPage;
   late MushafType _mushafType;
   bool _showOverlay = true;
@@ -59,6 +60,9 @@ class _MushafScreenState extends State<MushafScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (PrefUtils().isKeepScreenOn()) {
+      WakelockPlus.enable();
+    }
     _mushafType = MushafType.fromString(PrefUtils().getMushafType());
     final resolved =
         widget.initialPage ??
@@ -118,6 +122,7 @@ class _MushafScreenState extends State<MushafScreen>
     WidgetsBinding.instance.removeObserver(this);
     _overlayTimer?.cancel();
     _pageController.dispose();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -288,7 +293,8 @@ class _MushafScreenState extends State<MushafScreen>
             );
           }
         }
-      } catch (_) {
+      } catch (e) {
+        Logger.warning('Mushaf verse text load failed: \$e', feature: 'Mushaf');
         entries.add(
           _VerseText(
             surahId: range.surahId,
@@ -358,30 +364,37 @@ class _MushafScreenState extends State<MushafScreen>
             children: [
               // NEVER change reverse — see the _kMushafPageReverse constant
               // and the class-level comment above initState().
-              PageView.builder(
-                reverse: _kMushafPageReverse,
-                key: ValueKey(_mushafType),
-                controller: _pageController,
-                physics: _isZoomed
-                    ? const NeverScrollableScrollPhysics()
-                    : const ClampingScrollPhysics(),
-                itemCount: _mushafType.totalPages,
-                onPageChanged: (index) {
-                  final page = _pageIndexToNumber(index);
-                  _isZoomed = false;
-                  _persistPage(page);
-                  _precacheAdjacentPages(page);
-                  if (_showOverlay) {
-                    _overlayTimer?.cancel();
-                    _overlayTimer = Timer(const Duration(seconds: 3), () {
-                      if (mounted) setState(() => _showOverlay = false);
-                    });
-                  }
-                },
-                itemBuilder: (context, index) {
-                  final pageNumber = _pageIndexToNumber(index);
-                  return _buildPage(pageNumber, isDark, colors);
-                },
+              //
+              // Force LTR directionality around the PageView so that
+              // reverse:true always puts page 1 on the right and swipe-left
+              // advances, regardless of the app's UI locale (Arabic/English).
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: PageView.builder(
+                  reverse: _kMushafPageReverse,
+                  key: ValueKey(_mushafType),
+                  controller: _pageController,
+                  physics: _isZoomed
+                      ? const NeverScrollableScrollPhysics()
+                      : const ClampingScrollPhysics(),
+                  itemCount: _mushafType.totalPages,
+                  onPageChanged: (index) {
+                    final page = _pageIndexToNumber(index);
+                    _isZoomed = false;
+                    _persistPage(page);
+                    _precacheAdjacentPages(page);
+                    if (_showOverlay) {
+                      _overlayTimer?.cancel();
+                      _overlayTimer = Timer(const Duration(seconds: 3), () {
+                        if (mounted) setState(() => _showOverlay = false);
+                      });
+                    }
+                  },
+                  itemBuilder: (context, index) {
+                    final pageNumber = _pageIndexToNumber(index);
+                    return _buildPage(pageNumber, isDark, colors);
+                  },
+                ),
               ),
               if (_showOverlay)
                 Positioned(

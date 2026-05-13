@@ -48,7 +48,10 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     PrefUtils().addRecentSearch(query);
     sl<AnalyticsService>().logSearch(query);
     _loadRecentSearches();
-    NavigatorService.pushNamed(AppRoutes.searchPage);
+    NavigatorService.pushNamed(
+      AppRoutes.searchPage,
+      arguments: {'query': query},
+    );
   }
 
   void _clearRecentSearches() {
@@ -130,7 +133,7 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
                   icon: Icons.wb_sunny_outlined,
                   title: 'lbl_verse_of_day'.tr,
                   subtitle: 'msg_verse_of_day_desc'.tr,
-                  color: Colors.orange,
+                  color: Theme.of(context).colorScheme.secondary,
                   onTap: () => _showVerseOfDay(context),
                 ),
               ),
@@ -140,7 +143,7 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
                   icon: Icons.auto_stories_outlined,
                   title: 'lbl_todays_juz'.tr,
                   subtitle: _todayJuzLabel(isArabic),
-                  color: Colors.teal,
+                  color: Theme.of(context).colorScheme.primary,
                   onTap: () => _navigateToTodayJuz(context),
                 ),
               ),

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
@@ -49,7 +49,7 @@ class RecitationService {
             .toList();
       }
     } catch (e) {
-      debugPrint('Failed to fetch reciters: $e');
+      Logger.warning('Failed to fetch reciters: $e', feature: 'Recitation');
     }
     return _fallbackReciters();
   }
@@ -83,7 +83,7 @@ class RecitationService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch chapter audio: $e');
+      Logger.warning('Failed to fetch chapter audio: $e', feature: 'Recitation');
     }
     return null;
   }
@@ -98,7 +98,9 @@ class RecitationService {
         if (decoded is Map<String, dynamic>) {
           return ChapterAudioFile.fromJson(decoded);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Audio cache read failed: \$e', feature: 'Audio');
+      }
     }
     return null;
   }

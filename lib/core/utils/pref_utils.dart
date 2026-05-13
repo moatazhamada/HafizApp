@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,7 +33,7 @@ class PrefUtils {
       final prefs = await SharedPreferences.getInstance();
       _sharedPreferences = prefs;
       _initCompleter!.complete(prefs);
-      debugPrint('SharedPreference Initialized');
+      Logger.info('SharedPreference Initialized', feature: 'Preferences');
     } catch (e) {
       _initCompleter!.completeError(e);
       _initCompleter = null;
@@ -405,8 +406,18 @@ class PrefUtils {
     if (value) {
       final version = _cachedAppVersion ?? '';
       await _requirePrefs().setString('onboardingCompletedVersion', version);
+      await _requirePrefs().setBool('app_first_open', false);
     } else {
       await _requirePrefs().remove('onboardingCompletedVersion');
+    }
+  }
+
+  /// Returns true if this is the first time the app has ever been opened.
+  bool isFirstEverOpen() {
+    try {
+      return _requirePrefs().getBool('app_first_open') ?? true;
+    } catch (e) {
+      return true;
     }
   }
 
@@ -462,6 +473,32 @@ class PrefUtils {
     await _requirePrefs().setString('readingNavMode', mode);
   }
 
+  String getPreferredTafsirId() {
+    try {
+      return _requirePrefs().getString('preferred_tafsir_id') ??
+          ApiConfig.tafsirId;
+    } catch (e) {
+      return ApiConfig.tafsirId;
+    }
+  }
+
+  Future<void> setPreferredTafsirId(String id) async {
+    await _requirePrefs().setString('preferred_tafsir_id', id);
+  }
+
+  String getPreferredTranslationId() {
+    try {
+      return _requirePrefs().getString('preferred_translation_id') ??
+          ApiConfig.translationId.toString();
+    } catch (e) {
+      return ApiConfig.translationId.toString();
+    }
+  }
+
+  Future<void> setPreferredTranslationId(String id) async {
+    await _requirePrefs().setString('preferred_translation_id', id);
+  }
+
   bool isDailyVerseEnabled() {
     try {
       return _requirePrefs().getBool('dailyVerseEnabled') ?? true;
@@ -472,6 +509,30 @@ class PrefUtils {
 
   Future<void> setDailyVerseEnabled(bool enabled) async {
     await _requirePrefs().setBool('dailyVerseEnabled', enabled);
+  }
+
+  String getDailyVerseTime() {
+    try {
+      return _requirePrefs().getString('dailyVerseTime') ?? '08:00';
+    } catch (e) {
+      return '08:00';
+    }
+  }
+
+  Future<void> setDailyVerseTime(String time) async {
+    await _requirePrefs().setString('dailyVerseTime', time);
+  }
+
+  String getReadingReminderTime() {
+    try {
+      return _requirePrefs().getString('readingReminderTime') ?? '20:00';
+    } catch (e) {
+      return '20:00';
+    }
+  }
+
+  Future<void> setReadingReminderTime(String time) async {
+    await _requirePrefs().setString('readingReminderTime', time);
   }
 
   // ── User Archetype & Surface ──
@@ -603,12 +664,34 @@ class PrefUtils {
   bool isReadingReminderEnabled() {
     try {
       return _requirePrefs().getBool(_readingReminderEnabledKey) ?? true;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning(
+        'Failed to get reading reminder enabled: $e',
+        feature: 'Preferences',
+      );
       return true;
     }
   }
 
   Future<void> setReadingReminderEnabled(bool value) async {
     await _requirePrefs().setBool(_readingReminderEnabledKey, value);
+  }
+
+  static const String _keepScreenOnKey = 'keep_screen_on';
+
+  bool isKeepScreenOn() {
+    try {
+      return _requirePrefs().getBool(_keepScreenOnKey) ?? true;
+    } catch (e) {
+      Logger.warning(
+        'Failed to get keep screen on: $e',
+        feature: 'Preferences',
+      );
+      return true;
+    }
+  }
+
+  Future<void> setKeepScreenOn(bool value) async {
+    await _requirePrefs().setBool(_keepScreenOnKey, value);
   }
 }

@@ -7,6 +7,7 @@ import 'package:hafiz_app/core/audio/whisper_platform.dart'
     if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
 import '../../../core/app_export.dart';
+import '../../../core/theme/app_colors.dart';
 
 import '../../../domain/entities/verse.dart';
 import '../../../core/quran_index/quran_surah.dart';
@@ -51,8 +52,16 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
 
   // UI State
   String _spokenText = '';
-  Color _statusColor = Colors.blueAccent;
+  Color _statusColor = Colors.transparent;
   String _feedbackTitle = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_statusColor == Colors.transparent) {
+      _statusColor = Theme.of(context).colorScheme.primary;
+    }
+  }
   String _scoreText = '';
   String _hintLabel = '';
   String _hintWord = '';
@@ -100,7 +109,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     await _qrcService.dispose();
     try {
       await _customRecorder.closeRecorder();
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Recorder close failed: \$e', feature: 'VoiceVerification');
+    }
   }
 
   WhisperModel _resolveWhisperModel(String value) {
@@ -118,7 +129,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   void _resetState() {
     _isListening = false;
     _spokenText = '';
-    _statusColor = Colors.blueAccent;
+    _statusColor = Theme.of(context).colorScheme.primary;
     _feedbackTitle = '';
     _scoreText = '';
     _hintLabel = '';
@@ -142,7 +153,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     setState(() {
       _resetState();
       _isListening = true;
-      _statusColor = Colors.blueAccent;
+      _statusColor = Theme.of(context).colorScheme.primary;
     });
 
     final provider = PrefUtils().getRecitationProvider();
@@ -160,7 +171,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (!connected) {
         if (!mounted) return;
         setState(() {
-          _statusColor = Colors.redAccent;
+          _statusColor = AppColors.of(context).needsReviewStatus;
           _feedbackTitle = 'msg_qrc_missing_key'.tr;
           _qrcConnecting = false;
           _showFeedback = true;
@@ -181,7 +192,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           _handleQrcCheck(event.data);
         } else if (event is QrcErrorEvent) {
           setState(() {
-            _statusColor = Colors.redAccent;
+            _statusColor = AppColors.of(context).needsReviewStatus;
             _feedbackTitle = event.message;
             _showFeedback = true;
           });
@@ -210,7 +221,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (useCustom) {
         if (customEndpoint.isEmpty) {
           setState(() {
-            _statusColor = Colors.orangeAccent;
+            _statusColor = AppColors.of(context).inProgressStatus;
             _feedbackTitle = 'msg_custom_asr_empty'.tr;
             _showFeedback = true;
           });
@@ -245,16 +256,20 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _customFilePath != null) {
             try {
               await _customRecorder.stopRecorder();
-            } catch (_) {}
+            } catch (e) {
+              Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+            }
             final remoteText = await _customAsrService.transcribe(
               endpoint: customEndpoint,
               filePath: _customFilePath!,
             );
+            if (!mounted) return;
             if (remoteText != null && remoteText.isNotEmpty) {
               effectiveText = remoteText;
             }
           }
 
+          if (!mounted) return;
           _analyzeRecitation(effectiveText);
         },
       );
@@ -303,12 +318,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (_qrcWordIndex >= expectedCount &&
           expectedCount > 0 &&
           _qrcMistakes.isEmpty) {
-        _statusColor = Colors.green;
+        _statusColor = AppColors.of(context).memorizedStatus;
         _feedbackTitle = 'lbl_congrats'.tr;
         _isCorrect = true;
         _isListening = false;
       } else if (_qrcWordIndex >= expectedCount && _qrcMistakes.isNotEmpty) {
-        _statusColor = Colors.redAccent;
+        _statusColor = AppColors.of(context).needsReviewStatus;
         _feedbackTitle = 'msg_incorrect_recitation'.tr;
         _isWrong = true;
         _isListening = false;
@@ -317,6 +332,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   }
 
   void _analyzeRecitation(String effectiveText) {
+    if (!mounted) return;
     final analysis = _voiceService.analyzeRecitation(
       effectiveText,
       _expectedText,
@@ -361,17 +377,17 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _showFeedback = true;
 
       if (analysis.isTooShort) {
-        _statusColor = Colors.orangeAccent;
+        _statusColor = AppColors.of(context).inProgressStatus;
         _feedbackTitle = 'msg_recitation_too_short'.tr;
         return;
       }
 
       if (analysis.passed) {
-        _statusColor = Colors.green;
+        _statusColor = AppColors.of(context).memorizedStatus;
         _feedbackTitle = 'lbl_congrats'.tr;
         _isCorrect = true;
       } else {
-        _statusColor = Colors.redAccent;
+        _statusColor = AppColors.of(context).needsReviewStatus;
         _feedbackTitle = 'msg_incorrect_recitation'.tr;
         _isWrong = true;
       }
@@ -398,7 +414,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       } else if (useWhisper) {
         try {
           await _customRecorder.stopRecorder();
-        } catch (_) {}
+        } catch (e) {
+          Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+        }
         if (_customFilePath != null) {
           if (mounted) {
             setState(() {
@@ -425,7 +443,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         if (useCustom) {
           try {
             await _customRecorder.stopRecorder();
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Recorder stop failed: \$e', feature: 'VoiceVerification');
+          }
         }
         await _voiceService.stop();
       }
@@ -433,7 +453,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _isListening = false;
       if (mounted) {
         setState(() {
-          _statusColor = Colors.grey;
+          _statusColor = AppColors.of(context).notStartedStatus;
         });
       }
     }
@@ -588,7 +608,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 for (final line in _qrcMistakeLines)
                   Text(
                     line,
-                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                    style: TextStyle(fontSize: 12, color: AppColors.of(context).needsReviewStatus),
                   ),
               ],
             ],
@@ -609,7 +629,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               const SizedBox(height: 6),
               Text(
                 _scoreText,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
               ),
               if (_issueLines.isNotEmpty) ...[
                 const SizedBox(height: 6),
@@ -620,7 +640,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   _hintLabel,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
                 Text(
                   _hintWord,
@@ -635,7 +655,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   _repeatLabel,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
                 Text(
                   _repeatWord,
@@ -651,7 +671,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   'msg_coach_tip_slow'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
               ],
             ],
@@ -659,7 +679,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             const Divider(),
             Text(
               'lbl_original'.tr,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
             ),
             const SizedBox(height: 8),
             Text(

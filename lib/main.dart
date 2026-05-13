@@ -26,6 +26,10 @@ final ThemeData lightTheme = ThemeData(
   colorScheme: ColorScheme.fromSeed(
     seedColor: const Color(0xFF006754), // deep green accent
     brightness: Brightness.light,
+  ).copyWith(
+    secondary: const Color(0xFFFFB300), // gold
+    tertiary: const Color(0xFF1565C0), // sapphire
+    surfaceContainer: const Color(0xFFF5F5F5),
   ),
   textTheme: const TextTheme(
     headlineLarge: AppTextStyles.headingLarge,
@@ -87,6 +91,10 @@ final ThemeData darkTheme = ThemeData(
   colorScheme: ColorScheme.fromSeed(
     seedColor: const Color(0xFF87D1A4), // soft green tint for dark
     brightness: Brightness.dark,
+  ).copyWith(
+    secondary: const Color(0xFFFFCA28), // gold
+    tertiary: const Color(0xFF42A5F5), // sapphire
+    surfaceContainer: const Color(0xFF2D2D2D),
   ),
   textTheme: const TextTheme(
     headlineLarge: AppTextStyles.headingLarge,
@@ -210,7 +218,7 @@ class MyApp extends StatelessWidget {
                 final mediaQuery = MediaQuery.of(context);
                 final clampedScale = mediaQuery.textScaler
                     .scale(1.0)
-                    .clamp(1.0, 1.5);
+                    .clamp(0.8, 2.0);
                 return MediaQuery(
                   data: mediaQuery.copyWith(
                     textScaler: TextScaler.linear(clampedScale),
@@ -266,7 +274,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
         const Duration(seconds: 3),
       );
     } catch (e) {
-      debugPrint('Heavy init failed or timed out: $e');
+      Logger.warning('Heavy init failed or timed out: $e', feature: 'Bootstrap');
     }
 
     if (mounted) {
@@ -351,6 +359,11 @@ class _ReadyAppState extends State<_ReadyApp> {
   }
 
   Future<void> _maybeShowChangelog() async {
+    // Never show changelog during or before onboarding.
+    if (!PrefUtils().getOnboardingCompleted()) return;
+    // Never show changelog on the very first open.
+    if (PrefUtils().isFirstEverOpen()) return;
+
     final version = (await PackageInfo.fromPlatform()).version;
     final key = 'changelog_seen_${version.replaceAll('.', '_')}';
     final prefs = await SharedPreferences.getInstance();
@@ -394,24 +407,44 @@ class _SplashScaffold extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(
-                color: isDark
-                    ? const Color(0xFF87D1A4)
-                    : const Color(0xFF006754),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(
-                        alpha: isDark ? 0.7 : 0.54,
-                      ),
-                  fontSize: 14,
-                ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'بسم الله الرحمن الرحيم',
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(
+                      fontFamily: 'NotoNaskhArabic',
+                      fontSize: 22,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(
+                            alpha: isDark ? 0.87 : 0.87,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CircularProgressIndicator(
+                    color: isDark
+                        ? const Color(0xFF87D1A4)
+                        : const Color(0xFF006754),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(
+                            alpha: isDark ? 0.7 : 0.54,
+                          ),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

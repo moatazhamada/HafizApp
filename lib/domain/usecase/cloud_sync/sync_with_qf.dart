@@ -45,7 +45,9 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
           final created = await qfUserApi.createCollection('Hafiz Bookmarks');
           defaultCollectionId = created?['id']?.toString();
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('QF bookmark collection setup failed: \$e', feature: 'CloudSync');
+      }
 
       final qfBookmarks = await qfUserApi.getBookmarks();
       final Set<int> qfVerseIds = {};

@@ -20,6 +20,7 @@ class RemoteConfigService {
       await _remoteConfig.setDefaults({
         'min_version_code': 0,
         'force_update_message': '',
+        'show_musali_card': false,
       });
       await _remoteConfig.fetchAndActivate();
       Logger.info('Remote Config initialized', feature: 'RemoteConfig');
@@ -41,6 +42,14 @@ class RemoteConfigService {
       return _remoteConfig.getString('force_update_message');
     } catch (_) {
       return '';
+    }
+  }
+
+  bool get showMusaliCard {
+    try {
+      return _remoteConfig.getBool('show_musali_card');
+    } catch (_) {
+      return false;
     }
   }
 }

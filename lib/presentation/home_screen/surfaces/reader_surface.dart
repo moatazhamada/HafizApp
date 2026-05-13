@@ -34,7 +34,9 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
       if (saved != null && _scrollController.hasClients) {
         try {
           _scrollController.jumpTo(saved);
-        } catch (_) {}
+        } catch (e) {
+          Logger.warning('Scroll position restore failed: \$e', feature: 'Home');
+        }
       }
     });
     _scrollController.addListener(() {

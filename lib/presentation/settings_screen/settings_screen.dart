@@ -41,7 +41,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultQuranView;
   late String _mushafType;
   late bool _dailyVerseEnabled;
+  late TimeOfDay _dailyVerseTime;
   late bool _readingReminderEnabled;
+  late TimeOfDay _readingReminderTime;
+  late bool _keepScreenOn;
   late String _surfaceType;
   double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
   List<QiraatEdition> _editions = [];
@@ -67,7 +70,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
+    _dailyVerseTime = _parseTime(PrefUtils().getDailyVerseTime());
     _readingReminderEnabled = PrefUtils().isReadingReminderEnabled();
+    _readingReminderTime = _parseTime(PrefUtils().getReadingReminderTime());
+    _keepScreenOn = PrefUtils().isKeepScreenOn();
     _surfaceType = PrefUtils().getSurfaceType() ?? 'reader';
     _loadRecitationResources();
   }
@@ -132,8 +138,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1, indent: 16, endIndent: 16),
 
             _buildDailyVerseTile(),
+            if (_dailyVerseEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildDailyVerseTimeTile(),
+            ],
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildReadingReminderTile(),
+            if (_readingReminderEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildReadingReminderTimeTile(),
+            ],
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildKeepScreenOnTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),
@@ -606,12 +622,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final isSelected = _surfaceType == surface.name;
             return ListTile(
               leading: Icon(
-                switch (surface) {
-                  SurfaceType.reader => Icons.menu_book_outlined,
-                  SurfaceType.student => Icons.school_outlined,
-                  SurfaceType.seeker => Icons.explore_outlined,
-                },
-                color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                surface.icon,
+                color: isSelected ? surface.color : null,
               ),
               title: Text(surface.labelKey.tr),
               trailing: isSelected
@@ -627,7 +639,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (result != null && result.name != _surfaceType) {
       setState(() => _surfaceType = result.name);
-      PrefUtils().setSurfaceType(result.name);
+      await PrefUtils().setSurfaceType(result.name);
+      if (mounted) {
+        // Redirect to home so the new surface is rendered immediately
+        unawaited(NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen));
+      }
     }
   }
 
@@ -654,6 +670,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildDailyVerseTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_daily_verse_time'.tr),
+      subtitle: Text(_dailyVerseTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _dailyVerseTime,
+        );
+        if (picked != null && picked != _dailyVerseTime) {
+          setState(() => _dailyVerseTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setDailyVerseTime(timeStr);
+          await NotificationService().scheduleDailyVerse();
+        }
+      },
+    );
+  }
+
   Widget _buildReadingReminderTile() {
     return SwitchListTile(
       secondary: const Icon(Icons.access_time),
@@ -669,6 +707,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
         } else {
           notificationService.cancelRecurring();
         }
+      },
+    );
+  }
+
+  Widget _buildReadingReminderTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_reading_reminder_time'.tr),
+      subtitle: Text(_readingReminderTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _readingReminderTime,
+        );
+        if (picked != null && picked != _readingReminderTime) {
+          setState(() => _readingReminderTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setReadingReminderTime(timeStr);
+          await NotificationService().scheduleReadingReminder();
+        }
+      },
+    );
+  }
+
+  TimeOfDay _parseTime(String timeStr) {
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  Widget _buildKeepScreenOnTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.lightbulb_outline),
+      title: Text('lbl_keep_screen_on'.tr),
+      subtitle: Text('msg_keep_screen_on_desc'.tr),
+      value: _keepScreenOn,
+      onChanged: (val) {
+        setState(() => _keepScreenOn = val);
+        PrefUtils().setKeepScreenOn(val);
       },
     );
   }

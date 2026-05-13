@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../injection_container.dart';
 import '../../bookmarks/bloc/bookmark_bloc.dart';
 import '../../khatmah/bloc/khatmah_bloc.dart';
@@ -215,7 +216,7 @@ class _StudentBody extends StatelessWidget {
                       child: _StatPill(
                         label: 'lbl_memorized'.tr,
                         value: memorized,
-                        color: Colors.green,
+                        color: AppColors.of(context).memorizedStatus,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -223,7 +224,7 @@ class _StudentBody extends StatelessWidget {
                       child: _StatPill(
                         label: 'lbl_in_progress'.tr,
                         value: inProgress,
-                        color: Colors.orange,
+                        color: AppColors.of(context).inProgressStatus,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -231,7 +232,7 @@ class _StudentBody extends StatelessWidget {
                       child: _StatPill(
                         label: 'lbl_bookmarks'.tr,
                         value: bookmarks,
-                        color: Colors.teal,
+                        color: AppColors.of(context).statBookmark,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -239,7 +240,7 @@ class _StudentBody extends StatelessWidget {
                       child: _StatPill(
                         label: 'lbl_practice_list'.tr,
                         value: practice,
-                        color: Colors.redAccent,
+                        color: AppColors.of(context).statPractice,
                       ),
                     ),
                   ],
@@ -309,18 +310,16 @@ class _MemorizationCard extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: (memFrac * 100).round(),
-                        child: Container(color: Colors.green),
+                        child: Container(color: AppColors.of(context).memorizedStatus),
                       ),
                       Expanded(
                         flex: (progFrac * 100).round(),
-                        child: Container(color: Colors.orange),
+                        child: Container(color: AppColors.of(context).inProgressStatus),
                       ),
                       Expanded(
                         flex: (notStarted / total * 100).round(),
                         child: Container(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF3A3A3A)
-                              : const Color(0xFFE0E0E0),
+                          color: Theme.of(context).colorScheme.surfaceContainer,
                         ),
                       ),
                     ],
@@ -331,9 +330,9 @@ class _MemorizationCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _LegendItem(color: Colors.green, label: '$memorized'),
-                  _LegendItem(color: Colors.orange, label: '$inProgress'),
-                  _LegendItem(color: Colors.grey, label: '$notStarted'),
+                  _LegendItem(color: AppColors.of(context).memorizedStatus, label: '$memorized'),
+                  _LegendItem(color: AppColors.of(context).inProgressStatus, label: '$inProgress'),
+                  _LegendItem(color: AppColors.of(context).notStartedStatus, label: '$notStarted'),
                 ],
               ),
               if (state.dueReviews.isNotEmpty) ...[
@@ -367,10 +366,10 @@ class _StreakCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
         elevation: 0,
-        color: Colors.orange.withValues(alpha: 0.08),
+        color: AppColors.of(context).inProgressStatus.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
+          side: BorderSide(color: AppColors.of(context).inProgressStatus.withValues(alpha: 0.3)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -380,12 +379,12 @@ class _StreakCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.15),
+                  color: AppColors.of(context).inProgressStatus.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.local_fire_department_rounded,
-                  color: streak > 0 ? Colors.orange : Colors.grey,
+                  color: streak > 0 ? AppColors.of(context).inProgressStatus : AppColors.of(context).notStartedStatus,
                   size: 28,
                 ),
               ),
@@ -405,7 +404,7 @@ class _StreakCard extends StatelessWidget {
                       '$streak ${'lbl_day_streak'.tr}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: streak > 0 ? Colors.orange : Colors.grey,
+                        color: streak > 0 ? AppColors.of(context).inProgressStatus : AppColors.of(context).notStartedStatus,
                       ),
                     ),
                   ],

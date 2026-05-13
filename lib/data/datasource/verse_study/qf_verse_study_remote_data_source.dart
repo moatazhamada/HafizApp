@@ -16,7 +16,11 @@ class VerseStudyData {
 }
 
 abstract class QfVerseStudyRemoteDataSource {
-  Future<VerseStudyData> getVerseStudy(String verseKey);
+  Future<VerseStudyData> getVerseStudy(
+    String verseKey, {
+    String? tafsirId,
+    String? translationId,
+  });
 }
 
 class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
@@ -25,11 +29,15 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   QfVerseStudyRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
 
   @override
-  Future<VerseStudyData> getVerseStudy(String verseKey) async {
+  Future<VerseStudyData> getVerseStudy(
+    String verseKey, {
+    String? tafsirId,
+    String? translationId,
+  }) async {
     final results = await Future.wait([
       _fetchArabic(verseKey),
-      _fetchTranslation(verseKey),
-      _fetchTafsir(verseKey),
+      _fetchTranslation(verseKey, translationId: translationId),
+      _fetchTafsir(verseKey, tafsirId: tafsirId),
     ]);
 
     final arabicText = results[0];
@@ -66,14 +74,18 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     return '';
   }
 
-  Future<String> _fetchTranslation(String verseKey) async {
+  Future<String> _fetchTranslation(
+    String verseKey, {
+    String? translationId,
+  }) async {
     if (_isArabicLocale()) return '';
 
     try {
+      final id = translationId ?? ApiConfig.translationId.toString();
       final translationResponse = await _dio.get(
         '${ApiConfig.contentBase}/verses/by_key/$verseKey',
         queryParameters: {
-          'translations': '${ApiConfig.translationId}',
+          'translations': id,
           'fields': 'text_uthmani',
         },
       );
@@ -91,10 +103,14 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     return '';
   }
 
-  Future<String> _fetchTafsir(String verseKey) async {
+  Future<String> _fetchTafsir(
+    String verseKey, {
+    String? tafsirId,
+  }) async {
     try {
+      final id = tafsirId ?? ApiConfig.tafsirId;
       final tafsirResponse = await _dio.get(
-        '${ApiConfig.contentBase}/tafsirs/${ApiConfig.tafsirId}/by_ayah/$verseKey',
+        '${ApiConfig.contentBase}/tafsirs/$id/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {

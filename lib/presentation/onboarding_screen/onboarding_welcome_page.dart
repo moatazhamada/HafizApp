@@ -7,8 +7,17 @@ import 'widgets/onboarding_scaffold.dart';
 
 class OnboardingWelcomePage extends StatefulWidget {
   final VoidCallback onContinue;
+  final VoidCallback onBack;
+  final String? themeMode;
+  final bool isLightBackground;
 
-  const OnboardingWelcomePage({super.key, required this.onContinue});
+  const OnboardingWelcomePage({
+    super.key,
+    required this.onContinue,
+    required this.onBack,
+    this.themeMode,
+    this.isLightBackground = false,
+  });
 
   @override
   State<OnboardingWelcomePage> createState() => _OnboardingWelcomePageState();
@@ -55,9 +64,9 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
   Widget build(BuildContext context) {
     mediaQueryData = MediaQuery.of(context);
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return OnboardingScaffold(
+      themeMode: widget.themeMode,
       maxContentWidth: 800,
       child: Stack(
         children: [
@@ -135,7 +144,9 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(30),
                             child: Container(
-                              color: Colors.white.withValues(alpha: 0.1),
+                              color: widget.isLightBackground
+                    ? Colors.black.withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.1),
                               child: CustomImageView(
                                 imagePath: ImageConstant.imgQuranOnboarding,
                                 height: imageHeight,
@@ -152,7 +163,9 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                         Text(
                           'app_name'.tr,
                           style: theme.textTheme.displayMedium?.copyWith(
-                            color: AppColors.of(context).primaryLight,
+                            color: widget.isLightBackground
+                                ? Theme.of(context).colorScheme.primary
+                                : AppColors.of(context).primaryLight,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -164,7 +177,9 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           'lbl_learn_quran'.tr,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: widget.isLightBackground
+                                ? Colors.black.withValues(alpha: 0.7)
+                                : Colors.white.withValues(alpha: 0.9),
                             fontFamily: 'Poppins',
                             height: 1.5,
                           ),
@@ -180,6 +195,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           child: OnboardingPrimaryButton(
                             text: 'lbl_get_started'.tr,
                             onPressed: widget.onContinue,
+                            isLightBackground: widget.isLightBackground,
                           ),
                         ),
                         const Spacer(),

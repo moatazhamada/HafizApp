@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/reading_goal_model.dart';
 
 abstract class KhatmahLocalDataSource {
@@ -60,7 +61,9 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
             logs.add(
               DailyReadingLogModel.fromJson(Map<String, dynamic>.from(raw)),
             );
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Daily reading log parse failed: \$e', feature: 'Khatmah');
+          }
         }
       }
       return logs;
@@ -92,7 +95,9 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
             result[key] = DailyReadingLogModel.fromJson(
               Map<String, dynamic>.from(raw),
             );
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Daily reading log parse failed: \$e', feature: 'Khatmah');
+          }
         }
       }
       return result;

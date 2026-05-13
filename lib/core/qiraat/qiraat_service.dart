@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
@@ -56,7 +56,7 @@ class QiraatService {
         return _editionsCache!;
       }
     } catch (e) {
-      debugPrint('Failed to fetch editions: $e');
+      Logger.warning('Failed to fetch editions: $e', feature: 'Qiraat');
     }
     _editionsCache ??= _fallbackEditions();
     return _editionsCache!;
@@ -96,7 +96,7 @@ class QiraatService {
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch ayah text: $e');
+      Logger.warning('Failed to fetch ayah text: $e', feature: 'Qiraat');
     }
     return null;
   }
@@ -114,7 +114,9 @@ class QiraatService {
               .map(QiraatEdition.fromJson)
               .toList();
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Qiraat cache read failed: \$e', feature: 'Qiraat');
+      }
     }
     return [];
   }

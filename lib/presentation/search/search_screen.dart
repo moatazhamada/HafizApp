@@ -24,6 +24,17 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _searchBloc = sl<SearchBloc>();
+
+    // Pre-fill search from route arguments
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic>) {
+      final initialQuery = args['query'] as String?;
+      if (initialQuery != null && initialQuery.isNotEmpty) {
+        _searchController.text = initialQuery;
+        _searchBloc.add(SearchQueryChanged(initialQuery));
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
     });

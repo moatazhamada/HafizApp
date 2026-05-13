@@ -6,6 +6,8 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 
 /// Manages all local notifications: daily verse, reading reminders, and streak milestones.
 class NotificationService {
@@ -39,13 +41,20 @@ class NotificationService {
   Future<void> initialize() async {
     if (kIsWeb) return;
 
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('UTC'));
+
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
+    // iOS: Do NOT request permissions automatically here.
+    // We request them explicitly during the onboarding flow so the
+    // user sees context first. If onboarding is already completed,
+    // permissions will be requested when the user toggles a setting.
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     await _plugin.initialize(
@@ -100,8 +109,13 @@ class NotificationService {
     final verseCount = MushafPageIndex.getVerseCount(randomSurah.id);
     final randomVerse = verseCount > 1 ? Random().nextInt(verseCount) + 1 : 1;
 
-    final title = '${randomSurah.nameEnglish} ${randomSurah.nameArabic}';
-    final body = 'Verse $randomVerse \u2014 Open Hafiz to read';
+    final isAr = PrefUtils().getLocaleCode() == 'ar';
+    final title = isAr
+        ? randomSurah.nameArabic
+        : '${randomSurah.nameEnglish} ${randomSurah.nameArabic}';
+    final body = isAr
+        ? 'آية $randomVerse \u2014 افتح حافظ للقراءة'
+        : 'Verse $randomVerse \u2014 Open Hafiz to read';
 
     const androidDetails = AndroidNotificationDetails(
       _verseChannelId,
@@ -111,17 +125,24 @@ class NotificationService {
       priority: Priority.defaultPriority,
     );
 
-    await _plugin.periodicallyShow(
+    final timeStr = pref.getDailyVerseTime();
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 8;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    final scheduledDate = _nextInstanceOfTime(hour, minute);
+
+    await _plugin.zonedSchedule(
       _verseNotificationId,
       title,
       body,
-      RepeatInterval.daily,
+      scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
 
     Logger.info(
-      'Daily verse scheduled: ${randomSurah.nameEnglish} $randomVerse',
+      'Daily verse scheduled: ${randomSurah.nameEnglish} $randomVerse at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
       feature: 'Notifications',
     );
   }
@@ -152,16 +173,30 @@ class NotificationService {
       priority: Priority.low,
     );
 
-    await _plugin.periodicallyShow(
+    final isAr = PrefUtils().getLocaleCode() == 'ar';
+
+    final timeStr = pref.getReadingReminderTime();
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 20;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    final scheduledDate = _nextInstanceOfTime(hour, minute);
+
+    await _plugin.zonedSchedule(
       _reminderNotificationId,
-      'Time for Quran',
-      'Keep your daily reading habit alive \u2014 open Hafiz',
-      RepeatInterval.daily,
+      isAr ? 'وقت القرآن' : 'Time for Quran',
+      isAr
+          ? 'حافظ على ورد القرآن اليومي \u2014 افتح حافظ'
+          : 'Keep your daily reading habit alive \u2014 open Hafiz',
+      scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    Logger.info('Reading reminder scheduled', feature: 'Notifications');
+    Logger.info(
+      'Reading reminder scheduled at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+      feature: 'Notifications',
+    );
   }
 
   // ── Streak Milestone (immediate) ──
@@ -175,15 +210,25 @@ class NotificationService {
     final String title;
     final String body;
 
+    final isAr = PrefUtils().getLocaleCode() == 'ar';
+
     if (streakDays == 7) {
-      title = '\u2728 One week streak!';
-      body = 'You\'ve read Quran for 7 days in a row. Keep it up!';
+      title = isAr ? '\u2728 أسبوع كامل!' : '\u2728 One week streak!';
+      body = isAr
+          ? 'قرأت القرآن 7 أيام متتالية. استمر!'
+          : 'You\'ve read Quran for 7 days in a row. Keep it up!';
     } else if (streakDays == 30) {
-      title = '\ud83c\udf1f 30-day streak!';
-      body = 'Amazing dedication! A full month of daily reading.';
+      title = isAr ? '\ud83c\udf1f 30 يومًا!' : '\ud83c\udf1f 30-day streak!';
+      body = isAr
+          ? 'إخلاص رائع! شهر كامل من القراءة اليومية.'
+          : 'Amazing dedication! A full month of daily reading.';
     } else if (streakDays % 10 == 0) {
-      title = '\ud83d\udd25 $streakDays-day streak!';
-      body = 'You\'re building an incredible habit. Keep going!';
+      title = isAr
+          ? '\ud83d\udd25 سلسلة $streakDays يوم!'
+          : '\ud83d\udd25 $streakDays-day streak!';
+      body = isAr
+          ? 'تبني عادة رائعة. واصل!'
+          : 'You\'re building an incredible habit. Keep going!';
     } else {
       // Don't show for minor streaks
       return;
@@ -227,6 +272,7 @@ class NotificationService {
     if (!await _ensurePermission()) return;
 
     final remaining = dailyGoal - versesReadToday;
+    final isAr = PrefUtils().getLocaleCode() == 'ar';
 
     const androidDetails = AndroidNotificationDetails(
       _reminderChannelId,
@@ -239,8 +285,10 @@ class NotificationService {
 
     await _plugin.show(
       _reminderNotificationId + 10,
-      'Keep your momentum',
-      'You have $remaining verses left to reach your daily goal. You\'ve got this!',
+      isAr ? 'حافظ على زخمك' : 'Keep your momentum',
+      isAr
+          ? 'تبقى $remaining آيات لتحقيق هدفك اليومي. أنت قادر!'
+          : 'You have $remaining verses left to reach your daily goal. You\'ve got this!',
       const NotificationDetails(android: androidDetails),
     );
   }
@@ -274,6 +322,15 @@ class NotificationService {
       }
     }
     return true;
+  }
+
+  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
+    final now = DateTime.now();
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return tz.TZDateTime.from(scheduled.toUtc(), tz.UTC);
   }
 
   void _onNotificationTap(NotificationResponse response) {

@@ -166,7 +166,6 @@ class _StatsBody extends StatelessWidget {
                   memorized: memorizedCount,
                   inProgress: inProgressCount,
                   notStarted: notStartedCount,
-                  isDark: isDark,
                   colors: colors,
                 ),
                 const SizedBox(height: 16),
@@ -176,7 +175,7 @@ class _StatsBody extends StatelessWidget {
                   icon: Icons.bookmark_rounded,
                   label: 'stats_bookmarks'.tr,
                   value: bookmarkCount,
-                  color: Colors.teal,
+                  color: colors.statBookmark,
                 ),
                 const SizedBox(height: 12),
                 _buildStatCard(
@@ -185,7 +184,7 @@ class _StatsBody extends StatelessWidget {
                   icon: Icons.playlist_add_check_rounded,
                   label: 'stats_practice_verses'.tr,
                   value: practiceCount,
-                  color: Colors.redAccent,
+                  color: colors.statPractice,
                 ),
                 const SizedBox(height: 12),
                 _buildStatCard(
@@ -194,7 +193,7 @@ class _StatsBody extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'stats_surahs_completed'.tr,
                   value: memorizedCount,
-                  color: Colors.blueAccent,
+                  color: colors.statCompleted,
                 ),
                 const SizedBox(height: 24),
                 if (allZero)
@@ -322,15 +321,15 @@ class _StreakCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
+        side: BorderSide(color: colors.inProgressStatus.withValues(alpha: 0.3)),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              Colors.orange.withValues(alpha: 0.08),
-              Colors.deepOrange.withValues(alpha: 0.04),
+              colors.inProgressStatus.withValues(alpha: 0.08),
+              colors.inProgressStatus.withValues(alpha: 0.04),
             ],
           ),
         ),
@@ -341,14 +340,14 @@ class _StreakCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.15),
+                color: colors.inProgressStatus.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 streak > 0
                     ? Icons.local_fire_department_rounded
                     : Icons.local_fire_department_outlined,
-                color: streak > 0 ? Colors.orange : Colors.grey,
+                color: streak > 0 ? colors.inProgressStatus : colors.notStartedStatus,
                 size: 32,
               ),
             ),
@@ -368,7 +367,7 @@ class _StreakCard extends StatelessWidget {
                     '$streak ${'lbl_day_streak'.tr}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: streak > 0 ? Colors.orange : Colors.grey,
+                      color: streak > 0 ? colors.inProgressStatus : colors.notStartedStatus,
                     ),
                   ),
                   if (cloudStreak > 0)
@@ -395,14 +394,12 @@ class _ProgressChart extends StatelessWidget {
   final int memorized;
   final int inProgress;
   final int notStarted;
-  final bool isDark;
   final AppColors colors;
 
   const _ProgressChart({
     required this.memorized,
     required this.inProgress,
     required this.notStarted,
-    required this.isDark,
     required this.colors,
   });
 
@@ -447,7 +444,9 @@ class _ProgressChart extends StatelessWidget {
                     inProgress: inProgress,
                     notStarted: notStarted,
                     total: total,
-                    isDark: isDark,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                    memorizedColor: colors.memorizedStatus,
+                    inProgressColor: colors.inProgressStatus,
                   ),
                 ),
               ),
@@ -455,11 +454,11 @@ class _ProgressChart extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                _LegendDot(color: Colors.green, label: 'lbl_memorized'.tr),
+                _LegendDot(color: colors.memorizedStatus, label: 'lbl_memorized'.tr),
                 const SizedBox(width: 16),
-                _LegendDot(color: Colors.orange, label: 'lbl_in_progress'.tr),
+                _LegendDot(color: colors.inProgressStatus, label: 'lbl_in_progress'.tr),
                 const SizedBox(width: 16),
-                _LegendDot(color: Colors.grey, label: 'lbl_not_started'.tr),
+                _LegendDot(color: colors.notStartedStatus, label: 'lbl_not_started'.tr),
               ],
             ),
           ],
@@ -508,20 +507,23 @@ class _StackedBarPainter extends CustomPainter {
   final int inProgress;
   final int notStarted;
   final int total;
-  final bool isDark;
+  final Color backgroundColor;
+  final Color memorizedColor;
+  final Color inProgressColor;
 
   _StackedBarPainter({
     required this.memorized,
     required this.inProgress,
     required this.notStarted,
     required this.total,
-    required this.isDark,
+    required this.backgroundColor,
+    required this.memorizedColor,
+    required this.inProgressColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()
-      ..color = isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0);
+    final bgPaint = Paint()..color = backgroundColor;
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.width, size.height),
       const Radius.circular(12),
@@ -532,7 +534,7 @@ class _StackedBarPainter extends CustomPainter {
     final progFrac = total > 0 ? inProgress / total : 0.0;
 
     if (memFrac > 0) {
-      final memPaint = Paint()..color = const Color(0xFF4CAF50);
+      final memPaint = Paint()..color = memorizedColor;
       canvas.drawRRect(
         RRect.fromLTRBAndCorners(
           0,
@@ -553,7 +555,7 @@ class _StackedBarPainter extends CustomPainter {
     }
 
     if (progFrac > 0) {
-      final progPaint = Paint()..color = const Color(0xFFFF9800);
+      final progPaint = Paint()..color = inProgressColor;
       canvas.drawRRect(
         RRect.fromLTRBAndCorners(
           size.width * memFrac,
@@ -579,7 +581,9 @@ class _StackedBarPainter extends CustomPainter {
     return memorized != oldDelegate.memorized ||
         inProgress != oldDelegate.inProgress ||
         notStarted != oldDelegate.notStarted ||
-        isDark != oldDelegate.isDark;
+        backgroundColor != oldDelegate.backgroundColor ||
+        memorizedColor != oldDelegate.memorizedColor ||
+        inProgressColor != oldDelegate.inProgressColor;
   }
 }
 

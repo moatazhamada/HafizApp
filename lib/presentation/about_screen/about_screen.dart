@@ -4,6 +4,7 @@ import '../../core/app_export.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
+import '../../core/services/remote_config_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../core/utils/platform_info.dart';
 
@@ -33,7 +34,9 @@ class _AboutScreenState extends State<AboutScreen> {
       if (mounted) {
         setState(() => _version = info.version);
       }
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Version load failed: \$e', feature: 'About');
+    }
   }
 
   @override
@@ -383,9 +386,10 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
-          // TODO: Uncomment when Musali is ready to announce
-          // const SizedBox(height: 24),
-          // const MusaliComingSoonCard(),
+          if (sl<RemoteConfigService>().showMusaliCard) ...[
+            const SizedBox(height: 24),
+            const MusaliComingSoonCard(),
+          ],
         ],
       ),
     );

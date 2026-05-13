@@ -8,8 +8,17 @@ import 'widgets/onboarding_scaffold.dart';
 
 class ArchetypeSelectionPage extends StatefulWidget {
   final VoidCallback onContinue;
+  final VoidCallback onBack;
+  final String? themeMode;
+  final bool isLightBackground;
 
-  const ArchetypeSelectionPage({super.key, required this.onContinue});
+  const ArchetypeSelectionPage({
+    super.key,
+    required this.onContinue,
+    required this.onBack,
+    this.themeMode,
+    this.isLightBackground = false,
+  });
 
   @override
   State<ArchetypeSelectionPage> createState() => _ArchetypeSelectionPageState();
@@ -36,6 +45,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
     final isLarge = MediaQuery.of(context).size.width > 900;
 
     return OnboardingScaffold(
+      themeMode: widget.themeMode,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: isLarge ? 64 : 24),
         child: Column(
@@ -75,6 +85,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                     child: OnboardingSelectionCard(
                       isSelected: isSelected,
                       onTap: () => _select(archetype),
+                      isLightBackground: widget.isLightBackground,
                       child: Row(
                         children: [
                           Container(
@@ -86,7 +97,9 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                             ),
                             child: Icon(
                               archetype.icon,
-                              color: Colors.white,
+                              color: widget.isLightBackground
+                                  ? Color(archetype.colorValue)
+                                  : Colors.white,
                               size: 24,
                             ),
                           ),
@@ -97,8 +110,10 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                               children: [
                                 Text(
                                   archetype.labelKey.tr,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: widget.isLightBackground
+                                        ? Colors.black87
+                                        : Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -107,7 +122,9 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                                 Text(
                                   archetype.descriptionKey.tr,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
+                                    color: widget.isLightBackground
+                                        ? Colors.black.withValues(alpha: 0.6)
+                                        : Colors.white.withValues(alpha: 0.7),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -115,9 +132,11 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                             ),
                           ),
                           if (isSelected)
-                            const Icon(
+                            Icon(
                               Icons.check_circle_rounded,
-                              color: Colors.white,
+                              color: widget.isLightBackground
+                                  ? Color(archetype.colorValue)
+                                  : Colors.white,
                               size: 24,
                             ),
                         ],
@@ -134,6 +153,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
               child: OnboardingPrimaryButton(
                 text: 'lbl_continue'.tr,
                 onPressed: _continue,
+                isLightBackground: widget.isLightBackground,
               ),
             ),
           ],

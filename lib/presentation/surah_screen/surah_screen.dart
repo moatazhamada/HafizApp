@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
@@ -24,6 +25,7 @@ import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
+import '../../core/quran_index/sajdah_index.dart';
 import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
@@ -105,6 +107,9 @@ class _SurahScreenState extends State<SurahScreen> {
     super.initState();
     _showTranslation = PrefUtils().getShowTranslation();
     LocaleController.notifier.addListener(_onLocaleChanged);
+    if (PrefUtils().isKeepScreenOn()) {
+      WakelockPlus.enable();
+    }
     // Logic moved to didChangeDependencies to safely access ModalRoute
   }
 
@@ -282,7 +287,7 @@ class _SurahScreenState extends State<SurahScreen> {
             return true;
           }
         } catch (e) {
-          debugPrint('Scroll error: $e');
+          Logger.warning('Scroll error: $e', feature: 'SurahScreen');
           return false;
         }
       }
@@ -371,8 +376,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
             visibleVerseNumber = range.verse.verseNumber;
           }
-        } catch (_) {
-          // ignore
+        } catch (e) {
+          Logger.warning('Reading progress save failed: \$e', feature: 'Surah');
         }
       }
     }
@@ -392,6 +397,7 @@ class _SurahScreenState extends State<SurahScreen> {
     _voiceService.stop();
 
     _scrollControllerForInit?.dispose();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -538,7 +544,9 @@ class _SurahScreenState extends State<SurahScreen> {
               AdaptiveQrc.evaluateAndAdjust(state.sessions);
             }
           })
-          .catchError((_) {});
+          .catchError((e) {
+            Logger.warning('Adaptive QRC evaluation failed: \$e', feature: 'QRC');
+          });
     }
   }
 
@@ -582,7 +590,9 @@ class _SurahScreenState extends State<SurahScreen> {
     // Clear the singleton cache so re-fetch gets fresh data for the new locale.
     try {
       sl<QfTranslationRemoteDataSource>().clearCache();
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Translation cache clear failed: \$e', feature: 'Translation');
+    }
     if (!isArabic && PrefUtils().getShowTranslation()) {
       _showTranslation = true;
       _loadTranslations();
@@ -877,7 +887,9 @@ class _SurahScreenState extends State<SurahScreen> {
                   }
                   try {
                     context.read<CloudSyncBloc>().add(SyncWithQfEvent());
-                  } catch (_) {}
+                  } catch (e) {
+                    Logger.warning('Bookmark sync trigger failed: \$e', feature: 'Bookmarks');
+                  }
                   break;
                 case 'translation':
                   setState(() {
@@ -1522,6 +1534,33 @@ class _SurahScreenState extends State<SurahScreen> {
       );
       currentOffset += verseMarker.length;
 
+      // Sajdah marker for verses requiring prostration of recitation
+      if (isSajdahVerse(surah?.id ?? 0, aya.verseNumber)) {
+        const sajdahMarker = ' ۩ ';
+        verseRanges.add(
+          VerseRange(
+            start: currentOffset,
+            end: currentOffset + sajdahMarker.length,
+            verse: aya,
+            isBookmarked: isBookmarked,
+            isError: isRecitationError,
+          ),
+        );
+        spans.add(
+          TextSpan(
+            text: sajdahMarker,
+            style: TextStyle(
+              fontFamily: 'NotoNaskhArabic',
+              fontSize: PrefUtils().getQuranFontSize() - 4,
+              fontWeight: FontWeight.bold,
+              color: Colors.teal,
+              height: 2.2,
+            ),
+          ),
+        );
+        currentOffset += sajdahMarker.length;
+      }
+
       // RLM after badge ensures strong RTL boundary before next ayah's text,
       // preventing bidi reordering when two ayahs share the same visual line.
       spans.add(const TextSpan(text: '‏'));
@@ -1777,6 +1816,22 @@ class _SurahScreenState extends State<SurahScreen> {
                           : null,
                     ),
                   ),
+                  if (isSajdahVerse(surah?.id ?? 0, aya.verseNumber))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Tooltip(
+                        message: 'lbl_sajdah'.tr,
+                        child: Text(
+                          '۩',
+                          style: TextStyle(
+                            fontFamily: 'NotoNaskhArabic',
+                            fontSize: PrefUtils().getQuranFontSize() - 6,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ),
+                    ),
                   const SizedBox(width: 8),
                   ExcludeSemantics(
                     child: Container(

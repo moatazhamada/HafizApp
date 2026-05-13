@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 import '../../core/network/debug_log_interceptor.dart';
 
@@ -36,7 +36,7 @@ class CustomAsrService {
             data['result']?.toString();
       }
     } catch (e) {
-      debugPrint('Custom ASR failed: $e');
+      Logger.warning('Custom ASR failed: $e', feature: 'CustomASR');
     }
     return null;
   }

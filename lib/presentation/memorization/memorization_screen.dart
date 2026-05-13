@@ -127,7 +127,7 @@ class _ProgressSummary extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: state.totalMemorized / 114,
                 minHeight: 12,
-                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                backgroundColor: isDark ? AppColors.of(context).notStartedStatus : AppColors.of(context).notStartedStatus,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   AppColors.of(context).primary,
                 ),
@@ -140,17 +140,17 @@ class _ProgressSummary extends StatelessWidget {
                 _StatChip(
                   label: 'lbl_memorized'.tr,
                   value: state.totalMemorized,
-                  color: Colors.green,
+                  color: AppColors.of(context).memorizedStatus,
                 ),
                 _StatChip(
                   label: 'lbl_in_progress'.tr,
                   value: state.totalInProgress,
-                  color: Colors.orange,
+                  color: AppColors.of(context).inProgressStatus,
                 ),
                 _StatChip(
                   label: 'lbl_not_started'.tr,
                   value: state.totalNotStarted,
-                  color: Colors.grey,
+                  color: AppColors.of(context).notStartedStatus,
                 ),
               ],
             ),
@@ -192,7 +192,7 @@ class _StatChip extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus)),
       ],
     );
   }
@@ -212,7 +212,7 @@ class _ReviewCard extends StatelessWidget {
         ? urgencyKey.tr.replaceAll('{days}', '${-daysUntil}')
         : urgencyKey.tr;
     final isOverdue = daysUntil < 0;
-    final urgencyColor = isOverdue ? Colors.red : Colors.orange;
+    final urgencyColor = isOverdue ? AppColors.of(context).needsReviewStatus : AppColors.of(context).inProgressStatus;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -277,7 +277,7 @@ class _SurahProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(progress.status);
+    final statusColor = _statusColor(context, progress.status);
     final statusLabel = _statusLabel(progress.status);
 
     return Card(
@@ -312,25 +312,26 @@ class _SurahProgressCard extends StatelessWidget {
         ),
         subtitle: Text(
           '$statusLabel • ${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}%',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
         ),
         trailing: progress.status == MemorizationStatus.memorized
-            ? const Icon(Icons.check_circle, color: Colors.green)
+            ? Icon(Icons.check_circle, color: AppColors.of(context).memorizedStatus)
             : null,
       ),
     );
   }
 
-  Color _statusColor(MemorizationStatus status) {
+  Color _statusColor(BuildContext context, MemorizationStatus status) {
+    final colors = AppColors.of(context);
     switch (status) {
       case MemorizationStatus.memorized:
-        return Colors.green;
+        return colors.memorizedStatus;
       case MemorizationStatus.inProgress:
-        return Colors.orange;
+        return colors.inProgressStatus;
       case MemorizationStatus.needsReview:
-        return Colors.red;
+        return colors.needsReviewStatus;
       case MemorizationStatus.notStarted:
-        return Colors.grey;
+        return colors.notStartedStatus;
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
 
 class LocalWhisperService {
@@ -20,7 +20,7 @@ class LocalWhisperService {
       );
       return result?.transcription.text.trim();
     } catch (e) {
-      debugPrint('Local Whisper failed: $e');
+      Logger.warning('Local Whisper failed: $e', feature: 'Whisper');
       return null;
     }
   }

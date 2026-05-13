@@ -37,14 +37,14 @@ class AppInitializer {
     try {
       await PrefUtils().init();
     } catch (e) {
-      debugPrint('PrefUtils init failed: $e');
+      Logger.warning('PrefUtils init failed: $e', feature: 'Init');
     }
 
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       PrefUtils().setCachedAppVersion(packageInfo.version);
     } catch (e) {
-      debugPrint('PackageInfo init failed: $e');
+      Logger.warning('PackageInfo init failed: $e', feature: 'Init');
     }
 
     try {
@@ -57,13 +57,13 @@ class AppInitializer {
       );
       HydratedBloc.storage = storage;
     } catch (e) {
-      debugPrint('HydratedStorage init failed: $e');
+      Logger.warning('HydratedStorage init failed: $e', feature: 'Init');
     }
 
     try {
       await Hive.initFlutter();
     } catch (e) {
-      debugPrint('Hive init failed: $e');
+      Logger.warning('Hive init failed: $e', feature: 'Init');
     }
 
     const boxes = [
@@ -80,7 +80,7 @@ class AppInitializer {
         try {
           await Hive.openBox(box);
         } catch (e) {
-          debugPrint('Failed to open box $box: $e');
+          Logger.warning('Failed to open box $box: $e', feature: 'Init');
         }
       }),
     );
@@ -89,7 +89,7 @@ class AppInitializer {
       await sl.reset();
       await di.init();
     } catch (e) {
-      debugPrint('Critical init failed: $e');
+      Logger.warning('Critical init failed: $e', feature: 'Init');
       error = e.toString();
       return false;
     }
@@ -97,7 +97,7 @@ class AppInitializer {
     try {
       await MushafPageIndex.loadFromAsset();
     } catch (e) {
-      debugPrint('MushafPageIndex load failed: $e');
+      Logger.warning('MushafPageIndex load failed: $e', feature: 'Init');
     }
 
     try {
@@ -123,7 +123,7 @@ class AppInitializer {
       }
       await SystemChrome.setPreferredOrientations(orientations);
     } catch (e) {
-      debugPrint('Orientation setup failed: $e');
+      Logger.warning('Orientation setup failed: $e', feature: 'Init');
     }
 
     return true;
@@ -149,7 +149,7 @@ class AppInitializer {
     try {
       crashlytics = FirebaseCrashlytics.instance;
     } catch (e) {
-      debugPrint('Crashlytics not available on this platform: $e');
+      Logger.warning('Crashlytics not available on this platform: $e', feature: 'Init');
     }
     Logger.init(
       kDebugMode ? LogMode.debug : LogMode.live,
@@ -161,7 +161,7 @@ class AppInitializer {
       await Hive.openBox('qiraat_cache');
       await Hive.openBox('audio_cache');
     } catch (e) {
-      debugPrint('Hive cache open failed: $e');
+      Logger.warning('Hive cache open failed: $e', feature: 'Init');
     }
 
     // 3. Global error handlers
@@ -200,15 +200,20 @@ class AppInitializer {
     try {
       unawaited(FirebaseAnalytics.instance.logAppOpen());
     } catch (e) {
-      debugPrint('Analytics not available on this platform: $e');
+      Logger.warning('Analytics not available on this platform: $e', feature: 'Init');
     }
 
     // 5. Local notifications – not available on web
+    // Only schedule automatically if onboarding is already completed.
+    // During first onboarding, the user explicitly chooses on the
+    // NotificationPermissionPage.
     try {
       final notificationService = NotificationService();
       await notificationService.initialize();
-      await notificationService.scheduleDailyVerse();
-      await notificationService.scheduleReadingReminder();
+      if (PrefUtils().getOnboardingCompleted()) {
+        await notificationService.scheduleDailyVerse();
+        await notificationService.scheduleReadingReminder();
+      }
     } catch (e) {
       Logger.warning(
         'Notifications not available on this platform: $e',

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../core/utils/rtl_utils.dart';
 import 'archetype_selection_page.dart';
 import 'language_selection_page.dart';
+import 'notification_permission_page.dart';
 import 'onboarding_welcome_page.dart';
 import 'theme_selection_page.dart';
 
@@ -19,20 +21,42 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  String? _themeMode;
+
+  bool get _isLightBackground {
+    if (_themeMode == 'light') return true;
+    if (_themeMode == 'dark') return false;
+    return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+        Brightness.light;
+  }
 
   void _nextPage() {
-    if (_currentPage < 3) {
+    if (_currentPage < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
       setState(() => _currentPage++);
     } else {
-      // After archetype selection, go to mushaf type onboarding
+      // After notification permission, go to mushaf type onboarding
       NavigatorService.pushNamedAndRemoveUntil(
         AppRoutes.mushafTypeOnboarding,
       );
     }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      setState(() => _currentPage--);
+    }
+  }
+
+  void _onThemeModeChanged(String mode) {
+    setState(() => _themeMode = mode);
   }
 
   @override
@@ -43,16 +67,85 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          LanguageSelectionPage(onContinue: _nextPage),
-          ThemeSelectionPage(onContinue: _nextPage),
-          OnboardingWelcomePage(onContinue: _nextPage),
-          ArchetypeSelectionPage(onContinue: _nextPage),
-        ],
+    return PopScope(
+      canPop: _currentPage == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _currentPage > 0) {
+          _previousPage();
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                LanguageSelectionPage(
+                  onContinue: _nextPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                ThemeSelectionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                  onThemeModeChanged: _onThemeModeChanged,
+                ),
+                OnboardingWelcomePage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                ArchetypeSelectionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                NotificationPermissionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+              ],
+            ),
+            // Back button on pages 1+
+            if (_currentPage > 0)
+              PositionedDirectional(
+                top: 16,
+                start: 16,
+                child: SafeArea(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _previousPage,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _isLightBackground
+                              ? Colors.black.withValues(alpha: 0.05)
+                              : Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          rtlBackArrow(context),
+                          color: _isLightBackground
+                              ? Colors.black87
+                              : Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

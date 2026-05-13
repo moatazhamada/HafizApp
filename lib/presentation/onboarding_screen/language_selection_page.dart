@@ -7,8 +7,15 @@ import 'widgets/onboarding_scaffold.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
   final VoidCallback onContinue;
+  final String? themeMode;
+  final bool isLightBackground;
 
-  const LanguageSelectionPage({super.key, required this.onContinue});
+  const LanguageSelectionPage({
+    super.key,
+    required this.onContinue,
+    this.themeMode,
+    this.isLightBackground = false,
+  });
 
   void _selectLanguage(BuildContext context, String code) {
     Locale newLocale;
@@ -31,6 +38,7 @@ class LanguageSelectionPage extends StatelessWidget {
     final isLarge = MediaQuery.of(context).size.width > 900;
 
     return OnboardingScaffold(
+      themeMode: themeMode,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: isLarge ? 64 : 32),
         child: Column(
@@ -67,7 +75,9 @@ class LanguageSelectionPage extends StatelessWidget {
             Text(
               'msg_language_desc'.tr,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: isLightBackground
+                    ? Colors.black.withValues(alpha: 0.6)
+                    : Colors.white.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -75,24 +85,27 @@ class LanguageSelectionPage extends StatelessWidget {
 
             // Language options
             _LanguageCard(
-              flag: '🇬🇧',
+              code: 'EN',
               label: 'English',
               sublabel: 'English',
+              isLightBackground: isLightBackground,
               onTap: () => _selectLanguage(context, 'en'),
             ),
             const SizedBox(height: 16),
             _LanguageCard(
-              flag: '🇸🇦',
+              code: 'ع',
               label: 'العربية',
               sublabel: 'Arabic',
+              isLightBackground: isLightBackground,
               onTap: () => _selectLanguage(context, 'ar'),
             ),
             const SizedBox(height: 16),
             _LanguageCard(
-              flag: '🌐',
+              code: null,
               label: 'lbl_system_default'.tr,
               sublabel: 'System',
               isSystem: true,
+              isLightBackground: isLightBackground,
               onTap: () => _selectLanguage(context, 'system'),
             ),
 
@@ -105,17 +118,19 @@ class LanguageSelectionPage extends StatelessWidget {
 }
 
 class _LanguageCard extends StatelessWidget {
-  final String flag;
+  final String? code;
   final String label;
   final String sublabel;
   final bool isSystem;
+  final bool isLightBackground;
   final VoidCallback onTap;
 
   const _LanguageCard({
-    required this.flag,
+    this.code,
     required this.label,
     required this.sublabel,
     this.isSystem = false,
+    this.isLightBackground = false,
     required this.onTap,
   });
 
@@ -124,9 +139,45 @@ class _LanguageCard extends StatelessWidget {
     return OnboardingSelectionCard(
       isSelected: false,
       onTap: onTap,
+      isLightBackground: isLightBackground,
       child: Row(
         children: [
-          Text(flag, style: const TextStyle(fontSize: 28)),
+          if (isSystem)
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isLightBackground
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.language_rounded,
+                color: isLightBackground ? Colors.black54 : Colors.white,
+                size: 24,
+              ),
+            )
+          else
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isLightBackground
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                code!,
+                style: TextStyle(
+                  color: isLightBackground ? Colors.black87 : Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -134,8 +185,8 @@ class _LanguageCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isLightBackground ? Colors.black87 : Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -144,7 +195,9 @@ class _LanguageCard extends StatelessWidget {
                   Text(
                     sublabel,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: isLightBackground
+                    ? Colors.black.withValues(alpha: 0.6)
+                    : Colors.white.withValues(alpha: 0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -153,7 +206,9 @@ class _LanguageCard extends StatelessWidget {
           ),
           Icon(
             rtlForwardArrowIos(context),
-            color: Colors.white.withValues(alpha: 0.5),
+            color: isLightBackground
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.white.withValues(alpha: 0.5),
             size: 16,
           ),
         ],

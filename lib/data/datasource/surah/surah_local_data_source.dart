@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -114,7 +115,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 
       return rawMatches.map(VerseModel.fromJson).toList();
     } catch (e) {
-      debugPrint('Search error: $e');
+      Logger.warning('Search error: $e', feature: 'SurahData');
       return [];
     }
   }
@@ -147,7 +148,7 @@ Future<List<Map<String, dynamic>>> _loadAllSurahsWorker(
       final jsonStr = await rootBundle.loadString('$basePath/surah_$i.json');
       surahs.add(json.decode(jsonStr) as Map<String, dynamic>);
     } catch (e) {
-      debugPrint('Error loading surah $i: $e');
+      Logger.warning('Error loading surah $i: $e', feature: 'SurahData');
     }
   }
   return surahs;
@@ -194,7 +195,7 @@ Future<List<Map<String, dynamic>>> _searchCachedWorker(
         }
       }
     } catch (e) {
-      debugPrint('Error searching surah: $e');
+      Logger.warning('Error searching surah: $e', feature: 'SurahData');
     }
   }
   return allMatches;

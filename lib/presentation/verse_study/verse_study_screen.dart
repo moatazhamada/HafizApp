@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
+import 'package:hafiz_app/core/quran/quran_word_service.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
+import 'package:just_audio/just_audio.dart';
 import 'bloc/verse_study_bloc.dart';
 
 class VerseStudyScreen extends StatelessWidget {
@@ -15,6 +17,7 @@ class VerseStudyScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) => VerseStudyBloc(
         dataSource: di.sl<QfVerseStudyRemoteDataSource>(),
+        wordService: di.sl<QuranWordService>(),
         postDataSource: di.sl<QfPostRemoteDataSource>(),
       )..add(LoadVerseStudy(verseKey)),
       child: Scaffold(
@@ -69,50 +72,23 @@ class _VerseStudyView extends StatelessWidget {
           );
         }
         if (state is VerseStudyLoaded) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+          return DefaultTabController(
+            length: 2,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (state.arabicText.isNotEmpty) ...[
-                  _SectionCard(
-                    title: 'lbl_arabic'.tr,
-                    icon: Icons.format_quote,
-                    color: Colors.teal,
-                    child: SelectableText(
-                      state.arabicText,
-                      textDirection: TextDirection.rtl,
-                      style: TextStyle(
-                        fontSize: PrefUtils().getQuranFontSize(),
-                        height: 2.0,
-                        fontFamily: 'NotoNaskhArabic',
-                      ),
-                    ),
+                TabBar(
+                  tabs: [
+                    Tab(text: 'lbl_overview'.tr),
+                    Tab(text: 'lbl_word_by_word'.tr),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _OverviewTab(state: state),
+                      _WordByWordTab(state: state),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                ],
-                if (state.translation.isNotEmpty) ...[
-                  _SectionCard(
-                    title: 'lbl_translation'.tr,
-                    icon: Icons.translate,
-                    color: Colors.blue,
-                    child: SelectableText(_stripHtml(state.translation)),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                if (state.tafsir.isNotEmpty) ...[
-                  _SectionCard(
-                    title: 'lbl_tafsir_ibn_kathir'.tr,
-                    icon: Icons.menu_book,
-                    color: Colors.deepPurple,
-                    child: SelectableText(_stripHtml(state.tafsir)),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                _ReflectionsSection(
-                  verseKey: state.verseKey ?? '',
-                  reflections: state.reflections,
-                  isLoading: state.reflectionsLoading,
                 ),
               ],
             ),
@@ -124,21 +100,220 @@ class _VerseStudyView extends StatelessWidget {
   }
 }
 
+class _OverviewTab extends StatelessWidget {
+  final VerseStudyLoaded state;
+
+  const _OverviewTab({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (state.arabicText.isNotEmpty) ...[
+            _SectionCard(
+              title: 'lbl_arabic'.tr,
+              icon: Icons.format_quote,
+              color: Colors.teal,
+              child: SelectableText(
+                state.arabicText,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  fontSize: PrefUtils().getQuranFontSize(),
+                  height: 2.0,
+                  fontFamily: 'NotoNaskhArabic',
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (state.translation.isNotEmpty) ...[
+            _SectionCard(
+              title: 'lbl_translation'.tr,
+              icon: Icons.translate,
+              color: Colors.blue,
+              trailing: IconButton(
+                icon: const Icon(Icons.tune, size: 18),
+                onPressed: () => _showSourceSelector(
+                  context,
+                  title: 'lbl_select_translation_source'.tr,
+                  options: _translationOptions,
+                  selectedId: state.selectedTranslationId,
+                  onSelected: (id) => context.read<VerseStudyBloc>().add(
+                    ChangeTranslationSource(
+                      id: id,
+                      verseKey: state.verseKey!,
+                    ),
+                  ),
+                ),
+              ),
+              child: SelectableText(_stripHtml(state.translation)),
+            ),
+            const SizedBox(height: 20),
+          ],
+          if (state.tafsir.isNotEmpty) ...[
+            _SectionCard(
+              title: _tafsirTitleForId(state.selectedTafsirId),
+              icon: Icons.menu_book,
+              color: Colors.deepPurple,
+              trailing: IconButton(
+                icon: const Icon(Icons.tune, size: 18),
+                onPressed: () => _showSourceSelector(
+                  context,
+                  title: 'lbl_select_tafsir_source'.tr,
+                  options: _tafsirOptions(context),
+                  selectedId: state.selectedTafsirId,
+                  onSelected: (id) => context.read<VerseStudyBloc>().add(
+                    ChangeTafsirSource(
+                      id: id,
+                      verseKey: state.verseKey!,
+                    ),
+                  ),
+                ),
+              ),
+              child: SelectableText(_stripHtml(state.tafsir)),
+            ),
+            const SizedBox(height: 20),
+          ],
+          _ReflectionsSection(
+            verseKey: state.verseKey ?? '',
+            reflections: state.reflections,
+            isLoading: state.reflectionsLoading,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WordByWordTab extends StatefulWidget {
+  final VerseStudyLoaded state;
+
+  const _WordByWordTab({required this.state});
+
+  @override
+  State<_WordByWordTab> createState() => _WordByWordTabState();
+}
+
+class _WordByWordTabState extends State<_WordByWordTab> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playWord(String? url) async {
+    if (url == null || url.isEmpty) return;
+    try {
+      await _audioPlayer.setUrl(url);
+      await _audioPlayer.play();
+    } catch (e) {
+      Logger.warning('Failed to play word audio: $e', feature: 'VerseStudy');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final words =
+        widget.state.words?.words.where((w) => w.charType != 'end').toList() ??
+        [];
+    if (words.isEmpty) {
+      return Center(child: Text('lbl_loading'.tr));
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 16,
+          alignment: WrapAlignment.center,
+          children: words.map((word) {
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: InkWell(
+                onTap:
+                    word.fullAudioUrl != null
+                        ? () => _playWord(word.fullAudioUrl)
+                        : null,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        word.textUthmani,
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          fontSize: PrefUtils().getQuranFontSize(),
+                          fontFamily: 'NotoNaskhArabic',
+                        ),
+                      ),
+                      if (word.transliteration != null &&
+                          word.transliteration!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            word.transliteration!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
   final Widget child;
+  final Widget? trailing;
 
   const _SectionCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.child,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
+    final rowChildren = <Widget>[
+      Icon(icon, color: color, size: 20),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ];
+    if (trailing != null) {
+      rowChildren.add(trailing!);
+    }
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -147,19 +322,7 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+            Row(children: rowChildren),
             const Divider(height: 24),
             child,
           ],
@@ -172,6 +335,107 @@ class _SectionCard extends StatelessWidget {
 String _stripHtml(String htmlText) {
   final regex = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: true);
   return htmlText.replaceAll(regex, '').trim();
+}
+
+String _tafsirTitleForId(String id) {
+  switch (id) {
+    case '169':
+      return 'Ibn Kathir (Abridged)';
+    case '168':
+      return "Ma'arif al-Qur'an";
+    case '817':
+      return 'Tazkirul Quran';
+    case '16':
+      return 'Muyassar';
+    case '93':
+      return 'Al-Wasit';
+    case '14':
+      return 'Ibn Kathir';
+    case '15':
+      return 'Tabari';
+    case '90':
+      return 'Qurtubi';
+    case '91':
+      return "Sa'di";
+    case '94':
+      return 'Baghawy';
+    default:
+      return 'Tafsir';
+  }
+}
+
+List<Map<String, String>> _tafsirOptions(BuildContext context) {
+  final isAr = AppLocalization.of()?.locale.languageCode == 'ar';
+  if (isAr) {
+    return const [
+      {'id': '16', 'name': 'الميسر'},
+      {'id': '93', 'name': 'الوسيط'},
+      {'id': '14', 'name': 'ابن كثير'},
+      {'id': '15', 'name': 'الطبري'},
+      {'id': '90', 'name': 'القرطبي'},
+      {'id': '91', 'name': 'السعدي'},
+      {'id': '94', 'name': 'البغوي'},
+    ];
+  }
+  return const [
+    {'id': '169', 'name': 'Ibn Kathir (Abridged)'},
+    {'id': '168', 'name': "Ma'arif al-Qur'an"},
+    {'id': '817', 'name': 'Tazkirul Quran'},
+  ];
+}
+
+const List<Map<String, String>> _translationOptions = [
+  {'id': '85', 'name': 'Clear Quran'},
+  {'id': '131', 'name': 'Pickthall'},
+  {'id': '84', 'name': 'Muhsin Khan'},
+  {'id': '101', 'name': 'Sahih International'},
+];
+
+void _showSourceSelector(
+  BuildContext context, {
+  required String title,
+  required List<Map<String, String>> options,
+  required String selectedId,
+  required ValueChanged<String> onSelected,
+}) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final option = options[index];
+                final id = option['id']!;
+                final name = option['name']!;
+                final isSelected = id == selectedId;
+                return ListTile(
+                  title: Text(name),
+                  trailing: isSelected ? const Icon(Icons.check) : null,
+                  onTap: () {
+                    Navigator.pop(context);
+                    onSelected(id);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ReflectionsSection extends StatefulWidget {
@@ -202,7 +466,6 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
   @override
   void didUpdateWidget(covariant _ReflectionsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reset submitting state once the bloc adds the new reflection.
     if (_isSubmitting &&
         oldWidget.reflections.length != widget.reflections.length) {
       setState(() => _isSubmitting = false);

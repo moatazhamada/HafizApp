@@ -19,6 +19,7 @@ import 'bloc/adaptive_home_bloc.dart';
 import 'surfaces/reader_surface.dart';
 import 'surfaces/student_surface.dart';
 import 'surfaces/seeker_surface.dart';
+import 'surfaces/devotee_surface.dart';
 import '../../core/models/surface_type.dart';
 import '../../core/tracking/behavior_tracker.dart';
 import 'widgets/surface_suggestion_banner.dart';
@@ -58,7 +59,9 @@ class _HomeScreenState extends State<HomeScreen>
     if (route is PageRoute) {
       try {
         sl<AnalyticsRouteObserver>().subscribe(this, route);
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Analytics subscribe failed: \$e', feature: 'Home');
+      }
     }
   }
 
@@ -66,7 +69,9 @@ class _HomeScreenState extends State<HomeScreen>
   void didPopNext() {
     try {
       homeBloc.add(HomeShowLastSurahEvent());
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Home show last surah failed: \$e', feature: 'Home');
+    }
     if (mounted) setState(() {});
   }
 
@@ -74,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     try {
       sl<AnalyticsRouteObserver>().unsubscribe(this);
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Analytics unsubscribe failed: \$e', feature: 'Home');
+    }
     super.dispose();
   }
 
@@ -326,6 +333,7 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           SurfaceType.student => const StudentSurface(),
                           SurfaceType.seeker => const SeekerSurface(),
+                          SurfaceType.devotee => const DevoteeSurface(),
                         },
                       ),
                     ),

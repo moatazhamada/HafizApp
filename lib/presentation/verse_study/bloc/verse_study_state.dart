@@ -22,6 +22,9 @@ class VerseStudyLoaded extends VerseStudyState {
   final String arabicText;
   final String translation;
   final String tafsir;
+  final String selectedTafsirId;
+  final String selectedTranslationId;
+  final VerseWordData? words;
   final List<Map<String, dynamic>> reflections;
   final bool reflectionsLoading;
 
@@ -30,6 +33,9 @@ class VerseStudyLoaded extends VerseStudyState {
     required this.translation,
     required this.tafsir,
     required String verseKey,
+    this.selectedTafsirId = '',
+    this.selectedTranslationId = '',
+    this.words,
     this.reflections = const [],
     this.reflectionsLoading = false,
   }) : super(verseKey: verseKey);
@@ -38,6 +44,9 @@ class VerseStudyLoaded extends VerseStudyState {
     String? arabicText,
     String? translation,
     String? tafsir,
+    String? selectedTafsirId,
+    String? selectedTranslationId,
+    VerseWordData? words,
     String? verseKey,
     List<Map<String, dynamic>>? reflections,
     bool? reflectionsLoading,
@@ -46,6 +55,9 @@ class VerseStudyLoaded extends VerseStudyState {
       arabicText: arabicText ?? this.arabicText,
       translation: translation ?? this.translation,
       tafsir: tafsir ?? this.tafsir,
+      selectedTafsirId: selectedTafsirId ?? this.selectedTafsirId,
+      selectedTranslationId: selectedTranslationId ?? this.selectedTranslationId,
+      words: words ?? this.words,
       verseKey: verseKey ?? this.verseKey!,
       reflections: reflections ?? this.reflections,
       reflectionsLoading: reflectionsLoading ?? this.reflectionsLoading,
@@ -57,6 +69,9 @@ class VerseStudyLoaded extends VerseStudyState {
     arabicText,
     translation,
     tafsir,
+    selectedTafsirId,
+    selectedTranslationId,
+    words,
     verseKey,
     reflections,
     reflectionsLoading,

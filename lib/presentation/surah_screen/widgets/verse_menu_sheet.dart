@@ -213,5 +213,7 @@ void showVerseMenu(
 void _triggerBookmarkSync(BuildContext context) {
   try {
     context.read<CloudSyncBloc>().add(SyncWithQfEvent());
-  } catch (_) {}
+  } catch (e) {
+    Logger.warning('Bookmark sync trigger failed: \$e', feature: 'Bookmarks');
+  }
 }
