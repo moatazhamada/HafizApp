@@ -5,6 +5,7 @@ import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../../../injection_container.dart';
+import '../../../core/utils/rtl_utils.dart';
 import '../widgets/surah_index_widget.dart';
 import '../widgets/staggered_list_item.dart';
 import '../../../widgets/random_verse_card.dart';
@@ -107,7 +108,7 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
                     ),
                   ),
                   Icon(
-                    Icons.arrow_forward_rounded,
+                    rtlForwardArrowRounded(context),
                     color: colorScheme.primary,
                   ),
                 ],

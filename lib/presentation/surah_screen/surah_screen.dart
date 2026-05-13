@@ -18,6 +18,7 @@ import 'widgets/voice_verification_dialog.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
@@ -750,7 +751,7 @@ class _SurahScreenState extends State<SurahScreen> {
         button: true,
         label: 'lbl_back'.tr,
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: Icon(rtlBackArrow(context), color: Colors.white),
           onPressed: () => NavigatorService.goBack(),
           tooltip: 'lbl_back'.tr,
         ),

@@ -5,6 +5,7 @@ import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
 
 class RecitationErrorScreen extends StatelessWidget {
@@ -16,7 +17,7 @@ class RecitationErrorScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(rtlBackArrow(context)),
           onPressed: () => NavigatorService.goBack(),
         ),
         centerTitle: true,
@@ -68,7 +69,7 @@ class RecitationErrorScreen extends StatelessWidget {
                   key: Key('${error.surahId}_${error.verseId}'),
                   direction: DismissDirection.endToStart,
                   background: Container(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerEnd,
                     padding: const EdgeInsetsDirectional.only(end: 20),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,

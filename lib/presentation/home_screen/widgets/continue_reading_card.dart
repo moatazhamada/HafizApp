@@ -3,6 +3,7 @@ import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_converter.dart';
+import '../../../core/utils/rtl_utils.dart';
 
 class ContinueReadingCard extends StatelessWidget {
   final Surah? surah;
@@ -183,7 +184,7 @@ class ContinueReadingCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward_rounded, size: 20),
+                              Icon(rtlForwardArrowRounded(context), size: 20),
                             ],
                           ),
                         ),

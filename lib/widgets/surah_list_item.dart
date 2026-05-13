@@ -75,7 +75,7 @@ class SurahListItem extends StatelessWidget {
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
-                      textAlign: TextAlign.left,
+                      textAlign: TextAlign.start,
                     ),
                   ),
                   const SizedBox(width: 16),

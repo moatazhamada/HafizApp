@@ -9,6 +9,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
+import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
@@ -574,7 +575,7 @@ class _MushafScreenState extends State<MushafScreen>
           child: Row(
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+                icon: Icon(rtlBackArrow(context), color: colors.textPrimary),
                 onPressed: () => NavigatorService.goBack(),
                 tooltip: 'lbl_back'.tr,
               ),

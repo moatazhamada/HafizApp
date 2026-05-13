@@ -249,7 +249,7 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
             ),
             const SizedBox(height: 8),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: FilledButton.icon(
                 onPressed: _isSubmitting ? null : _submitReflection,
                 icon: _isSubmitting

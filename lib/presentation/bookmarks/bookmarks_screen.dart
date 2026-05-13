@@ -5,6 +5,7 @@ import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../widgets/shimmer_loading.dart';
 
@@ -22,7 +23,7 @@ class BookmarksScreen extends StatelessWidget {
           button: true,
           label: 'lbl_back'.tr,
           child: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: Icon(rtlBackArrow(context)),
             onPressed: () => NavigatorService.goBack(),
             tooltip: 'lbl_back'.tr,
           ),
@@ -103,7 +104,7 @@ class BookmarksScreen extends StatelessWidget {
                     key: Key('${bookmark.surahId}_${bookmark.verseNumber}'),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerEnd,
                       padding: const EdgeInsetsDirectional.only(end: 20),
                       decoration: BoxDecoration(
                         color: Colors.redAccent,

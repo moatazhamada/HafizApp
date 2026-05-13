@@ -5,6 +5,7 @@ import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -52,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
             button: true,
             label: 'lbl_back'.tr,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(rtlBackArrow(context), color: Colors.white),
               onPressed: () => NavigatorService.goBack(),
               tooltip: 'lbl_back'.tr,
             ),

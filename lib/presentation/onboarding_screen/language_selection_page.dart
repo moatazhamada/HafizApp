@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/i18n/locale_controller.dart';
+import '../../core/utils/rtl_utils.dart';
 import 'widgets/onboarding_buttons.dart';
 import 'widgets/onboarding_scaffold.dart';
 
@@ -151,7 +152,7 @@ class _LanguageCard extends StatelessWidget {
             ),
           ),
           Icon(
-            Icons.arrow_forward_ios_rounded,
+            rtlForwardArrowIos(context),
             color: Colors.white.withValues(alpha: 0.5),
             size: 16,
           ),

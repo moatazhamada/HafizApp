@@ -18,6 +18,7 @@ import 'package:hafiz_app/core/utils/platform_file_utils.dart'
 import '../../injection_container.dart' as di;
 import '../auth/bloc/qf_auth_bloc.dart';
 import '../../core/models/surface_type.dart';
+import '../../core/utils/rtl_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -140,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: Text('lbl_recitation_provider'.tr),
               subtitle: Text(_recitationProviderLabel(_recitationProvider)),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _selectRecitationProvider,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -151,7 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? 'lbl_loading'.tr
                     : _editionLabel(_qiraatEdition),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _loadingEditions ? null : _selectQiraatEdition,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -160,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text(
                 _loadingReciters ? 'lbl_loading'.tr : _reciterLabel(_reciterId),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _loadingReciters ? null : _selectReciter,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -211,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       )
-                    : const Icon(Icons.chevron_right),
+                    : Icon(rtlChevron(context)),
                 onTap: _downloadProgress != null ? null : _selectWhisperModel,
               ),
             ],
@@ -225,7 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: Text('lbl_whats_new'.tr),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: () =>
                   Navigator.pushNamed(context, AppRoutes.changelogScreen),
             ),
@@ -343,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   Icon(
-                    Icons.chevron_right,
+                    rtlChevron(context),
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
@@ -389,7 +390,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('about_language_title'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'about_language_title'.tr,
@@ -427,7 +428,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_theme'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_theme'.tr,
@@ -500,7 +501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_orientation'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_orientation'.tr,
@@ -546,7 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_default_quran_view'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_default_quran_view'.tr,
@@ -569,7 +570,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: const Icon(Icons.menu_book_outlined),
       title: Text('lbl_mushaf_type'.tr),
       subtitle: Text(_mushafTypeLabel(_mushafType)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         await Navigator.pushNamed(
           context,
@@ -589,7 +590,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: const Icon(Icons.dashboard_outlined),
       title: Text('lbl_home_layout'.tr),
       subtitle: Text(_surfaceTypeLabel(_surfaceType)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: _selectHomeLayout,
     );
   }

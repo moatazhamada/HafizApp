@@ -128,7 +128,18 @@ Linting is configured in `analysis_options.yaml`. The project includes `package:
 2. **Either<Failure, Success>** — Repositories always return `Either<Failure, T>`. BLoCs map `Left(Failure)` to error states and `Right(Data)` to success states.
 3. **BLoC pattern** — Every major screen has its own BLoC. Events are named `*Event`, states are named `*State`. Use `BlocBuilder` / `BlocListener` in widgets.
 4. **Dependency Injection** — Register shared dependencies as `registerLazySingleton` and per-screen BLoCs as `registerFactory` in the appropriate `di/di_*.dart` file.
-5. **RTL Convention** — All Quran / Arabic text **must** use `textDirection: TextDirection.rtl` regardless of app locale. Surah navigation arrows follow RTL semantics (next = left, previous = right).
+5. **RTL Convention** — This is a Quran app. The Quran is Arabic (RTL). All Quran/Mushaf content **must** use RTL semantics regardless of UI language.
+   - **Centralized helpers:** Use `lib/core/utils/rtl_utils.dart` for all directional icons. Never hardcode `Icons.arrow_back`, `Icons.chevron_right`, `Icons.arrow_forward`, etc. directly in UI code.
+     - `rtlBackArrow(context)` — back arrow (points right in RTL)
+     - `rtlForwardArrow(context)` — forward arrow (points left in RTL)
+     - `rtlChevron(context)` — chevron (left in RTL, right in LTR)
+     - `rtlSkipPreviousIcon(context)` / `rtlSkipNextIcon(context)` — media skip icons flipped in RTL
+   - **All Quran / Arabic text** must use `textDirection: TextDirection.rtl` regardless of app locale.
+   - **Surah navigation** follows RTL semantics: next surah is on the **left**, previous surah is on the **right** (like a physical Quran).
+   - **Mushaf page direction** is immutable RTL: `PageView(reverse: true)` — page 1 on the right, swipe left to advance. Never make this conditional on locale.
+   - **Never** hardcode `TextDirection.ltr` on Quran-specific components (Mushaf, Surah, verse lists, audio player navigation).
+   - Prefer `AlignmentDirectional` over `Alignment`, `EdgeInsetsDirectional` over `EdgeInsets.fromLTRB`, and `TextAlign.start/end` over `left/right`.
+   - **Temporal vs Spatial icons:** Media playback controls (play, pause, replay_10, forward_10) represent **time** and must **not** be flipped. Spatial navigation icons (back, forward, next, previous, chevrons) **must** adapt to RTL.
 6. **Localization keys** — All user-facing strings use translation keys defined in `lib/localization/en_us/en_us_translations.dart` and `lib/localization/ar_eg/ar_eg_translations.dart`.
 
 ---

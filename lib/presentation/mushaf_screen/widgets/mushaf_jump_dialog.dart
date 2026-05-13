@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -167,7 +168,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             textDirection: TextDirection.rtl,
           ),
           subtitle: Text('${'lbl_page'.tr} $page'),
-          trailing: const Icon(Icons.chevron_right, size: 18),
+          trailing: Icon(rtlChevron(context), size: 18),
           onTap: () => Navigator.pop(context, page),
         );
       },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../auth/bloc/qf_auth_bloc.dart';
+import '../../../core/utils/rtl_utils.dart';
 
 /// Navigation destination data shared between Drawer and Rail.
 class _NavDestination {
@@ -265,7 +266,7 @@ class AdaptiveNavigationDrawer extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right,
+                  rtlChevron(context),
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   size: 18,
                 ),
