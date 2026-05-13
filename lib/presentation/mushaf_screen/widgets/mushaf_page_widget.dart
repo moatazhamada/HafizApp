@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_cache_manager.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -85,6 +86,11 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
         ? ColorFiltered(
             colorFilter: const ColorFilter.matrix(_invertMatrix),
             child: CachedNetworkImage(
+              cacheManager: MushafCacheManager.instance,
+              cacheKey: MushafCacheManager.cacheKey(
+                widget.mushafType.name,
+                widget.pageNumber,
+              ),
               imageUrl: url,
               fit: BoxFit.contain,
               placeholder: (context, url) => Center(
@@ -108,6 +114,11 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
             ),
           )
         : CachedNetworkImage(
+            cacheManager: MushafCacheManager.instance,
+            cacheKey: MushafCacheManager.cacheKey(
+              widget.mushafType.name,
+              widget.pageNumber,
+            ),
             imageUrl: url,
             fit: BoxFit.contain,
             placeholder: (context, url) => Center(

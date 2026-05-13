@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_cache_manager.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
@@ -175,7 +177,14 @@ class _MushafScreenState extends State<MushafScreen>
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
       final url = _mushafType.pageImageUrl(target);
-      precacheImage(NetworkImage(url), context);
+      precacheImage(
+        CachedNetworkImageProvider(
+          url,
+          cacheManager: MushafCacheManager.instance,
+          cacheKey: MushafCacheManager.cacheKey(_mushafType.name, target),
+        ),
+        context,
+      );
     }
   }
 
