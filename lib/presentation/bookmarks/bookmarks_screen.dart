@@ -37,14 +37,15 @@ class BookmarksScreen extends StatelessWidget {
       body: BlocConsumer<BookmarkBloc, BookmarkState>(
         listener: (context, state) {
           if (state is BookmarkLoaded && state.feedbackMessage != null) {
-            ScaffoldMessenger.of(
+            SnackBarHelper.show(
               context,
-            ).showSnackBar(SnackBar(content: Text(state.feedbackMessage!.tr)));
+              message: state.feedbackMessage!.tr,
+            );
           } else if (state is BookmarkError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${"msg_error_prefix".tr}${state.message.tr}'),
-              ),
+            SnackBarHelper.show(
+              context,
+              message: '${"msg_error_prefix".tr}${state.message.tr}',
+              type: SnackBarType.error,
             );
           }
         },

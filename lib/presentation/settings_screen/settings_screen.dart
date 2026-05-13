@@ -1005,11 +1005,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Clean up partial download on failure
       platformDeleteFile(localPath);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('msg_model_download_failed'.tr),
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context,
+          message: 'msg_model_download_failed'.tr,
+          type: SnackBarType.error,
         );
       }
     } finally {

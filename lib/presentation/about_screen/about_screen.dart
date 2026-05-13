@@ -53,9 +53,10 @@ class _AboutScreenState extends State<AboutScreen> {
 
     void copy(String text) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(
+      SnackBarHelper.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('lbl_copied'.tr)));
+        message: 'lbl_copied'.tr,
+      );
     }
 
     Future<void> openExternal(String url) async {
@@ -70,8 +71,10 @@ class _AboutScreenState extends State<AboutScreen> {
         }
         if (!ok) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+            SnackBarHelper.show(
+              context,
+              message: '${"msg_could_not_open".tr}$url',
+              type: SnackBarType.error,
             );
           }
         }
@@ -80,8 +83,10 @@ class _AboutScreenState extends State<AboutScreen> {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+          SnackBarHelper.show(
+            context,
+            message: '${"msg_could_not_open".tr}$url',
+            type: SnackBarType.error,
           );
         }
       }
@@ -137,18 +142,16 @@ class _AboutScreenState extends State<AboutScreen> {
                             Navigator.of(ctx).pop();
                             controller.dispose();
                             if (launched) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('about_feedback_sent'.tr),
-                                ),
+                              SnackBarHelper.show(
+                                context,
+                                message: 'about_feedback_sent'.tr,
                               );
                             } else {
                               await Clipboard.setData(ClipboardData(text: msg));
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('msg_feedback_copied'.tr),
-                                  ),
+                                SnackBarHelper.show(
+                                  context,
+                                  message: 'msg_feedback_copied'.tr,
                                 );
                               }
                             }
@@ -159,10 +162,10 @@ class _AboutScreenState extends State<AboutScreen> {
                         } catch (e) {
                           setState(() => isSending = false);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${"msg_error_prefix".tr}$e'),
-                              ),
+                            SnackBarHelper.show(
+                              context,
+                              message: '${"msg_error_prefix".tr}$e',
+                              type: SnackBarType.error,
                             );
                           }
                         }

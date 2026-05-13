@@ -81,8 +81,9 @@ class RecitationErrorScreen extends StatelessWidget {
                     ),
                   ),
                   onDismissed: (direction) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('msg_removed_practice'.tr)),
+                    SnackBarHelper.show(
+                      context,
+                      message: 'msg_removed_practice'.tr,
                     );
                     context.read<RecitationErrorBloc>().add(
                       RemoveRecitationErrorEvent(error.surahId, error.verseId),

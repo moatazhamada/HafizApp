@@ -31,13 +31,17 @@ class _CloudSyncView extends StatelessWidget {
                 final msg = 'msg_sync_complete'.tr
                     .replaceAll('{pushed}', '${state.pushed}')
                     .replaceAll('{pulled}', '${state.pulled}');
-                ScaffoldMessenger.of(
+                SnackBarHelper.show(
                   context,
-                ).showSnackBar(SnackBar(content: Text(msg)));
+                  message: msg,
+                  type: SnackBarType.success,
+                );
               } else if (state is QfSyncError) {
-                ScaffoldMessenger.of(
+                SnackBarHelper.show(
                   context,
-                ).showSnackBar(SnackBar(content: Text(state.message)));
+                  message: state.message,
+                  type: SnackBarType.error,
+                );
               }
             },
           ),
@@ -91,8 +95,9 @@ class _CloudSyncView extends StatelessWidget {
               final service = sl<PreferenceSyncService>();
               unawaited(service.pushLocalToRemote());
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('pref_sync_push_started'.tr)),
+                SnackBarHelper.show(
+                  context,
+                  message: 'pref_sync_push_started'.tr,
                 );
               }
             },
@@ -106,8 +111,9 @@ class _CloudSyncView extends StatelessWidget {
               final service = sl<PreferenceSyncService>();
               unawaited(service.pullRemoteToLocal());
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('pref_sync_pull_started'.tr)),
+                SnackBarHelper.show(
+                  context,
+                  message: 'pref_sync_pull_started'.tr,
                 );
               }
             },
@@ -414,15 +420,14 @@ class _PreferenceSyncSection extends StatelessWidget {
                                 final pushed = await service
                                     .pushLocalToRemote();
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'pref_sync_pushed_count'.tr.replaceAll(
+                                  SnackBarHelper.show(
+                                    context,
+                                    message: 'pref_sync_pushed_count'.tr
+                                        .replaceAll(
                                           '{count}',
                                           '$pushed',
                                         ),
-                                      ),
-                                    ),
+                                    type: SnackBarType.success,
                                   );
                                 }
                               },
@@ -438,15 +443,14 @@ class _PreferenceSyncSection extends StatelessWidget {
                                 final pulled = await service
                                     .pullRemoteToLocal();
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'pref_sync_pulled_count'.tr.replaceAll(
+                                  SnackBarHelper.show(
+                                    context,
+                                    message: 'pref_sync_pulled_count'.tr
+                                        .replaceAll(
                                           '{count}',
                                           '$pulled',
                                         ),
-                                      ),
-                                    ),
+                                    type: SnackBarType.success,
                                   );
                                 }
                               },
@@ -468,9 +472,11 @@ class _PreferenceSyncSection extends StatelessWidget {
                             final msg = 'pref_sync_two_way_result'.tr
                                 .replaceAll('{pulled}', '$pulled')
                                 .replaceAll('{pushed}', '$pushed');
-                            ScaffoldMessenger.of(
+                            SnackBarHelper.show(
                               context,
-                            ).showSnackBar(SnackBar(content: Text(msg)));
+                              message: msg,
+                              type: SnackBarType.success,
+                            );
                           }
                         },
                         icon: const Icon(Icons.sync_alt, size: 18),

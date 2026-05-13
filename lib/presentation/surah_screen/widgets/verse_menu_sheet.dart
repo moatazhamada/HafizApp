@@ -236,7 +236,6 @@ Future<void> _shareVerseAsImage(Verse verse, String surahName) async {
   if (rootContext == null) return;
 
   final navigator = Navigator.of(rootContext, rootNavigator: true);
-  final scaffoldMessenger = ScaffoldMessenger.of(rootContext);
 
   unawaited(showDialog(
     context: rootContext,
@@ -278,8 +277,11 @@ Future<void> _shareVerseAsImage(Verse verse, String surahName) async {
     entry.remove();
     navigator.pop();
     Logger.error('Failed to share image: $e', feature: 'Sharing');
-    scaffoldMessenger.showSnackBar(
-      SnackBar(content: Text('msg_operation_failed'.tr)),
+    SnackBarHelper.show(
+      // ignore: use_build_context_synchronously
+      rootContext,
+      message: 'msg_operation_failed'.tr,
+      type: SnackBarType.error,
     );
   }
 }

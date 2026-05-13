@@ -390,12 +390,10 @@ class _SurahScreenState extends State<SurahScreen> {
                   listener: (context, state) {
                     if (state is BookmarkLoaded &&
                         state.feedbackMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.feedbackMessage!.tr),
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      SnackBarHelper.show(
+                        context,
+                        message: state.feedbackMessage!.tr,
+                        duration: const Duration(seconds: 2),
                       );
                     }
                   },
@@ -404,13 +402,11 @@ class _SurahScreenState extends State<SurahScreen> {
                   listener: (context, state) {
                     if (state is RecitationErrorLoaded &&
                         state.feedbackMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.feedbackMessage!.tr),
-                          backgroundColor: Colors.red[700],
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      SnackBarHelper.show(
+                        context,
+                        message: state.feedbackMessage!.tr,
+                        type: SnackBarType.error,
+                        duration: const Duration(seconds: 2),
                       );
                     }
                   },

@@ -29,8 +29,10 @@ class _GoalsView extends StatelessWidget {
       body: BlocListener<GoalsBloc, GoalsState>(
         listener: (context, state) {
           if (state is GoalsActionError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+            SnackBarHelper.show(
+              context,
+              message: state.message,
+              type: SnackBarType.error,
             );
           }
         },

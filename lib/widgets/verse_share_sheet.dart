@@ -64,11 +64,10 @@ class _VerseShareSheetState extends State<VerseShareSheet> {
         '${widget.verseText}\n— ${widget.surahName}, ${'lbl_ayah'.tr} ${widget.verseNumber}';
     Clipboard.setData(ClipboardData(text: text));
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('msg_text_copied'.tr),
-        duration: const Duration(seconds: 2),
-      ),
+    SnackBarHelper.show(
+      context,
+      message: 'msg_text_copied'.tr,
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -109,8 +108,10 @@ class _VerseShareSheetState extends State<VerseShareSheet> {
       entry.remove();
       Logger.error('Failed to share image: $e', feature: 'Sharing');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('msg_operation_failed'.tr)),
+        SnackBarHelper.show(
+          context,
+          message: 'msg_operation_failed'.tr,
+          type: SnackBarType.error,
         );
       }
     } finally {
