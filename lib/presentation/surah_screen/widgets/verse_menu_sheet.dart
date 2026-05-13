@@ -35,7 +35,7 @@ void showVerseMenu(
             child: ListTile(
               leading: Icon(
                 isBookmarked ? Icons.bookmark_remove : Icons.bookmark_add,
-                color: Colors.teal,
+                color: Theme.of(context).colorScheme.primary,
               ),
               title: Text(
                 isBookmarked
@@ -74,11 +74,13 @@ void showVerseMenu(
             child: ListTile(
               leading: Icon(
                 isError ? Icons.playlist_remove : Icons.error_outline,
-                color: Colors.redAccent,
+                color: Theme.of(context).colorScheme.error,
               ),
               title: Text(
                 isError ? 'msg_unmark_practice'.tr : 'msg_mark_practice'.tr,
-                style: const TextStyle(color: Colors.redAccent),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -105,7 +107,10 @@ void showVerseMenu(
             button: true,
             label: 'lbl_verify_recitation'.tr,
             child: ListTile(
-              leading: const Icon(Icons.mic, color: Colors.blueAccent),
+              leading: Icon(
+                Icons.mic,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
               title: Text('lbl_verify_recitation'.tr),
               onTap: () {
                 Navigator.pop(context);
@@ -117,7 +122,10 @@ void showVerseMenu(
             button: true,
             label: 'lbl_share_verse'.tr,
             child: ListTile(
-              leading: const Icon(Icons.share, color: Colors.teal),
+              leading: Icon(
+                Icons.share,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: Text('lbl_share_verse'.tr),
               onTap: () {
                 Navigator.pop(context);
@@ -135,7 +143,10 @@ void showVerseMenu(
             button: true,
             label: 'lbl_tafsir'.tr,
             child: ListTile(
-              leading: const Icon(Icons.menu_book, color: Colors.teal),
+              leading: Icon(
+                Icons.menu_book,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: Text('lbl_tafsir'.tr),
               onTap: () {
                 Navigator.pop(context);
@@ -147,7 +158,10 @@ void showVerseMenu(
             button: true,
             label: 'lbl_study'.tr,
             child: ListTile(
-              leading: const Icon(Icons.school, color: Colors.deepPurple),
+              leading: Icon(
+                Icons.school,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
               title: Text('lbl_study'.tr),
               onTap: () {
                 Navigator.pop(context);

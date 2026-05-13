@@ -104,7 +104,7 @@ class BookmarksScreen extends StatelessWidget {
                     direction: DismissDirection.endToStart,
                     background: Container(
                       alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
+                      padding: const EdgeInsetsDirectional.only(end: 20),
                       decoration: BoxDecoration(
                         color: Colors.redAccent,
                         borderRadius: BorderRadius.circular(12),

@@ -683,11 +683,29 @@ class _SurahScreenState extends State<SurahScreen> {
                     }
 
                     return BlocBuilder<BookmarkBloc, BookmarkState>(
+                      buildWhen: (previous, current) {
+                        final prevBookmarks = previous is BookmarkLoaded
+                            ? previous.bookmarks
+                            : null;
+                        final currBookmarks = current is BookmarkLoaded
+                            ? current.bookmarks
+                            : null;
+                        return prevBookmarks != currBookmarks;
+                      },
                       builder: (context, bookmarkState) {
                         return BlocBuilder<
                           RecitationErrorBloc,
                           RecitationErrorState
                         >(
+                          buildWhen: (previous, current) {
+                            final prevErrors = previous is RecitationErrorLoaded
+                                ? previous.errors
+                                : null;
+                            final currErrors = current is RecitationErrorLoaded
+                                ? current.errors
+                                : null;
+                            return prevErrors != currErrors;
+                          },
                           builder: (context, errorState) {
                             return CustomScrollView(
                               controller: _scrollController,

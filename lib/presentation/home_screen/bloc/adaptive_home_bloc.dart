@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/models/surface_type.dart';
 import '../../../core/utils/pref_utils.dart';

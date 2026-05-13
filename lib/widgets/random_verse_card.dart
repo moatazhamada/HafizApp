@@ -202,7 +202,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
         itemBuilder: (context, index) {
           final item = _media[index];
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsetsDirectional.only(end: 8),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(

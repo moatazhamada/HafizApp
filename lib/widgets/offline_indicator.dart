@@ -34,21 +34,26 @@ class OfflineIndicator extends StatelessWidget {
 class _OfflineBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.orange.shade800,
+      color: colorScheme.errorContainer,
       child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.wifi_off, color: Colors.white, size: 18),
+              Icon(
+                Icons.wifi_off,
+                color: colorScheme.onErrorContainer,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'msg_offline'.tr,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colorScheme.onErrorContainer,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),

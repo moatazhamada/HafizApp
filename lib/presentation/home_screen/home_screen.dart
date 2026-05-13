@@ -276,6 +276,8 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
         child: BlocBuilder<HomeBloc, HomeState>(
+          buildWhen: (previous, current) =>
+              current is UpdateLastReadSurah && previous != current,
           builder: (context, homeState) {
             final lastReadSurah = homeState is UpdateLastReadSurah
                 ? homeState.surah
@@ -285,6 +287,9 @@ class _HomeScreenState extends State<HomeScreen>
                 : null;
 
             return BlocBuilder<AdaptiveHomeBloc, AdaptiveHomeState>(
+              buildWhen: (previous, current) =>
+                  previous.surfaceType != current.surfaceType ||
+                  previous.showSuggestion != current.showSuggestion,
               builder: (context, adaptiveState) {
                 final suggested = BehaviorTracker.suggestSurfaceType();
                 final showBanner = suggested != null &&

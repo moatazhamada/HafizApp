@@ -7,7 +7,7 @@ class HomeState extends Equatable {
   const HomeState();
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [surah];
 }
 
 class InitialSurahState extends HomeState {}

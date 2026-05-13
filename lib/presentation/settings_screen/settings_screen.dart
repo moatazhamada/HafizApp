@@ -220,7 +220,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionLabel('lbl_about'.tr),
           _buildCard([
             ListTile(
-              leading: const Icon(Icons.new_releases, color: Colors.teal),
+              leading: Icon(
+                Icons.new_releases,
+                color: theme.colorScheme.primary,
+              ),
               title: Text('lbl_whats_new'.tr),
               trailing: const Icon(Icons.chevron_right),
               onTap: () =>
@@ -264,8 +267,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             backgroundColor: theme.colorScheme.primary,
             child: Text(
               initials,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -356,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final displayLabel = isArabic ? label : label.toUpperCase();
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
       child: Text(
         displayLabel,
         style: TextStyle(
@@ -532,7 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           PrefUtils().setVerseViewMode(val);
         });
       },
-      activeThumbColor: Colors.teal,
+      activeThumbColor: theme.colorScheme.primary,
     );
   }
 

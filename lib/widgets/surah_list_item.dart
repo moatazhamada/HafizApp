@@ -19,27 +19,33 @@ class SurahListItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? colorScheme.surfaceContainer : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        spreadRadius: 1,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+    return Semantics(
+      button: true,
+      label: '$nameEnglish, $nameArabic',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? colorScheme.surfaceContainer
+                    : colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: isDark
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row,
               children: [
                 // Number Badge
                 Container(
@@ -94,6 +100,7 @@ class SurahListItem extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }

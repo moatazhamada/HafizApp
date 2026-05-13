@@ -1,6 +1,6 @@
 part of 'adaptive_home_bloc.dart';
 
-class AdaptiveHomeState {
+class AdaptiveHomeState extends Equatable {
   final SurfaceType surfaceType;
   final bool showSuggestion;
   final String? suggestedSurface;
@@ -14,6 +14,9 @@ class AdaptiveHomeState {
   factory AdaptiveHomeState.initial() {
     return const AdaptiveHomeState(surfaceType: SurfaceType.reader);
   }
+
+  @override
+  List<Object?> get props => [surfaceType, showSuggestion, suggestedSurface];
 
   AdaptiveHomeState copyWith({
     SurfaceType? surfaceType,

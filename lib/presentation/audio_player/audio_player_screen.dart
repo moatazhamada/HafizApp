@@ -47,7 +47,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void initState() {
     super.initState();
     _verseSub = _handler.currentVerseStream.listen((verseIndex) {
-      if (mounted) {
+      if (mounted && _currentVerse != verseIndex) {
         setState(() => _currentVerse = verseIndex);
         // Persist last played verse for resume functionality
         if (verseIndex >= 0) {
@@ -228,7 +228,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isCurrent ? Colors.white : null,
+                            color: isCurrent
+                                ? theme.colorScheme.onPrimary
+                                : null,
                           ),
                         ),
                       ),
@@ -383,7 +385,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                 ),
               ),
 
-            _buildVerseProgress(theme, totalVerses, isPlaying),
+            _VerseProgressIndicator(
+              surahId: widget.surahId,
+              totalVerses: totalVerses,
+              handler: _handler,
+            ),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -402,48 +408,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     );
   }
 
-  Widget _buildVerseProgress(
-    ThemeData theme,
-    int totalVerses,
-    bool isPlaying,
-  ) {
-    if (!isPlaying) return const SizedBox.shrink();
-
-    final displayVerse = _currentVerse + 1;
-    final progress = displayVerse / totalVerses;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${'lbl_verse_num'.tr} $displayVerse / $totalVerses',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor:
-                  theme.brightness == Brightness.dark
-                      ? Colors.grey[800]
-                      : Colors.grey[300],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
+  /// Extracted into [_VerseProgressIndicator] to avoid rebuilding the
+  /// entire screen on every verse change.
 
   Widget _buildControls(ThemeData theme, bool isPlaying) {
     return Row(
@@ -488,7 +454,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
               ? const Padding(
                   padding: EdgeInsets.all(20),
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: theme.colorScheme.onPrimary,
                     strokeWidth: 2,
                   ),
                 )
@@ -498,7 +464,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                   child: IconButton(
                     icon: Icon(
                       _handler.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
+                      color: theme.colorScheme.onPrimary,
                       size: 36,
                     ),
                     tooltip: _handler.isPlaying
@@ -582,6 +548,86 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
             setState(() {});
           },
         ),
+      ],
+    );
+  }
+}
+
+/// Self-contained verse progress indicator that listens to the audio handler
+/// stream directly, preventing the entire [AudioPlayerScreen] from rebuilding
+/// on every verse change.
+class _VerseProgressIndicator extends StatefulWidget {
+  final int surahId;
+  final int totalVerses;
+  final AudioPlayerHandler handler;
+
+  const _VerseProgressIndicator({
+    required this.surahId,
+    required this.totalVerses,
+    required this.handler,
+  });
+
+  @override
+  State<_VerseProgressIndicator> createState() =>
+      _VerseProgressIndicatorState();
+}
+
+class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
+  int _currentVerse = -1;
+  StreamSubscription<int>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = widget.handler.currentVerseStream.listen((verseIndex) {
+      if (mounted && _currentVerse != verseIndex) {
+        setState(() => _currentVerse = verseIndex);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = widget.handler.currentSurahId == widget.surahId &&
+        _currentVerse >= 0;
+    if (!isPlaying) return const SizedBox.shrink();
+
+    final displayVerse = _currentVerse + 1;
+    final progress = displayVerse / widget.totalVerses;
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "${'lbl_verse_num'.tr} $displayVerse / ${widget.totalVerses}",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }

@@ -22,14 +22,20 @@ class MushafScreen extends StatefulWidget {
   State<MushafScreen> createState() => _MushafScreenState();
 }
 
-class _MushafScreenState extends State<MushafScreen> {
-  late PageController _pageController;
+class _MushafScreenState extends State<MushafScreen>
+    with WidgetsBindingObserver {
+  // late final → cannot be reassigned; survives rebuilds, orientation flips,
+  // and any lifecycle event that does NOT fully dispose the State.
+  late final PageController _pageController;
   late int _currentPage;
   late MushafType _mushafType;
   bool _showOverlay = true;
   bool _isZoomed = false;
   Timer? _overlayTimer;
   final Map<int, List<_VerseText>> _localTextCache = {};
+
+  // PageStorage bucket key — used as a fallback if prefs are slow/unavailable.
+  static const String _kPageStorageKey = 'mushaf_current_page';
 
   // --------------------------------------------------------------------------
   // CRITICAL: Mushaf Page Direction
@@ -51,6 +57,7 @@ class _MushafScreenState extends State<MushafScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _mushafType = MushafType.fromString(PrefUtils().getMushafType());
     final resolved =
         widget.initialPage ??
@@ -61,10 +68,68 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // If PageStorage has a saved page (e.g. after orientation change),
+    // restore it so the user doesn't jump back to the initial page.
+    final storage = PageStorage.of(context);
+    final saved = storage.readState(context, identifier: _kPageStorageKey);
+    if (saved is int && saved != _currentPage && saved >= 1 && saved <= _mushafType.totalPages) {
+      _currentPage = saved;
+      // Jump without animation so the user sees the exact page instantly.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_currentPage - 1);
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MushafScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent pushes a new initialPage (e.g. deep-link), honour it.
+    if (widget.initialPage != null &&
+        widget.initialPage != oldWidget.initialPage) {
+      _currentPage = widget.initialPage!.clamp(1, _mushafType.totalPages);
+      _pageController.jumpToPage(_currentPage - 1);
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    // Orientation or split-screen resize can reset the PageView viewport.
+    // Re-assert the correct page after the frame settles.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        final page = _pageController.page?.round() ?? _currentPage - 1;
+        final expected = _currentPage - 1;
+        if (page != expected) {
+          _pageController.jumpToPage(expected);
+        }
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _overlayTimer?.cancel();
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Persist the current page to both prefs and PageStorage so it survives
+  /// orientation changes, app backgrounding, and even widget disposal.
+  void _persistPage(int page) {
+    _currentPage = page;
+    PrefUtils().setMushafLastPageForType(_mushafType.name, page);
+    PageStorage.of(context).writeState(
+      context,
+      page,
+      identifier: _kPageStorageKey,
+    );
   }
 
   int _pageIndexToNumber(int index) => index + 1;
@@ -243,7 +308,8 @@ class _MushafScreenState extends State<MushafScreen> {
 
   void _goToPage(int page) {
     final target = page.clamp(1, _mushafType.totalPages);
-    setState(() => _currentPage = target);
+    _persistPage(target);
+    setState(() {});
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 300),
@@ -301,9 +367,8 @@ class _MushafScreenState extends State<MushafScreen> {
                 itemCount: _mushafType.totalPages,
                 onPageChanged: (index) {
                   final page = _pageIndexToNumber(index);
-                  _currentPage = page;
                   _isZoomed = false;
-                  PrefUtils().setMushafLastPageForType(_mushafType.name, page);
+                  _persistPage(page);
                   _precacheAdjacentPages(page);
                   if (_showOverlay) {
                     _overlayTimer?.cancel();

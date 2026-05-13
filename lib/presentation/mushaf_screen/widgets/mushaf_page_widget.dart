@@ -127,14 +127,18 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
                 ),
           );
 
-    return Container(
-      color: colors.mushafPageBg,
-      child: InteractiveViewer(
-        transformationController: _transformController,
-        panEnabled: _isZoomedIn,
-        minScale: 0.5,
-        maxScale: 4.0,
-        child: imageWidget,
+    return Semantics(
+      label: 'Mushaf page ${widget.pageNumber}',
+      image: true,
+      child: Container(
+        color: colors.mushafPageBg,
+        child: InteractiveViewer(
+          transformationController: _transformController,
+          panEnabled: _isZoomedIn,
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: imageWidget,
+        ),
       ),
     );
   }

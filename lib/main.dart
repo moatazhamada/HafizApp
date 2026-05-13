@@ -4,6 +4,7 @@ import 'package:hafiz_app/core/services/app_initializer.dart';
 
 import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
+import 'core/theme/app_text_styles.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
@@ -26,6 +27,49 @@ final ThemeData lightTheme = ThemeData(
     seedColor: const Color(0xFF006754), // deep green accent
     brightness: Brightness.light,
   ),
+  textTheme: const TextTheme(
+    headlineLarge: AppTextStyles.headingLarge,
+    headlineMedium: AppTextStyles.headingMedium,
+    headlineSmall: AppTextStyles.headingSmall,
+    titleLarge: AppTextStyles.headingSmall,
+    titleMedium: AppTextStyles.labelLarge,
+    titleSmall: AppTextStyles.labelMedium,
+    bodyLarge: AppTextStyles.bodyLarge,
+    bodyMedium: AppTextStyles.bodyMedium,
+    bodySmall: AppTextStyles.bodySmall,
+    labelLarge: AppTextStyles.labelLarge,
+    labelMedium: AppTextStyles.labelMedium,
+    labelSmall: AppTextStyles.labelSmall,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    ),
+  ),
+  cardTheme: const CardTheme(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+  ),
+  bottomSheetTheme: const BottomSheetThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+  ),
+  dialogTheme: const DialogTheme(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+  ),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -205,7 +249,11 @@ class _BootstrapAppState extends State<BootstrapApp> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Initialization Failed',
@@ -215,7 +263,12 @@ class _BootstrapAppState extends State<BootstrapApp> {
                   Text(
                     _initError,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5),
+                    ),
                   ),
                 ],
               ),
@@ -287,8 +340,13 @@ class _SplashScaffold extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark
+            ? darkTheme.colorScheme.surface
+            : lightTheme.colorScheme.surface,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -303,7 +361,12 @@ class _SplashScaffold extends StatelessWidget {
                 'Loading...',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  color: isDark ? Colors.white70 : Colors.black54,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(
+                        alpha: isDark ? 0.7 : 0.54,
+                      ),
                   fontSize: 14,
                 ),
               ),

@@ -39,17 +39,20 @@ class RecitationErrorScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle_outline,
                       size: 64,
-                      color: Colors.green,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'msg_no_practice_items'.tr,
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.grey[600],
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -68,12 +71,15 @@ class RecitationErrorScreen extends StatelessWidget {
                   direction: DismissDirection.endToStart,
                   background: Container(
                     alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
+                    padding: const EdgeInsetsDirectional.only(end: 20),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.check, color: Colors.white),
+                    child: Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                   onDismissed: (direction) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -89,13 +95,18 @@ class RecitationErrorScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Theme.of(context)
+                          .colorScheme
+                          .shadow
+                          .withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
                       ],
                       border: Border.all(
-                        color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
+                        color: Theme.of(context)
+                          .colorScheme
+                          .outlineVariant,
                       ),
                     ),
                     child: Material(
@@ -128,14 +139,15 @@ class RecitationErrorScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent.withValues(
-                                    alpha: 0.1,
-                                  ),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .error
+                                      .withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.warning_amber_rounded,
-                                  color: Colors.redAccent,
+                                  color: Theme.of(context).colorScheme.error,
                                   size: 24,
                                 ),
                               ),
@@ -166,9 +178,10 @@ class RecitationErrorScreen extends StatelessWidget {
                                       style: TextStyle(
                                         fontFamily: 'Poppins',
                                         fontSize: 13,
-                                        color: isDark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600],
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -177,7 +190,7 @@ class RecitationErrorScreen extends StatelessWidget {
                               IconButton(
                                 icon: const Icon(
                                   Icons.check_circle_outline,
-                                  color: Colors.green,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                                 onPressed: () {
                                   context.read<RecitationErrorBloc>().add(
