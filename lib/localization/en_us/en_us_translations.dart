@@ -38,6 +38,7 @@ final Map<String, String> enUs = {
   'about_feedback_send': 'Submit',
   'about_feedback_sent': 'Thank you for your feedback!',
   'lbl_cancel': 'Cancel',
+  'lbl_confirm': 'Confirm',
   'lbl_copied': 'Copied to clipboard',
   'lbl_practice_list': 'Practice List',
   'msg_no_practice_items': 'No verses marked for practice',
@@ -667,6 +668,7 @@ final Map<String, String> enUs = {
   // Reading Reminder
   'lbl_reading_reminder': 'Reading Reminder',
   'msg_reading_reminder_desc': 'Gentle nudge to keep your daily Quran habit',
+  'msg_reading_reminder_benefit': 'Build a consistent reading habit with daily reminders',
   'lbl_daily_verse_time': 'Daily Verse Time',
   'lbl_reading_reminder_time': 'Reading Reminder Time',
 

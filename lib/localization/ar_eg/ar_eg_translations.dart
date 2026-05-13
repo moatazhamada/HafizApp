@@ -37,6 +37,7 @@ final Map<String, String> arEg = {
   'about_feedback_send': 'إرسال',
   'about_feedback_sent': 'شكراً لملاحظتك!',
   'lbl_cancel': 'إلغاء',
+  'lbl_confirm': 'تأكيد',
   'lbl_copied': 'تم النسخ للحافظة',
   'lbl_practice_list': 'قائمة تثبيت الحفظ',
   'msg_no_practice_items': 'لا توجد آيات لتثبيت الحفظ',
@@ -642,6 +643,7 @@ final Map<String, String> arEg = {
   // Reading Reminder
   'lbl_reading_reminder': 'تذكير القراءة',
   'msg_reading_reminder_desc': 'تنبيه خفيف للمحافظة على عادة القرآن اليومية',
+  'msg_reading_reminder_benefit': 'اجعل القراءة عادة يومية مع التذكيرات المنتظمة',
   'lbl_daily_verse_time': 'وقت الآية اليومية',
   'lbl_reading_reminder_time': 'وقت تذكير القراءة',
 
