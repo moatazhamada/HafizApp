@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
 
 /// Shared scaffold for all onboarding screens.
 ///
-/// Provides consistent gradient background, safe area, responsive layout,
-/// and large-screen centering.
+/// Provides a deep dark-teal gradient background for maximum contrast
+/// with white text, buttons, and selection cards.
 class OnboardingScaffold extends StatelessWidget {
   final Widget child;
   final double? maxContentWidth;
@@ -17,21 +16,18 @@ class OnboardingScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
       body: Container(
         width: double.maxFinite,
         height: double.maxFinite,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.primary.withValues(alpha: 0.85),
-              colorScheme.primary,
-              AppColors.of(context).primaryDark,
+              Color(0xFF0D2926),
+              Color(0xFF061F1B),
+              Color(0xFF001A16),
             ],
           ),
         ),
