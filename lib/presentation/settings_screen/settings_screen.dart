@@ -323,47 +323,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle = 'lbl_tap_to_sign_in'.tr;
         }
 
-        return Card(
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  avatar,
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+        return Semantics(
+          button: true,
+          label: 'lbl_semantics_profile_card'.tr.replaceAll('{status}', title),
+          child: Card(
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    avatar,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    rtlChevron(context),
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    Icon(
+                      rtlChevron(context),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -302,27 +302,32 @@ class _MemorizationCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  height: 24,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: (memFrac * 100).round(),
-                        child: Container(color: AppColors.of(context).memorizedStatus),
-                      ),
-                      Expanded(
-                        flex: (progFrac * 100).round(),
-                        child: Container(color: AppColors.of(context).inProgressStatus),
-                      ),
-                      Expanded(
-                        flex: (notStarted / total * 100).round(),
-                        child: Container(
-                          color: Theme.of(context).colorScheme.surfaceContainer,
+              Semantics(
+                label: 'lbl_semantics_memorization_progress'
+                    .tr
+                    .replaceAll('{percent}', '${((memorized / total) * 100).round()}'),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 24,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: (memFrac * 100).round(),
+                          child: Container(color: AppColors.of(context).memorizedStatus),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          flex: (progFrac * 100).round(),
+                          child: Container(color: AppColors.of(context).inProgressStatus),
+                        ),
+                        Expanded(
+                          flex: (notStarted / total * 100).round(),
+                          child: Container(
+                            color: Theme.of(context).colorScheme.surfaceContainer,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -504,64 +509,69 @@ class _CompactSurahTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: InkWell(
-        onTap: () {
-          PrefUtils().saveLastReadSurah(surah);
-          final defaultView = PrefUtils().getDefaultQuranView();
-          if (defaultView == 'mushaf') {
-            NavigatorService.pushNamed(AppRoutes.mushafScreen);
-          } else {
-            NavigatorService.pushNamed(AppRoutes.surahPage, arguments: surah);
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark ? colorScheme.surfaceContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '${surah.id}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+    return Semantics(
+      button: true,
+      label:
+          '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: InkWell(
+          onTap: () {
+            PrefUtils().saveLastReadSurah(surah);
+            final defaultView = PrefUtils().getDefaultQuranView();
+            if (defaultView == 'mushaf') {
+              NavigatorService.pushNamed(AppRoutes.mushafScreen);
+            } else {
+              NavigatorService.pushNamed(AppRoutes.surahPage, arguments: surah);
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDark ? colorScheme.surfaceContainer : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              if (!isArabic) ...[
-                Expanded(
+                  alignment: Alignment.center,
                   child: Text(
-                    surah.nameEnglish,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
+                    '${surah.id}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ] else
-                const Spacer(),
-              Text(
-                surah.nameArabic,
-                textDirection: TextDirection.rtl,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontFamily: 'NotoNaskhArabic',
-                  color: colorScheme.primary,
+                const SizedBox(width: 12),
+                if (!isArabic) ...[
+                  Expanded(
+                    child: Text(
+                      surah.nameEnglish,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ] else
+                  const Spacer(),
+                Text(
+                  surah.nameArabic,
+                  textDirection: TextDirection.rtl,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontFamily: 'NotoNaskhArabic',
+                    color: colorScheme.primary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -650,21 +650,33 @@ class _MushafScreenState extends State<MushafScreen>
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              IconButton(
-                icon: Icon(rtlBackArrow(context), color: colors.textPrimary),
-                onPressed: () => NavigatorService.goBack(),
-                tooltip: 'lbl_back'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_back'.tr,
+                child: IconButton(
+                  icon: Icon(rtlBackArrow(context), color: colors.textPrimary),
+                  onPressed: () => NavigatorService.goBack(),
+                  tooltip: 'lbl_back'.tr,
+                ),
               ),
               const Spacer(),
-              IconButton(
-                icon: Icon(Icons.menu_book, color: colors.textPrimary),
-                onPressed: _showMushafTypeSwitcher,
-                tooltip: 'lbl_select_mushaf_type'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_select_mushaf_type'.tr,
+                child: IconButton(
+                  icon: Icon(Icons.menu_book, color: colors.textPrimary),
+                  onPressed: _showMushafTypeSwitcher,
+                  tooltip: 'lbl_select_mushaf_type'.tr,
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.search, color: colors.textPrimary),
-                onPressed: _showJumpDialog,
-                tooltip: 'lbl_jump_to_page'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_jump_to_page'.tr,
+                child: IconButton(
+                  icon: Icon(Icons.search, color: colors.textPrimary),
+                  onPressed: _showJumpDialog,
+                  tooltip: 'lbl_jump_to_page'.tr,
+                ),
               ),
             ],
           ),
@@ -720,23 +732,30 @@ class _MushafScreenState extends State<MushafScreen>
                     style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   ),
                   const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _showJumpDialog,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.mushafPageBorder.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
+                  Semantics(
+                    button: true,
+                    label: 'lbl_semantics_page_indicator'
+                        .tr
+                        .replaceAll('{current}', '$_currentPage')
+                        .replaceAll('{total}', '${_mushafType.totalPages}'),
+                    child: GestureDetector(
+                      onTap: _showJumpDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.mushafPageBorder.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
                     ),

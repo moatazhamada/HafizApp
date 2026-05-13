@@ -118,6 +118,9 @@ class _OverviewTab extends StatelessWidget {
               title: 'lbl_arabic'.tr,
               icon: Icons.format_quote,
               color: Colors.teal,
+              child: Semantics(
+              label: 'lbl_quran_text'.tr,
+              textDirection: TextDirection.rtl,
               child: SelectableText(
                 state.arabicText,
                 textDirection: TextDirection.rtl,
@@ -127,6 +130,7 @@ class _OverviewTab extends StatelessWidget {
                   fontFamily: 'NotoNaskhArabic',
                 ),
               ),
+            ),
             ),
             const SizedBox(height: 20),
           ],
@@ -163,6 +167,7 @@ class _TafsirTab extends StatelessWidget {
             color: Colors.deepPurple,
             trailing: IconButton(
               icon: const Icon(Icons.tune, size: 18),
+              tooltip: 'lbl_select_tafsir'.tr,
               onPressed: () => _showSourceSelector(
                 context,
                 title: 'lbl_select_tafsir'.tr,
@@ -202,6 +207,7 @@ class _TranslationTab extends StatelessWidget {
             color: Colors.blue,
             trailing: IconButton(
               icon: const Icon(Icons.tune, size: 18),
+              tooltip: 'lbl_select_translation'.tr,
               onPressed: () => _showSourceSelector(
                 context,
                 title: 'lbl_select_translation'.tr,

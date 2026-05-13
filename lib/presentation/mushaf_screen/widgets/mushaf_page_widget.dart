@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 
 const _invertMatrix = <double>[
@@ -127,8 +130,22 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
                 ),
           );
 
+    final surahId = MushafPageIndex.getSurahForPage(widget.pageNumber);
+    final surah = surahId >= 1 && surahId <= 114
+        ? QuranIndex.quranSurahs[surahId - 1]
+        : null;
+    final surahName = surah != null
+        ? (Localizations.localeOf(context).languageCode == 'ar'
+            ? surah.nameArabic
+            : surah.nameEnglish)
+        : '';
+
     return Semantics(
-      label: 'Mushaf page ${widget.pageNumber}',
+      label: 'lbl_semantics_mushaf_page'
+          .tr
+          .replaceAll('{page}', '${widget.pageNumber}')
+          .replaceAll('{surah}', surahName),
+      textDirection: TextDirection.rtl,
       image: true,
       child: Container(
         color: colors.mushafPageBg,

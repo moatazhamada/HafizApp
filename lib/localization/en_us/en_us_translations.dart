@@ -677,6 +677,16 @@ final Map<String, String> enUs = {
   // Sajdah
   'lbl_sajdah': 'Sajdah tilawa — prostration required',
 
+  // Semantics / Accessibility Labels
+  'lbl_semantics_verse_of': 'Verse {verse} of {surah}',
+  'lbl_semantics_mushaf_page': 'Mushaf page {page}, {surah}',
+  'lbl_semantics_memorization_progress': 'Memorization progress, {percent} percent',
+  'lbl_semantics_page_indicator': 'Page {current} of {total}',
+  'lbl_semantics_status': 'Status: {status}',
+  'lbl_semantics_discovery_card': '{title}, {subtitle}',
+  'lbl_semantics_due_for_review': 'Due for review: {surah}',
+  'lbl_semantics_profile_card': 'Profile, {status}',
+
   // Notifications Onboarding
   'lbl_notifications': 'Stay Connected',
   'msg_notifications_desc': 'Allow notifications to receive gentle reminders that help you maintain your daily Quran habit.',

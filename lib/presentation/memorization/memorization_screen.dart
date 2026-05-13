@@ -122,14 +122,19 @@ class _ProgressSummary extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: state.totalMemorized / 114,
-                minHeight: 12,
-                backgroundColor: isDark ? AppColors.of(context).notStartedStatus : AppColors.of(context).notStartedStatus,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.of(context).primary,
+            Semantics(
+              label: 'lbl_semantics_memorization_progress'
+                  .tr
+                  .replaceAll('{percent}', '${((state.totalMemorized / 114) * 100).round()}'),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: state.totalMemorized / 114,
+                  minHeight: 12,
+                  backgroundColor: isDark ? AppColors.of(context).notStartedStatus : AppColors.of(context).notStartedStatus,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.of(context).primary,
+                  ),
                 ),
               ),
             ),
@@ -176,18 +181,21 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$value',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+        Semantics(
+          label: 'lbl_semantics_status'.tr.replaceAll('{status}', label),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ),
@@ -231,36 +239,44 @@ class _ReviewCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: urgencyColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                urgency,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: urgencyColor,
+            Semantics(
+              label: 'lbl_semantics_status'.tr.replaceAll('{status}', urgency),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: urgencyColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  urgency,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: urgencyColor,
+                  ),
                 ),
               ),
             ),
-            IconButton(
-              icon: Icon(
-                Icons.play_arrow,
-                color: AppColors.of(context).primary,
+            Semantics(
+              button: true,
+              label: 'lbl_read_this_ayah'.tr,
+              child: IconButton(
+                icon: Icon(
+                  Icons.play_arrow,
+                  color: AppColors.of(context).primary,
+                ),
+                tooltip: 'lbl_read_this_ayah'.tr,
+                onPressed: () {
+                  final surah = QuranIndex.quranSurahs.firstWhere(
+                    (s) => s.id == progress.surahId,
+                    orElse: () => Surah(progress.surahId, '', ''),
+                  );
+                  NavigatorService.popAndPushNamed(
+                    AppRoutes.surahPage,
+                    arguments: {'surah': surah},
+                  );
+                },
               ),
-              onPressed: () {
-                final surah = QuranIndex.quranSurahs.firstWhere(
-                  (s) => s.id == progress.surahId,
-                  orElse: () => Surah(progress.surahId, '', ''),
-                );
-                NavigatorService.popAndPushNamed(
-                  AppRoutes.surahPage,
-                  arguments: {'surah': surah},
-                );
-              },
             ),
           ],
         ),
@@ -286,20 +302,23 @@ class _SurahProgressCard extends StatelessWidget {
       color: AppColors.of(context).surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: statusColor.withValues(alpha: 0.15),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            '${progress.surahId}',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: statusColor,
+        leading: Semantics(
+          label: 'lbl_semantics_status'.tr.replaceAll('{status}', statusLabel),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: statusColor.withValues(alpha: 0.15),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${progress.surahId}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: statusColor,
+              ),
             ),
           ),
         ),

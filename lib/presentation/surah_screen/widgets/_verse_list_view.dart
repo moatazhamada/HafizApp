@@ -444,9 +444,21 @@ class _VerseListView extends StatelessWidget {
           }
         }
 
+        final surahName = surah != null
+            ? (Localizations.localeOf(context).languageCode == 'ar'
+                ? surah!.nameArabic
+                : surah!.nameEnglish)
+            : '';
+
         return Semantics(
           button: true,
-          label: '${'lbl_ayah'.tr} ${aya.verseNumber}',
+          label: surahName.isNotEmpty
+              ? 'lbl_semantics_verse_of'
+                  .tr
+                  .replaceAll('{verse}', '${aya.verseNumber}')
+                  .replaceAll('{surah}', surahName)
+              : '${'lbl_ayah'.tr} ${aya.verseNumber}',
+          textDirection: TextDirection.rtl,
           child: GestureDetector(
             onTap: () {
               if (isHifzMode) {

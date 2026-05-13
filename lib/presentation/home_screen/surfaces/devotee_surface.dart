@@ -166,32 +166,38 @@ class _DailyDevotionCard extends StatelessWidget {
     final juzNumber = ((dayOfYear - 1) % 30) + 1;
     final juzLabel = isArabic ? 'الجزء $juzNumber' : 'Juz $juzNumber';
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.15),
-            colorScheme.secondary.withValues(alpha: 0.10),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
+    return Semantics(
+      button: true,
+      label: 'lbl_semantics_discovery_card'
+          .tr
+          .replaceAll('{title}', 'lbl_todays_reading'.tr)
+          .replaceAll('{subtitle}', juzLabel),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary.withValues(alpha: 0.15),
+              colorScheme.secondary.withValues(alpha: 0.10),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Row(
                   children: [
                     Container(
@@ -261,7 +267,8 @@ class _DailyDevotionCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -282,43 +289,50 @@ class _DiscoveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      button: true,
+      label: 'lbl_semantics_discovery_card'
+          .tr
+          .replaceAll('{title}', title)
+          .replaceAll('{subtitle}', subtitle),
+      child: Material(
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -336,16 +350,22 @@ class _KhatmahCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Material(
-      color: colorScheme.tertiary.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      button: true,
+      label: 'lbl_semantics_discovery_card'
+          .tr
+          .replaceAll('{title}', 'lbl_khatmah'.tr)
+          .replaceAll('{subtitle}', 'msg_khatmah_desc'.tr),
+      child: Material(
+        color: colorScheme.tertiary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
               Container(
                 width: 48,
                 height: 48,
@@ -388,6 +408,7 @@ class _KhatmahCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

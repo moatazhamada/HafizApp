@@ -652,6 +652,16 @@ final Map<String, String> arEg = {
   // Sajdah
   'lbl_sajdah': 'سجدة التلاوة — يجب السجود',
 
+  // Semantics / Accessibility Labels
+  'lbl_semantics_verse_of': 'آية {verse} من {surah}',
+  'lbl_semantics_mushaf_page': 'صفحة المصحف {page}، {surah}',
+  'lbl_semantics_memorization_progress': 'تقدم الحفظ، {percent} بالمئة',
+  'lbl_semantics_page_indicator': 'صفحة {current} من {total}',
+  'lbl_semantics_status': 'الحالة: {status}',
+  'lbl_semantics_discovery_card': '{title}، {subtitle}',
+  'lbl_semantics_due_for_review': 'مستحقة للمراجعة: {surah}',
+  'lbl_semantics_profile_card': 'الملف الشخصي، {status}',
+
   // Notifications Onboarding
   'lbl_notifications': 'ابقَ على تواصل',
   'msg_notifications_desc': 'اسمح بالإشعارات لتلقي تذكيرات خفيفة تساعدك على المحافظة على عادة القرآن اليومية.',

@@ -71,50 +71,61 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
         index: 0,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: GestureDetector(
-            onTap: _onSearchTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.2),
+          child: Semantics(
+            button: true,
+            label: 'lbl_semantics_discovery_card'
+                .tr
+                .replaceAll('{title}', 'lbl_search_quran'.tr)
+                .replaceAll('{subtitle}', 'msg_search_desc'.tr),
+            child: GestureDetector(
+              onTap: _onSearchTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    color: colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'lbl_search_quran'.tr,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'msg_search_desc'.tr,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
+                child: Row(
+                  children: [
+                    ExcludeSemantics(
+                      child: Icon(
+                        Icons.search_rounded,
+                        color: colorScheme.primary,
+                        size: 28,
+                      ),
                     ),
-                  ),
-                  Icon(
-                    rtlForwardArrowRounded(context),
-                    color: colorScheme.primary,
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'lbl_search_quran'.tr,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'msg_search_desc'.tr,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ExcludeSemantics(
+                      child: Icon(
+                        rtlForwardArrowRounded(context),
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -352,43 +363,50 @@ class _DiscoveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      button: true,
+      label: 'lbl_semantics_discovery_card'
+          .tr
+          .replaceAll('{title}', title)
+          .replaceAll('{subtitle}', subtitle),
+      child: Material(
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -442,18 +460,22 @@ class _WidgetPromoCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                InkWell(
-                  onTap: () {
-                    PrefUtils().dismissWidgetPromo();
-                    onDismiss();
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.close,
-                      size: 18,
-                      color: colorScheme.onSurfaceVariant,
+                Semantics(
+                  button: true,
+                  label: 'lbl_close'.tr,
+                  child: InkWell(
+                    onTap: () {
+                      PrefUtils().dismissWidgetPromo();
+                      onDismiss();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
