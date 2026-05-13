@@ -61,14 +61,13 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     final colorScheme = theme.colorScheme;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Column(
-      children: [
-        // Prominent Search
-        StaggeredListItem(
-          index: 0,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: GestureDetector(
+    final headerChildren = <Widget>[
+      // Prominent Search
+      StaggeredListItem(
+        index: 0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: GestureDetector(
             onTap: _onSearchTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -116,162 +115,167 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
             ),
           ),
         ),
-        ),
+      ),
 
-        // Discovery Cards
-        StaggeredListItem(
-          index: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _DiscoveryCard(
-                    icon: Icons.wb_sunny_outlined,
-                    title: 'lbl_verse_of_day'.tr,
-                    subtitle: 'msg_verse_of_day_desc'.tr,
-                    color: Colors.orange,
-                    onTap: () => _showVerseOfDay(context),
-                  ),
+      // Discovery Cards
+      StaggeredListItem(
+        index: 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: _DiscoveryCard(
+                  icon: Icons.wb_sunny_outlined,
+                  title: 'lbl_verse_of_day'.tr,
+                  subtitle: 'msg_verse_of_day_desc'.tr,
+                  color: Colors.orange,
+                  onTap: () => _showVerseOfDay(context),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _DiscoveryCard(
-                    icon: Icons.auto_stories_outlined,
-                    title: 'lbl_todays_juz'.tr,
-                    subtitle: _todayJuzLabel(isArabic),
-                    color: Colors.teal,
-                    onTap: () => _navigateToTodayJuz(context),
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DiscoveryCard(
+                  icon: Icons.auto_stories_outlined,
+                  title: 'lbl_todays_juz'.tr,
+                  subtitle: _todayJuzLabel(isArabic),
+                  color: Colors.teal,
+                  onTap: () => _navigateToTodayJuz(context),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
 
-        // Widget Promo
-        if (!PrefUtils().hasDismissedWidgetPromo())
-          StaggeredListItem(
-            index: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: _WidgetPromoCard(
-                onDismiss: () => setState(() {}),
-              ),
-            ),
-          ),
-
-        // Recent Searches
-        if (_recentSearches.isNotEmpty)
-          StaggeredListItem(
-            index: 2,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'lbl_recent'.tr,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _clearRecentSearches,
-                    child: Text('lbl_clear'.tr),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        if (_recentSearches.isNotEmpty)
-          StaggeredListItem(
-            index: 3,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _recentSearches
-                    .map((q) => _SearchChip(
-                          label: q,
-                          onTap: () => _onSearchChipTap(q),
-                        ))
-                    .toList(),
-              ),
-            ),
-          ),
-        if (_recentSearches.isEmpty)
-          StaggeredListItem(
-            index: 3,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _SearchChip(
-                    label: 'الرحمة',
-                    onTap: () => _onSearchChipTap('الرحمة'),
-                  ),
-                  _SearchChip(
-                    label: 'mercy',
-                    onTap: () => _onSearchChipTap('mercy'),
-                  ),
-                  _SearchChip(
-                    label: 'الصيام',
-                    onTap: () => _onSearchChipTap('الصيام'),
-                  ),
-                  _SearchChip(
-                    label: 'patience',
-                    onTap: () => _onSearchChipTap('patience'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Quran Reflect Community
+      // Widget Promo
+      if (!PrefUtils().hasDismissedWidgetPromo())
         StaggeredListItem(
-          index: 4,
+          index: 2,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: _DiscoveryCard(
-              icon: Icons.forum_outlined,
-              title: 'lbl_quran_reflect'.tr,
-              subtitle: 'msg_quran_reflect_desc'.tr,
-              color: Colors.indigo,
-              onTap: () => NavigatorService.pushNamed(
-                AppRoutes.quranReflectFeed,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: _WidgetPromoCard(
+              onDismiss: () => setState(() {}),
             ),
           ),
         ),
 
-        const SizedBox(height: 8),
-
-        // Surah Index Section
+      // Recent Searches
+      if (_recentSearches.isNotEmpty)
         StaggeredListItem(
-          index: 4,
+          index: 2,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'lbl_surah'.tr,
+                  'lbl_recent'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
+                ),
+                TextButton(
+                  onPressed: _clearRecentSearches,
+                  child: Text('lbl_clear'.tr),
+                ),
+              ],
+            ),
+          ),
+        ),
+      if (_recentSearches.isNotEmpty)
+        StaggeredListItem(
+          index: 3,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recentSearches
+                  .map((q) => _SearchChip(
+                        label: q,
+                        onTap: () => _onSearchChipTap(q),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ),
+      if (_recentSearches.isEmpty)
+        StaggeredListItem(
+          index: 3,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _SearchChip(
+                  label: 'الرحمة',
+                  onTap: () => _onSearchChipTap('الرحمة'),
+                ),
+                _SearchChip(
+                  label: 'mercy',
+                  onTap: () => _onSearchChipTap('mercy'),
+                ),
+                _SearchChip(
+                  label: 'الصيام',
+                  onTap: () => _onSearchChipTap('الصيام'),
+                ),
+                _SearchChip(
+                  label: 'patience',
+                  onTap: () => _onSearchChipTap('patience'),
                 ),
               ],
             ),
           ),
         ),
 
-        Expanded(
-          child: SurahIndexWidget(
-            searchQuery: _searchQuery,
+      // Quran Reflect Community
+      StaggeredListItem(
+        index: 4,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: _DiscoveryCard(
+            icon: Icons.forum_outlined,
+            title: 'lbl_quran_reflect'.tr,
+            subtitle: 'msg_quran_reflect_desc'.tr,
+            color: Colors.indigo,
+            onTap: () => NavigatorService.pushNamed(
+              AppRoutes.quranReflectFeed,
+            ),
+          ),
+        ),
+      ),
+
+      const SizedBox(height: 8),
+
+      // Surah Index Section
+      StaggeredListItem(
+        index: 4,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'lbl_surah'.tr,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+
+    return SurahIndexWidget(
+      searchQuery: _searchQuery,
+      headerSlivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: headerChildren,
           ),
         ),
       ],

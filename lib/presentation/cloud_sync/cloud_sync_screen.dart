@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/services/preference_sync_service.dart';
-import '../../core/utils/pref_utils.dart';
 import '../../injection_container.dart';
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
@@ -28,17 +27,16 @@ class _CloudSyncView extends StatelessWidget {
           BlocListener<CloudSyncBloc, CloudSyncState>(
             listener: (context, state) {
               if (state is QfSyncSuccess) {
-                final msg = 'msg_sync_complete'
-                    .tr
+                final msg = 'msg_sync_complete'.tr
                     .replaceAll('{pushed}', '${state.pushed}')
                     .replaceAll('{pulled}', '${state.pulled}');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(msg)),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(msg)));
               } else if (state is QfSyncError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(state.message)));
               }
             },
           ),
@@ -129,8 +127,7 @@ class _AuthCard extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is QfAuthLoading || state is QfAuthInitial;
         final isAuth = state is QfAuthAuthenticated;
-        final errorMsg =
-            state is QfAuthError ? state.message : null;
+        final errorMsg = state is QfAuthError ? state.message : null;
 
         return Card(
           child: Padding(
@@ -144,8 +141,8 @@ class _AuthCard extends StatelessWidget {
                       isAuth
                           ? Icons.verified_user
                           : (errorMsg != null
-                              ? Icons.error_outline
-                              : Icons.no_accounts),
+                                ? Icons.error_outline
+                                : Icons.no_accounts),
                       color: isAuth
                           ? Colors.teal
                           : (errorMsg != null ? Colors.redAccent : Colors.grey),
@@ -166,34 +163,26 @@ class _AuthCard extends StatelessWidget {
                             if (state.profile?.displayName != null)
                               Text(
                                 state.profile!.displayName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: Colors.grey),
                               ),
                             if (state.profile?.email != null)
                               Text(
                                 state.profile!.email!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: Colors.grey),
                               ),
                             if (state.profile == null && state.userId != null)
                               Text(
                                 '${'lbl_user'.tr}: ${state.userId}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: Colors.grey),
                               ),
                           ],
                           if (errorMsg != null)
                             Text(
                               errorMsg.tr,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: Colors.redAccent),
                             ),
                         ],
@@ -212,9 +201,9 @@ class _AuthCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: isLoading
                         ? null
-                        : () => context
-                            .read<QfAuthBloc>()
-                            .add(QfAuthLogoutRequested()),
+                        : () => context.read<QfAuthBloc>().add(
+                            QfAuthLogoutRequested(),
+                          ),
                     icon: const Icon(Icons.logout),
                     label: Text('lbl_sign_out'.tr),
                   ),
@@ -237,11 +226,13 @@ class _AuthCard extends StatelessWidget {
                                     onPressed: () {
                                       Navigator.pop(ctx);
                                       context.read<QfAuthBloc>().add(
-                                          QfAuthDeleteDataRequested());
+                                        QfAuthDeleteDataRequested(),
+                                      );
                                     },
                                     style: TextButton.styleFrom(
-                                      foregroundColor:
-                                          Theme.of(context).colorScheme.error,
+                                      foregroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
                                     ),
                                     child: Text('lbl_delete_data'.tr),
                                   ),
@@ -249,19 +240,24 @@ class _AuthCard extends StatelessWidget {
                               ),
                             );
                           },
-                    icon: Icon(Icons.delete_forever,
-                        color: Theme.of(context).colorScheme.error),
-                    label: Text('lbl_delete_my_data'.tr,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error)),
+                    icon: Icon(
+                      Icons.delete_forever,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    label: Text(
+                      'lbl_delete_my_data'.tr,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
                 ] else
                   FilledButton.icon(
                     onPressed: isLoading
                         ? null
-                        : () => context
-                            .read<QfAuthBloc>()
-                            .add(QfAuthLoginRequested()),
+                        : () => context.read<QfAuthBloc>().add(
+                            QfAuthLoginRequested(),
+                          ),
                     icon: const Icon(Icons.login),
                     label: Text('msg_qf_login'.tr),
                     style: FilledButton.styleFrom(
@@ -302,9 +298,8 @@ class _SyncSection extends StatelessWidget {
                 const SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed: isAuth && !isSyncing
-                      ? () => context
-                          .read<CloudSyncBloc>()
-                          .add(SyncWithQfEvent())
+                      ? () =>
+                            context.read<CloudSyncBloc>().add(SyncWithQfEvent())
                       : null,
                   icon: isSyncing
                       ? const SizedBox(
@@ -325,13 +320,13 @@ class _SyncSection extends StatelessWidget {
                 if (lastSync != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'msg_last_synced'
-                        .tr
-                        .replaceAll('{time}', _formatDate(lastSync)),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey),
+                    'msg_last_synced'.tr.replaceAll(
+                      '{time}',
+                      _formatDate(lastSync),
+                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -339,10 +334,9 @@ class _SyncSection extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'msg_login_to_sync'.tr,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -416,14 +410,16 @@ class _PreferenceSyncSection extends StatelessWidget {
                             child: OutlinedButton.icon(
                               onPressed: () async {
                                 final service = sl<PreferenceSyncService>();
-                                final pushed = await service.pushLocalToRemote();
+                                final pushed = await service
+                                    .pushLocalToRemote();
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'pref_sync_pushed_count'
-                                            .tr
-                                            .replaceAll('{count}', '$pushed'),
+                                        'pref_sync_pushed_count'.tr.replaceAll(
+                                          '{count}',
+                                          '$pushed',
+                                        ),
                                       ),
                                     ),
                                   );
@@ -438,20 +434,25 @@ class _PreferenceSyncSection extends StatelessWidget {
                             child: OutlinedButton.icon(
                               onPressed: () async {
                                 final service = sl<PreferenceSyncService>();
-                                final pulled = await service.pullRemoteToLocal();
+                                final pulled = await service
+                                    .pullRemoteToLocal();
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'pref_sync_pulled_count'
-                                            .tr
-                                            .replaceAll('{count}', '$pulled'),
+                                        'pref_sync_pulled_count'.tr.replaceAll(
+                                          '{count}',
+                                          '$pulled',
+                                        ),
                                       ),
                                     ),
                                   );
                                 }
                               },
-                              icon: const Icon(Icons.download_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.download_outlined,
+                                size: 18,
+                              ),
                               label: Text('pref_sync_download'.tr),
                             ),
                           ),
@@ -463,13 +464,12 @@ class _PreferenceSyncSection extends StatelessWidget {
                           final service = sl<PreferenceSyncService>();
                           final (pulled, pushed) = await service.twoWaySync();
                           if (context.mounted) {
-                            final msg = 'pref_sync_two_way_result'
-                                .tr
+                            final msg = 'pref_sync_two_way_result'.tr
                                 .replaceAll('{pulled}', '$pulled')
                                 .replaceAll('{pushed}', '$pushed');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(msg)),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(msg)));
                           }
                         },
                         icon: const Icon(Icons.sync_alt, size: 18),

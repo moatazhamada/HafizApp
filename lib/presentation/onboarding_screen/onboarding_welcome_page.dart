@@ -29,12 +29,12 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
   void _setupAnimations() {
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeIn,
+      curve: Curves.easeInOut,
     );
 
     _slideAnimation =

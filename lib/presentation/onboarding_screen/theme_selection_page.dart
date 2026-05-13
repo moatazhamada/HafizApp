@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
-import '../../theme/bloc/theme_bloc.dart';
 import 'widgets/onboarding_buttons.dart';
 import 'widgets/onboarding_scaffold.dart';
 
@@ -121,11 +119,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          option.icon,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: Icon(option.icon, color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 16),
                       Expanded(

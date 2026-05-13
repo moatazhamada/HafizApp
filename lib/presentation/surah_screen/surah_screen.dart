@@ -496,10 +496,7 @@ class _SurahScreenState extends State<SurahScreen> {
 
   Widget _buildSurahNavigation(BuildContext context, AppColors colors) {
     if (surah == null) return const SizedBox.shrink();
-    return SurahNavigationBar(
-      surah: surah!,
-      onNavigate: _navigateToSurah,
-    );
+    return SurahNavigationBar(surah: surah!, onNavigate: _navigateToSurah);
   }
 
   void _saveSession(double percentage) {
@@ -521,9 +518,7 @@ class _SurahScreenState extends State<SurahScreen> {
     sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
 
     // Fire-and-forget: report reading session to Quran.Foundation
-    unawaited(
-      sl<KhatmahRepository>().reportReadingSession(surah!.id, 1),
-    );
+    unawaited(sl<KhatmahRepository>().reportReadingSession(surah!.id, 1));
     unawaited(
       sl<AnalyticsService>().logReadingSession(
         chapterNumber: surah!.id,
@@ -534,8 +529,7 @@ class _SurahScreenState extends State<SurahScreen> {
     // Adaptive QRC: evaluate and adjust levels after each session
     if (PrefUtils().isAdaptiveQrc()) {
       sl<RecitationSessionBloc>().add(LoadSessions());
-      sl<RecitationSessionBloc>()
-          .stream
+      sl<RecitationSessionBloc>().stream
           .firstWhere((s) => s is RecitationSessionLoaded)
           .timeout(const Duration(seconds: 5))
           .then((state) {
@@ -817,7 +811,7 @@ class _SurahScreenState extends State<SurahScreen> {
                       'surahName': isArabic
                           ? surah!.nameArabic
                           : surah!.nameEnglish,
-                      if (startVerse != null) 'startVerse': startVerse,
+                      'startVerse': ?startVerse,
                     },
                   );
                   break;
@@ -1794,5 +1788,3 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 }
-
-

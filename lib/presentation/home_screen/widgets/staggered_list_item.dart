@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Maximum stagger delay to prevent long lists from taking forever to animate.
-const _kMaxStaggerDelay = Duration(milliseconds: 500);
+const _kMaxStaggerDelay = Duration(milliseconds: 200);
 
 /// A wrapper that adds a staggered fade + slide entry animation to list items.
 ///
@@ -17,8 +17,8 @@ class StaggeredListItem extends StatelessWidget {
     super.key,
     required this.child,
     required this.index,
-    this.delayPerItem = const Duration(milliseconds: 12),
-    this.duration = const Duration(milliseconds: 350),
+    this.delayPerItem = const Duration(milliseconds: 6),
+    this.duration = const Duration(milliseconds: 250),
   });
 
   @override
@@ -79,8 +79,8 @@ class StaggeredSliverListItem extends StatelessWidget {
     super.key,
     required this.child,
     required this.index,
-    this.delayPerItem = const Duration(milliseconds: 12),
-    this.duration = const Duration(milliseconds: 350),
+    this.delayPerItem = const Duration(milliseconds: 6),
+    this.duration = const Duration(milliseconds: 250),
   });
 
   @override

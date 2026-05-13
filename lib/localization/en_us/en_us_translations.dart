@@ -402,8 +402,16 @@ final Map<String, String> enUs = {
       'Expanded analytics \u2014 17 new events covering reading sessions, bookmarks, goals, and more.',
   'changelog_3_3_0_9':
       'Reading insights with activity heatmap \u2014 visualize your weekly Quran reading habits.',
-  'changelog_3_3_0_10':
-      'Performance fixes \u2014 eliminated 4.5-second staggered animation delay on Surah list.',
+  'changelog_3_2_0_1':
+      'Adaptive home surfaces \u2014 Reader, Student, and Seeker layouts that adapt to your usage.',
+  'changelog_3_2_0_2':
+      'Behavior tracking with smart surface suggestions based on your reading habits.',
+  'changelog_3_2_0_3':
+      'Reading activity heatmap \u2014 visualize your weekly Quran engagement at a glance.',
+  'changelog_3_2_0_4':
+      'Quran Reflect community feed \u2014 browse and share reflections on verses.',
+  'changelog_3_2_0_5':
+      'All content APIs now routed through Quran.Foundation for unified data integrity.',
   'changelog_3_1_0_7':
       'Force update mechanism for critical text accuracy fixes.',
   'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
@@ -558,6 +566,8 @@ final Map<String, String> enUs = {
   'lbl_surface_reader': 'Reader View',
   'lbl_surface_student': 'Student View',
   'lbl_surface_seeker': 'Seeker View',
+  'lbl_home_layout': 'Home Layout',
+  'msg_home_layout_desc': 'Choose your preferred home screen style',
   'lbl_review': 'Review',
   'lbl_search_quran': 'Search the Quran',
   'msg_search_desc': 'Find verses, topics, or Surahs',

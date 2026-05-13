@@ -84,10 +84,10 @@ class PreferenceSyncService {
     ),
   ];
 
-  QfPreferenceRemoteDataSource? _remote;
+  final QfPreferenceRemoteDataSource? _remote;
 
   PreferenceSyncService({QfPreferenceRemoteDataSource? remote})
-      : _remote = remote;
+    : _remote = remote;
 
   QfPreferenceRemoteDataSource get _ds =>
       _remote ?? sl<QfPreferenceRemoteDataSource>();
@@ -111,10 +111,12 @@ class PreferenceSyncService {
     }
 
     Logger.info('Pushed $pushed preferences to QF', feature: 'PrefSync');
-    unawaited(sl<AnalyticsService>().logPreferenceSync(
-      direction: 'push',
-      count: pushed,
-    ));
+    unawaited(
+      sl<AnalyticsService>().logPreferenceSync(
+        direction: 'push',
+        count: pushed,
+      ),
+    );
     return pushed;
   }
 
@@ -139,10 +141,12 @@ class PreferenceSyncService {
     }
 
     Logger.info('Pulled $applied preferences from QF', feature: 'PrefSync');
-    unawaited(sl<AnalyticsService>().logPreferenceSync(
-      direction: 'pull',
-      count: applied,
-    ));
+    unawaited(
+      sl<AnalyticsService>().logPreferenceSync(
+        direction: 'pull',
+        count: applied,
+      ),
+    );
     return applied;
   }
 

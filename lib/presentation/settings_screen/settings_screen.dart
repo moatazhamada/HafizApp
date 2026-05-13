@@ -17,6 +17,7 @@ import 'package:hafiz_app/core/utils/platform_file_utils.dart'
     if (dart.library.html) 'package:hafiz_app/core/utils/platform_file_utils_web.dart';
 import '../../injection_container.dart' as di;
 import '../auth/bloc/qf_auth_bloc.dart';
+import '../../core/models/surface_type.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -40,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _mushafType;
   late bool _dailyVerseEnabled;
   late bool _readingReminderEnabled;
+  late String _surfaceType;
   double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -65,6 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
     _readingReminderEnabled = PrefUtils().isReadingReminderEnabled();
+    _surfaceType = PrefUtils().getSurfaceType() ?? 'reader';
     _loadRecitationResources();
   }
 
@@ -109,6 +112,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildThemeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildFontSizeTile(),
+          ]),
+          const SizedBox(height: 20),
+          _buildSectionLabel('lbl_home_layout'.tr),
+          _buildCard([
+            _buildHomeLayoutTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_reading'.tr),
@@ -571,6 +579,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
     );
+  }
+
+  Widget _buildHomeLayoutTile() {
+    return ListTile(
+      leading: const Icon(Icons.dashboard_outlined),
+      title: Text('lbl_home_layout'.tr),
+      subtitle: Text(_surfaceTypeLabel(_surfaceType)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: _selectHomeLayout,
+    );
+  }
+
+  void _selectHomeLayout() async {
+    final result = await showDialog<SurfaceType>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('lbl_home_layout'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: SurfaceType.values.map((surface) {
+            final isSelected = _surfaceType == surface.name;
+            return ListTile(
+              leading: Icon(
+                switch (surface) {
+                  SurfaceType.reader => Icons.menu_book_outlined,
+                  SurfaceType.student => Icons.school_outlined,
+                  SurfaceType.seeker => Icons.explore_outlined,
+                },
+                color: isSelected ? Theme.of(context).colorScheme.primary : null,
+              ),
+              title: Text(surface.labelKey.tr),
+              trailing: isSelected
+                  ? Icon(Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () => Navigator.pop(ctx, surface),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+
+    if (result != null && result.name != _surfaceType) {
+      setState(() => _surfaceType = result.name);
+      PrefUtils().setSurfaceType(result.name);
+    }
+  }
+
+  String _surfaceTypeLabel(String type) {
+    return SurfaceType.fromString(type).labelKey.tr;
   }
 
   Widget _buildDailyVerseTile() {

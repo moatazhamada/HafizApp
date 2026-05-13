@@ -10,12 +10,16 @@ class SurahIndexWidget extends StatelessWidget {
   final String? searchQuery;
   final ScrollController? scrollController;
   final VoidCallback? onSurahTap;
+  /// Optional sliver widgets to insert before the surah list.
+  /// Useful when the entire screen (headers + list) should scroll together.
+  final List<Widget>? headerSlivers;
 
   const SurahIndexWidget({
     super.key,
     this.searchQuery,
     this.scrollController,
     this.onSurahTap,
+    this.headerSlivers,
   });
 
   List<_SurahListEntry> _buildEntries() {
@@ -87,6 +91,7 @@ class SurahIndexWidget extends StatelessWidget {
       controller: scrollController,
       key: const PageStorageKey('home-scroll'),
       slivers: [
+        if (headerSlivers != null) ...headerSlivers!,
         SliverList.builder(
           itemCount: entries.length,
           itemBuilder: (context, index) {

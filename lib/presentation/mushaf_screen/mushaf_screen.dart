@@ -273,7 +273,7 @@ class _MushafScreenState extends State<MushafScreen> {
           child: Stack(
             children: [
               PageView.builder(
-                reverse: true,
+                reverse: Directionality.of(context) == TextDirection.ltr,
                 key: ValueKey(_mushafType),
                 controller: _pageController,
                 physics: _isZoomed
