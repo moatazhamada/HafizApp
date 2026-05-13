@@ -328,9 +328,12 @@ final Map<String, String> arEg = {
 
   // Mushaf Settings
   'lbl_mushaf_type': 'نوع المصحف',
-  'lbl_clear_mushaf_cache': 'مسح ذاكرة صور المصحف',
+  'lbl_storage': 'التخزين',
+  'lbl_clear_mushaf_cache': 'مسح صور المصحف',
   'msg_clear_mushaf_cache_desc':
-      'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
+      'حرر مساحة بحذف صور صفحات المصحف المخزنة',
+  'msg_clear_mushaf_cache_confirm': 'سيؤدي هذا إلى إزالة جميع صور المصحف المخزنة. سيتم إعادة تنزيلها عند عرضها مرة أخرى.',
+  'msg_mushaf_cache_cleared': 'تم مسح ذاكرة المصحف بنجاح',
   'msg_cache_cleared': 'تم مسح ذاكرة الصور',
 
   // Statistics
@@ -681,4 +684,5 @@ final Map<String, String> arEg = {
   'msg_streak_desc': 'حافظ على عادتك اليومية',
   'lbl_khatmah': 'الختمة',
   'msg_khatmah_desc': 'تتبع تقدمك في ختم القرآن',
+
 };

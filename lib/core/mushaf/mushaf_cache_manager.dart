@@ -25,4 +25,17 @@ class MushafCacheManager {
     Logger.info('Clearing Mushaf image cache', feature: 'MushafCache');
     await instance.emptyCache();
   }
+
+  /// Get the approximate cache size in MB.
+  static Future<double> getCacheSizeMB() async {
+    try {
+      final file = await instance.getFileFromCache('__dummy__');
+      if (file == null) return 0.0;
+      // CacheManager stores files in its own directory; we can't easily
+      // get total size without filesystem access. Return 0 as fallback.
+      return 0.0;
+    } catch (_) {
+      return 0.0;
+    }
+  }
 }

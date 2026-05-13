@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/app_export.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
@@ -47,6 +48,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
     _verseSub = _handler.currentVerseStream.listen((verseIndex) {
       if (mounted && _currentVerse != verseIndex) {
         setState(() => _currentVerse = verseIndex);
@@ -73,6 +75,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   void dispose() {
     _verseSub?.cancel();
     _handler.stop();
+    WakelockPlus.disable();
     super.dispose();
   }
 

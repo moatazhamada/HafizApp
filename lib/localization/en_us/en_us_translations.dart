@@ -332,9 +332,12 @@ final Map<String, String> enUs = {
 
   // Mushaf Settings
   'lbl_mushaf_type': 'Mushaf Type',
-  'lbl_clear_mushaf_cache': 'Clear Mushaf Image Cache',
+  'lbl_storage': 'Storage',
+  'lbl_clear_mushaf_cache': 'Clear Mushaf Images',
   'msg_clear_mushaf_cache_desc':
-      'Remove cached page images to free space or fix display issues',
+      'Free up space by deleting cached Mushaf page images',
+  'msg_clear_mushaf_cache_confirm': 'This will remove all cached Mushaf images. They will be re-downloaded when you view them again.',
+  'msg_mushaf_cache_cleared': 'Mushaf cache cleared successfully',
   'msg_cache_cleared': 'Image cache cleared',
 
   // Statistics
@@ -706,4 +709,5 @@ final Map<String, String> enUs = {
   'msg_streak_desc': 'Keep your daily habit alive',
   'lbl_khatmah': 'Khatmah',
   'msg_khatmah_desc': 'Track your Quran completion progress',
+
 };

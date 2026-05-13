@@ -19,6 +19,7 @@ import '../../injection_container.dart' as di;
 import '../auth/bloc/qf_auth_bloc.dart';
 import '../../core/models/surface_type.dart';
 import '../../core/utils/rtl_utils.dart';
+import '../../core/mushaf/mushaf_cache_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -232,6 +233,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _downloadProgress != null ? null : _selectWhisperModel,
               ),
             ],
+          ]),
+          const SizedBox(height: 20),
+          _buildSectionLabel('lbl_storage'.tr),
+          _buildCard([
+            ListTile(
+              leading: Icon(
+                Icons.image_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text('lbl_clear_mushaf_cache'.tr),
+              subtitle: Text('msg_clear_mushaf_cache_desc'.tr),
+              trailing: Icon(rtlChevron(context)),
+              onTap: _clearMushafCache,
+            ),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_about'.tr),
@@ -1057,6 +1072,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _clearMushafCache() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('lbl_clear_mushaf_cache'.tr),
+        content: Text('msg_clear_mushaf_cache_confirm'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('lbl_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('lbl_confirm'.tr),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await MushafCacheManager.clearCache();
+      if (mounted) {
+        SnackBarHelper.show(
+          context,
+          message: 'msg_mushaf_cache_cleared'.tr,
+          type: SnackBarType.success,
+        );
+      }
+    }
   }
 }
 
