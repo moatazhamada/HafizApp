@@ -12,8 +12,6 @@ class RecitationErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -188,7 +186,7 @@ class RecitationErrorScreen extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.check_circle_outline,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),

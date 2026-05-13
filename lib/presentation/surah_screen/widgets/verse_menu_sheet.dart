@@ -18,6 +18,8 @@ void showVerseMenu(
   required bool isError,
   required VoidCallback onVerifyRecitation,
   required VoidCallback onOpenTafsir,
+  required VoidCallback onReadThisAyah,
+  required VoidCallback onStartFromHere,
 }) {
   showModalBottomSheet(
     context: context,
@@ -63,6 +65,36 @@ void showVerseMenu(
                   );
                 }
                 _triggerBookmarkSync(context);
+              },
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'lbl_read_this_ayah'.tr,
+            child: ListTile(
+              leading: Icon(
+                Icons.play_circle_outline,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text('lbl_read_this_ayah'.tr),
+              onTap: () {
+                Navigator.pop(context);
+                onReadThisAyah();
+              },
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'lbl_start_from_here'.tr,
+            child: ListTile(
+              leading: Icon(
+                Icons.play_arrow,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text('lbl_start_from_here'.tr),
+              onTap: () {
+                Navigator.pop(context);
+                onStartFromHere();
               },
             ),
           ),

@@ -47,7 +47,7 @@ final ThemeData lightTheme = ThemeData(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     ),
   ),
-  cardTheme: const CardTheme(
+  cardTheme: const CardThemeData(
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -58,7 +58,7 @@ final ThemeData lightTheme = ThemeData(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
   ),
-  dialogTheme: const DialogTheme(
+  dialogTheme: const DialogThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(20)),
     ),
@@ -88,6 +88,49 @@ final ThemeData darkTheme = ThemeData(
     seedColor: const Color(0xFF87D1A4), // soft green tint for dark
     brightness: Brightness.dark,
   ),
+  textTheme: const TextTheme(
+    headlineLarge: AppTextStyles.headingLarge,
+    headlineMedium: AppTextStyles.headingMedium,
+    headlineSmall: AppTextStyles.headingSmall,
+    titleLarge: AppTextStyles.headingSmall,
+    titleMedium: AppTextStyles.labelLarge,
+    titleSmall: AppTextStyles.labelMedium,
+    bodyLarge: AppTextStyles.bodyLarge,
+    bodyMedium: AppTextStyles.bodyMedium,
+    bodySmall: AppTextStyles.bodySmall,
+    labelLarge: AppTextStyles.labelLarge,
+    labelMedium: AppTextStyles.labelMedium,
+    labelSmall: AppTextStyles.labelSmall,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    ),
+  ),
+  cardTheme: const CardThemeData(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+  ),
+  bottomSheetTheme: const BottomSheetThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+  ),
+  dialogTheme: const DialogThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+  ),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),

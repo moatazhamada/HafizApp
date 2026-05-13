@@ -297,6 +297,9 @@ final Map<String, String> arEg = {
   'msg_text_copied': 'تم نسخ النص',
   'msg_via_app': 'عبر حافظ',
 
+  'lbl_read_this_ayah': 'اقرأ هذه الآية',
+  'lbl_start_from_here': 'ابدأ من هنا',
+
   // Audio Player
   'lbl_sleep_timer': 'مؤقت النوم',
   'lbl_cancel_timer': 'إلغاء المؤقت',
@@ -308,6 +311,8 @@ final Map<String, String> arEg = {
   'lbl_next_verse': 'الآية التالية',
   'msg_resume_audio': 'استئناف الاستماع',
   'msg_resume_from_verse': 'الاستمرار من الآية {verse}',
+  'lbl_speed_x': '{speed}x',
+  'msg_verse_progress': '{label} {current} / {total}',
 
   // Mushaf Screen
   'lbl_mushaf': 'المصحف',

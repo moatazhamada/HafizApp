@@ -535,7 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           PrefUtils().setVerseViewMode(val);
         });
       },
-      activeThumbColor: theme.colorScheme.primary,
+      activeThumbColor: Theme.of(context).colorScheme.primary,
     );
   }
 

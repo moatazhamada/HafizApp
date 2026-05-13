@@ -97,13 +97,18 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     emit(QfAuthLoading());
     try {
       await _authRemoteDataSource.logout();
-      // Reset preference sync prompt on logout so user is asked again next login.
-      await PrefUtils().setQfPrefSyncPrompted(false);
-      unawaited(sl<AnalyticsService>().logQfLogout());
       emit(QfAuthUnauthenticated());
     } catch (e) {
       emit(const QfAuthError(message: 'msg_unexpected_error'));
+      return;
     }
+    // Best-effort cleanup after successful logout.
+    try {
+      await PrefUtils().setQfPrefSyncPrompted(false);
+    } catch (_) {}
+    try {
+      unawaited(sl<AnalyticsService>().logQfLogout());
+    } catch (_) {}
   }
 
   Future<void> _onAuthDeleteDataRequested(

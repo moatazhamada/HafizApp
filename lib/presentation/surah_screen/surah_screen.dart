@@ -1042,6 +1042,31 @@ class _SurahScreenState extends State<SurahScreen> {
       isError: isError,
       onVerifyRecitation: () => _showVoiceDialog(aya),
       onOpenTafsir: () => _showTafsirSheet(aya),
+      onReadThisAyah: () {
+        AudioPlayerHandler().setLoopRange(
+          aya.verseNumber - 1,
+          aya.verseNumber - 1,
+        );
+        NavigatorService.pushNamed(
+          AppRoutes.audioPlayerScreen,
+          arguments: {
+            'surahId': surah!.id,
+            'surahName': surah!.nameEnglish,
+            'startVerse': aya.verseNumber,
+          },
+        );
+      },
+      onStartFromHere: () {
+        AudioPlayerHandler().clearLoop();
+        NavigatorService.pushNamed(
+          AppRoutes.audioPlayerScreen,
+          arguments: {
+            'surahId': surah!.id,
+            'surahName': surah!.nameEnglish,
+            'startVerse': aya.verseNumber,
+          },
+        );
+      },
     );
   }
 

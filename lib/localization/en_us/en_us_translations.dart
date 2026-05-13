@@ -301,6 +301,9 @@ final Map<String, String> enUs = {
   'msg_text_copied': 'Text copied to clipboard',
   'msg_via_app': 'via Hafiz',
 
+  'lbl_read_this_ayah': 'Read This Ayah',
+  'lbl_start_from_here': 'Start From Here',
+
   // Audio Player
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_cancel_timer': 'Cancel Timer',
@@ -312,6 +315,8 @@ final Map<String, String> enUs = {
   'lbl_next_verse': 'Next Ayah',
   'msg_resume_audio': 'Resume Listening',
   'msg_resume_from_verse': 'Continue from Ayah {verse}',
+  'lbl_speed_x': '{speed}x',
+  'msg_verse_progress': '{label} {current} / {total}',
 
   // Mushaf Screen
   'lbl_mushaf': 'Mushaf',

@@ -446,9 +446,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     final bool useWhisper = provider == 'local_whisper';
 
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       title: Semantics(header: true, child: Text(_dialogTitle)),
-      content: SingleChildScrollView(
-        child: Column(
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Semantics(
@@ -468,12 +471,24 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _isListening
-                        ? Colors.redAccent.withValues(alpha: 0.1)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .error
+                            .withValues(alpha: 0.1)
                         : _isCorrect
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1)
                         : _isWrong
-                        ? Colors.orangeAccent.withValues(alpha: 0.1)
-                        : Colors.blueAccent.withValues(alpha: 0.1),
+                        ? Theme.of(context)
+                            .colorScheme
+                            .errorContainer
+                            .withValues(alpha: 0.1)
+                        : Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                   ),
                   padding: const EdgeInsets.all(20),
                   child: Icon(
@@ -486,12 +501,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                         : Icons.mic_none,
                     size: 48,
                     color: _isListening
-                        ? Colors.redAccent
+                        ? Theme.of(context).colorScheme.error
                         : _isCorrect
-                        ? Colors.green
+                        ? Theme.of(context).colorScheme.primary
                         : _isWrong
-                        ? Colors.orangeAccent
-                        : Colors.blueAccent,
+                        ? Theme.of(context).colorScheme.errorContainer
+                        : Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -516,7 +531,13 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             if (!_showFeedback && !_isCorrect && !_isWrong)
               Text(
                 _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
               ),
             if (useQrc) ...[
               const SizedBox(height: 12),
@@ -542,9 +563,11 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                         final word = entry.value;
                         final isCorrect = _qrcWordIndex >= idx;
                         final isMistake = _qrcMistakeIndices.contains(idx);
-                        Color color = Colors.black87;
-                        if (isCorrect) color = Colors.green;
-                        if (isMistake) color = Colors.redAccent;
+                        final colorScheme = Theme.of(context).colorScheme;
+                        Color color = colorScheme.onSurface
+                            .withValues(alpha: 0.87);
+                        if (isCorrect) color = colorScheme.primary;
+                        if (isMistake) color = colorScheme.error;
                         return Text(
                           word,
                           style: TextStyle(
@@ -650,6 +673,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             ),
           ],
         ),
+      ),
       ),
       actions: [
         TextButton(

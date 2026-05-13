@@ -8,6 +8,8 @@ class MockQfAuthRemoteDataSource extends Mock
     implements QfAuthRemoteDataSource {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late MockQfAuthRemoteDataSource mockAuthDs;
   late QfAuthBloc bloc;
 
@@ -30,6 +32,8 @@ void main() {
             .thenAnswer((_) async => true);
         when(() => mockAuthDs.getUserId())
             .thenAnswer((_) async => 'user-123');
+        when(() => mockAuthDs.getUserProfile())
+            .thenAnswer((_) async => null);
         return bloc;
       },
       act: (bloc) => bloc.add(QfAuthCheckRequested()),

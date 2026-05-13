@@ -12,7 +12,7 @@ class PrefUtils {
   static String? _cachedAppVersion;
 
   PrefUtils() {
-    init();
+    init().catchError((_) {});
   }
 
   /// Cache the current app version for synchronous access during route setup.

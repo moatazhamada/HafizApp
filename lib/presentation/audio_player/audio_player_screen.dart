@@ -170,7 +170,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           children: _speedOptions
               .map(
                 (speed) => ListTile(
-                  title: Text('${speed}x'),
+                  title: Text(
+                    'lbl_speed_x'.tr.replaceAll('{speed}', '$speed'),
+                  ),
                   trailing: speed == _speed
                       ? Icon(
                           Icons.check,
@@ -229,13 +231,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: isCurrent
-                                ? theme.colorScheme.onPrimary
+                                ? Theme.of(ctx).colorScheme.onPrimary
                                 : null,
                           ),
                         ),
                       ),
                       title: Text(
-                        '${'lbl_verse'.tr} ${index + 1}',
+                        '${'lbl_verse_num'.tr} ${index + 1}',
                         style: TextStyle(
                           fontWeight:
                               isCurrent ? FontWeight.bold : FontWeight.normal,
@@ -374,7 +376,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                             ),
                           ),
                           Icon(
-                            Icons.chevron_right,
+                            Directionality.of(context) == TextDirection.rtl
+                                ? Icons.chevron_left
+                                : Icons.chevron_right,
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.4),
                           ),
@@ -412,6 +416,24 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   /// entire screen on every verse change.
 
   Widget _buildControls(ThemeData theme, bool isPlaying) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
+    // In RTL the Quran is read right-to-left, so spatial "previous"
+    // is on the right and "next" is on the left. We flip the skip
+    // icons horizontally so the arrows match the user's mental model.
+    Widget rtlAwareIcon(IconData icon, {double size = 24}) {
+      final child = Icon(icon, size: size);
+      if (!isRtl) return child;
+      // Only flip directional skip icons, not temporal replay/forward.
+      if (icon != Icons.skip_previous && icon != Icons.skip_next) {
+        return child;
+      }
+      return Transform.flip(
+        flipX: true,
+        child: child,
+      );
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -420,7 +442,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           button: true,
           label: 'lbl_previous_verse'.tr,
           child: IconButton(
-            icon: const Icon(Icons.skip_previous, size: 32),
+            icon: rtlAwareIcon(Icons.skip_previous, size: 32),
             tooltip: 'lbl_previous_verse'.tr,
             onPressed: isPlaying ? _previousVerse : null,
           ),
@@ -451,8 +473,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
             shape: BoxShape.circle,
           ),
           child: _isLoading
-              ? const Padding(
-                  padding: EdgeInsets.all(20),
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
                   child: CircularProgressIndicator(
                     color: theme.colorScheme.onPrimary,
                     strokeWidth: 2,
@@ -505,7 +527,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           button: true,
           label: 'lbl_next_verse'.tr,
           child: IconButton(
-            icon: const Icon(Icons.skip_next, size: 32),
+            icon: rtlAwareIcon(Icons.skip_next, size: 32),
             tooltip: 'lbl_next_verse'.tr,
             onPressed: isPlaying ? _nextVerse : null,
           ),
@@ -520,7 +542,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
       children: [
         TextButton.icon(
           icon: const Icon(Icons.speed),
-          label: Text('${_speed}x'),
+          label: Text(
+            'lbl_speed_x'.tr.replaceAll('{speed}', '$_speed'),
+          ),
           onPressed: _showSpeedDialog,
         ),
         TextButton.icon(
@@ -608,7 +632,10 @@ class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "${'lbl_verse_num'.tr} $displayVerse / ${widget.totalVerses}",
+              'msg_verse_progress'.tr
+                  .replaceAll('{label}', 'lbl_verse_num'.tr)
+                  .replaceAll('{current}', '$displayVerse')
+                  .replaceAll('{total}', '${widget.totalVerses}'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
