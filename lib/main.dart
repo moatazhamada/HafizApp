@@ -117,6 +117,20 @@ class MyApp extends StatelessWidget {
                   ? AppRoutes.homeScreen
                   : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
+              // Clamp text scale to prevent broken layouts at extreme accessibility
+              // sizes while still supporting users who need larger text.
+              builder: (context, child) {
+                final mediaQuery = MediaQuery.of(context);
+                final clampedScale = mediaQuery.textScaler
+                    .scale(1.0)
+                    .clamp(1.0, 1.5);
+                return MediaQuery(
+                  data: mediaQuery.copyWith(
+                    textScaler: TextScaler.linear(clampedScale),
+                  ),
+                  child: child!,
+                );
+              },
               // Silently handle unknown routes from navigation state restoration.
               onUnknownRoute: (_) => null,
             ),

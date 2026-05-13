@@ -31,6 +31,23 @@ class _MushafScreenState extends State<MushafScreen> {
   Timer? _overlayTimer;
   final Map<int, List<_VerseText>> _localTextCache = {};
 
+  // --------------------------------------------------------------------------
+  // CRITICAL: Mushaf Page Direction
+  // --------------------------------------------------------------------------
+  // The Mushaf is the physical Quran — it is ALWAYS an Arabic (RTL) book.
+  // Page 1 (Al-Fatiha) MUST appear on the RIGHT side of the screen, and
+  // users swipe LEFT to advance to the next page (page 2, 3, … 604).
+  //
+  // This is NOT affected by the app's UI language. An English-speaking user
+  // reading the Mushaf still turns pages the same way an Arabic-speaking user
+  // does, because the content itself is Arabic.
+  //
+  // Therefore PageView.reverse is HARDCODED to `true` below.
+  // DO NOT make this conditional on TextDirection, locale, or any setting.
+  // If you change this, you will break the Mushaf for every user.
+  // --------------------------------------------------------------------------
+  static const bool _kMushafPageReverse = true;
+
   @override
   void initState() {
     super.initState();
@@ -272,8 +289,10 @@ class _MushafScreenState extends State<MushafScreen> {
           onTap: _toggleOverlay,
           child: Stack(
             children: [
+              // NEVER change reverse — see the _kMushafPageReverse constant
+              // and the class-level comment above initState().
               PageView.builder(
-                reverse: true,
+                reverse: _kMushafPageReverse,
                 key: ValueKey(_mushafType),
                 controller: _pageController,
                 physics: _isZoomed
