@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import '../../model/bookmark_model.dart';
 
 abstract class BookmarkLocalDataSource {
@@ -23,8 +24,9 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
       if (e is! Map) continue;
       try {
         bookmarks.add(BookmarkModel.fromJson(Map<String, dynamic>.from(e)));
-      } catch (_) {
+      } catch (e) {
         // Skip malformed entries instead of failing the entire read.
+        Logger.warning('Skipping malformed bookmark entry: $e', feature: 'BookmarkLocal');
         continue;
       }
     }

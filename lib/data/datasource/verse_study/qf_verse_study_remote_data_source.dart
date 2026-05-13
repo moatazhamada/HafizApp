@@ -21,6 +21,12 @@ abstract class QfVerseStudyRemoteDataSource {
     String? tafsirId,
     String? translationId,
   });
+
+  Future<List<Map<String, dynamic>>> getAvailableTafsirs(String languageCode);
+
+  Future<List<Map<String, dynamic>>> getAvailableTranslations(
+    String languageCode,
+  );
 }
 
 class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
@@ -53,6 +59,56 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
       translation: translation,
       tafsir: tafsir,
     );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAvailableTafsirs(
+    String languageCode,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/resources/tafsirs',
+        queryParameters: {'language': languageCode},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final tafsirs = data['tafsirs'] as List?;
+        if (tafsirs != null) {
+          return tafsirs.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+    } catch (e) {
+      Logger.warning(
+        'Failed to fetch available tafsirs: $e',
+        feature: 'VerseStudy',
+      );
+    }
+    return [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAvailableTranslations(
+    String languageCode,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/resources/translations',
+        queryParameters: {'language': languageCode},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final translations = data['translations'] as List?;
+        if (translations != null) {
+          return translations.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+    } catch (e) {
+      Logger.warning(
+        'Failed to fetch available translations: $e',
+        feature: 'VerseStudy',
+      );
+    }
+    return [];
   }
 
   Future<String> _fetchArabic(String verseKey) async {
@@ -132,7 +188,8 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   bool _isArabicLocale() {
     try {
       return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to detect Arabic locale: $e', feature: 'VerseStudy');
       return false;
     }
   }

@@ -1,6 +1,5 @@
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
-import 'package:flutter/foundation.dart';
 
 class VoiceVerificationService {
   final SpeechToText _speechToText = SpeechToText();
@@ -14,8 +13,8 @@ class VoiceVerificationService {
     // Just simple check, actual init with UI prompt happens on listen usually or explicit init
     try {
       _isAvailable = await _speechToText.initialize(
-        onError: (error) => debugPrint('STT Error: $error'),
-        onStatus: (status) => debugPrint('STT Status: $status'),
+        onError: (error) => Logger.warning('STT Error: $error', feature: 'VoiceVerification'),
+        onStatus: (status) => Logger.info('STT Status: $status', feature: 'VoiceVerification'),
       );
       return _isAvailable;
     } catch (e) {

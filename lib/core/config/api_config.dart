@@ -1,4 +1,5 @@
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class ApiConfig {
   // Whether to prefer Quran.Foundation content endpoints.
@@ -73,7 +74,8 @@ class ApiConfig {
   static bool get _isArabic {
     try {
       return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to detect Arabic locale: $e', feature: 'ApiConfig');
       return false;
     }
   }

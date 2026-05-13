@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hafiz_app/core/quran/quran_word_models.dart';
 import 'package:hafiz_app/core/quran/quran_word_service.dart';
 import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
@@ -73,7 +74,8 @@ void main() {
         isA<VerseStudyLoaded>()
             .having((s) => s.arabicText, 'arabicText', 'بِسْمِ')
             .having((s) => s.translation, 'translation', 'In the name of')
-            .having((s) => s.tafsir, 'tafsir', 'Tafsir text'),
+            .having((s) => s.tafsir, 'tafsir', 'Tafsir text')
+            .having((s) => s.words, 'words', isNull),
         // LoadReflections sets reflectionsLoading = true
         isA<VerseStudyLoaded>().having(
           (s) => s.reflectionsLoading,
@@ -105,6 +107,58 @@ void main() {
       ),
       act: (bloc) => bloc.add(const LoadVerseStudy(testVerseKey)),
       expect: () => [isA<VerseStudyLoading>(), isA<VerseStudyError>()],
+    );
+  });
+
+  group('LoadVerseStudyWithSources', () {
+    blocTest<VerseStudyBloc, VerseStudyState>(
+      'emits [Loading, Loaded] with provided source IDs',
+      setUp: () {
+        when(
+          () => mockDataSource.getVerseStudy(
+            testVerseKey,
+            tafsirId: '91',
+            translationId: '101',
+          ),
+        ).thenAnswer(
+          (_) async => const VerseStudyData(
+            arabicText: 'بِسْمِ',
+            translation: 'Bismillah',
+            tafsir: 'Tafsir Saadi',
+          ),
+        );
+        when(
+          () => mockWordService.fetchVerseWords(testVerseKey),
+        ).thenAnswer(
+          (_) async => const VerseWordData(
+            verseKey: testVerseKey,
+            words: [],
+          ),
+        );
+      },
+      build: () => VerseStudyBloc(
+        dataSource: mockDataSource,
+        wordService: mockWordService,
+      ),
+      act:
+          (bloc) => bloc.add(
+            const LoadVerseStudyWithSources(
+              testVerseKey,
+              tafsirId: '91',
+              translationId: '101',
+            ),
+          ),
+      expect: () => [
+        isA<VerseStudyLoading>(),
+        isA<VerseStudyLoaded>()
+            .having((s) => s.selectedTafsirId, 'selectedTafsirId', '91')
+            .having(
+              (s) => s.selectedTranslationId,
+              'selectedTranslationId',
+              '101',
+            )
+            .having((s) => s.words, 'words', isNotNull),
+      ],
     );
   });
 

@@ -175,8 +175,9 @@ class AppInitializer {
       );
       try {
         FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-      } catch (_) {
+      } catch (e) {
         // Crashlytics not available on this platform
+        Logger.info('Crashlytics not available on this platform: $e', feature: 'Init');
       }
     };
 
@@ -190,8 +191,9 @@ class AppInitializer {
       );
       try {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      } catch (_) {
+      } catch (e) {
         // Crashlytics not available on this platform
+        Logger.info('Crashlytics not available on this platform: $e', feature: 'Init');
       }
       return true;
     };

@@ -95,7 +95,8 @@ class ReadingSessionInsights extends StatelessWidget {
       return recentLogs.firstWhere(
         (log) => _dateKey(log.date) == key,
       );
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to find log for date: $e', feature: 'ReadingInsights');
       return null;
     }
   }

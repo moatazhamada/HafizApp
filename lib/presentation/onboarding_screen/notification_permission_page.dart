@@ -37,7 +37,7 @@ class _NotificationPermissionPageState
       await service.scheduleDailyVerse();
       await service.scheduleReadingReminder();
     } catch (e) {
-      debugPrint('Notification setup failed: $e');
+      Logger.warning('Notification setup failed: $e', feature: 'Notifications');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

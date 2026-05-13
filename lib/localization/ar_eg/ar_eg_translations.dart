@@ -290,7 +290,8 @@ final Map<String, String> arEg = {
 
   // Sharing
   'lbl_share_verse': 'مشاركة الآية',
-  'lbl_share_text': 'مشاركة كنص',
+  'lbl_share_text': 'مشاركة النص',
+  'lbl_share_as_image': 'مشاركة كصورة',
   'msg_share_text_desc': 'شارك الآية مع الإسناد',
   'lbl_copy_text': 'نسخ النص',
   'msg_copy_text_desc': 'نسخ نص الآية فقط',
@@ -465,6 +466,13 @@ final Map<String, String> arEg = {
   'lbl_word_by_word': 'كلمة بكلمة',
   'lbl_select_tafsir_source': 'اختر مصدر التفسير',
   'lbl_select_translation_source': 'اختر مصدر الترجمة',
+  'lbl_tab_overview': 'نظرة عامة',
+  'lbl_tab_tafsir': 'تفسير',
+  'lbl_tab_translation': 'ترجمة',
+  'lbl_tab_word_by_word': 'كلمة بكلمة',
+  'lbl_tab_reflections': 'تأملات',
+  'lbl_select_tafsir': 'اختر التفسير',
+  'lbl_select_translation': 'اختر الترجمة',
 
   // Recitation feedback
   'lbl_keep_practicing': 'واصل التدريب',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/core/services/app_initializer.dart';
+import 'package:hafiz_app/core/services/app_lifecycle_manager.dart';
 
 import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
@@ -212,20 +213,23 @@ class MyApp extends StatelessWidget {
                   ? AppRoutes.homeScreen
                   : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
-              // Clamp text scale to prevent broken layouts at extreme accessibility
-              // sizes while still supporting users who need larger text.
               builder: (context, child) {
                 final mediaQuery = MediaQuery.of(context);
                 final clampedScale = mediaQuery.textScaler
                     .scale(1.0)
                     .clamp(0.8, 2.0);
-                return MediaQuery(
-                  data: mediaQuery.copyWith(
-                    textScaler: TextScaler.linear(clampedScale),
+                return AppLifecycleManager(
+                  child: MediaQuery(
+                    data: mediaQuery.copyWith(
+                      textScaler: TextScaler.linear(clampedScale),
+                    ),
+                    child: child!,
                   ),
-                  child: child!,
                 );
               },
+              // Clamp text scale to prevent broken layouts at extreme accessibility
+              // sizes while still supporting users who need larger text.
+              // Handled by AppLifecycleManager wrapper above.
               // Silently handle unknown routes from navigation state restoration.
               onUnknownRoute: (_) => null,
             ),

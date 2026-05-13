@@ -354,7 +354,8 @@ class PrefUtils {
     try {
       final s = _requirePrefs().getString('qf_last_sync_at');
       return s != null ? DateTime.tryParse(s) : null;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read qf_last_sync_at: $e', feature: 'Prefs');
       return null;
     }
   }
@@ -597,7 +598,8 @@ class PrefUtils {
   int? getLastAudioVerse(int surahId) {
     try {
       return _requirePrefs().getInt('last_audio_verse_$surahId');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read last audio verse: $e', feature: 'Prefs');
       return null;
     }
   }
@@ -615,7 +617,8 @@ class PrefUtils {
   bool getQfPrefSyncPrompted() {
     try {
       return _requirePrefs().getBool(_qfPrefSyncPromptedKey) ?? false;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read QF pref sync prompted: $e', feature: 'Prefs');
       return false;
     }
   }
@@ -628,7 +631,8 @@ class PrefUtils {
   String? getQfPrefSyncDirection() {
     try {
       return _requirePrefs().getString(_qfPrefSyncDirectionKey);
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read QF pref sync direction: $e', feature: 'Prefs');
       return null;
     }
   }
@@ -648,7 +652,8 @@ class PrefUtils {
   bool hasDismissedWidgetPromo() {
     try {
       return _requirePrefs().getBool(_widgetPromoDismissedKey) ?? false;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read widget promo dismissed: $e', feature: 'Prefs');
       return false;
     }
   }

@@ -3,6 +3,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class ConnectivityState extends Equatable {
   final bool isOnline;
@@ -78,7 +79,8 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
         options: Options(sendTimeout: _timeout, receiveTimeout: _timeout),
       );
       return response.statusCode == 204;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Reachability check failed: $e', feature: 'Connectivity');
       return false;
     }
   }

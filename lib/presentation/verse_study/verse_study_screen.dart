@@ -4,8 +4,8 @@ import 'package:hafiz_app/injection_container.dart' as di;
 import 'package:hafiz_app/core/quran/quran_word_service.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
-import 'package:just_audio/just_audio.dart';
 import 'bloc/verse_study_bloc.dart';
+import 'widgets/word_by_word_section.dart';
 
 class VerseStudyScreen extends StatelessWidget {
   final String verseKey;
@@ -20,11 +20,24 @@ class VerseStudyScreen extends StatelessWidget {
         wordService: di.sl<QuranWordService>(),
         postDataSource: di.sl<QfPostRemoteDataSource>(),
       )..add(LoadVerseStudy(verseKey)),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('lbl_verse_study_title'.tr.replaceAll('{key}', verseKey)),
+      child: DefaultTabController(
+        length: 5,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('lbl_verse_study_title'.tr.replaceAll('{key}', verseKey)),
+            bottom: TabBar(
+              isScrollable: true,
+              tabs: [
+                Tab(text: 'lbl_tab_overview'.tr),
+                Tab(text: 'lbl_tab_tafsir'.tr),
+                Tab(text: 'lbl_tab_translation'.tr),
+                Tab(text: 'lbl_tab_word_by_word'.tr),
+                Tab(text: 'lbl_tab_reflections'.tr),
+              ],
+            ),
+          ),
+          body: const _VerseStudyView(),
         ),
-        body: const _VerseStudyView(),
       ),
     );
   }
@@ -72,26 +85,14 @@ class _VerseStudyView extends StatelessWidget {
           );
         }
         if (state is VerseStudyLoaded) {
-          return DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                TabBar(
-                  tabs: [
-                    Tab(text: 'lbl_overview'.tr),
-                    Tab(text: 'lbl_word_by_word'.tr),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _OverviewTab(state: state),
-                      _WordByWordTab(state: state),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          return TabBarView(
+            children: [
+              _OverviewTab(state: state),
+              _TafsirTab(state: state),
+              _TranslationTab(state: state),
+              WordByWordSection(words: state.words),
+              _ReflectionsTab(state: state),
+            ],
           );
         }
         return const SizedBox.shrink();
@@ -134,53 +135,48 @@ class _OverviewTab extends StatelessWidget {
               title: 'lbl_translation'.tr,
               icon: Icons.translate,
               color: Colors.blue,
-              trailing: IconButton(
-                icon: const Icon(Icons.tune, size: 18),
-                onPressed: () => _showSourceSelector(
-                  context,
-                  title: 'lbl_select_translation_source'.tr,
-                  options: _translationOptions,
-                  selectedId: state.selectedTranslationId,
-                  onSelected: (id) => context.read<VerseStudyBloc>().add(
-                    ChangeTranslationSource(
-                      id: id,
-                      verseKey: state.verseKey!,
-                    ),
-                  ),
-                ),
-              ),
               child: SelectableText(_stripHtml(state.translation)),
             ),
             const SizedBox(height: 20),
           ],
-          if (state.tafsir.isNotEmpty) ...[
-            _SectionCard(
-              title: _tafsirTitleForId(state.selectedTafsirId),
-              icon: Icons.menu_book,
-              color: Colors.deepPurple,
-              trailing: IconButton(
-                icon: const Icon(Icons.tune, size: 18),
-                onPressed: () => _showSourceSelector(
-                  context,
-                  title: 'lbl_select_tafsir_source'.tr,
-                  options: _tafsirOptions(context),
-                  selectedId: state.selectedTafsirId,
-                  onSelected: (id) => context.read<VerseStudyBloc>().add(
-                    ChangeTafsirSource(
-                      id: id,
-                      verseKey: state.verseKey!,
-                    ),
-                  ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TafsirTab extends StatelessWidget {
+  final VerseStudyLoaded state;
+
+  const _TafsirTab({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionCard(
+            title: _tafsirTitleForId(state.selectedTafsirId),
+            icon: Icons.menu_book,
+            color: Colors.deepPurple,
+            trailing: IconButton(
+              icon: const Icon(Icons.tune, size: 18),
+              onPressed: () => _showSourceSelector(
+                context,
+                title: 'lbl_select_tafsir'.tr,
+                options: _tafsirOptions(context),
+                selectedId: state.selectedTafsirId,
+                onSelected: (id) => context.read<VerseStudyBloc>().add(
+                  ChangeTafsirSource(id: id, verseKey: state.verseKey!),
                 ),
               ),
-              child: SelectableText(_stripHtml(state.tafsir)),
             ),
-            const SizedBox(height: 20),
-          ],
-          _ReflectionsSection(
-            verseKey: state.verseKey ?? '',
-            reflections: state.reflections,
-            isLoading: state.reflectionsLoading,
+            child:
+                state.tafsir.isNotEmpty
+                    ? SelectableText(_stripHtml(state.tafsir))
+                    : Text('lbl_loading'.tr),
           ),
         ],
       ),
@@ -188,94 +184,58 @@ class _OverviewTab extends StatelessWidget {
   }
 }
 
-class _WordByWordTab extends StatefulWidget {
+class _TranslationTab extends StatelessWidget {
   final VerseStudyLoaded state;
 
-  const _WordByWordTab({required this.state});
-
-  @override
-  State<_WordByWordTab> createState() => _WordByWordTabState();
-}
-
-class _WordByWordTabState extends State<_WordByWordTab> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  Future<void> _playWord(String? url) async {
-    if (url == null || url.isEmpty) return;
-    try {
-      await _audioPlayer.setUrl(url);
-      await _audioPlayer.play();
-    } catch (e) {
-      Logger.warning('Failed to play word audio: $e', feature: 'VerseStudy');
-    }
-  }
+  const _TranslationTab({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final words =
-        widget.state.words?.words.where((w) => w.charType != 'end').toList() ??
-        [];
-    if (words.isEmpty) {
-      return Center(child: Text('lbl_loading'.tr));
-    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 16,
-          alignment: WrapAlignment.center,
-          children: words.map((word) {
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: InkWell(
-                onTap:
-                    word.fullAudioUrl != null
-                        ? () => _playWord(word.fullAudioUrl)
-                        : null,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        word.textUthmani,
-                        textDirection: TextDirection.rtl,
-                        style: TextStyle(
-                          fontSize: PrefUtils().getQuranFontSize(),
-                          fontFamily: 'NotoNaskhArabic',
-                        ),
-                      ),
-                      if (word.transliteration != null &&
-                          word.transliteration!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            word.transliteration!,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                    ],
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionCard(
+            title: 'lbl_translation'.tr,
+            icon: Icons.translate,
+            color: Colors.blue,
+            trailing: IconButton(
+              icon: const Icon(Icons.tune, size: 18),
+              onPressed: () => _showSourceSelector(
+                context,
+                title: 'lbl_select_translation'.tr,
+                options: _translationOptions,
+                selectedId: state.selectedTranslationId,
+                onSelected: (id) => context.read<VerseStudyBloc>().add(
+                  ChangeTranslationSource(id: id, verseKey: state.verseKey!),
                 ),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+            child:
+                state.translation.isNotEmpty
+                    ? SelectableText(_stripHtml(state.translation))
+                    : Text('lbl_loading'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReflectionsTab extends StatelessWidget {
+  final VerseStudyLoaded state;
+
+  const _ReflectionsTab({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: _ReflectionsSection(
+        verseKey: state.verseKey ?? '',
+        reflections: state.reflections,
+        isLoading: state.reflectionsLoading,
       ),
     );
   }

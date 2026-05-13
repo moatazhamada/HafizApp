@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 
 /// Tracks lightweight user behavior sessions to suggest the optimal surface.
@@ -89,7 +90,8 @@ class BehaviorTracker {
       if (raw == null || raw.isEmpty) return [];
       final list = jsonDecode(raw) as List<dynamic>;
       return list.cast<Map<String, dynamic>>();
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to decode behavior sessions: $e', feature: 'BehaviorTracker');
       return [];
     }
   }

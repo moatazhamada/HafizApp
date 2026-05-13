@@ -38,21 +38,4 @@ class _HifzModeOverlay extends StatelessWidget {
     );
   }
 
-  static TextStyle blurTextStyle({
-    required TextStyle baseStyle,
-    required bool isBlurred,
-    required Color textColor,
-  }) {
-    if (!isBlurred) return baseStyle;
-    return baseStyle.copyWith(
-      color: Colors.transparent,
-      shadows: [
-        Shadow(
-          color: textColor,
-          blurRadius: 20.0,
-          offset: Offset.zero,
-        ),
-      ],
-    );
-  }
 }

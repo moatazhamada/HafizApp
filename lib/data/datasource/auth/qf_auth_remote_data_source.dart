@@ -316,7 +316,8 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
             );
             try {
               return await _refreshWithScopes(QfApiConfig.coreScopes);
-            } catch (_) {
+            } catch (e) {
+              Logger.warning('Token refresh with core scopes failed: $e', feature: 'QfAuth');
               await logout();
               return false;
             }

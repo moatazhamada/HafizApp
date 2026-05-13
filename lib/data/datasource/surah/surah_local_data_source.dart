@@ -87,7 +87,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
       if (!_surahCache!.containsKey(basePath)) {
         final token = RootIsolateToken.instance;
         if (token == null) {
-          debugPrint(
+          Logger.warning(
             'RootIsolateToken is null, cannot spawn isolate with channels',
           );
           return [];

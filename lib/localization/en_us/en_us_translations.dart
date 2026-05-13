@@ -294,7 +294,8 @@ final Map<String, String> enUs = {
 
   // Sharing
   'lbl_share_verse': 'Share Verse',
-  'lbl_share_text': 'Share as Text',
+  'lbl_share_text': 'Share Text',
+  'lbl_share_as_image': 'Share as Image',
   'msg_share_text_desc': 'Share verse with attribution',
   'lbl_copy_text': 'Copy Text',
   'msg_copy_text_desc': 'Copy verse text only',
@@ -487,6 +488,13 @@ final Map<String, String> enUs = {
   'lbl_word_by_word': 'Word by Word',
   'lbl_select_tafsir_source': 'Select Tafsir Source',
   'lbl_select_translation_source': 'Select Translation Source',
+  'lbl_tab_overview': 'Overview',
+  'lbl_tab_tafsir': 'Tafsir',
+  'lbl_tab_translation': 'Translation',
+  'lbl_tab_word_by_word': 'Word by Word',
+  'lbl_tab_reflections': 'Reflections',
+  'lbl_select_tafsir': 'Select Tafsir',
+  'lbl_select_translation': 'Select Translation',
 
   // Recitation feedback
   'lbl_keep_practicing': 'Keep Practicing',

@@ -233,7 +233,8 @@ class _ReflectionCard extends StatelessWidget {
       if (diff.inDays == 1) return 'lbl_yesterday'.tr;
       if (diff.inDays < 7) return '${diff.inDays} days ago';
       return '${date.day}/${date.month}/${date.year}';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to format date: $e', feature: 'QuranReflect');
       return '';
     }
   }

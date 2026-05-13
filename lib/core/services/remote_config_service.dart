@@ -32,7 +32,8 @@ class RemoteConfigService {
   int get minVersionCode {
     try {
       return _remoteConfig.getInt('min_version_code');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read min_version_code: $e', feature: 'RemoteConfig');
       return 0;
     }
   }
@@ -40,7 +41,8 @@ class RemoteConfigService {
   String get forceUpdateMessage {
     try {
       return _remoteConfig.getString('force_update_message');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read force_update_message: $e', feature: 'RemoteConfig');
       return '';
     }
   }
@@ -48,7 +50,8 @@ class RemoteConfigService {
   bool get showMusaliCard {
     try {
       return _remoteConfig.getBool('show_musali_card');
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to read show_musali_card: $e', feature: 'RemoteConfig');
       return false;
     }
   }

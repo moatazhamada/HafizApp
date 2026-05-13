@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class AnalyticsService {
   FirebaseAnalytics? _cached;
@@ -14,7 +15,8 @@ class AnalyticsService {
       if (Firebase.apps.isEmpty) return null;
       _cached = FirebaseAnalytics.instance;
       return _cached;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Analytics initialization failed: $e', feature: 'Analytics');
       return null;
     }
   }

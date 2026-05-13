@@ -150,8 +150,9 @@ class SurahRepositoryImpl implements SurahRepository {
                   allMatches.add(verse);
                 }
               }
-            } catch (_) {
+            } catch (e) {
               // Ignore malformed cache entries
+              Logger.warning('Ignoring malformed cache entry: $e', feature: 'Search');
             }
           }
         }

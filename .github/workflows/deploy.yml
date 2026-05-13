@@ -98,7 +98,7 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
       - name: Build Release AAB
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --flavor production --dart-define-from-file=.dart_defines.production.json
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}

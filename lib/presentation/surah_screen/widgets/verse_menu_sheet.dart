@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/share_as_image.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/presentation/surah_screen/widgets/verse_image_card.dart';
 import 'package:hafiz_app/widgets/verse_share_sheet.dart';
+import 'package:share_plus/share_plus.dart' show Share, XFile;
 
 void showVerseMenu(
   BuildContext context, {
@@ -167,7 +172,23 @@ void showVerseMenu(
                   surahId: surahId,
                   verseNumber: verse.verseNumber,
                   surahName: surahNameEnglish,
+                  translation: verse.translationText,
                 );
+              },
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'lbl_share_as_image'.tr,
+            child: ListTile(
+              leading: Icon(
+                Icons.image_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text('lbl_share_as_image'.tr),
+              onTap: () async {
+                Navigator.pop(context);
+                await _shareVerseAsImage(verse, surahNameEnglish);
               },
             ),
           ),
@@ -208,6 +229,59 @@ void showVerseMenu(
       ),
     ),
   );
+}
+
+Future<void> _shareVerseAsImage(Verse verse, String surahName) async {
+  final rootContext = NavigatorService.navigatorKey.currentContext;
+  if (rootContext == null) return;
+
+  final navigator = Navigator.of(rootContext, rootNavigator: true);
+  final scaffoldMessenger = ScaffoldMessenger.of(rootContext);
+
+  unawaited(showDialog(
+    context: rootContext,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  ));
+
+  final key = GlobalKey();
+  final overlay = Overlay.of(rootContext);
+  final entry = OverlayEntry(
+    builder: (context) => Positioned(
+      left: -9999,
+      child: RepaintBoundary(
+        key: key,
+        child: VerseImageCard(
+          arabicText: verse.arabicText,
+          surahName: surahName,
+          verseNumber: verse.verseNumber,
+          translation: verse.translationText,
+          width: 1080,
+          height: 1350,
+        ),
+      ),
+    ),
+  );
+
+  overlay.insert(entry);
+
+  // Wait for the widget to render before capturing
+  await Future.delayed(const Duration(milliseconds: 100));
+  await WidgetsBinding.instance.endOfFrame;
+
+  try {
+    final path = await ShareAsImage.captureWidget(key);
+    entry.remove();
+    navigator.pop();
+    await Share.shareXFiles([XFile(path)], text: 'Shared from Hafiz');
+  } catch (e) {
+    entry.remove();
+    navigator.pop();
+    Logger.error('Failed to share image: $e', feature: 'Sharing');
+    scaffoldMessenger.showSnackBar(
+      SnackBar(content: Text('msg_operation_failed'.tr)),
+    );
+  }
 }
 
 void _triggerBookmarkSync(BuildContext context) {

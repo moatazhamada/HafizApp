@@ -59,7 +59,8 @@ class QfTranslationRemoteDataSource {
   bool _isArabicLocale() {
     try {
       return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to detect Arabic locale: $e', feature: 'Translation');
       return false;
     }
   }

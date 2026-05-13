@@ -44,7 +44,7 @@ Locale getCurrentLocale() {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with WidgetsBindingObserver, RouteAware {
+    with RouteAware {
   final homeBloc = sl<HomeBloc>();
   final themeBloc = sl<ThemeBloc>();
   @override
