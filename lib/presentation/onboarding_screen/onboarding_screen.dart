@@ -128,15 +128,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: _isLightBackground
-                              ? Colors.black.withValues(alpha: 0.05)
-                              : Colors.white.withValues(alpha: 0.1),
+                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
+                              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           rtlBackArrow(context),
                           color: _isLightBackground
-                              ? Colors.black87
-                              : Colors.white,
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onPrimary,
                           size: 20,
                         ),
                       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
@@ -64,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
             button: true,
             label: 'lbl_back'.tr,
             child: IconButton(
-              icon: Icon(rtlBackArrow(context), color: Colors.white),
+              icon: Icon(rtlBackArrow(context), color: Theme.of(context).colorScheme.onPrimary),
               onPressed: () => NavigatorService.goBack(),
               tooltip: 'lbl_back'.tr,
             ),
@@ -75,19 +74,19 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              cursorColor: Colors.white,
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16),
+              cursorColor: Theme.of(context).colorScheme.onPrimary,
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'lbl_search_surah'.tr,
-                hintStyle: const TextStyle(color: Colors.white70),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)),
                 border: InputBorder.none,
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _searchController,
                   builder: (context, value, child) {
                     if (value.text.isNotEmpty) {
                       return IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white70),
+                        icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)),
                         onPressed: () {
                           _searchController.clear();
                           _searchBloc.add(const SearchQueryChanged(''));
@@ -163,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : theme.primaryColor,
+                              color: isDark ? Theme.of(context).colorScheme.onSurface : theme.primaryColor,
                             ),
                           ),
                         ),
@@ -210,7 +209,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : theme.primaryColor,
+                              color: isDark ? Theme.of(context).colorScheme.onSurface : theme.primaryColor,
                             ),
                           ),
                         ),
@@ -257,14 +256,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
+                                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                     ),
                                   )
                                 : Text(
                                     '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
                                     style: TextStyle(
-                                      color: isDark ? Colors.grey[400] : null,
+                                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : null,
                                     ),
                                   ),
                             leading: Container(
@@ -299,8 +298,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             '$totalResults ${'msg_results_count'.tr}',
                             style: TextStyle(
                               color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[600],
+                                  ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               fontSize: 13,
                             ),
                           ),
@@ -319,14 +318,14 @@ class _SearchScreenState extends State<SearchScreen> {
                       Icon(
                         Icons.search_off_rounded,
                         size: 64,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'msg_no_results'.tr,
                         style: TextStyle(
                           fontSize: 16,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -346,15 +345,15 @@ class _SearchScreenState extends State<SearchScreen> {
                           Icons.error_outline_rounded,
                           size: 64,
                           color: isDark
-                              ? Colors.redAccent[200]
-                              : Colors.red[300],
+                              ? AppColors.of(context).needsReviewStatus.withValues(alpha: 0.7)
+                              : AppColors.of(context).needsReviewStatus.withValues(alpha: 0.6),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           '${'lbl_error'.tr}: ${state.message}',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark ? Colors.redAccent : Colors.red,
+                            color: AppColors.of(context).needsReviewStatus,
                           ),
                         ),
                       ],
@@ -371,14 +370,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(
                     Icons.search_rounded,
                     size: 64,
-                    color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'msg_search_hint'.tr,
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -448,10 +447,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark
-        ? Colors.white
+        ? Theme.of(context).colorScheme.onSurface
         : Theme.of(context).textTheme.bodyLarge?.color;
     final subtleColor = isDark
-        ? Colors.grey[400]
+        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
         : Theme.of(context).textTheme.bodyMedium?.color;
 
     return RichText(
@@ -477,7 +476,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ? AppColors.of(context).bismillahColor
                   : Theme.of(context).primaryColor,
               backgroundColor: isDark
-                  ? Colors.amberAccent
+                  ? AppColors.of(context).warning.withValues(alpha: 0.3)
                   : Theme.of(context).primaryColor.withValues(alpha: 0.1),
             ),
           ),
@@ -506,7 +505,7 @@ class _SearchScreenState extends State<SearchScreen> {
       style: TextStyle(
         fontFamily: 'NotoNaskhArabic',
         fontSize: PrefUtils().getQuranFontSize(),
-        color: isDark ? Colors.white : null,
+        color: isDark ? Theme.of(context).colorScheme.onSurface : null,
       ),
     );
   }

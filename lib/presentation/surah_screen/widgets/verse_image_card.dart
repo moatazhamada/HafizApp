@@ -46,7 +46,7 @@ class VerseImageCard extends StatelessWidget {
               width: 40,
               height: 2,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(1),
               ),
             ),
@@ -55,20 +55,20 @@ class VerseImageCard extends StatelessWidget {
               arabicText,
               textDirection: TextDirection.rtl,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
                 fontSize: 28,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 height: 1.6,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               '$surahName — $verseNumber',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
                 fontSize: 16,
-                color: Colors.white70,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
               ),
             ),
             if (translation != null && translation!.isNotEmpty) ...[
@@ -76,25 +76,25 @@ class VerseImageCard extends StatelessWidget {
               Container(
                 width: 60,
                 height: 1,
-                color: Colors.white24,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
               ),
               const SizedBox(height: 16),
               Text(
                 translation!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white70,
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                   height: 1.5,
                 ),
               ),
             ],
             const Spacer(),
-            const Text(
+            Text(
               'Shared from Hafiz',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white38,
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
               ),
             ),
           ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_converter.dart';
 import '../../../core/utils/rtl_utils.dart';
 

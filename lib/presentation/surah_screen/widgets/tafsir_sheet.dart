@@ -42,14 +42,14 @@ void showTafsirSheet(
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
                       IconButton(
                         icon: Icon(
                           Icons.close,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         onPressed: () => Navigator.pop(context),
                         tooltip: 'lbl_close'.tr,
@@ -71,13 +71,13 @@ void showTafsirSheet(
                                 Icon(
                                   Icons.error_outline,
                                   size: 48,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'msg_tafsir_error'.tr,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                                 ),
                               ],
                             ),
@@ -89,7 +89,7 @@ void showTafsirSheet(
                           child: snapshot.data!.fold(
                             (failure) => Text(
                               'msg_tafsir_error'.tr,
-                              style: TextStyle(color: Colors.grey[600]),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                             ),
                             (tafsir) => Text(
                               stripHtmlTags(tafsir.text),
@@ -98,8 +98,8 @@ void showTafsirSheet(
                                 fontSize: 16,
                                 height: 1.8,
                                 color: isDark
-                                    ? Colors.grey[300]
-                                    : Colors.black87,
+                                    ? Theme.of(context).colorScheme.onSurface
+                                    : Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),

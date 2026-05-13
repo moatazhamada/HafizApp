@@ -172,7 +172,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                         style: TextStyle(
                           fontSize: 18,
                           fontFamily: 'NotoNaskhArabic',
-                          color: highlight ? Colors.green : Colors.black87,
+                          color: highlight ? AppColors.of(context).memorizedStatus : Theme.of(context).colorScheme.onSurface,
                           fontWeight: highlight
                               ? FontWeight.bold
                               : FontWeight.normal,

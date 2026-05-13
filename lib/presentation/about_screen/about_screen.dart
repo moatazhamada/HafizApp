@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/services/remote_config_service.dart';
@@ -171,12 +170,12 @@ class _AboutScreenState extends State<AboutScreen> {
                         }
                       },
                 child: isSending
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : Text('about_feedback_send'.tr),
@@ -406,7 +405,6 @@ class MusaliComingSoonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       child: Column(
@@ -442,9 +440,7 @@ class MusaliComingSoonCard extends StatelessWidget {
                       Text(
                         'musali_status'.tr,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.black.withValues(alpha: 0.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],

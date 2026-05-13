@@ -278,7 +278,7 @@ class _VerseListView extends StatelessWidget {
               fontFamily: 'NotoNaskhArabic',
               fontSize: PrefUtils().getQuranFontSize() - 4,
               fontWeight: FontWeight.bold,
-              color: Colors.teal,
+              color: AppColors.of(context).statBookmark,
               height: 2.2,
             ),
           ),
@@ -502,10 +502,10 @@ class _VerseListView extends StatelessWidget {
                 border: (isBookmarked || isRecitationError || isHighlighted)
                     ? Border.all(
                         color: isHighlighted
-                            ? Colors.teal.withValues(alpha: 0.5)
+                            ? AppColors.of(context).statBookmark.withValues(alpha: 0.5)
                             : isRecitationError
-                            ? Colors.red.withValues(alpha: 0.3)
-                            : Colors.teal.withValues(alpha: 0.3),
+                            ? AppColors.of(context).needsReviewStatus.withValues(alpha: 0.3)
+                            : AppColors.of(context).statBookmark.withValues(alpha: 0.3),
                         width: isHighlighted ? 2 : 1,
                       )
                     : null,
@@ -540,7 +540,7 @@ class _VerseListView extends StatelessWidget {
                             fontFamily: 'NotoNaskhArabic',
                             fontSize: PrefUtils().getQuranFontSize() - 6,
                             fontWeight: FontWeight.bold,
-                            color: Colors.teal,
+                            color: AppColors.of(context).statBookmark,
                           ),
                         ),
                       ),

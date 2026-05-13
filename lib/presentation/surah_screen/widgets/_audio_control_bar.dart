@@ -27,7 +27,7 @@ class _AudioControlBar extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             child: Icon(
               isListeningMode ? Icons.headset : Icons.headset_outlined,
-              color: isListeningMode ? Colors.amber : Colors.white,
+              color: isListeningMode ? AppColors.of(context).warning : Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ),

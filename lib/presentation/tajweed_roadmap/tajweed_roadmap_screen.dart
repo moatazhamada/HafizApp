@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/tajweed/tajweed_models.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'bloc/tajweed_roadmap_bloc.dart';
@@ -161,13 +160,13 @@ class _AccuracyCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: progress.overallAccuracy,
                     strokeWidth: 10,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       pct >= 80
-                          ? Colors.green
+                          ? AppColors.of(context).memorizedStatus
                           : pct >= 50
-                          ? Colors.orange
-                          : Colors.red,
+                          ? AppColors.of(context).inProgressStatus
+                          : AppColors.of(context).needsReviewStatus,
                     ),
                   ),
                 ),
@@ -209,7 +208,7 @@ class _WeaknessCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: Colors.orange.withValues(alpha: 0.3),
+          color: AppColors.of(context).inProgressStatus.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -220,7 +219,7 @@ class _WeaknessCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
+                color: AppColors.of(context).inProgressStatus.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -228,7 +227,7 @@ class _WeaknessCard extends StatelessWidget {
                   '${weakness.errorCount}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange[700],
+                    color: AppColors.of(context).warning,
                   ),
                 ),
               ),

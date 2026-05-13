@@ -49,7 +49,6 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../domain/repository/khatmah_repository.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
-import '../../core/theme/app_colors.dart';
 import 'package:hafiz_app/data/datasource/translation/qf_translation_remote_data_source.dart';
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
 

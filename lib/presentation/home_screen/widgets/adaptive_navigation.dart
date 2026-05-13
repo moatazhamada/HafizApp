@@ -190,8 +190,8 @@ class AdaptiveNavigationDrawer extends StatelessWidget {
             backgroundColor: Theme.of(context).colorScheme.primary,
             child: Text(
               initials,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),

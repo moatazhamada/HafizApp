@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/domain/entities/recitation_session.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
@@ -52,11 +51,11 @@ class RecitationSessionScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                    Icon(Icons.history, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                     const SizedBox(height: 16),
                     Text(
                       'msg_no_sessions'.tr,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -96,15 +95,15 @@ class _SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoreColor = session.score >= 80
-        ? Colors.green
+        ? AppColors.of(context).memorizedStatus
         : session.score >= 50
-        ? Colors.orange
-        : Colors.red;
+        ? AppColors.of(context).inProgressStatus
+        : AppColors.of(context).needsReviewStatus;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       elevation: 2,
-      color: isDark ? AppColors.of(context).surface : Colors.white,
+      color: AppColors.of(context).surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -120,7 +119,7 @@ class _SessionCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -151,28 +150,28 @@ class _SessionCard extends StatelessWidget {
                 Icon(
                   Icons.check_circle,
                   size: 16,
-                  color: isDark ? Colors.green[300] : Colors.green,
+                  color: AppColors.of(context).memorizedStatus,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${session.correctCount}/${session.totalCount}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Icon(
                   Icons.format_list_numbered,
                   size: 16,
-                  color: isDark ? Colors.grey[400] : Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${'lbl_total_verses'.tr}: ${session.totalVerses}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -182,7 +181,7 @@ class _SessionCard extends StatelessWidget {
               _formatDate(session.createdAt),
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.grey[500] : Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],

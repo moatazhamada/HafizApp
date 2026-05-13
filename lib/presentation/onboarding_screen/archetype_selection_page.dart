@@ -56,7 +56,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
             Text(
               'lbl_how_use_app'.tr,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -65,7 +65,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
             Text(
               'msg_archetype_desc'.tr,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -99,7 +99,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                               archetype.icon,
                               color: widget.isLightBackground
                                   ? Color(archetype.colorValue)
-                                  : Colors.white,
+                                  : Theme.of(context).colorScheme.onPrimary,
                               size: 24,
                             ),
                           ),
@@ -112,8 +112,8 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                                   archetype.labelKey.tr,
                                   style: TextStyle(
                                     color: widget.isLightBackground
-                                        ? Colors.black87
-                                        : Colors.white,
+                                        ? Theme.of(context).colorScheme.onSurface
+                                        : Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -123,8 +123,8 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                                   archetype.descriptionKey.tr,
                                   style: TextStyle(
                                     color: widget.isLightBackground
-                                        ? Colors.black.withValues(alpha: 0.6)
-                                        : Colors.white.withValues(alpha: 0.7),
+                                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                                        : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -136,7 +136,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
                               Icons.check_circle_rounded,
                               color: widget.isLightBackground
                                   ? Color(archetype.colorValue)
-                                  : Colors.white,
+                                  : Theme.of(context).colorScheme.onPrimary,
                               size: 24,
                             ),
                         ],

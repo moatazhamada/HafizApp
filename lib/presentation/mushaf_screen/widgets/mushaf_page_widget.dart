@@ -5,7 +5,6 @@ import 'package:hafiz_app/core/mushaf/mushaf_cache_manager.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 
 const _invertMatrix = <double>[
   -1,

@@ -76,7 +76,7 @@ class ReadingSessionInsights extends StatelessWidget {
                     label: 'lbl_this_week'.tr,
                     value: _formatDuration(weekTotalDuration),
                     subValue: '$weekTotalVerses ${'lbl_verses'.tr}',
-                    color: Colors.teal,
+                    color: AppColors.of(context).statBookmark,
                   ),
                 ),
               ],

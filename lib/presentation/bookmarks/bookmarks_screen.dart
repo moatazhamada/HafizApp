@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
@@ -64,7 +63,7 @@ class BookmarksScreen extends StatelessWidget {
                         child: Icon(
                           Icons.bookmark_outline,
                           size: 64,
-                          color: Colors.grey.withValues(alpha: 0.5),
+                          color: AppColors.of(context).notStartedStatus.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -72,7 +71,7 @@ class BookmarksScreen extends StatelessWidget {
                         'msg_no_bookmarks'.tr,
                         style: TextStyle(
                           fontSize: 18,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontFamily: 'Poppins',
                         ),
                       ),
@@ -108,10 +107,10 @@ class BookmarksScreen extends StatelessWidget {
                       alignment: AlignmentDirectional.centerEnd,
                       padding: const EdgeInsetsDirectional.only(end: 20),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent,
+                        color: AppColors.of(context).needsReviewStatus,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.delete, color: Colors.white),
+                      child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
                     ),
                     onDismissed: (direction) {
                       bookmarkBloc.add(
@@ -127,13 +126,13 @@ class BookmarksScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
                         border: Border.all(
-                          color: isDark ? Colors.grey[800]! : Colors.grey[100]!,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         ),
                       ),
                       child: Material(
@@ -200,8 +199,8 @@ class BookmarksScreen extends StatelessWidget {
                                           fontFamily: 'Poppins',
                                           fontSize: 13,
                                           color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600],
+                                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                         ),
                                       ),
                                     ],
@@ -211,9 +210,9 @@ class BookmarksScreen extends StatelessWidget {
                                   button: true,
                                   label: 'lbl_delete'.tr,
                                   child: IconButton(
-                                    icon: const Icon(
+                                    icon: Icon(
                                       Icons.delete_outline,
-                                      color: Colors.redAccent,
+                                      color: AppColors.of(context).needsReviewStatus,
                                     ),
                                     onPressed: () {
                                       bookmarkBloc.add(
@@ -244,7 +243,7 @@ class BookmarksScreen extends StatelessWidget {
                 child: Text(
                   '${'lbl_error'.tr}: ${state.message.tr}',
                   style: TextStyle(
-                    color: isDark ? Colors.redAccent : Colors.red,
+                    color: AppColors.of(context).needsReviewStatus,
                   ),
                 ),
               ),

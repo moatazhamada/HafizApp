@@ -9,7 +9,6 @@ import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
@@ -216,9 +215,9 @@ class _MushafScreenState extends State<MushafScreen>
                     leading: CircleAvatar(
                       backgroundColor: Color(type.colorValue),
                       radius: 16,
-                      child: const Icon(
+                      child: Icon(
                         Icons.menu_book,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 18,
                       ),
                     ),
@@ -484,7 +483,7 @@ class _MushafScreenState extends State<MushafScreen>
                     fontFamily: 'NotoNaskhArabic',
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -492,7 +491,7 @@ class _MushafScreenState extends State<MushafScreen>
                   '$pageNumber / ${_mushafType.totalPages}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -514,7 +513,7 @@ class _MushafScreenState extends State<MushafScreen>
   ) {
     final fontSize = PrefUtils().getQuranFontSize();
     final textColor = colors.mushafTextPrimary;
-    final verseNumColor = isDark ? Colors.white38 : Colors.black38;
+    final verseNumColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
 
     final List<InlineSpan> spans = [];
     final arabicVerseNumStyle = TextStyle(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 
 import '../../core/analytics/analytics_service.dart';
@@ -222,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: IconButton(
             icon: Icon(
               Icons.menu,
-              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+              color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
             ),
             onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
             tooltip: 'lbl_open_nav_menu'.tr,
@@ -237,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: IconButton(
             icon: Icon(
               isDarkMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+              color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
             ),
             onPressed: () {
               themeBloc.add(ToggleThemeEvent());
@@ -252,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: IconButton(
             icon: Icon(
               Icons.menu_book_rounded,
-              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+              color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
             ),
             onPressed: () => _showJuzSelector(context),
             tooltip: 'lbl_juz_index'.tr,
@@ -264,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: IconButton(
             icon: Icon(
               Icons.search_rounded,
-              color: isDarkMode ? Colors.white : theme.colorScheme.primary,
+              color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
             ),
             onPressed: () =>
                 NavigatorService.pushNamed(AppRoutes.searchPage),

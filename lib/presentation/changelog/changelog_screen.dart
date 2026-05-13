@@ -147,7 +147,7 @@ class _VersionCard extends StatelessWidget {
                         size: isLatest ? 12 : 6,
                         color: isLatest
                             ? theme.colorScheme.primary
-                            : Colors.grey,
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
                     ),
                     Expanded(
@@ -179,13 +179,13 @@ class _SpecialThanksCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.star, color: Colors.amber.shade700, size: 20),
+                Icon(Icons.star, color: AppColors.of(context).warning, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'lbl_special_thanks'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber.shade900,
+                    color: AppColors.of(context).warning,
                   ),
                 ),
               ],

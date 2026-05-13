@@ -7,7 +7,6 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_state.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class MemorizationScreen extends StatelessWidget {
   const MemorizationScreen({super.key});
@@ -65,7 +64,7 @@ class MemorizationScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -79,7 +78,7 @@ class MemorizationScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -118,7 +117,7 @@ class _ProgressSummary extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -131,7 +130,7 @@ class _ProgressSummary extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: state.totalMemorized / 114,
                   minHeight: 12,
-                  backgroundColor: isDark ? AppColors.of(context).notStartedStatus : AppColors.of(context).notStartedStatus,
+                  backgroundColor: AppColors.of(context).notStartedStatus,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     AppColors.of(context).primary,
                   ),
@@ -326,7 +325,7 @@ class _SurahProgressCard extends StatelessWidget {
           progress.surahName,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         subtitle: Text(

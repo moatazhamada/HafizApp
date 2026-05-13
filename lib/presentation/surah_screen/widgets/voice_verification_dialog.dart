@@ -7,7 +7,6 @@ import 'package:hafiz_app/core/audio/whisper_platform.dart'
     if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
 import '../../../core/app_export.dart';
-import '../../../core/theme/app_colors.dart';
 
 import '../../../domain/entities/verse.dart';
 import '../../../core/quran_index/quran_surah.dart';

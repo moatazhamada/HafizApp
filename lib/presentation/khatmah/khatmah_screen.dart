@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import 'package:hafiz_app/core/theme/app_spacing.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
@@ -123,9 +122,7 @@ class _TodayProgressCard extends StatelessWidget {
                     value: progress,
                     strokeWidth: 12,
                     backgroundColor:
-                        Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]
-                        : Colors.grey[200],
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                   ),
                 ),
@@ -143,7 +140,7 @@ class _TodayProgressCard extends StatelessWidget {
                     Text(
                       '/ $target ${'lbl_verses'.tr}',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -159,7 +156,7 @@ class _TodayProgressCard extends StatelessWidget {
                       '${target - state.versesReadToday}',
                     ),
               style: AppTextStyles.bodyMedium.copyWith(
-                color: progress >= 1.0 ? Colors.green : Colors.grey[600],
+                color: progress >= 1.0 ? AppColors.of(context).memorizedStatus : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: progress >= 1.0
                     ? FontWeight.bold
                     : FontWeight.normal,
@@ -203,14 +200,14 @@ class _StreakCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: streak > 0
-                        ? Colors.orange.withValues(alpha: 0.15)
-                        : Colors.grey.withValues(alpha: 0.15),
+                        ? AppColors.of(context).inProgressStatus.withValues(alpha: 0.15)
+                        : AppColors.of(context).notStartedStatus.withValues(alpha: 0.15),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.local_fire_department,
                     size: 32,
-                    color: streak > 0 ? Colors.orange : Colors.grey,
+                    color: streak > 0 ? AppColors.of(context).inProgressStatus : AppColors.of(context).notStartedStatus,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -227,7 +224,7 @@ class _StreakCard extends StatelessWidget {
                       Text(
                         'lbl_keep_going'.tr,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -240,19 +237,19 @@ class _StreakCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
+                      color: AppColors.of(context).memorizedStatus.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                        Icon(Icons.cloud_done, size: 14, color: AppColors.of(context).success),
                         const SizedBox(width: 4),
                         Text(
                           'lbl_cloud_synced'.tr,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.green[700],
+                            color: AppColors.of(context).success,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -304,19 +301,17 @@ class _StreakSourceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[800]
-            : Colors.grey[100],
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           const SizedBox(width: 4),
           Text(
             '$label: $value',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           ),
         ],
       ),
@@ -355,13 +350,13 @@ class _GoalCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                    Icon(Icons.cloud_done, size: 14, color: AppColors.of(context).success),
                     const SizedBox(width: 4),
                     Text(
                       'lbl_cloud_synced'.tr,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.green[700],
+                        color: AppColors.of(context).success,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -381,7 +376,7 @@ class _GoalCard extends StatelessWidget {
                   side: BorderSide(
                     color: isSelected
                         ? colors.primary
-                        : Colors.grey.withValues(alpha: 0.3),
+                        : AppColors.of(context).notStartedStatus.withValues(alpha: 0.3),
                   ),
                   onSelected: (_) {
                     context.read<KhatmahBloc>().add(SetReadingGoal(target));
@@ -395,7 +390,7 @@ class _GoalCard extends StatelessWidget {
                 child: Text(
                   '${'lbl_current_goal'.tr}: $currentTarget ${'lbl_verses'.tr}',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -461,8 +456,8 @@ class _WeeklyHeatmap extends StatelessWidget {
                             : partial
                             ? colors.primary.withValues(alpha: 0.3)
                             : isDark
-                            ? Colors.grey[800]
-                            : Colors.grey[200],
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
                       alignment: Alignment.center,
                       child: met
@@ -472,15 +467,15 @@ class _WeeklyHeatmap extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[700],
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       _dayAbbr(date.weekday),
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 );

@@ -48,7 +48,7 @@ class _SurahAppBar extends StatelessWidget {
         button: true,
         label: 'lbl_back'.tr,
         child: IconButton(
-          icon: Icon(rtlBackArrow(context), color: Colors.white),
+          icon: Icon(rtlBackArrow(context), color: Theme.of(context).colorScheme.onPrimary),
           onPressed: () => NavigatorService.goBack(),
           tooltip: 'lbl_back'.tr,
         ),
@@ -69,7 +69,7 @@ class _SurahAppBar extends StatelessWidget {
           button: true,
           label: 'lbl_more_options'.tr,
           child: PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onPrimary),
             onSelected: (value) {
               switch (value) {
                 case 'audio':
@@ -188,10 +188,10 @@ class _SurahAppBar extends StatelessWidget {
             child: Text(
               surah?.localizedName(context) ?? '',
               textDirection: TextDirection.rtl,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontFamily: 'NotoNaskhArabic',
               ),
               overflow: TextOverflow.ellipsis,

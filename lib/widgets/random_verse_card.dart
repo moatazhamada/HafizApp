@@ -71,7 +71,6 @@ class _RandomVerseCardState extends State<RandomVerseCard>
   Widget build(BuildContext context) {
     super.build(context);
     final colors = AppColors.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_loading) {
       return Card(
@@ -133,7 +132,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                 fontSize: 20,
                 fontFamily: 'NotoNaskhArabic',
                 height: 1.8,
-                color: isDark ? Colors.white : Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -141,7 +140,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
               '— ${_data!.verseKey}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -159,7 +158,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontStyle: FontStyle.italic,
                     height: 1.5,
                   ),
@@ -215,7 +214,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                   return Container(
                     width: 160,
                     height: 120,
-                    color: Colors.grey[200],
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: const Center(
                       child: SizedBox(
                         width: 20,
@@ -229,8 +228,8 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                   return Container(
                     width: 160,
                     height: 120,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                   );
                 },
               ),

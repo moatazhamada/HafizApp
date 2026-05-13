@@ -30,12 +30,12 @@ class CustomElevatedButton extends BaseButton {
     return alignment != null
         ? Align(
             alignment: alignment ?? Alignment.center,
-            child: buildElevatedButtonWidget,
+            child: buildElevatedButtonWidget(context),
           )
-        : buildElevatedButtonWidget;
+        : buildElevatedButtonWidget(context);
   }
 
-  Widget get buildElevatedButtonWidget => Container(
+  Widget buildElevatedButtonWidget(BuildContext context) => Container(
         height: height ?? 57.v,
         width: width ?? double.maxFinite,
         margin: margin,
@@ -51,8 +51,8 @@ class CustomElevatedButton extends BaseButton {
               Text(
                 text,
                 style: buttonTextStyle ??
-                    const TextStyle(
-                        color: Colors.black,
+                    TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w400,
                         fontSize: 14),
               ),

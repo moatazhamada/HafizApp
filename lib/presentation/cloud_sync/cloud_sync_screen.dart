@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/services/preference_sync_service.dart';
-import '../../core/theme/app_colors.dart';
 import '../../injection_container.dart';
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
@@ -269,7 +268,7 @@ class _AuthCard extends StatelessWidget {
                     label: Text('msg_qf_login'.tr),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.of(context).statBookmark,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
               ],
@@ -309,19 +308,19 @@ class _SyncSection extends StatelessWidget {
                             context.read<CloudSyncBloc>().add(SyncWithQfEvent())
                       : null,
                   icon: isSyncing
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         )
                       : const Icon(Icons.sync),
                   label: Text('lbl_bookmarks_sync'.tr),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.of(context).statBookmark,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 if (lastSync != null) ...[
@@ -483,7 +482,7 @@ class _PreferenceSyncSection extends StatelessWidget {
                         label: Text('pref_sync_two_way'.tr),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.of(context).statBookmark,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                     ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/network/connectivity_cubit.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import '../../core/app_export.dart';
 import 'widgets/onboarding_buttons.dart';
 import 'widgets/onboarding_scaffold.dart';
@@ -79,13 +78,13 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                 right: 0,
                 top: 0,
                 child: Container(
-                  color: Colors.redAccent.withValues(alpha: 0.9),
+                  color: AppColors.of(context).needsReviewStatus.withValues(alpha: 0.9),
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     'msg_no_internet_connection'.tr,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -104,7 +103,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                 imagePath: ImageConstant.imgGroupCircles,
                 height: 150.adaptSize,
                 width: 150.adaptSize,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ),
@@ -135,7 +134,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -145,8 +144,8 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                             borderRadius: BorderRadius.circular(30),
                             child: Container(
                               color: widget.isLightBackground
-                    ? Colors.black.withValues(alpha: 0.05)
-                    : Colors.white.withValues(alpha: 0.1),
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
+                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                               child: CustomImageView(
                                 imagePath: ImageConstant.imgQuranOnboarding,
                                 height: imageHeight,
@@ -178,8 +177,8 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: widget.isLightBackground
-                                ? Colors.black.withValues(alpha: 0.7)
-                                : Colors.white.withValues(alpha: 0.9),
+                                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)
+                                : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                             fontFamily: 'Poppins',
                             height: 1.5,
                           ),

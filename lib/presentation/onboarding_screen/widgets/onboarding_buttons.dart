@@ -28,22 +28,22 @@ class OnboardingPrimaryButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: isLightBackground
               ? colorScheme.primary
-              : Colors.white,
+              : Theme.of(context).colorScheme.onPrimary,
           foregroundColor: isLightBackground
-              ? Colors.white
+              ? Theme.of(context).colorScheme.onPrimary
               : colorScheme.primary,
           disabledBackgroundColor: isLightBackground
               ? colorScheme.primary.withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.4),
+              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
           disabledForegroundColor: isLightBackground
-              ? Colors.white.withValues(alpha: 0.5)
+              ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)
               : colorScheme.primary.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 2,
-          shadowColor: Colors.black.withValues(alpha: 0.2),
+          shadowColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
         ),
         child: Text(
           text,
@@ -81,7 +81,7 @@ class OnboardingSecondaryButton extends StatelessWidget {
       style: TextButton.styleFrom(
         foregroundColor: isLightBackground
             ? colorScheme.primary
-            : Colors.white,
+            : Theme.of(context).colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -124,10 +124,10 @@ class OnboardingSelectionCard extends StatelessWidget {
       color: isSelected
           ? (isLightBackground
               ? colorScheme.primary.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.2))
+              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2))
           : (isLightBackground
               ? colorScheme.primary.withValues(alpha: 0.05)
-              : Colors.white.withValues(alpha: 0.1)),
+              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -141,7 +141,7 @@ class OnboardingSelectionCard extends StatelessWidget {
               color: isSelected
                   ? (isLightBackground
                       ? colorScheme.primary.withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.6))
+                      : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6))
                   : Colors.transparent,
               width: 2,
             ),
@@ -176,12 +176,12 @@ class OnboardingHeader extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Icon(
             icon,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onPrimary,
             size: 40,
           ),
         ),
@@ -189,7 +189,7 @@ class OnboardingHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.bold,
               ),
           textAlign: TextAlign.center,
@@ -199,7 +199,7 @@ class OnboardingHeader extends StatelessWidget {
           Text(
             subtitle!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                 ),
             textAlign: TextAlign.center,
           ),

@@ -254,7 +254,7 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
             icon: Icons.forum_outlined,
             title: 'lbl_quran_reflect'.tr,
             subtitle: 'msg_quran_reflect_desc'.tr,
-            color: Colors.indigo,
+            color: Theme.of(context).colorScheme.primary,
             onTap: () => NavigatorService.pushNamed(
               AppRoutes.quranReflectFeed,
             ),

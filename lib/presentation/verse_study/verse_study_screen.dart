@@ -60,10 +60,10 @@ class _VerseStudyView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: Colors.redAccent,
+                    color: AppColors.of(context).needsReviewStatus,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -117,7 +117,7 @@ class _OverviewTab extends StatelessWidget {
             _SectionCard(
               title: 'lbl_arabic'.tr,
               icon: Icons.format_quote,
-              color: Colors.teal,
+              color: AppColors.of(context).statBookmark,
               child: Semantics(
               label: 'lbl_quran_text'.tr,
               textDirection: TextDirection.rtl,
@@ -138,7 +138,7 @@ class _OverviewTab extends StatelessWidget {
             _SectionCard(
               title: 'lbl_translation'.tr,
               icon: Icons.translate,
-              color: Colors.blue,
+              color: Theme.of(context).colorScheme.primary,
               child: SelectableText(_stripHtml(state.translation)),
             ),
             const SizedBox(height: 20),
@@ -164,7 +164,7 @@ class _TafsirTab extends StatelessWidget {
           _SectionCard(
             title: _tafsirTitleForId(state.selectedTafsirId),
             icon: Icons.menu_book,
-            color: Colors.deepPurple,
+            color: Theme.of(context).colorScheme.tertiary,
             trailing: IconButton(
               icon: const Icon(Icons.tune, size: 18),
               tooltip: 'lbl_select_tafsir'.tr,
@@ -204,7 +204,7 @@ class _TranslationTab extends StatelessWidget {
           _SectionCard(
             title: 'lbl_translation'.tr,
             icon: Icons.translate,
-            color: Colors.blue,
+            color: Theme.of(context).colorScheme.primary,
             trailing: IconButton(
               icon: const Icon(Icons.tune, size: 18),
               tooltip: 'lbl_select_translation'.tr,
@@ -454,7 +454,7 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
     return _SectionCard(
       title: 'lbl_reflections'.tr,
       icon: Icons.edit_note,
-      color: Colors.teal,
+      color: AppColors.of(context).statBookmark,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -189,8 +189,8 @@ class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.of(context).inProgressStatus,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             onPressed: () {
               recitationErrorBloc.add(

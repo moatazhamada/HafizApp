@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/tracking/behavior_tracker.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../injection_container.dart';
 import '../../bookmarks/bloc/bookmark_bloc.dart';
 import '../../khatmah/bloc/khatmah_bloc.dart';
