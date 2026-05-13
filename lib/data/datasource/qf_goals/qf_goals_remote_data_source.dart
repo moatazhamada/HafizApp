@@ -44,6 +44,10 @@ abstract class QfGoalsRemoteDataSource {
   Future<void> postReadingSession({
     required int chapterNumber,
     required int verseNumber,
+    int? startVerse,
+    int? endVerse,
+    int? duration,
+    DateTime? readAt,
   });
   Future<List<Map<String, dynamic>>> getReadingSessions({int? first});
 }
@@ -217,11 +221,24 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
   Future<void> postReadingSession({
     required int chapterNumber,
     required int verseNumber,
+    int? startVerse,
+    int? endVerse,
+    int? duration,
+    DateTime? readAt,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'chapterNumber': chapterNumber,
+        'verseNumber': verseNumber,
+      };
+      if (startVerse != null) body['startVerse'] = startVerse;
+      if (endVerse != null) body['endVerse'] = endVerse;
+      if (duration != null) body['duration'] = duration;
+      if (readAt != null) body['readAt'] = readAt.toIso8601String();
+
       await _dio.post(
         '$_baseUrl/reading-sessions',
-        data: {'chapterNumber': chapterNumber, 'verseNumber': verseNumber},
+        data: body,
       );
       Logger.info(
         'Posted reading session $chapterNumber:$verseNumber to QF',

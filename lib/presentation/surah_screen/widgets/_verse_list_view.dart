@@ -706,10 +706,8 @@ extension _SurahScreenStateScroll on _SurahScreenState {
     }
   }
 
-  void _saveReadingProgress() {
-    if (surah == null) return;
-
-    PrefUtils().saveLastReadSurah(surah!);
+  int? _findVisibleVerseNumber() {
+    if (surah == null) return null;
 
     int? visibleVerseNumber;
 
@@ -753,10 +751,20 @@ extension _SurahScreenStateScroll on _SurahScreenState {
             visibleVerseNumber = range.verse.verseNumber;
           }
         } catch (e) {
-          Logger.warning('Reading progress save failed: \$e', feature: 'Surah');
+          Logger.warning('Finding visible verse failed: \$e', feature: 'Surah');
         }
       }
     }
+
+    return visibleVerseNumber;
+  }
+
+  void _saveReadingProgress() {
+    if (surah == null) return;
+
+    PrefUtils().saveLastReadSurah(surah!);
+
+    final visibleVerseNumber = _findVisibleVerseNumber();
 
     if (visibleVerseNumber != null) {
       PrefUtils().setSurahVerseIndex(surah!.id, visibleVerseNumber - 1);

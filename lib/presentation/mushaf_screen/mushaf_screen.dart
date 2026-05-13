@@ -11,6 +11,11 @@ import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
+import 'package:hafiz_app/core/services/reading_session_tracker.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
+import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
+import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
@@ -38,6 +43,9 @@ class _MushafScreenState extends State<MushafScreen>
 
   // PageStorage bucket key — used as a fallback if prefs are slow/unavailable.
   static const String _kPageStorageKey = 'mushaf_current_page';
+
+  // Reading Session Tracking
+  final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
 
   // --------------------------------------------------------------------------
   // CRITICAL: Mushaf Page Direction
@@ -70,6 +78,7 @@ class _MushafScreenState extends State<MushafScreen>
     _currentPage = resolved.clamp(1, _mushafType.totalPages);
 
     _pageController = PageController(initialPage: _currentPage - 1);
+    _startMushafSession();
   }
 
   @override
@@ -119,6 +128,10 @@ class _MushafScreenState extends State<MushafScreen>
 
   @override
   void dispose() {
+    final session = _sessionTracker.endSession();
+    if (session != null) {
+      _postMushafReadingSession(session);
+    }
     WidgetsBinding.instance.removeObserver(this);
     _overlayTimer?.cancel();
     _pageController.dispose();
@@ -383,6 +396,7 @@ class _MushafScreenState extends State<MushafScreen>
                     _isZoomed = false;
                     _persistPage(page);
                     _precacheAdjacentPages(page);
+                    _updateMushafSessionProgress(page);
                     if (_showOverlay) {
                       _overlayTimer?.cancel();
                       _overlayTimer = Timer(const Duration(seconds: 3), () {
@@ -568,6 +582,55 @@ class _MushafScreenState extends State<MushafScreen>
   }
 
   // ─── Overlay Bars ───────────────────────────────────────────────
+
+  void _startMushafSession() {
+    final ranges = MushafPageVerseMap.getVersesForPage(
+      _currentPage,
+      totalPages: _mushafType.totalPages,
+    );
+    if (ranges.isNotEmpty) {
+      final firstRange = ranges.first;
+      _sessionTracker.startSession(
+        surahId: firstRange.surahId,
+        startVerse: firstRange.startVerse,
+      );
+    }
+  }
+
+  void _updateMushafSessionProgress(int page) {
+    final ranges = MushafPageVerseMap.getVersesForPage(
+      page,
+      totalPages: _mushafType.totalPages,
+    );
+    if (ranges.isNotEmpty && ranges.first.surahId == _sessionTracker.surahId) {
+      _sessionTracker.updateProgress(ranges.last.endVerse);
+    }
+  }
+
+  Future<void> _postMushafReadingSession(ReadingSession session) async {
+    try {
+      final isAuthenticated = await sl<QfAuthRemoteDataSource>().isAuthenticated();
+      if (!isAuthenticated) return;
+      final dataSource = sl<QfGoalsRemoteDataSource>();
+      await dataSource.postReadingSession(
+        chapterNumber: session.surahId,
+        verseNumber: session.startVerse,
+        startVerse: session.startVerse,
+        endVerse: session.endVerse,
+        duration: session.durationSeconds,
+        readAt: session.readAt,
+      );
+      Logger.info(
+        'Mushaf reading session posted to QF: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+        feature: 'ReadingSessions',
+      );
+    } catch (e) {
+      Logger.warning(
+        'Failed to post mushaf reading session: $e',
+        feature: 'ReadingSessions',
+      );
+    }
+  }
 
   Widget _buildTopBar(bool isDark, AppColors colors) {
     return Container(

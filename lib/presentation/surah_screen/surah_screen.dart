@@ -24,6 +24,10 @@ import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/services/reading_session_tracker.dart';
+import '../../domain/entities/reading_session.dart';
+import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
+import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
 import '../../core/quran_index/sajdah_index.dart';
 import '../../domain/entities/verse.dart';
@@ -109,6 +113,9 @@ class _SurahScreenState extends State<SurahScreen> {
   StreamSubscription<int>? _listeningSubscription;
   List<Verse> _chapters = []; // Cached for listening mode toggle
 
+  // Reading Session Tracking
+  final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
+
   @override
   void initState() {
     super.initState();
@@ -143,6 +150,10 @@ class _SurahScreenState extends State<SurahScreen> {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
         final isArabic = LocaleController.notifier.value.languageCode == 'ar';
         if (_showTranslation && !isArabic) _loadTranslations();
+        _sessionTracker.startSession(
+          surahId: surah!.id,
+          startVerse: _selectedVerse ?? 1,
+        );
       }
 
       _scrollControllerForInit = ScrollController(
@@ -158,6 +169,10 @@ class _SurahScreenState extends State<SurahScreen> {
             surah!.id,
             _scrollControllerForInit!.offset,
           );
+          final visibleVerse = _findVisibleVerseNumber();
+          if (visibleVerse != null) {
+            _sessionTracker.updateProgress(visibleVerse);
+          }
         });
       });
     }
@@ -165,6 +180,10 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   void dispose() {
+    final session = _sessionTracker.endSession();
+    if (session != null) {
+      _postReadingSession(session);
+    }
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
     _autoScrollTimer?.cancel();
@@ -316,6 +335,31 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
+  Future<void> _postReadingSession(ReadingSession session) async {
+    try {
+      final isAuthenticated = await sl<QfAuthRemoteDataSource>().isAuthenticated();
+      if (!isAuthenticated) return;
+      final dataSource = sl<QfGoalsRemoteDataSource>();
+      await dataSource.postReadingSession(
+        chapterNumber: session.surahId,
+        verseNumber: session.startVerse,
+        startVerse: session.startVerse,
+        endVerse: session.endVerse,
+        duration: session.durationSeconds,
+        readAt: session.readAt,
+      );
+      Logger.info(
+        'Reading session posted to QF: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+        feature: 'ReadingSessions',
+      );
+    } catch (e) {
+      Logger.warning(
+        'Failed to post reading session: $e',
+        feature: 'ReadingSessions',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -331,6 +375,10 @@ class _SurahScreenState extends State<SurahScreen> {
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
             _saveReadingProgress();
+            final session = _sessionTracker.endSession();
+            if (session != null) {
+              _postReadingSession(session);
+            }
           },
           child: MultiBlocProvider(
             providers: [
