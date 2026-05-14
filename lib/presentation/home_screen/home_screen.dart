@@ -393,30 +393,46 @@ class _HomeScreenState extends State<HomeScreen>
         NavigatorService.pushNamed(AppRoutes.mushafScreen);
         break;
       case 1:
-        NavigatorService.pushNamed(AppRoutes.goalsPage);
+        final lastRead = PrefUtils().getLastReadSurah();
+        final surahId = lastRead?.id ?? 1;
+        final isArabic =
+            Localizations.localeOf(context).languageCode == 'ar';
+        final surahName = lastRead != null
+            ? (isArabic ? lastRead.nameArabic : lastRead.nameEnglish)
+            : '';
+        NavigatorService.pushNamed(
+          AppRoutes.audioPlayerScreen,
+          arguments: {
+            'surahId': surahId,
+            'surahName': surahName,
+          },
+        );
         break;
       case 2:
-        NavigatorService.pushNamed(AppRoutes.bookmarksPage);
+        NavigatorService.pushNamed(AppRoutes.goalsPage);
         break;
       case 3:
-        NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
+        NavigatorService.pushNamed(AppRoutes.bookmarksPage);
         break;
       case 4:
-        NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
+        NavigatorService.pushNamed(AppRoutes.recitationErrorsPage);
         break;
       case 5:
-        NavigatorService.pushNamed(AppRoutes.memorizationPage);
+        NavigatorService.pushNamed(AppRoutes.recitationSessionsPage);
         break;
       case 6:
-        NavigatorService.pushNamed(AppRoutes.khatmahPage);
+        NavigatorService.pushNamed(AppRoutes.memorizationPage);
         break;
       case 7:
-        NavigatorService.pushNamed(AppRoutes.statisticsScreen);
+        NavigatorService.pushNamed(AppRoutes.khatmahPage);
         break;
       case 8:
-        NavigatorService.pushNamed(AppRoutes.settingsScreen);
+        NavigatorService.pushNamed(AppRoutes.statisticsScreen);
         break;
       case 9:
+        NavigatorService.pushNamed(AppRoutes.settingsScreen);
+        break;
+      case 10:
         NavigatorService.pushNamed(AppRoutes.aboutPage);
         break;
     }

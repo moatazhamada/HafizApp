@@ -234,20 +234,7 @@ class _SurahScreenState extends State<SurahScreen> {
       }
     });
 
-    final reciterId = PrefUtils().getReciterId();
-    final reciterCdnIds = {
-      7: 'ar.alafasy',
-      9: 'ar.abdurrahmaansudais',
-      1: 'ar.abdulbasitmurattal',
-      5: 'ar.husary',
-      17: 'ar.minshawi',
-    };
-    final cdnId = reciterCdnIds[reciterId] ?? 'ar.alafasy';
-    final totalVerses = chapters.length;
-    final urls = List.generate(totalVerses, (i) {
-      final absolute = absoluteVerseNumber(surah!.id, i + 1);
-      return 'https://cdn.islamic.network/quran/audio/128/$cdnId/$absolute.mp3';
-    });
+    final urls = _buildVerseAudioUrls();
     handler.playSurah(surahId: surah!.id, verseAudioUrls: urls);
   }
 
@@ -258,6 +245,81 @@ class _SurahScreenState extends State<SurahScreen> {
     setState(() {
       _isListeningMode = false;
       _highlightedVerse = null;
+    });
+  }
+
+  /// Starts Listening Mode from a specific verse and plays continuously.
+  void _startListeningFromVerse(int verseNumber) {
+    if (surah == null || _chapters.isEmpty) return;
+    _stopListeningMode();
+    final handler = AudioPlayerHandler();
+    setState(() => _isListeningMode = true);
+
+    _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
+      if (!_isListeningMode || !mounted) return;
+      setState(() {
+        _highlightedVerse = verseIndex >= 0 ? verseIndex + 1 : null;
+      });
+      if (verseIndex >= 0) {
+        _scrollToVerse(verseIndex + 1, _chapters);
+        PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+      }
+    });
+
+    final urls = _buildVerseAudioUrls();
+    handler.clearLoop();
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: verseNumber - 1,
+    );
+  }
+
+  /// Plays only a single verse inline (no navigation) then stops.
+  void _playOnlyVerse(int verseNumber) {
+    if (surah == null || _chapters.isEmpty) return;
+    _stopListeningMode();
+    final handler = AudioPlayerHandler();
+    setState(() => _isListeningMode = true);
+
+    _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
+      if (!_isListeningMode || !mounted) return;
+      if (verseIndex < 0) {
+        _stopListeningMode();
+        return;
+      }
+      // Stop if we moved past the target verse
+      if (verseIndex + 1 != verseNumber) {
+        _stopListeningMode();
+        return;
+      }
+      setState(() => _highlightedVerse = verseNumber);
+      _scrollToVerse(verseNumber, _chapters);
+    });
+
+    final urls = _buildVerseAudioUrls();
+    handler.clearLoop();
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: verseNumber - 1,
+    );
+  }
+
+  /// Builds the full list of verse audio URLs for the current surah.
+  List<String> _buildVerseAudioUrls() {
+    final reciterId = PrefUtils().getReciterId();
+    const reciterCdnIds = {
+      7: 'ar.alafasy',
+      9: 'ar.abdurrahmaansudais',
+      1: 'ar.abdulbasitmurattal',
+      5: 'ar.husary',
+      17: 'ar.minshawi',
+    };
+    final cdnId = reciterCdnIds[reciterId] ?? 'ar.alafasy';
+    return List.generate(_chapters.length, (i) {
+      final absolute = absoluteVerseNumber(surah!.id, i + 1);
+      return 'https://cdn.islamic.network/quran/audio/128/$cdnId/$absolute.mp3';
     });
   }
 
@@ -557,6 +619,8 @@ class _SurahScreenState extends State<SurahScreen> {
                                       .pushNamed(AppRoutes.helpScreen),
                                   onNavigateToAudioPlayer: (startVerse) {
                                     if (surah == null) return;
+                                    // Stop inline listening to avoid state conflicts
+                                    if (_isListeningMode) _stopListeningMode();
                                     final isArabic = Localizations.localeOf(
                                       context,
                                     ).languageCode == 'ar';
@@ -609,6 +673,10 @@ class _SurahScreenState extends State<SurahScreen> {
                                     onVerifyRecitation: (aya) =>
                                         _voicePanelKey.currentState
                                             ?.show(aya),
+                                    onPlayOnlyVerse: (verseNumber) =>
+                                        _playOnlyVerse(verseNumber),
+                                    onStartFromVerse: (verseNumber) =>
+                                        _startListeningFromVerse(verseNumber),
                                   ),
                                 ),
                                 SliverToBoxAdapter(

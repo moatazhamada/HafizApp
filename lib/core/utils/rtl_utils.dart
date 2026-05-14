@@ -27,43 +27,37 @@ bool isLtr(BuildContext context) {
 
 // ── Directional Icons ──
 
-/// Returns [Icons.arrow_back] in LTR, [Icons.arrow_forward] in RTL.
-///
-/// Use this for the standard "go back" navigation icon. In RTL the
-/// back arrow points right (towards the start of the screen).
+/// Returns [Icons.arrow_back]. This icon natively supports [matchTextDirection] 
+/// and will automatically mirror in RTL contexts (pointing right).
 IconData rtlBackArrow(BuildContext context) {
-  return isRtl(context) ? Icons.arrow_forward : Icons.arrow_back;
+  return Icons.arrow_back;
 }
 
-/// Returns [Icons.arrow_forward] in LTR, [Icons.arrow_back] in RTL.
-///
-/// Use this for "continue", "next step", or "proceed" arrows.
+/// Returns [Icons.arrow_forward]. This icon natively supports [matchTextDirection]
+/// and will automatically mirror in RTL contexts (pointing left).
 IconData rtlForwardArrow(BuildContext context) {
-  return isRtl(context) ? Icons.arrow_back : Icons.arrow_forward;
+  return Icons.arrow_forward;
 }
 
-/// Returns [Icons.chevron_right] in LTR, [Icons.chevron_left] in RTL.
+/// Returns [Icons.chevron_right]. This icon natively supports [matchTextDirection]
+/// and will automatically mirror in RTL contexts (pointing left).
 ///
 /// Use this for list-tile trailing chevrons, navigation indicators,
 /// and any "proceed to next screen" affordance.
 IconData rtlChevron(BuildContext context) {
-  return isRtl(context) ? Icons.chevron_left : Icons.chevron_right;
+  return Icons.chevron_right;
 }
 
-/// Returns [Icons.arrow_forward_ios_rounded] in LTR,
-/// [Icons.arrow_back_ios_rounded] in RTL.
+/// Returns [Icons.arrow_forward_ios_rounded]. This icon natively supports [matchTextDirection]
+/// and will automatically mirror in RTL contexts (pointing left).
 IconData rtlForwardArrowIos(BuildContext context) {
-  return isRtl(context)
-      ? Icons.arrow_back_ios_rounded
-      : Icons.arrow_forward_ios_rounded;
+  return Icons.arrow_forward_ios_rounded;
 }
 
-/// Returns [Icons.arrow_forward_rounded] in LTR,
-/// [Icons.arrow_back_rounded] in RTL.
+/// Returns [Icons.arrow_forward_rounded]. This icon natively supports [matchTextDirection]
+/// and will automatically mirror in RTL contexts (pointing left).
 IconData rtlForwardArrowRounded(BuildContext context) {
-  return isRtl(context)
-      ? Icons.arrow_back_rounded
-      : Icons.arrow_forward_rounded;
+  return Icons.arrow_forward_rounded;
 }
 
 // ── Quran-Specific Icons (always RTL semantics) ──

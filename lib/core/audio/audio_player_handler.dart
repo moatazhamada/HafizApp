@@ -75,6 +75,13 @@ class AudioPlayerHandler {
       }
 
       _currentVerseIndex++;
+
+      // If looping, wrap back to loop start when past loop end
+      if (_isLooping && _loopStart != null && _loopEnd != null &&
+          _currentVerseIndex > _loopEnd!) {
+        _currentVerseIndex = _loopStart!;
+      }
+
       await _playCurrentVerse();
     } catch (e) {
       if (!_isDisposed) {

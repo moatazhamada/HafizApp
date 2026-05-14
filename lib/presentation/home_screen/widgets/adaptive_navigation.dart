@@ -26,6 +26,12 @@ const List<_NavDestination> _destinations = [
     route: '/mushaf_screen',
   ),
   _NavDestination(
+    labelKey: 'lbl_audio_player',
+    icon: Icons.headphones_outlined,
+    selectedIcon: Icons.headphones_rounded,
+    route: '/audio_player',
+  ),
+  _NavDestination(
     labelKey: 'goals_title',
     icon: Icons.event_note_outlined,
     selectedIcon: Icons.event_note_rounded,

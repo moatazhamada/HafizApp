@@ -74,10 +74,7 @@ class _SurahAppBar extends StatelessWidget {
               switch (value) {
                 case 'audio':
                   if (surah == null) return;
-                  final startVerse = highlightedVerse != null
-                      ? highlightedVerse! + 1
-                      : null;
-                  onNavigateToAudioPlayer(startVerse);
+                  onNavigateToAudioPlayer(highlightedVerse);
                   break;
                 case 'help':
                   onNavigateToHelp();

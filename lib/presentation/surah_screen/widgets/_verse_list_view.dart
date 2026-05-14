@@ -18,6 +18,8 @@ class _VerseListView extends StatelessWidget {
   final void Function(List<VerseRange>) onUpdateVerseRanges;
   final void Function(int verseNumber) onToggleHifzReveal;
   final void Function(Verse aya) onVerifyRecitation;
+  final void Function(int verseNumber) onPlayOnlyVerse;
+  final void Function(int verseNumber) onStartFromVerse;
 
   const _VerseListView({
     required this.chapters,
@@ -37,6 +39,8 @@ class _VerseListView extends StatelessWidget {
     required this.onUpdateVerseRanges,
     required this.onToggleHifzReveal,
     required this.onVerifyRecitation,
+    required this.onPlayOnlyVerse,
+    required this.onStartFromVerse,
   });
 
   void _handleShowVerseMenu(
@@ -60,31 +64,8 @@ class _VerseListView extends StatelessWidget {
         surahName: surah!.localizedName(context),
         verseNumber: aya.verseNumber,
       ),
-      onReadThisAyah: () {
-        AudioPlayerHandler().setLoopRange(
-          aya.verseNumber - 1,
-          aya.verseNumber - 1,
-        );
-        NavigatorService.pushNamed(
-          AppRoutes.audioPlayerScreen,
-          arguments: {
-            'surahId': surah!.id,
-            'surahName': surah!.nameEnglish,
-            'startVerse': aya.verseNumber,
-          },
-        );
-      },
-      onStartFromHere: () {
-        AudioPlayerHandler().clearLoop();
-        NavigatorService.pushNamed(
-          AppRoutes.audioPlayerScreen,
-          arguments: {
-            'surahId': surah!.id,
-            'surahName': surah!.nameEnglish,
-            'startVerse': aya.verseNumber,
-          },
-        );
-      },
+      onReadThisAyah: () => onPlayOnlyVerse(aya.verseNumber),
+      onStartFromHere: () => onStartFromVerse(aya.verseNumber),
     );
   }
 
