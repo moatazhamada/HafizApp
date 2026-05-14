@@ -60,6 +60,9 @@ jobs:
       - name: Run analyzer
         run: flutter analyze
 
+      - name: Lint DESIGN.md
+        run: npx @google/design.md lint DESIGN.md
+
   build-android:
     name: Build Android
     needs: test

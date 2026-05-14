@@ -712,5 +712,8 @@ final Map<String, String> enUs = {
   'msg_streak_desc': 'Keep your daily habit alive',
   'lbl_khatmah': 'Khatmah',
   'msg_khatmah_desc': 'Track your Quran completion progress',
+  'lbl_meccan': 'Meccan',
+  'lbl_medinan': 'Medinan',
+  'lbl_ayahs': 'Ayahs',
 
 };

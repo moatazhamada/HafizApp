@@ -687,5 +687,8 @@ final Map<String, String> arEg = {
   'msg_streak_desc': 'حافظ على عادتك اليومية',
   'lbl_khatmah': 'الختمة',
   'msg_khatmah_desc': 'تتبع تقدمك في ختم القرآن',
+  'lbl_meccan': 'مكية',
+  'lbl_medinan': 'مدنية',
+  'lbl_ayahs': 'آيات',
 
 };
