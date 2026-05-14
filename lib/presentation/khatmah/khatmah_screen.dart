@@ -7,6 +7,7 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
 import 'package:hafiz_app/widgets/shimmer_loading.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/presentation/khatmah/widgets/manual_reading_entry_bottom_sheet.dart';
 
 class KhatmahScreen extends StatelessWidget {
   const KhatmahScreen({super.key});
@@ -81,6 +82,21 @@ class KhatmahScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => ManualReadingEntryBottomSheet(
+              onSubmit: (verses) {
+                context.read<KhatmahBloc>().add(RecordReading(verses: verses));
+              },
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: Text('lbl_log_reading'.tr),
       ),
     );
   }

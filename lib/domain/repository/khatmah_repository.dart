@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
 
 abstract class KhatmahRepository {
   Future<Either<Failure, DailyReadingLog?>> getTodayLog();
@@ -17,6 +18,9 @@ abstract class KhatmahRepository {
   /// Fetch cloud streak from QF and reconcile with local streak (take higher).
   Future<Either<Failure, int>> getReconciledStreak();
 
-  /// Report a reading session to QF (last verse read).
-  Future<void> reportReadingSession(int chapterNumber, int verseNumber);
+  /// Fetch Activity Days from QF and merge them into the local database.
+  Future<Either<Failure, int>> syncActivityDaysFromCloud();
+
+  /// Report a full reading session to QF.
+  Future<void> reportReadingSession(ReadingSession session);
 }

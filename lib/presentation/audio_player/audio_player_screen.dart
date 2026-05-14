@@ -8,6 +8,11 @@ import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
 import '../../core/utils/rtl_utils.dart';
+import '../../domain/repository/khatmah_repository.dart';
+import '../khatmah/bloc/khatmah_bloc.dart';
+import '../khatmah/bloc/khatmah_event.dart';
+import '../../injection_container.dart';
+import '../../core/services/reading_session_tracker.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
   final int surahId;
@@ -25,8 +30,9 @@ class AudioPlayerScreen extends StatefulWidget {
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
-class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
+class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindingObserver {
   final AudioPlayerHandler _handler = AudioPlayerHandler();
+  final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
   bool _isLoading = false;
   double _speed = 1.0;
   String? _errorMessage;
@@ -48,13 +54,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
+    
+    _sessionTracker.startSession(
+      surahId: widget.surahId,
+      startVerse: widget.startVerse ?? 1,
+    );
+
     _verseSub = _handler.currentVerseStream.listen((verseIndex) {
       if (mounted && _currentVerse != verseIndex) {
         setState(() => _currentVerse = verseIndex);
         // Persist last played verse for resume functionality
         if (verseIndex >= 0) {
           PrefUtils().setLastAudioVerse(widget.surahId, verseIndex);
+          _sessionTracker.updateProgress(verseIndex + 1);
         }
       }
     });
@@ -73,10 +87,39 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   void dispose() {
+    _finalizeCurrentSession();
+    WidgetsBinding.instance.removeObserver(this);
     _verseSub?.cancel();
     _handler.stop();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _finalizeCurrentSession();
+    } else if (state == AppLifecycleState.resumed) {
+      _sessionTracker.startSession(
+        surahId: widget.surahId,
+        startVerse: _currentVerse >= 0 ? _currentVerse + 1 : (widget.startVerse ?? 1),
+      );
+    }
+  }
+
+  void _finalizeCurrentSession() {
+    final session = _sessionTracker.endSession();
+    if (session != null && session.endVerse >= session.startVerse) {
+      final totalVerses = session.endVerse - session.startVerse + 1;
+      
+      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+      
+      Logger.info(
+        'Audio session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+        feature: 'ReadingSessions',
+      );
+    }
   }
 
   String _getReciterCdnId() {

@@ -79,7 +79,7 @@ void registerFeatureDependencies() {
   // Use Cases
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
   sl.registerLazySingleton(
-    () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl()),
+    () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl(), khatmahRepository: sl()),
   );
 
   sl.registerLazySingleton(() => LoadBookmarks(bookmarkRepository: sl()));

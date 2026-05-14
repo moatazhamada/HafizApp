@@ -26,8 +26,6 @@ import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/services/reading_session_tracker.dart';
 import '../../domain/entities/reading_session.dart';
-import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
-import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
 import '../../core/quran_index/sajdah_index.dart';
 import '../../domain/entities/verse.dart';
@@ -67,7 +65,7 @@ class SurahScreen extends StatefulWidget {
   State<SurahScreen> createState() => _SurahScreenState();
 }
 
-class _SurahScreenState extends State<SurahScreen> {
+class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   final surahBloc = sl<SurahBloc>();
   Surah? surah;
 
@@ -118,6 +116,7 @@ class _SurahScreenState extends State<SurahScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _showTranslation = PrefUtils().getShowTranslation();
     LocaleController.notifier.addListener(_onLocaleChanged);
     if (PrefUtils().isKeepScreenOn()) {
@@ -149,10 +148,7 @@ class _SurahScreenState extends State<SurahScreen> {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
         final isArabic = LocaleController.notifier.value.languageCode == 'ar';
         if (_showTranslation && !isArabic) _loadTranslations();
-        _sessionTracker.startSession(
-          surahId: surah!.id,
-          startVerse: _selectedVerse ?? 1,
-        );
+        _startSession();
       }
 
       _scrollControllerForInit = ScrollController(
@@ -179,10 +175,8 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   void dispose() {
-    final session = _sessionTracker.endSession();
-    if (session != null) {
-      _postReadingSession(session);
-    }
+    _finalizeCurrentSession();
+    WidgetsBinding.instance.removeObserver(this);
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
     _autoScrollTimer?.cancel();
@@ -192,6 +186,42 @@ class _SurahScreenState extends State<SurahScreen> {
     _scrollControllerForInit?.dispose();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _finalizeCurrentSession();
+    } else if (state == AppLifecycleState.resumed) {
+      _startSession();
+    }
+  }
+
+  void _startSession() {
+    if (surah != null) {
+      _sessionTracker.startSession(
+        surahId: surah!.id,
+        startVerse: _selectedVerse ?? 1,
+      );
+    }
+  }
+
+  void _finalizeCurrentSession() {
+    final session = _sessionTracker.endSession();
+    if (session != null && session.endVerse >= session.startVerse) {
+      final totalVerses = session.endVerse - session.startVerse + 1;
+      
+      // Update local dashboard
+      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+      
+      // Sync to QF
+      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+      
+      Logger.info(
+        'Surah session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+        feature: 'ReadingSessions',
+      );
+    }
   }
 
   void _clearHighlight() {
@@ -396,31 +426,6 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
-  Future<void> _postReadingSession(ReadingSession session) async {
-    try {
-      final isAuthenticated = await sl<QfAuthRemoteDataSource>().isAuthenticated();
-      if (!isAuthenticated) return;
-      final dataSource = sl<QfGoalsRemoteDataSource>();
-      await dataSource.postReadingSession(
-        chapterNumber: session.surahId,
-        verseNumber: session.startVerse,
-        startVerse: session.startVerse,
-        endVerse: session.endVerse,
-        duration: session.durationSeconds,
-        readAt: session.readAt,
-      );
-      Logger.info(
-        'Reading session posted to QF: ${session.surahId}:${session.startVerse}-${session.endVerse}',
-        feature: 'ReadingSessions',
-      );
-    } catch (e) {
-      Logger.warning(
-        'Failed to post reading session: $e',
-        feature: 'ReadingSessions',
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -435,11 +440,7 @@ class _SurahScreenState extends State<SurahScreen> {
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
-            _saveReadingProgress();
-            final session = _sessionTracker.endSession();
-            if (session != null) {
-              _postReadingSession(session);
-            }
+            _finalizeCurrentSession();
           },
           child: MultiBlocProvider(
             providers: [

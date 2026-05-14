@@ -7,19 +7,26 @@ import 'package:hafiz_app/data/datasource/qf_user_api_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 
 class QfSyncResult {
   final int pushed;
   final int pulled;
+  final int activityDaysUpdated;
 
-  const QfSyncResult({required this.pushed, required this.pulled});
+  const QfSyncResult({required this.pushed, required this.pulled, this.activityDaysUpdated = 0});
 }
 
 class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   final QfUserApiRemoteDataSource qfUserApi;
   final BookmarkLocalDataSource bookmarkLocalDataSource;
+  final KhatmahRepository khatmahRepository;
 
-  SyncWithQf({required this.qfUserApi, required this.bookmarkLocalDataSource});
+  SyncWithQf({
+    required this.qfUserApi, 
+    required this.bookmarkLocalDataSource,
+    required this.khatmahRepository,
+  });
 
   @override
   Future<Either<Failure, QfSyncResult>> call(NoParams params) async {
@@ -100,11 +107,18 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
         }
       }
 
+      int activityDaysUpdated = 0;
+      final activityDaysResult = await khatmahRepository.syncActivityDaysFromCloud();
+      activityDaysResult.fold(
+        (failure) => Logger.warning('Failed to sync activity days from cloud: $failure', feature: 'SyncWithQf'),
+        (count) => activityDaysUpdated = count,
+      );
+
       Logger.info(
-        'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}',
+        'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}, activity days updated: $activityDaysUpdated',
         feature: 'SyncWithQf',
       );
-      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length));
+      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length, activityDaysUpdated: activityDaysUpdated));
     } on InsufficientScopeFailure {
       Logger.warning(
         'QF sync blocked by insufficient scope',

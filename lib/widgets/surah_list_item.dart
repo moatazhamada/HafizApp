@@ -46,70 +46,52 @@ class SurahListItem extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
-            children: [
-              // Number Badge
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isDark ? appColors.primaryDark : appColors.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  surahId.toLocalizedNumber(context),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: appColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Middle/Right Content based on language
-              if (Localizations.localeOf(context).languageCode != 'ar') ...[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nameEnglish,
-                        style: theme.textTheme.titleLarge?.copyWith(
+            children: Localizations.localeOf(context).languageCode != 'ar'
+                ? [
+                    // Number Badge (Left)
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isDark ? appColors.primaryDark : appColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        surahId.toLocalizedNumber(context),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: appColors.primary,
                           fontWeight: FontWeight.bold,
-                          color: appColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.start,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$ayahLocalizedCount $ayahsText • $revelationText',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: appColors.textSecondary,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Hero(
-                  tag: 'surah-title-$surahId',
-                  child: Text(
-                    nameArabic,
-                    textDirection: TextDirection.rtl,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontFamily: 'NotoNaskhArabic',
-                      color: appColors.primary,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
                     ),
-                  ),
-                ),
-              ] else ...[
-                const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    const SizedBox(width: 16),
+                    // Middle Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nameEnglish,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: appColors.textPrimary,
+                            ),
+                            textAlign: TextAlign.start,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$ayahLocalizedCount $ayahsText • $revelationText',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: appColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Arabic Name (Right)
                     Hero(
                       tag: 'surah-title-$surahId',
                       child: Text(
@@ -123,19 +105,57 @@ class SurahListItem extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$ayahLocalizedCount $ayahsText • $revelationText',
-                      textDirection: TextDirection.rtl,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: appColors.textSecondary,
-                        fontWeight: FontWeight.w500,
+                  ]
+                : [
+                    // Text (Right)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Hero(
+                            tag: 'surah-title-$surahId',
+                            child: Text(
+                              nameArabic,
+                              textDirection: TextDirection.rtl,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontFamily: 'NotoNaskhArabic',
+                                color: appColors.primary,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$ayahLocalizedCount $ayahsText • $revelationText',
+                            textDirection: TextDirection.rtl,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: appColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Number Badge (Left)
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isDark ? appColors.primaryDark : appColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        surahId.toLocalizedNumber(context),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: appColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ],
-            ],
           ),
         ),
       ),

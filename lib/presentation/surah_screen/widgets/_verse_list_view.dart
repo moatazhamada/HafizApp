@@ -752,15 +752,4 @@ extension _SurahScreenStateScroll on _SurahScreenState {
     return visibleVerseNumber;
   }
 
-  void _saveReadingProgress() {
-    if (surah == null) return;
-
-    PrefUtils().saveLastReadSurah(surah!);
-
-    final visibleVerseNumber = _findVisibleVerseNumber();
-
-    if (visibleVerseNumber != null) {
-      PrefUtils().setSurahVerseIndex(surah!.id, visibleVerseNumber - 1);
-    }
-  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/utils/rtl_utils.dart';
+import '../../main.dart';
 import 'archetype_selection_page.dart';
 import 'language_selection_page.dart';
 import 'notification_permission_page.dart';
@@ -74,12 +75,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _previousPage();
         }
       },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
+      child: Theme(
+        data: _isLightBackground ? lightTheme : darkTheme,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
               children: [
                 LanguageSelectionPage(
                   onContinue: _nextPage,
@@ -147,6 +150,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

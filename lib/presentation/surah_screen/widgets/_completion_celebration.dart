@@ -43,8 +43,15 @@ class _CompletionCelebrationState extends State<_CompletionCelebration> {
     );
     sl<KhatmahBloc>().add(RecordReading(verses: totalCount));
 
+    final readingSession = ReadingSession(
+      surahId: widget.surah!.id,
+      startVerse: 1,
+      endVerse: totalCount,
+      durationSeconds: 0, // Duration tracking for voice sessions can be added later
+      readAt: DateTime.now(),
+    );
     unawaited(
-      sl<KhatmahRepository>().reportReadingSession(widget.surah!.id, 1),
+      sl<KhatmahRepository>().reportReadingSession(readingSession),
     );
     unawaited(
       sl<AnalyticsService>().logReadingSession(

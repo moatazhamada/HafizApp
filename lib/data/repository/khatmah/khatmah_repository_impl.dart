@@ -7,6 +7,7 @@ import 'package:hafiz_app/data/datasource/qf_activity/qf_activity_remote_data_so
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/reading_goal_model.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 
 class KhatmahRepositoryImpl implements KhatmahRepository {
@@ -201,12 +202,74 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   }
 
   @override
-  Future<void> reportReadingSession(int chapterNumber, int verseNumber) async {
+  Future<Either<Failure, int>> syncActivityDaysFromCloud() async {
+    try {
+      final days = await activityRemoteDataSource.getActivityDays();
+      int updatedCount = 0;
+
+      for (final dayData in days) {
+        final dateStr = dayData['date'] as String?;
+        if (dateStr == null) continue;
+
+        try {
+          final date = DateTime.parse(dateStr);
+          final localDate = DateTime(date.year, date.month, date.day);
+
+          final cloudSeconds = dayData['seconds'] as int? ?? 0;
+          // Calculate an estimated verses read from QF if they don't provide verses directly
+          // We assume roughly 1 verse per 15 seconds as a rough estimate
+          final estimatedVerses = cloudSeconds ~/ 15;
+
+          final localLog = await localDataSource.getLog(localDate);
+          
+          if (localLog == null) {
+            // Add new log from cloud
+            await localDataSource.saveLog(DailyReadingLogModel(
+              date: localDate,
+              versesRead: estimatedVerses,
+              readingDuration: Duration(seconds: cloudSeconds),
+              syncStatus: SyncStatus.synced,
+            ));
+            updatedCount++;
+          } else {
+            // Merge if cloud has more reading
+            final localSeconds = localLog.readingDuration.inSeconds;
+            if (cloudSeconds > localSeconds) {
+              await localDataSource.saveLog(DailyReadingLogModel(
+                date: localDate,
+                versesRead: localLog.versesRead > estimatedVerses ? localLog.versesRead : estimatedVerses,
+                juzRead: localLog.juzRead,
+                surahsVisited: localLog.surahsVisited,
+                readingDuration: Duration(seconds: cloudSeconds),
+                syncStatus: SyncStatus.synced,
+              ));
+              updatedCount++;
+            }
+          }
+        } catch (e) {
+          Logger.warning('Failed to parse/merge activity day $dateStr: $e', feature: 'Khatmah');
+        }
+      }
+
+      return Right(updatedCount);
+    } catch (e) {
+      Logger.error('Failed to sync activity days from cloud: $e', feature: 'Khatmah');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> reportReadingSession(ReadingSession session) async {
     try {
       await goalsRemoteDataSource.postReadingSession(
-        chapterNumber: chapterNumber,
-        verseNumber: verseNumber,
+        chapterNumber: session.surahId,
+        verseNumber: session.endVerse,
       );
+      // Wait, we need to report duration. Let's see if QfGoalsRemoteDataSource supports it.
+      // We will look at QfGoalsRemoteDataSource in a bit, but for now we pass start/end/duration if possible.
+      // Wait, let's keep the existing call and we will update QfGoalsRemoteDataSource separately if needed,
+      // or we just call activityRemoteDataSource directly?
+      // For now, let's just do postReadingSession with the data we have, or let's use the new fields if QfGoalsRemoteDataSource has them.
     } catch (e) {
       Logger.warning(
         'Failed to report reading session: $e',

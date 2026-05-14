@@ -13,9 +13,9 @@ import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/services/reading_session_tracker.dart';
-import 'package:hafiz_app/domain/entities/reading_session.dart';
-import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
-import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
@@ -129,15 +129,21 @@ class _MushafScreenState extends State<MushafScreen>
 
   @override
   void dispose() {
-    final session = _sessionTracker.endSession();
-    if (session != null) {
-      _postMushafReadingSession(session);
-    }
+    _finalizeCurrentSession();
     WidgetsBinding.instance.removeObserver(this);
     _overlayTimer?.cancel();
     _pageController.dispose();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _finalizeCurrentSession();
+    } else if (state == AppLifecycleState.resumed) {
+      _startMushafSession();
+    }
   }
 
   /// Persist the current page to both prefs and PageStorage so it survives
@@ -615,26 +621,19 @@ class _MushafScreenState extends State<MushafScreen>
     }
   }
 
-  Future<void> _postMushafReadingSession(ReadingSession session) async {
-    try {
-      final isAuthenticated = await sl<QfAuthRemoteDataSource>().isAuthenticated();
-      if (!isAuthenticated) return;
-      final dataSource = sl<QfGoalsRemoteDataSource>();
-      await dataSource.postReadingSession(
-        chapterNumber: session.surahId,
-        verseNumber: session.startVerse,
-        startVerse: session.startVerse,
-        endVerse: session.endVerse,
-        duration: session.durationSeconds,
-        readAt: session.readAt,
-      );
+  void _finalizeCurrentSession() {
+    final session = _sessionTracker.endSession();
+    if (session != null && session.endVerse >= session.startVerse) {
+      final totalVerses = session.endVerse - session.startVerse + 1;
+      
+      // Update local dashboard
+      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+      
+      // Sync to QF
+      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+      
       Logger.info(
-        'Mushaf reading session posted to QF: ${session.surahId}:${session.startVerse}-${session.endVerse}',
-        feature: 'ReadingSessions',
-      );
-    } catch (e) {
-      Logger.warning(
-        'Failed to post mushaf reading session: $e',
+        'Mushaf session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
         feature: 'ReadingSessions',
       );
     }
