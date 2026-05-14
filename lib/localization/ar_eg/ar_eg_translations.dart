@@ -52,7 +52,7 @@ final Map<String, String> arEg = {
   'msg_marked_error': 'تم تحديد الآية لتثبيت الحفظ',
   'msg_error_removed': 'تمت الإزالة من قائمة التثبيت',
   'lbl_settings': 'الإعدادات',
-  'lbl_recitation_coach': 'مدرب التلاوة',
+  'lbl_recitation_coach': 'التحقق من الحفظ',
   'lbl_recitation_provider': 'محرك التلاوة',
   'lbl_provider_local': 'على الجهاز (عادي)',
   'lbl_provider_whisper': 'على الجهاز (Whisper)',
@@ -134,7 +134,7 @@ final Map<String, String> arEg = {
   'msg_recitation_substitute': 'استبدالات',
   'msg_coach_tip_slow': 'نصيحة: اقرأ بهدوء وبنَفَس ثابت.',
   'msg_repeat_word': 'أعد هذه الكلمة:',
-  'msg_tajweed_notes': 'ملاحظات التجويد',
+  'msg_tajweed_notes': 'ملاحظات التحقق',
   'msg_qrc_missing_key': 'مفتاح QRC غير مضبوط',
   'lbl_listen_sheikh': 'استمع للشيخ',
   'lbl_play': 'تشغيل',
@@ -621,6 +621,7 @@ final Map<String, String> arEg = {
 
   // Quran Reflect
   'lbl_quran_reflect': 'تأملات القرآن',
+  'lbl_share_to_quran_reflect': 'فتح في QuranReflect',
   'msg_quran_reflect_desc': 'تأملات ودروس المجتمع',
 
   // Reading Insights

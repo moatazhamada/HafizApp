@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 import 'package:hafiz_app/core/quran/quran_word_service.dart';
@@ -501,6 +502,21 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  final parts = widget.verseKey.split(':');
+                  if (parts.length == 2) {
+                    final surah = parts[0];
+                    final ayah = parts[1];
+                    launchUrl(Uri.parse('https://quranreflect.com/join/$surah/$ayah'));
+                  }
+                },
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: Text('lbl_share_to_quran_reflect'.tr),
+              ),
+            ),
           ],
         ],
       ),

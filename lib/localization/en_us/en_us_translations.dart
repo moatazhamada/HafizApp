@@ -53,7 +53,7 @@ final Map<String, String> enUs = {
   'msg_marked_error': 'Verse marked for practice',
   'msg_error_removed': 'Removed from practice list',
   'lbl_settings': 'Settings',
-  'lbl_recitation_coach': 'Recitation Coach',
+  'lbl_recitation_coach': 'Memorization Verifier',
   'lbl_recitation_provider': 'Recitation Engine',
   'lbl_provider_local': 'On-device (Standard)',
   'lbl_provider_whisper': 'On-device (Whisper)',
@@ -133,9 +133,9 @@ final Map<String, String> enUs = {
   'msg_recitation_missing': 'Missing',
   'msg_recitation_extra': 'Extra',
   'msg_recitation_substitute': 'Substituted',
-  'msg_coach_tip_slow': 'Coach tip: slow down and keep steady pace.',
+  'msg_coach_tip_slow': 'Tip: slow down and keep a steady pace.',
   'msg_repeat_word': 'Repeat this word:',
-  'msg_tajweed_notes': 'Tajweed notes',
+  'msg_tajweed_notes': 'Verification notes',
   'msg_qrc_missing_key': 'QRC key not set',
   'lbl_listen_sheikh': 'Listen to Sheikh',
   'lbl_play': 'Play',
@@ -646,6 +646,7 @@ final Map<String, String> enUs = {
 
   // Quran Reflect
   'lbl_quran_reflect': 'Quran Reflect',
+  'lbl_share_to_quran_reflect': 'Open in QuranReflect',
   'msg_quran_reflect_desc': 'Community reflections & lessons',
 
   // Reading Insights
