@@ -217,6 +217,7 @@ class AppInitializer {
       if (PrefUtils().getOnboardingCompleted()) {
         await notificationService.scheduleDailyVerse();
         await notificationService.scheduleReadingReminder();
+        await notificationService.scheduleFridayKahf();
       }
     } catch (e) {
       Logger.warning(

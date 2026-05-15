@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 
+import '../../core/analytics/analytics_properties.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
 
@@ -241,6 +244,12 @@ class _HomeScreenState extends State<HomeScreen>
             onPressed: () {
               themeBloc.add(ToggleThemeEvent());
               sl<AnalyticsService>().logThemeChange(!isDarkMode);
+              unawaited(
+                sl<AnalyticsService>().setUserProperty(
+                  name: AnalyticsProperties.themeMode,
+                  value: PrefUtils().getThemeMode(),
+                ),
+              );
             },
             tooltip: 'lbl_toggle_theme'.tr,
           ),

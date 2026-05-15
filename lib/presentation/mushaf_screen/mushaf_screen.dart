@@ -13,6 +13,7 @@ import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/services/reading_session_tracker.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
@@ -80,6 +81,7 @@ class _MushafScreenState extends State<MushafScreen>
 
     _pageController = PageController(initialPage: _currentPage - 1);
     _startMushafSession();
+    unawaited(sl<AnalyticsService>().logOpenMushaf(_currentPage));
   }
 
   @override
@@ -638,6 +640,15 @@ class _MushafScreenState extends State<MushafScreen>
         
         // Sync to QF
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        // Analytics
+        unawaited(
+          sl<AnalyticsService>().logReadingSession(
+            chapterNumber: session.surahId,
+            versesRead: totalVerses,
+            durationSeconds: session.durationSeconds,
+          ),
+        );
         
         Logger.info(
           'Mushaf session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',

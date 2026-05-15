@@ -13,6 +13,7 @@ import '../khatmah/bloc/khatmah_bloc.dart';
 import '../khatmah/bloc/khatmah_event.dart';
 import '../../injection_container.dart';
 import '../../core/services/reading_session_tracker.dart';
+import '../../core/analytics/analytics_service.dart';
 
 class AudioPlayerScreen extends StatefulWidget {
   final int surahId;
@@ -60,6 +61,13 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     _sessionTracker.startSession(
       surahId: widget.surahId,
       startVerse: widget.startVerse ?? 1,
+    );
+    unawaited(
+      sl<AnalyticsService>().logAudioPlay(
+        surahId: widget.surahId,
+        verseNumber: widget.startVerse,
+        reciterId: _getReciterCdnId(),
+      ),
     );
 
     _verseSub = _handler.currentVerseStream.listen((verseIndex) {
@@ -119,6 +127,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
         
         sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        // Analytics
+        unawaited(
+          sl<AnalyticsService>().logReadingSession(
+            chapterNumber: session.surahId,
+            versesRead: totalVerses,
+            durationSeconds: session.durationSeconds,
+          ),
+        );
+        unawaited(sl<AnalyticsService>().logAudioCompleted(surahId: widget.surahId));
         
         Logger.info(
           'Audio session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
@@ -192,6 +210,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                   _handler.setSleepTimer(Duration(minutes: minutes));
                   Navigator.pop(context);
                   setState(() {});
+                  unawaited(
+                    sl<AnalyticsService>().logSleepTimerSet(minutes),
+                  );
                 },
               ),
             ),
@@ -231,6 +252,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                     _handler.setSpeed(speed);
                     Navigator.pop(context);
                     setState(() => _speed = speed);
+                    unawaited(
+                      sl<AnalyticsService>().logAudioSpeedChanged(speed),
+                    );
                   },
                 ),
               )
@@ -547,9 +571,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                           onPressed: () {
                             if (_handler.isPlaying) {
                               _handler.pause();
+                              unawaited(
+                                sl<AnalyticsService>().logAudioPause(
+                                  surahId: widget.surahId,
+                                ),
+                              );
                             } else if (_handler.currentSurahId ==
                                 widget.surahId) {
                               _handler.resume();
+                              unawaited(
+                                sl<AnalyticsService>().logAudioPlay(
+                                  surahId: widget.surahId,
+                                  verseNumber: _currentVerse >= 0 ? _currentVerse + 1 : null,
+                                  reciterId: _getReciterCdnId(),
+                                ),
+                              );
                             } else {
                               _play();
                             }

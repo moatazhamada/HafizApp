@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import '../../core/analytics/analytics_properties.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../injection_container.dart';
@@ -63,6 +66,12 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
       _ => WidgetsBinding.instance.platformDispatcher.platformBrightness,
     };
     sl<AnalyticsService>().logThemeChange(brightness == Brightness.dark);
+    unawaited(
+      sl<AnalyticsService>().setUserProperty(
+        name: AnalyticsProperties.themeMode,
+        value: widget.themeMode ?? 'system',
+      ),
+    );
     widget.onContinue();
   }
 

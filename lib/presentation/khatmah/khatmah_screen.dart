@@ -9,7 +9,10 @@ import 'package:hafiz_app/widgets/shimmer_loading.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/presentation/khatmah/widgets/manual_reading_entry_bottom_sheet.dart';
 
-class KhatmahScreen extends StatelessWidget {
+import 'package:hafiz_app/presentation/khatmah/widgets/goal_celebration.dart';
+import 'package:intl/intl.dart';
+
+class KhatmahScreen extends StatefulWidget {
   const KhatmahScreen({super.key});
 
   static Widget builder(BuildContext context) {
@@ -20,10 +23,67 @@ class KhatmahScreen extends StatelessWidget {
   }
 
   @override
+  State<KhatmahScreen> createState() => _KhatmahScreenState();
+}
+
+class _KhatmahScreenState extends State<KhatmahScreen> {
+  bool _showCelebration = false;
+  String? _celebrationTitle;
+
+  void _checkGoalCelebration(KhatmahState state) {
+    if (state is KhatmahDashboardLoaded) {
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final lastCelebrated = PrefUtils().getLastCelebratedDate();
+
+      // Check daily goal
+      if (state.todayProgress >= 1.0 && lastCelebrated != todayStr) {
+        _triggerCelebration('msg_daily_goal_achieved'.tr, todayStr);
+        return;
+      }
+
+      // Check streak milestones
+      final lastStreakCelebrated = PrefUtils().getLastStreakCelebrated() ?? 0;
+      final currentStreak = state.streak;
+      final milestones = [3, 7, 14, 30, 50, 100, 365];
+
+      for (final m in milestones) {
+        if (currentStreak >= m && lastStreakCelebrated < m) {
+          _triggerCelebration(
+            'msg_streak_milestone'.tr.replaceAll('{days}', m.toString()),
+            null, // Date handled separately for streak
+          );
+          PrefUtils().setLastStreakCelebrated(m);
+          break;
+        }
+      }
+    }
+  }
+
+  void _triggerCelebration(String title, String? dateKey) {
+    setState(() {
+      _showCelebration = true;
+      _celebrationTitle = title;
+    });
+    if (dateKey != null) {
+      PrefUtils().setLastCelebratedDate(dateKey);
+    }
+    // Hide celebration after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showCelebration = false;
+          _celebrationTitle = null;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('lbl_khatmah_tracker'.tr)),
-      body: BlocBuilder<KhatmahBloc, KhatmahState>(
+      body: BlocConsumer<KhatmahBloc, KhatmahState>(
+        listener: (context, state) => _checkGoalCelebration(state),
         builder: (context, state) {
           if (state is KhatmahLoading) {
             return Padding(
@@ -58,24 +118,61 @@ class KhatmahScreen extends StatelessWidget {
             );
           }
           if (state is KhatmahDashboardLoaded) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<KhatmahBloc>().add(LoadKhatmahDashboard());
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+            return GoalCelebration(
+              showConfetti: _showCelebration,
+              child: Stack(
                 children: [
-                  _TodayProgressCard(state: state),
-                  const SizedBox(height: AppSpacing.lg),
-                  _StreakCard(
-                    streak: state.streak,
-                    cloudStreak: state.cloudStreak,
-                    localStreak: state.localStreak,
+                  RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<KhatmahBloc>().add(LoadKhatmahDashboard());
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      children: [
+                        _TodayProgressCard(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        _StreakCard(
+                          streak: state.streak,
+                          cloudStreak: state.cloudStreak,
+                          localStreak: state.localStreak,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _GoalCard(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        _WeeklyHeatmap(state: state),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  _GoalCard(state: state),
-                  const SizedBox(height: AppSpacing.lg),
-                  _WeeklyHeatmap(state: state),
+                  if (_showCelebration && _celebrationTitle != null)
+                    Positioned(
+                      top: 100,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Card(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              _celebrationTitle!,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );

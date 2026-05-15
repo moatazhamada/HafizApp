@@ -650,6 +650,10 @@ final Map<String, String> arEg = {
   'msg_reading_reminder_benefit': 'اجعل القراءة عادة يومية مع التذكيرات المنتظمة',
   'lbl_daily_verse_time': 'وقت الآية اليومية',
   'lbl_reading_reminder_time': 'وقت تذكير القراءة',
+  'lbl_friday_kahf': 'سورة الكهف - يوم الجمعة',
+  'msg_friday_kahf_desc': 'تذكير أسبوعي بقراءة سورة الكهف صباح الجمعة',
+  'lbl_friday_kahf_time': 'وقت تذكير الكهف',
+  'msg_friday_kahf_benefit': 'اقرأ سورة الكهف كل جمعة قبل الصلاة',
 
   // Wake Lock
   'lbl_keep_screen_on': 'إبقاء الشاشة مضاءة',
@@ -693,5 +697,6 @@ final Map<String, String> arEg = {
   'lbl_meccan': 'مكية',
   'lbl_medinan': 'مدنية',
   'lbl_ayahs': 'آيات',
-
+  'msg_daily_goal_achieved': 'تم تحقيق الهدف اليومي! ما شاء الله!',
+  'msg_streak_milestone': 'سلسلة لمدة {days} يوم! رائع!',
 };

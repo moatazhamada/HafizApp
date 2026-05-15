@@ -36,6 +36,7 @@ class _NotificationPermissionPageState
       // Schedule notifications once permission is handled
       await service.scheduleDailyVerse();
       await service.scheduleReadingReminder();
+      await service.scheduleFridayKahf();
     } catch (e) {
       Logger.warning('Notification setup failed: $e', feature: 'Notifications');
     } finally {
@@ -126,6 +127,13 @@ class _NotificationPermissionPageState
               icon: Icons.local_fire_department_outlined,
               title: 'lbl_streak_milestone'.tr,
               subtitle: 'msg_streak_milestone_benefit'.tr,
+              isLightBackground: widget.isLightBackground,
+            ),
+            const SizedBox(height: 16),
+            _BenefitRow(
+              icon: Icons.mosque_outlined,
+              title: 'lbl_friday_kahf'.tr,
+              subtitle: 'msg_friday_kahf_benefit'.tr,
               isLightBackground: widget.isLightBackground,
             ),
 

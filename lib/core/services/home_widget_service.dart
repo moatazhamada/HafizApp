@@ -94,7 +94,6 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: 'HafizAppWidgetProvider',
         androidName: 'HafizAppWidgetProvider',
-        uri: Uri.parse('hafiz://verse/${verse.chapterId}/${verse.verseNumber}'),
       );
 
       Logger.info('HomeWidget updated: ${verse.verseKey}',
@@ -129,7 +128,6 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(
       name: 'HafizAppWidgetProvider',
       androidName: 'HafizAppWidgetProvider',
-      uri: Uri.parse('hafiz://verse/96/1'),
     );
   }
 

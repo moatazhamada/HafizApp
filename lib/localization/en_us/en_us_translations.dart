@@ -675,6 +675,10 @@ final Map<String, String> enUs = {
   'msg_reading_reminder_benefit': 'Build a consistent reading habit with daily reminders',
   'lbl_daily_verse_time': 'Daily Verse Time',
   'lbl_reading_reminder_time': 'Reading Reminder Time',
+  'lbl_friday_kahf': 'Friday Surah Al-Kahf',
+  'msg_friday_kahf_desc': 'Weekly reminder to read Surah Al-Kahf on Friday morning',
+  'lbl_friday_kahf_time': 'Friday Kahf Time',
+  'msg_friday_kahf_benefit': 'Read Surah Al-Kahf every Friday before prayer',
 
   // Wake Lock
   'lbl_keep_screen_on': 'Keep Screen On',
@@ -718,5 +722,6 @@ final Map<String, String> enUs = {
   'lbl_meccan': 'Meccan',
   'lbl_medinan': 'Medinan',
   'lbl_ayahs': 'Ayahs',
-
+  'msg_daily_goal_achieved': 'Daily Goal Achieved! Mashallah!',
+  'msg_streak_milestone': '{days} Day Streak! Incredible!',
 };

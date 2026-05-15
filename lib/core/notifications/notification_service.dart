@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/routes/app_routes.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/navigator_service.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -25,9 +27,15 @@ class NotificationService {
   static const String _streakChannelDescription =
       'Celebrate your reading streak achievements';
 
+  static const String _kahfChannelId = 'friday_kahf';
+  static const String _kahfChannelName = 'Surah Al-Kahf';
+  static const String _kahfChannelDescription =
+      'Weekly reminder to read Surah Al-Kahf on Friday morning';
+
   static const int _verseNotificationId = 0;
   static const int _reminderNotificationId = 1;
   static const int _streakNotificationIdBase = 1000;
+  static const int _kahfNotificationId = 2;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -302,11 +310,12 @@ class NotificationService {
     Logger.info('All notifications cancelled', feature: 'Notifications');
   }
 
-  /// Cancel only recurring notifications (verse + reminder).
+  /// Cancel only recurring notifications (verse + reminder + kahf).
   Future<void> cancelRecurring() async {
     if (kIsWeb) return;
     await _plugin.cancel(_verseNotificationId);
     await _plugin.cancel(_reminderNotificationId);
+    await _plugin.cancel(_kahfNotificationId);
     Logger.info('Recurring notifications cancelled', feature: 'Notifications');
   }
 
@@ -324,10 +333,72 @@ class NotificationService {
     return true;
   }
 
+  // ── Friday Surah Al-Kahf ──
+
+  Future<void> scheduleFridayKahf() async {
+    if (kIsWeb) return;
+
+    final pref = PrefUtils();
+    if (!pref.isFridayKahfEnabled()) {
+      await _plugin.cancel(_kahfNotificationId);
+      Logger.info(
+        'Friday Kahf notification cancelled (disabled)',
+        feature: 'Notifications',
+      );
+      return;
+    }
+
+    if (!await _ensurePermission()) return;
+    await _plugin.cancel(_kahfNotificationId);
+
+    const androidDetails = AndroidNotificationDetails(
+      _kahfChannelId,
+      _kahfChannelName,
+      channelDescription: _kahfChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    final isAr = PrefUtils().getLocaleCode() == 'ar';
+    final timeStr = pref.getFridayKahfTime();
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 6;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    final scheduledDate = _nextInstanceOfFridayTime(hour, minute);
+
+    await _plugin.zonedSchedule(
+      _kahfNotificationId,
+      isAr ? 'سورة الكهف' : 'Surah Al-Kahf',
+      isAr
+          ? 'يوم الجمعة \u2014 اقرأ سورة الكهف قبل صلاة الجمعة'
+          : 'It\'s Friday \u2014 read Surah Al-Kahf before Friday prayer',
+      scheduledDate,
+      const NotificationDetails(android: androidDetails),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      payload: 'surah:18',
+    );
+
+    Logger.info(
+      'Friday Kahf scheduled at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+      feature: 'Notifications',
+    );
+  }
+
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final now = DateTime.now();
     var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return tz.TZDateTime.from(scheduled.toUtc(), tz.UTC);
+  }
+
+  tz.TZDateTime _nextInstanceOfFridayTime(int hour, int minute) {
+    final now = DateTime.now();
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    // Advance to next Friday (DateTime.friday == 5)
+    while (scheduled.weekday != DateTime.friday || scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     return tz.TZDateTime.from(scheduled.toUtc(), tz.UTC);
@@ -338,5 +409,19 @@ class NotificationService {
       'Notification tapped: ${response.id}',
       feature: 'Notifications',
     );
+    final payload = response.payload;
+    if (payload != null && payload.startsWith('surah:')) {
+      final surahId = int.tryParse(payload.replaceFirst('surah:', ''));
+      if (surahId != null) {
+        final surah = QuranIndex.quranSurahs.firstWhere(
+          (s) => s.id == surahId,
+          orElse: () => QuranIndex.quranSurahs[0],
+        );
+        NavigatorService.pushNamed(
+          AppRoutes.surahPage,
+          arguments: surah,
+        );
+      }
+    }
   }
 }

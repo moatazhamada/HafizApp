@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/notifications/notification_service.dart';
 
+import '../../core/analytics/analytics_properties.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/i18n/locale_controller.dart';
 import '../../core/qiraat/qiraat_models.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -45,6 +47,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TimeOfDay _dailyVerseTime;
   late bool _readingReminderEnabled;
   late TimeOfDay _readingReminderTime;
+  late bool _fridayKahfEnabled;
+  late TimeOfDay _fridayKahfTime;
   late bool _keepScreenOn;
   late String _surfaceType;
   double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
@@ -74,6 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _dailyVerseTime = _parseTime(PrefUtils().getDailyVerseTime());
     _readingReminderEnabled = PrefUtils().isReadingReminderEnabled();
     _readingReminderTime = _parseTime(PrefUtils().getReadingReminderTime());
+    _fridayKahfEnabled = PrefUtils().isFridayKahfEnabled();
+    _fridayKahfTime = _parseTime(PrefUtils().getFridayKahfTime());
     _keepScreenOn = PrefUtils().isKeepScreenOn();
     _surfaceType = PrefUtils().getSurfaceType() ?? 'reader';
     _loadRecitationResources();
@@ -148,6 +154,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (_readingReminderEnabled) ...[
               const Divider(height: 1, indent: 16, endIndent: 16),
               _buildReadingReminderTimeTile(),
+            ],
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildFridayKahfTile(),
+            if (_fridayKahfEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildFridayKahfTimeTile(),
             ],
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildKeepScreenOnTile(),
@@ -449,6 +461,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           LocaleController.setLocale(newLocale);
           await PrefUtils().setLocaleCode(value);
           setState(() => _currentLang = value);
+          unawaited(
+            di.sl<AnalyticsService>().logLanguageChange(
+              value == 'system'
+                  ? WidgetsBinding.instance.platformDispatcher.locale.languageCode
+                  : value,
+            ),
+          );
+          unawaited(
+            di.sl<AnalyticsService>().setUserProperty(
+              name: AnalyticsProperties.locale,
+              value: value,
+            ),
+          );
         }
       },
     );
@@ -477,6 +502,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (value != null && value != _themeMode) {
           di.sl<ThemeBloc>().add(ChangeThemeModeEvent(value));
           setState(() => _themeMode = value);
+          unawaited(
+            di.sl<AnalyticsService>().logThemeChange(value == 'dark'),
+          );
+          unawaited(
+            di.sl<AnalyticsService>().setUserProperty(
+              name: AnalyticsProperties.themeMode,
+              value: value,
+            ),
+          );
         }
       },
     );
@@ -747,6 +781,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
               '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
           await PrefUtils().setReadingReminderTime(timeStr);
           await NotificationService().scheduleReadingReminder();
+        }
+      },
+    );
+  }
+
+  Widget _buildFridayKahfTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.mosque_outlined),
+      title: Text('lbl_friday_kahf'.tr),
+      subtitle: Text('msg_friday_kahf_desc'.tr),
+      value: _fridayKahfEnabled,
+      onChanged: (val) {
+        setState(() => _fridayKahfEnabled = val);
+        PrefUtils().setFridayKahfEnabled(val);
+        final notificationService = NotificationService();
+        if (val) {
+          notificationService.scheduleFridayKahf();
+        } else {
+          notificationService.cancelRecurring();
+        }
+      },
+    );
+  }
+
+  Widget _buildFridayKahfTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_friday_kahf_time'.tr),
+      subtitle: Text(_fridayKahfTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _fridayKahfTime,
+        );
+        if (picked != null && picked != _fridayKahfTime) {
+          setState(() => _fridayKahfTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setFridayKahfTime(timeStr);
+          await NotificationService().scheduleFridayKahf();
         }
       },
     );

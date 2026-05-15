@@ -203,6 +203,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         surahId: surah!.id,
         startVerse: _selectedVerse ?? 1,
       );
+      unawaited(sl<AnalyticsService>().logOpenSurah(surah!.id));
     }
   }
 
@@ -217,6 +218,15 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         
         // Sync to QF
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        // Analytics
+        unawaited(
+          sl<AnalyticsService>().logReadingSession(
+            chapterNumber: session.surahId,
+            versesRead: totalVerses,
+            durationSeconds: session.durationSeconds,
+          ),
+        );
         
         Logger.info(
           'Surah session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
@@ -563,6 +573,11 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                       _isHifzMode = !_isHifzMode;
                                       _revealedVerses.clear();
                                     });
+                                    unawaited(
+                                      sl<AnalyticsService>().logHifzModeToggled(
+                                        _isHifzMode,
+                                      ),
+                                    );
                                     SemanticsService.sendAnnouncement(
                                       View.of(context),
                                       _isHifzMode
@@ -672,6 +687,14 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                           _revealedVerses.add(verseNumber);
                                         }
                                       });
+                                      if (surah != null) {
+                                        unawaited(
+                                          sl<AnalyticsService>().logVerseRevealed(
+                                            surahId: surah!.id,
+                                            verseNumber: verseNumber,
+                                          ),
+                                        );
+                                      }
                                     },
                                     onVerifyRecitation: (aya) =>
                                         _voicePanelKey.currentState

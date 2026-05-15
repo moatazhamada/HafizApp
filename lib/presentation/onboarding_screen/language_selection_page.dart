@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import '../../core/analytics/analytics_properties.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../core/i18n/locale_controller.dart';
 import '../../core/utils/rtl_utils.dart';
+import '../../injection_container.dart';
 import 'widgets/onboarding_buttons.dart';
 import 'widgets/onboarding_scaffold.dart';
 
@@ -47,6 +52,16 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
 
   void _continue() {
     PrefUtils().setLocaleCode(_selectedCode);
+    final code = _selectedCode == 'system'
+        ? WidgetsBinding.instance.platformDispatcher.locale.languageCode
+        : _selectedCode;
+    sl<AnalyticsService>().logLanguageChange(code);
+    unawaited(
+      sl<AnalyticsService>().setUserProperty(
+        name: AnalyticsProperties.locale,
+        value: code,
+      ),
+    );
     widget.onContinue();
   }
 

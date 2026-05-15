@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hafiz_app/core/analytics/analytics_bloc_observer.dart';
 import 'package:hafiz_app/core/services/app_initializer.dart';
 import 'package:hafiz_app/core/services/app_lifecycle_manager.dart';
 
@@ -15,6 +16,7 @@ import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'dart:async';
+import 'core/analytics/analytics_service.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
 import 'core/services/remote_config_service.dart';
@@ -154,6 +156,7 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = AnalyticsBlocObserver();
   runApp(const BootstrapApp());
 }
 
@@ -360,6 +363,28 @@ class _ReadyAppState extends State<_ReadyApp> {
   void initState() {
     super.initState();
     _maybeShowChangelog();
+    _setInitialUserProperties();
+  }
+
+  void _setInitialUserProperties() {
+    try {
+      if (sl.isRegistered<AnalyticsService>()) {
+        final analytics = sl<AnalyticsService>();
+        unawaited(
+          analytics.setCoreUserProperties(
+            locale: PrefUtils().getLocaleCode(),
+            themeMode: PrefUtils().getThemeMode(),
+            archetype: PrefUtils().getUserArchetype(),
+            onboardingCompleted: PrefUtils().getOnboardingCompleted(),
+            showTranslation: PrefUtils().getShowTranslation(),
+            mushafType: PrefUtils().getMushafType(),
+            reciterId: PrefUtils().getReciterId().toString(),
+          ),
+        );
+      }
+    } catch (e) {
+      Logger.warning('Initial user properties failed: \$e', feature: 'Analytics');
+    }
   }
 
   Future<void> _maybeShowChangelog() async {

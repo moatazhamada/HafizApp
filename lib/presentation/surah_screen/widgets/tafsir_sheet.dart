@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/utils/string_utils.dart';
 import 'package:hafiz_app/domain/entities/reading_session.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 void showTafsirSheet(
@@ -14,6 +15,12 @@ void showTafsirSheet(
   required String surahName,
   required int verseNumber,
 }) {
+  unawaited(
+    sl<AnalyticsService>().logTafsirOpened(
+      surahId: surahId,
+      verseNumber: verseNumber,
+    ),
+  );
   unawaited(
     showModalBottomSheet(
       context: context,

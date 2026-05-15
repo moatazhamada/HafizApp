@@ -524,6 +524,32 @@ class PrefUtils {
     await _requirePrefs().setString('dailyVerseTime', time);
   }
 
+  // ── Friday Surah Al-Kahf Reminder ──
+
+  bool isFridayKahfEnabled() {
+    try {
+      return _requirePrefs().getBool('fridayKahfEnabled') ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  Future<void> setFridayKahfEnabled(bool enabled) async {
+    await _requirePrefs().setBool('fridayKahfEnabled', enabled);
+  }
+
+  String getFridayKahfTime() {
+    try {
+      return _requirePrefs().getString('fridayKahfTime') ?? '06:00';
+    } catch (e) {
+      return '06:00';
+    }
+  }
+
+  Future<void> setFridayKahfTime(String time) async {
+    await _requirePrefs().setString('fridayKahfTime', time);
+  }
+
   String getReadingReminderTime() {
     try {
       return _requirePrefs().getString('readingReminderTime') ?? '20:00';
@@ -698,5 +724,35 @@ class PrefUtils {
 
   Future<void> setKeepScreenOn(bool value) async {
     await _requirePrefs().setBool(_keepScreenOnKey, value);
+  }
+
+  // ── Goal Celebration ──
+
+  static const String _lastCelebratedDateKey = 'last_celebrated_date';
+
+  String? getLastCelebratedDate() {
+    try {
+      return _requirePrefs().getString(_lastCelebratedDateKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setLastCelebratedDate(String date) async {
+    await _requirePrefs().setString(_lastCelebratedDateKey, date);
+  }
+
+  static const String _lastStreakCelebratedKey = 'last_streak_celebrated';
+
+  int? getLastStreakCelebrated() {
+    try {
+      return _requirePrefs().getInt(_lastStreakCelebratedKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> setLastStreakCelebrated(int milestone) async {
+    await _requirePrefs().setInt(_lastStreakCelebratedKey, milestone);
   }
 }

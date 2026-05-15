@@ -6,7 +6,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:hafiz_app/core/audio/whisper_platform.dart'
     if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/app_export.dart';
+import '../../../injection_container.dart';
 
 import '../../../domain/entities/verse.dart';
 import '../../../core/quran_index/quran_surah.dart';
@@ -238,6 +240,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         );
       }
 
+      unawaited(
+        sl<AnalyticsService>().logRecitationStarted(surahId: widget.surah.id),
+      );
       await _voiceService.listen(
         onResult: (text) {
           if (!mounted) return;
@@ -337,6 +342,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       effectiveText,
       _expectedText,
       allowPartial: true,
+    );
+    unawaited(
+      sl<AnalyticsService>().logRecitationVerified(
+        surahId: widget.surah.id,
+        accuracy: (analysis.score * 100).roundToDouble(),
+      ),
     );
     setState(() {
       _spokenText = effectiveText;

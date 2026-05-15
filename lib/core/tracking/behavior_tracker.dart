@@ -1,6 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
+
+
+import '../analytics/analytics_properties.dart';
+import '../analytics/analytics_service.dart';
+import '../../injection_container.dart';
 
 /// Tracks lightweight user behavior sessions to suggest the optimal surface.
 /// Stores at most 7 sessions locally in SharedPreferences.
@@ -25,6 +32,31 @@ class BehaviorTracker {
 
     await PrefUtils().setString(_sessionsKey, jsonEncode(sessions));
     await PrefUtils().setInt(_sessionCountKey, sessions.length);
+
+    // Sync to analytics
+    _syncToAnalytics(action);
+  }
+
+  static void _syncToAnalytics(String action) {
+    try {
+      if (sl.isRegistered<AnalyticsService>()) {
+        final analytics = sl<AnalyticsService>();
+        unawaited(analytics.logBehaviorSessionRecorded(action));
+
+        final dominant = detectDominantAction();
+        if (dominant != null) {
+          unawaited(analytics.logDominantActionDetected(dominant));
+          unawaited(
+            analytics.setUserProperty(
+              name: AnalyticsProperties.dominantAction,
+              value: dominant,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      Logger.warning('BehaviorTracker analytics sync failed: \$e', feature: 'BehaviorTracker');
+    }
   }
 
   /// Returns the number of recorded sessions.

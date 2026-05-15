@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
 import '../../core/utils/rtl_utils.dart';
+import '../../injection_container.dart';
 import '../../main.dart';
 import 'archetype_selection_page.dart';
 import 'language_selection_page.dart';
@@ -38,8 +42,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
       setState(() => _currentPage++);
+      unawaited(
+        sl<AnalyticsService>().logOnboardingStepViewed(
+          step: _currentPage + 1,
+          totalSteps: 5,
+        ),
+      );
     } else {
       // After notification permission, go to mushaf type onboarding
+      unawaited(sl<AnalyticsService>().logOnboardingCompleted());
       NavigatorService.pushNamedAndRemoveUntil(
         AppRoutes.mushafTypeOnboarding,
       );
