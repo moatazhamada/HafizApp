@@ -602,12 +602,12 @@ class _MushafScreenState extends State<MushafScreen>
       _currentPage,
       totalPages: _mushafType.totalPages,
     );
-    if (ranges.isNotEmpty) {
-      final firstRange = ranges.first;
+    for (final range in ranges) {
       _sessionTracker.startSession(
-        surahId: firstRange.surahId,
-        startVerse: firstRange.startVerse,
+        surahId: range.surahId,
+        startVerse: range.startVerse,
       );
+      _sessionTracker.updateProgress(range.endVerse);
     }
   }
 
@@ -616,26 +616,34 @@ class _MushafScreenState extends State<MushafScreen>
       page,
       totalPages: _mushafType.totalPages,
     );
-    if (ranges.isNotEmpty && ranges.first.surahId == _sessionTracker.surahId) {
-      _sessionTracker.updateProgress(ranges.last.endVerse);
+    if (ranges.isEmpty) return;
+
+    for (final range in ranges) {
+      _sessionTracker.startSession(
+        surahId: range.surahId,
+        startVerse: range.startVerse,
+      );
+      _sessionTracker.updateProgress(range.endVerse);
     }
   }
 
   void _finalizeCurrentSession() {
-    final session = _sessionTracker.endSession();
-    if (session != null && session.endVerse >= session.startVerse) {
-      final totalVerses = session.endVerse - session.startVerse + 1;
-      
-      // Update local dashboard
-      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
-      
-      // Sync to QF
-      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
-      
-      Logger.info(
-        'Mushaf session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
-        feature: 'ReadingSessions',
-      );
+    final sessions = _sessionTracker.endSession();
+    for (final session in sessions) {
+      if (session.endVerse >= session.startVerse) {
+        final totalVerses = session.endVerse - session.startVerse + 1;
+        
+        // Update local dashboard
+        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        
+        // Sync to QF
+        unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        Logger.info(
+          'Mushaf session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+          feature: 'ReadingSessions',
+        );
+      }
     }
   }
 

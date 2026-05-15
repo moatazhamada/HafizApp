@@ -1,46 +1,74 @@
 import '../../domain/entities/reading_session.dart';
 
 class ReadingSessionTracker {
-  DateTime? _startTime;
-  int? _surahId;
-  int? _startVerse;
-  int? _endVerse;
+  DateTime? _batchStartTime;
+  DateTime? _currentStartTime;
+  
+  final List<ReadingSession> _completedSessions = [];
+  
+  int? _currentSurahId;
+  int? _currentStartVerse;
+  int? _currentEndVerse;
 
-  int? get surahId => _surahId;
+  int? get surahId => _currentSurahId;
 
   void startSession({required int surahId, int startVerse = 1}) {
-    _startTime = DateTime.now();
-    _surahId = surahId;
-    _startVerse = startVerse;
-    _endVerse = startVerse;
+    if (_currentSurahId == surahId) return;
+
+    _finalizeCurrent(DateTime.now());
+
+    _batchStartTime ??= DateTime.now();
+    _currentStartTime = DateTime.now();
+    _currentSurahId = surahId;
+    _currentStartVerse = startVerse;
+    _currentEndVerse = startVerse;
   }
 
   void updateProgress(int verseNumber) {
-    if (_endVerse == null || verseNumber > _endVerse!) {
-      _endVerse = verseNumber;
+    if (_currentEndVerse == null || verseNumber > _currentEndVerse!) {
+      _currentEndVerse = verseNumber;
     }
   }
 
-  ReadingSession? endSession() {
-    if (_startTime == null || _surahId == null) return null;
-    final duration = DateTime.now().difference(_startTime!);
-    // Only log if user spent at least 10 seconds reading
-    if (duration.inSeconds < 10) return null;
-    final session = ReadingSession(
-      surahId: _surahId!,
-      startVerse: _startVerse ?? 1,
-      endVerse: _endVerse ?? _startVerse ?? 1,
-      durationSeconds: duration.inSeconds,
-      readAt: _startTime!,
-    );
-    _reset();
-    return session;
+  void _finalizeCurrent(DateTime endTime) {
+    if (_currentSurahId != null && _currentStartTime != null) {
+      final duration = endTime.difference(_currentStartTime!);
+      
+      _completedSessions.add(ReadingSession(
+        surahId: _currentSurahId!,
+        startVerse: _currentStartVerse ?? 1,
+        endVerse: _currentEndVerse ?? _currentStartVerse ?? 1,
+        durationSeconds: duration.inSeconds,
+        readAt: _currentStartTime!,
+      ));
+    }
+    _currentSurahId = null;
   }
 
-  void _reset() {
-    _startTime = null;
-    _surahId = null;
-    _startVerse = null;
-    _endVerse = null;
+  List<ReadingSession> endSession() {
+    _finalizeCurrent(DateTime.now());
+    
+    final validSessions = <ReadingSession>[];
+    
+    if (_batchStartTime != null) {
+      final totalBatchDuration = DateTime.now().difference(_batchStartTime!).inSeconds;
+      
+      for (var session in _completedSessions) {
+        // False Positive Prevention:
+        // If the entire continuous batch of reading lasted less than 10 seconds, 
+        // it is likely accidental or just a quick glance. We discard it.
+        if (totalBatchDuration < 10) {
+          continue; 
+        }
+        
+        validSessions.add(session);
+      }
+    }
+    
+    _completedSessions.clear();
+    _batchStartTime = null;
+    _currentStartTime = null;
+    
+    return validSessions;
   }
 }

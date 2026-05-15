@@ -207,20 +207,22 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   }
 
   void _finalizeCurrentSession() {
-    final session = _sessionTracker.endSession();
-    if (session != null && session.endVerse >= session.startVerse) {
-      final totalVerses = session.endVerse - session.startVerse + 1;
-      
-      // Update local dashboard
-      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
-      
-      // Sync to QF
-      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
-      
-      Logger.info(
-        'Surah session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
-        feature: 'ReadingSessions',
-      );
+    final sessions = _sessionTracker.endSession();
+    for (final session in sessions) {
+      if (session.endVerse >= session.startVerse) {
+        final totalVerses = session.endVerse - session.startVerse + 1;
+        
+        // Update local dashboard
+        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        
+        // Sync to QF
+        unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        Logger.info(
+          'Surah session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+          feature: 'ReadingSessions',
+        );
+      }
     }
   }
 

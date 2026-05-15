@@ -108,17 +108,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
   }
 
   void _finalizeCurrentSession() {
-    final session = _sessionTracker.endSession();
-    if (session != null && session.endVerse >= session.startVerse) {
-      final totalVerses = session.endVerse - session.startVerse + 1;
-      
-      sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
-      unawaited(sl<KhatmahRepository>().reportReadingSession(session));
-      
-      Logger.info(
-        'Audio session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
-        feature: 'ReadingSessions',
-      );
+    final sessions = _sessionTracker.endSession();
+    for (final session in sessions) {
+      if (session.endVerse >= session.startVerse) {
+        final totalVerses = session.endVerse - session.startVerse + 1;
+        
+        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        Logger.info(
+          'Audio session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+          feature: 'ReadingSessions',
+        );
+      }
     }
   }
 
