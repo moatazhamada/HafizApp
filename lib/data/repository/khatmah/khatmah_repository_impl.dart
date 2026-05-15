@@ -6,6 +6,7 @@ import 'package:hafiz_app/data/datasource/khatmah/khatmah_local_data_source.dart
 import 'package:hafiz_app/data/datasource/qf_activity/qf_activity_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/reading_goal_model.dart';
+import 'package:hafiz_app/data/model/reading_session_model.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
 import 'package:hafiz_app/domain/entities/reading_session.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
@@ -179,6 +180,48 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
           }
         }
       }
+
+      // Also sync granular offline sessions
+      final offlineSessions = await localDataSource.getOfflineSessions();
+      if (offlineSessions.isNotEmpty) {
+        Logger.info(
+          'Attempting to sync ${offlineSessions.length} granular reading sessions',
+          feature: 'Khatmah',
+        );
+        final successfulSessions = <ReadingSessionModel>[];
+        for (final session in offlineSessions) {
+          try {
+            await goalsRemoteDataSource.postReadingSession(
+              chapterNumber: session.surahId,
+              verseNumber: session.endVerse,
+            );
+            successfulSessions.add(session);
+          } catch (e) {
+            Logger.warning(
+              'Failed to sync granular session for surah ${session.surahId}: $e',
+              feature: 'Khatmah',
+            );
+          }
+        }
+
+        if (successfulSessions.isNotEmpty) {
+          // This is a bit naive (clears all instead of specific ones)
+          // but Hive.add()/removeAt() is tricky with toMap().
+          // Let's improve this: clear and re-add failures.
+          final failures = offlineSessions
+              .where((s) => !successfulSessions.contains(s))
+              .toList();
+          await localDataSource.clearOfflineSessions();
+          for (final f in failures) {
+            await localDataSource.saveOfflineSession(f);
+          }
+          Logger.info(
+            'Successfully synced ${successfulSessions.length} granular sessions',
+            feature: 'Khatmah',
+          );
+        }
+      }
+
       return Right(synced);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
@@ -265,16 +308,19 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         chapterNumber: session.surahId,
         verseNumber: session.endVerse,
       );
-      // Wait, we need to report duration. Let's see if QfGoalsRemoteDataSource supports it.
-      // We will look at QfGoalsRemoteDataSource in a bit, but for now we pass start/end/duration if possible.
-      // Wait, let's keep the existing call and we will update QfGoalsRemoteDataSource separately if needed,
-      // or we just call activityRemoteDataSource directly?
-      // For now, let's just do postReadingSession with the data we have, or let's use the new fields if QfGoalsRemoteDataSource has them.
     } catch (e) {
       Logger.warning(
-        'Failed to report reading session: $e',
+        'Failed to report reading session instantly (queuing offline): $e',
         feature: 'Khatmah',
       );
+      // Queue offline for later
+      try {
+        await localDataSource.saveOfflineSession(
+          ReadingSessionModel.fromEntity(session),
+        );
+      } catch (cacheError) {
+        Logger.error('Failed to queue offline session: $cacheError', feature: 'Khatmah');
+      }
     }
   }
 

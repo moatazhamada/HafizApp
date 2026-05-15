@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/share_as_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
@@ -222,6 +223,26 @@ void showVerseMenu(
                   AppRoutes.verseStudyScreen,
                   arguments: {'verseKey': '$surahId:${verse.verseNumber}'},
                 );
+              },
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'lbl_share_to_quran_reflect'.tr,
+            child: ListTile(
+              leading: Icon(
+                Icons.forum_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text('lbl_share_to_quran_reflect'.tr),
+              onTap: () async {
+                Navigator.pop(context);
+                final url = Uri.parse(
+                  'https://quranreflect.com/verses/$surahId/${verse.verseNumber}',
+                );
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           ),

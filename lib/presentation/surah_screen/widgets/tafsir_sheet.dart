@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/string_utils.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
 import 'package:hafiz_app/injection_container.dart';
 
@@ -25,7 +27,19 @@ void showTafsirSheet(
         maxChildSize: 0.8,
         expand: false,
         builder: (context, scrollController) => FutureBuilder(
-          future: sl<TafsirRepository>().getTafsir(surahId, verseNumber),
+          future: sl<TafsirRepository>().getTafsir(surahId, verseNumber).then((result) {
+            // Track as reading session (estimated 30s for tafsir)
+            sl<KhatmahRepository>().reportReadingSession(
+              ReadingSession(
+                surahId: surahId,
+                startVerse: verseNumber,
+                endVerse: verseNumber,
+                durationSeconds: 30,
+                readAt: DateTime.now(),
+              ),
+            );
+            return result;
+          }),
           builder: (context, snapshot) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return Column(

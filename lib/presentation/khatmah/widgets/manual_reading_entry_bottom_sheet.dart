@@ -58,41 +58,53 @@ class _ManualReadingEntryBottomSheetState extends State<ManualReadingEntryBottom
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment<bool>(
-                value: true,
-                label: Text('lbl_pages'.tr),
-              ),
-              ButtonSegment<bool>(
-                value: false,
-                label: Text('lbl_verses'.tr),
-              ),
-            ],
-            selected: {_isPages},
-            onSelectionChanged: (Set<bool> newSelection) {
-              setState(() {
-                _isPages = newSelection.first;
-              });
-            },
+          Semantics(
+            label: 'lbl_log_type_selector'.tr,
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment<bool>(
+                  value: true,
+                  label: Text('lbl_pages'.tr),
+                ),
+                ButtonSegment<bool>(
+                  value: false,
+                  label: Text('lbl_verses'.tr),
+                ),
+              ],
+              selected: {_isPages},
+              onSelectionChanged: (Set<bool> newSelection) {
+                setState(() {
+                  _isPages = newSelection.first;
+                });
+              },
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          TextField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: _isPages ? 'lbl_number_of_pages'.tr : 'lbl_number_of_verses'.tr,
-              border: const OutlineInputBorder(),
+          Semantics(
+            textField: true,
+            label: _isPages ? 'lbl_number_of_pages'.tr : 'lbl_number_of_verses'.tr,
+            hint: 'msg_enter_amount'.tr,
+            child: TextField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: _isPages ? 'lbl_number_of_pages'.tr : 'lbl_number_of_verses'.tr,
+                border: const OutlineInputBorder(),
+              ),
+              onSubmitted: (_) => _submit(),
             ),
-            onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: AppSpacing.xl),
-          FilledButton(
-            onPressed: _submit,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+          Semantics(
+            button: true,
+            label: 'lbl_save_reading_log'.tr,
+            child: FilledButton(
+              onPressed: _submit,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text('lbl_save'.tr),
             ),
-            child: Text('lbl_save'.tr),
           ),
           const SizedBox(height: AppSpacing.xl),
         ],

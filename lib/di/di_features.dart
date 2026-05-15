@@ -172,6 +172,7 @@ void registerFeatureDependencies() {
     () => KhatmahLocalDataSourceImpl(
       logBox: Hive.box('reading_logs'),
       goalBox: Hive.box('reading_goal'),
+      offlineSessionBox: Hive.box('offline_reading_sessions'),
     ),
   );
 

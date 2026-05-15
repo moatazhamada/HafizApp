@@ -69,6 +69,10 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
         if (verseIndex >= 0) {
           PrefUtils().setLastAudioVerse(widget.surahId, verseIndex);
           _sessionTracker.updateProgress(verseIndex + 1);
+          
+          // Sync global last read surah for home screen consistency
+          final surah = QuranIndex.quranSurahs[widget.surahId - 1];
+          PrefUtils().saveLastReadSurah(surah);
         }
       }
     });

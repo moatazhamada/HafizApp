@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AudioPlayerHandler {
   static final AudioPlayerHandler _instance = AudioPlayerHandler._internal();
@@ -22,6 +23,9 @@ class AudioPlayerHandler {
   bool _isDisposed = false;
   StreamSubscription<ProcessingState>? _completionSub;
   Completer<void>? _verseCompleter;
+  
+  static const String _prefSurahId = 'audio_last_surah_id';
+  static const String _prefVerseIndex = 'audio_last_verse_index';
 
   AudioPlayer get player => _player;
   Stream<int> get currentVerseStream => _currentVerseController.stream;
@@ -62,6 +66,7 @@ class AudioPlayerHandler {
       await _player.setUrl(_verseUrls![_currentVerseIndex]);
       if (_isDisposed || _currentSurahId == null) return;
       _currentVerseController.add(_currentVerseIndex);
+      unawaited(_saveState());
       await _player.play();
       if (_isDisposed || _currentSurahId == null) return;
 
@@ -176,6 +181,32 @@ class AudioPlayerHandler {
     _verseCompleter = null;
     await _player.stop();
     await _playCurrentVerse();
+  }
+
+  Future<void> _saveState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_currentSurahId != null) {
+        await prefs.setInt(_prefSurahId, _currentSurahId!);
+        await prefs.setInt(_prefVerseIndex, _currentVerseIndex);
+      }
+    } catch (e) {
+      // Ignore persistence errors
+    }
+  }
+
+  Future<Map<String, int>?> getLastPosition() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final surahId = prefs.getInt(_prefSurahId);
+      final verseIndex = prefs.getInt(_prefVerseIndex);
+      if (surahId != null && verseIndex != null) {
+        return {'surahId': surahId, 'verseIndex': verseIndex};
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return null;
   }
 
   Future<void> dispose() async {

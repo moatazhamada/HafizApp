@@ -114,6 +114,17 @@ class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
     _sessionCorrectCount++;
     _sessionTotalCount++;
 
+    // Track as reading session
+    sl<KhatmahRepository>().reportReadingSession(
+      ReadingSession(
+        surahId: widget.surah!.id,
+        startVerse: currentVerse.verseNumber,
+        endVerse: currentVerse.verseNumber,
+        durationSeconds: 15, // Estimate 15s per successful verification
+        readAt: DateTime.now(),
+      ),
+    );
+
     final currentState = widget.surahBloc.state;
     if (currentState is SuccessSurahState) {
       final chapters = currentState.chapters;
@@ -141,6 +152,17 @@ class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
           verseId: aya.verseNumber,
           createdAt: DateTime.now(),
         ),
+      ),
+    );
+
+    // Track as reading session even if marked for practice (they still read it)
+    sl<KhatmahRepository>().reportReadingSession(
+      ReadingSession(
+        surahId: widget.surah!.id,
+        startVerse: aya.verseNumber,
+        endVerse: aya.verseNumber,
+        durationSeconds: 15,
+        readAt: DateTime.now(),
       ),
     );
 
