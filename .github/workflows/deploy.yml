@@ -96,6 +96,32 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
+      - name: Validate & Generate Dart Defines
+        run: |
+          echo "🔐 Validating QF credentials..."
+          if [ -z "${{ secrets.QF_CLIENT_ID }}" ]; then
+            echo "::error::QF_CLIENT_ID secret is empty or not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.QF_CLIENT_SECRET }}" ]; then
+            echo "::error::QF_CLIENT_SECRET secret is empty or not configured"
+            exit 1
+          fi
+          echo "✅ QF credentials validated"
+
+          cat > .dart_defines.production.json <<EOF
+          {
+            "flavor": "production",
+            "QF_CLIENT_ID": "${{ secrets.QF_CLIENT_ID }}",
+            "QF_CLIENT_SECRET": "${{ secrets.QF_CLIENT_SECRET }}",
+            "QF_PRODUCTION": "true",
+            "FIREBASE_WEB_API_KEY": "${{ secrets.FIREBASE_WEB_API_KEY }}",
+            "FIREBASE_ANDROID_API_KEY": "${{ secrets.FIREBASE_ANDROID_API_KEY }}",
+            "FIREBASE_IOS_API_KEY": "${{ secrets.FIREBASE_IOS_API_KEY }}"
+          }
+          EOF
+          echo "✅ Generated .dart_defines.production.json"
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
@@ -146,6 +172,32 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
+      - name: Validate & Generate Dart Defines
+        run: |
+          echo "🔐 Validating QF credentials..."
+          if [ -z "${{ secrets.QF_CLIENT_ID }}" ]; then
+            echo "::error::QF_CLIENT_ID secret is empty or not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.QF_CLIENT_SECRET }}" ]; then
+            echo "::error::QF_CLIENT_SECRET secret is empty or not configured"
+            exit 1
+          fi
+          echo "✅ QF credentials validated"
+
+          cat > .dart_defines.production.json <<EOF
+          {
+            "flavor": "production",
+            "QF_CLIENT_ID": "${{ secrets.QF_CLIENT_ID }}",
+            "QF_CLIENT_SECRET": "${{ secrets.QF_CLIENT_SECRET }}",
+            "QF_PRODUCTION": "true",
+            "FIREBASE_WEB_API_KEY": "${{ secrets.FIREBASE_WEB_API_KEY }}",
+            "FIREBASE_ANDROID_API_KEY": "${{ secrets.FIREBASE_ANDROID_API_KEY }}",
+            "FIREBASE_IOS_API_KEY": "${{ secrets.FIREBASE_IOS_API_KEY }}"
+          }
+          EOF
+          echo "✅ Generated .dart_defines.production.json"
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
@@ -194,6 +246,32 @@ jobs:
 
       - name: Get Flutter dependencies
         run: flutter pub get
+
+      - name: Validate & Generate Dart Defines
+        run: |
+          echo "🔐 Validating QF credentials..."
+          if [ -z "${{ secrets.QF_CLIENT_ID }}" ]; then
+            echo "::error::QF_CLIENT_ID secret is empty or not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.QF_CLIENT_SECRET }}" ]; then
+            echo "::error::QF_CLIENT_SECRET secret is empty or not configured"
+            exit 1
+          fi
+          echo "✅ QF credentials validated"
+
+          cat > .dart_defines.production.json <<EOF
+          {
+            "flavor": "production",
+            "QF_CLIENT_ID": "${{ secrets.QF_CLIENT_ID }}",
+            "QF_CLIENT_SECRET": "${{ secrets.QF_CLIENT_SECRET }}",
+            "QF_PRODUCTION": "true",
+            "FIREBASE_WEB_API_KEY": "${{ secrets.FIREBASE_WEB_API_KEY }}",
+            "FIREBASE_ANDROID_API_KEY": "${{ secrets.FIREBASE_ANDROID_API_KEY }}",
+            "FIREBASE_IOS_API_KEY": "${{ secrets.FIREBASE_IOS_API_KEY }}"
+          }
+          EOF
+          echo "✅ Generated .dart_defines.production.json"
 
       - name: Decode Keystore
         run: |

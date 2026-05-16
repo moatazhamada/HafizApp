@@ -110,17 +110,19 @@ class CachedQfMushafPageDataSource implements QfMushafPageDataSource {
   }
 
   Future<void> prefetchPages(List<int> pageNumbers) async {
-    for (final page in pageNumbers) {
-      if (!_cache.containsKey(page)) {
-        final data = await _inner.fetchPage(page);
-        if (data != null) {
-          if (_cache.length >= _maxCacheSize) {
-            final oldest = _cacheOrder.removeAt(0);
-            _cache.remove(oldest);
-          }
-          _cache[page] = data;
-          _cacheOrder.add(page);
+    final pagesToFetch = pageNumbers.where((p) => !_cache.containsKey(p)).toList();
+    final results = await Future.wait(
+      pagesToFetch.map((page) => _inner.fetchPage(page)),
+    );
+    for (int i = 0; i < pagesToFetch.length; i++) {
+      final data = results[i];
+      if (data != null) {
+        if (_cache.length >= _maxCacheSize) {
+          final oldest = _cacheOrder.removeAt(0);
+          _cache.remove(oldest);
         }
+        _cache[pagesToFetch[i]] = data;
+        _cacheOrder.add(pagesToFetch[i]);
       }
     }
   }
@@ -168,8 +170,11 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
           wordsByVerse[pv.verseKey] = glyphWords;
 
           for (final gw in glyphWords) {
-            lineMap.putIfAbsent(gw.lineV2, () => GlyphLine(lineNumber: gw.lineV2, words: []));
-            lineMap[gw.lineV2]!.words.add(gw);
+            final line = lineMap.putIfAbsent(
+              gw.lineV2,
+              () => GlyphLine(lineNumber: gw.lineV2, words: []),
+            );
+            line.words.add(gw);
           }
         }
       }

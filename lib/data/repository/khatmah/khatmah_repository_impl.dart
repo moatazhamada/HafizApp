@@ -107,13 +107,10 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
 
       for (int i = 0; i < 365; i++) {
         final date = today.subtract(Duration(days: i));
-        final key =
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        final key = _dateKey(date);
         final log = logs[key];
         if (log != null && log.versesRead > 0) {
           streak++;
-        } else if (i > 0) {
-          break;
         } else {
           break;
         }
@@ -130,22 +127,23 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       final now = DateTime.now();
       int synced = 0;
 
-      // Check last 30 days for pending logs
-      for (int i = 0; i < 30; i++) {
-        final date = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: i));
-        final log = await localDataSource.getLog(date);
-        if (log != null &&
-            log.versesRead > 0 &&
-            log.syncStatus != SyncStatus.synced) {
+      // Batch-read all 30 days of logs first to avoid N+1 local reads
+      final startDate = DateTime(now.year, now.month, now.day).subtract(
+        const Duration(days: 29),
+      );
+      final endDate = DateTime(now.year, now.month, now.day);
+      final allLogs = await localDataSource.getLogsBatch(startDate, endDate);
+
+      final pendingLogs = allLogs.values.where(
+        (log) => log.versesRead > 0 && log.syncStatus != SyncStatus.synced,
+      );
+
+      await Future.wait(
+        pendingLogs.map((log) async {
           try {
             await activityRemoteDataSource.postActivityDay(
               type: 'QURAN',
-              date:
-                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+              date: _dateKey(log.date),
               seconds: log.readingDuration.inSeconds > 0
                   ? log.readingDuration.inSeconds
                   : null,
@@ -178,10 +176,10 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
             );
             await localDataSource.saveLog(updated);
           }
-        }
-      }
+        }),
+      );
 
-      // Also sync granular offline sessions
+      // Also sync granular offline sessions in parallel
       final offlineSessions = await localDataSource.getOfflineSessions();
       if (offlineSessions.isNotEmpty) {
         Logger.info(
@@ -189,25 +187,24 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
           feature: 'Khatmah',
         );
         final successfulSessions = <ReadingSessionModel>[];
-        for (final session in offlineSessions) {
-          try {
-            await goalsRemoteDataSource.postReadingSession(
-              chapterNumber: session.surahId,
-              verseNumber: session.endVerse,
-            );
-            successfulSessions.add(session);
-          } catch (e) {
-            Logger.warning(
-              'Failed to sync granular session for surah ${session.surahId}: $e',
-              feature: 'Khatmah',
-            );
-          }
-        }
+        await Future.wait(
+          offlineSessions.map((session) async {
+            try {
+              await goalsRemoteDataSource.postReadingSession(
+                chapterNumber: session.surahId,
+                verseNumber: session.endVerse,
+              );
+              successfulSessions.add(session);
+            } catch (e) {
+              Logger.warning(
+                'Failed to sync granular session for surah ${session.surahId}: $e',
+                feature: 'Khatmah',
+              );
+            }
+          }),
+        );
 
         if (successfulSessions.isNotEmpty) {
-          // This is a bit naive (clears all instead of specific ones)
-          // but Hive.add()/removeAt() is tricky with toMap().
-          // Let's improve this: clear and re-add failures.
           final failures = offlineSessions
               .where((s) => !successfulSessions.contains(s))
               .toList();
@@ -264,7 +261,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
           final estimatedVerses = cloudSeconds ~/ 15;
 
           final localLog = await localDataSource.getLog(localDate);
-          
+
           if (localLog == null) {
             // Add new log from cloud
             await localDataSource.saveLog(DailyReadingLogModel(
@@ -329,13 +326,18 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
     return DateTime(now.year, now.month, now.day);
   }
 
+  static String _dateKey(DateTime date) {
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$m-$d';
+  }
+
   /// Fire-and-forget activity day report to QF.
   Future<void> _reportActivityDay(DailyReadingLog log) async {
     try {
       await activityRemoteDataSource.postActivityDay(
         type: 'QURAN',
-        date:
-            '${log.date.year}-${log.date.month.toString().padLeft(2, '0')}-${log.date.day.toString().padLeft(2, '0')}',
+        date: _dateKey(log.date),
         mushafId: 4, // UthmaniHafs
       );
       // Mark locally as synced

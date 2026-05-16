@@ -21,10 +21,10 @@ class QfApiConfig {
   static const String clientId = defaultIsProduction
       ? String.fromEnvironment('QF_CLIENT_ID', defaultValue: '')
       : '5cd47ccf-93e5-47d0-83b5-9bf538bb5759';
-  static const String clientSecret = defaultIsProduction
-      ? String.fromEnvironment('QF_CLIENT_SECRET', defaultValue: '')
-      : String.fromEnvironment('QF_CLIENT_SECRET',
-          defaultValue: 'pd9aPG1ieJL2.34Qi-LV6E8FBG');
+  static const String clientSecret = String.fromEnvironment(
+    'QF_CLIENT_SECRET',
+    defaultValue: '',
+  );
 
   /// When a backend proxy is configured, the app sends the authorization code
   /// to this URL for server-side token exchange.  This keeps the client_secret

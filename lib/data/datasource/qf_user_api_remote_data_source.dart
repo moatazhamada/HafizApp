@@ -59,9 +59,6 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
     } on DioException catch (e) {
       Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
       rethrow;
-    } catch (e) {
-      Logger.error('Failed to get QF collections: $e', feature: 'QfUserApi');
-      rethrow;
     }
   }
 
@@ -116,9 +113,6 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
       );
       throw InsufficientScopeFailure();
     } on DioException catch (e) {
-      Logger.error('Failed to get QF bookmarks: $e', feature: 'QfUserApi');
-      rethrow;
-    } catch (e) {
       Logger.error('Failed to get QF bookmarks: $e', feature: 'QfUserApi');
       rethrow;
     }

@@ -181,9 +181,6 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
       }
       rethrow;
-    } catch (e) {
-      Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
-      rethrow;
     }
   }
 

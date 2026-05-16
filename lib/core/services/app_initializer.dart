@@ -10,6 +10,7 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../config/qf_api_config.dart';
 import '../notifications/notification_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/deep_link_handler.dart';
@@ -33,6 +34,21 @@ class AppInitializer {
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
+
+    // Fail fast if production QF credentials are missing.
+    // This prevents shipping a build that cannot authenticate.
+    if (QfApiConfig.defaultIsProduction) {
+      if (QfApiConfig.clientId.isEmpty) {
+        throw StateError(
+          'QF_CLIENT_ID is empty. Build with --dart-define=QF_CLIENT_ID=...',
+        );
+      }
+      if (QfApiConfig.clientSecret.isEmpty) {
+        throw StateError(
+          'QF_CLIENT_SECRET is empty. Build with --dart-define=QF_CLIENT_SECRET=...',
+        );
+      }
+    }
 
     try {
       await PrefUtils().init();

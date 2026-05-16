@@ -190,18 +190,30 @@ lcov --remove coverage/lcov.info 'lib/**/*.g.dart' 'lib/**/*.freezed.dart' 'lib/
 
 - **This is a private repository.**
 - **Keystore:** `android/app/upload-keystore.jks` and `android/keystore.properties` are excluded from git via `.gitignore`.
-- **Secrets:** Quran Foundation OAuth `client_id` and `client_secret` are injected at build time via `--dart-define-from-file` (`.dart_defines.production.json` / `.dart_defines.prelive.json`). In CI they are sourced from GitHub Secrets.
+- **Secrets:** Quran Foundation OAuth `client_id` and `client_secret` are injected at build time via `--dart-define-from-file`. The files `.dart_defines.production.json` and `.dart_defines.prelive.json` are **gitignored** and must never be committed. In CI they are generated on-the-fly from GitHub Secrets; the build fails fast if any required secret is empty.
 - **Token Storage:** Access tokens are stored in `flutter_secure_storage`. Token refresh is handled automatically by `QfApiInterceptor`.
 - **PKCE:** OAuth2 login uses PKCE via `flutter_appauth`.
 - **Confidential vs Public Client:** The app defaults to confidential-client mode (server-side token exchange). Only enable `forcePublicClient` if Quran Foundation explicitly confirms it.
 
 ### Required GitHub Secrets (CI/CD)
 
+**Build will fail if empty:**
+- `QF_CLIENT_ID` — Quran Foundation OAuth client ID
+- `QF_CLIENT_SECRET` — Quran Foundation OAuth client secret
+
+**Android signing & deployment:**
 - `KEYSTORE_BASE64`
 - `KEYSTORE_PASSWORD`
 - `KEY_PASSWORD`
 - `KEY_ALIAS`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT`
+
+**Optional (Firebase key rotation):**
+- `FIREBASE_WEB_API_KEY`
+- `FIREBASE_ANDROID_API_KEY`
+- `FIREBASE_IOS_API_KEY`
+
+> **Note on Firebase API keys:** For native mobile apps, Firebase API keys are embedded in the app binary and are considered public by design. The `firebase_options.dart` file reads them from `String.fromEnvironment` with safe defaults. Security relies on GCP API key restrictions (bundle ID, SHA-1, App Check), not on key secrecy. The optional secrets above allow rotating keys without rebuilding from source.
 
 ---
 
