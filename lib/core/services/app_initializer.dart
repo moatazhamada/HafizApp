@@ -99,13 +99,30 @@ class AppInitializer {
         try {
           await Hive.openBox(box);
         } catch (e) {
-          Logger.warning('Failed to open box $box: $e', feature: 'Init');
+          Logger.error(
+            'Failed to open box $box, attempting recovery: $e',
+            feature: 'Init',
+            error: e,
+          );
+          // Try once more before destroying data
           try {
-            await Hive.deleteBoxFromDisk(box);
             await Hive.openBox(box);
-            Logger.info('Recovered box $box after deletion', feature: 'Init');
-          } catch (e2) {
-            Logger.error('Box $box unrecoverable: $e2', feature: 'Init');
+            Logger.info('Box $box opened on retry', feature: 'Init');
+          } catch (_) {
+            try {
+              await Hive.deleteBoxFromDisk(box);
+              await Hive.openBox(box);
+              Logger.error(
+                'Box $box was corrupted and had to be recreated. User data in this box was lost.',
+                feature: 'Init',
+              );
+            } catch (e2) {
+              Logger.error(
+                'Box $box unrecoverable after delete: $e2',
+                feature: 'Init',
+                error: e2,
+              );
+            }
           }
         }
       }),

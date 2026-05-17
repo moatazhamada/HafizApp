@@ -799,7 +799,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (val) {
           notificationService.scheduleFridayKahf();
         } else {
-          notificationService.cancelRecurring();
+          notificationService.cancelFridayKahf();
         }
       },
     );

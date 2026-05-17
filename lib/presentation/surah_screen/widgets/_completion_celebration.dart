@@ -73,7 +73,7 @@ class _CompletionCelebrationState extends State<_CompletionCelebration> {
           })
           .catchError((e) {
             Logger.warning(
-              'Adaptive QRC evaluation failed: \$e',
+              'Adaptive QRC evaluation failed: $e',
               feature: 'QRC',
             );
           });

@@ -283,9 +283,23 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
   Future<bool> refreshToken() async {
     try {
       return await _refreshWithFallback();
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 401 || statusCode == 403) {
+        Logger.error(
+          'Token refresh rejected ($statusCode), logging out',
+          feature: 'QfAuth',
+        );
+        await logout();
+      } else {
+        Logger.error(
+          'Token refresh failed with network error: $e',
+          feature: 'QfAuth',
+        );
+      }
+      return false;
     } catch (e) {
-      Logger.error('Failed to refresh token: $e', feature: 'QfAuth');
-      await logout();
+      Logger.error('Token refresh failed unexpectedly: $e', feature: 'QfAuth');
       return false;
     }
   }

@@ -110,8 +110,8 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         final date = today.subtract(Duration(days: i));
         final key = _dateKey(date);
         final log = logs[key];
-        // Count any day the app was opened (log exists) or verses were read
-        if (log != null) {
+        // Count only days with actual reading activity
+        if (log != null && log.versesRead > 0) {
           streak++;
         } else {
           break;
@@ -140,82 +140,75 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         (log) => log.versesRead > 0 && log.syncStatus != SyncStatus.synced,
       );
 
-      await Future.wait(
-        pendingLogs.map((log) async {
-          try {
-            await activityRemoteDataSource.postActivityDay(
-              type: 'QURAN',
-              date: _dateKey(log.date),
-              seconds: log.readingDuration.inSeconds > 0
-                  ? log.readingDuration.inSeconds
-                  : null,
-              mushafId: _resolveMushafId(),
-            );
-            // Mark as synced
-            final updated = DailyReadingLogModel(
-              date: log.date,
-              versesRead: log.versesRead,
-              juzRead: log.juzRead,
-              surahsVisited: log.surahsVisited,
-              readingDuration: log.readingDuration,
-              syncStatus: SyncStatus.synced,
-            );
-            await localDataSource.saveLog(updated);
-            synced++;
-          } catch (e) {
-            Logger.warning(
-              'Failed to sync activity day ${log.date}: $e',
-              feature: 'Khatmah',
-            );
-            // Keep as pending so it retries on next sync
-            final updated = DailyReadingLogModel(
-              date: log.date,
-              versesRead: log.versesRead,
-              juzRead: log.juzRead,
-              surahsVisited: log.surahsVisited,
-              readingDuration: log.readingDuration,
-              syncStatus: SyncStatus.pending,
-            );
-            await localDataSource.saveLog(updated);
-          }
-        }),
-      );
+      // Sync pending logs sequentially to avoid rate limits
+      for (final log in pendingLogs) {
+        try {
+          await activityRemoteDataSource.postActivityDay(
+            type: 'QURAN',
+            date: _dateKey(log.date),
+            seconds: log.readingDuration.inSeconds > 0
+                ? log.readingDuration.inSeconds
+                : null,
+            mushafId: _resolveMushafId(),
+          );
+          // Mark as synced
+          final updated = DailyReadingLogModel(
+            date: log.date,
+            versesRead: log.versesRead,
+            juzRead: log.juzRead,
+            surahsVisited: log.surahsVisited,
+            readingDuration: log.readingDuration,
+            syncStatus: SyncStatus.synced,
+          );
+          await localDataSource.saveLog(updated);
+          synced++;
+        } catch (e) {
+          Logger.warning(
+            'Failed to sync activity day ${log.date}: $e',
+            feature: 'Khatmah',
+          );
+          // Keep as pending so it retries on next sync
+          final updated = DailyReadingLogModel(
+            date: log.date,
+            versesRead: log.versesRead,
+            juzRead: log.juzRead,
+            surahsVisited: log.surahsVisited,
+            readingDuration: log.readingDuration,
+            syncStatus: SyncStatus.pending,
+          );
+          await localDataSource.saveLog(updated);
+        }
+      }
 
-      // Also sync granular offline sessions in parallel
-      final offlineSessions = await localDataSource.getOfflineSessions();
-      if (offlineSessions.isNotEmpty) {
+      // Also sync granular offline sessions sequentially
+      final sessionsWithKeys = await localDataSource.getOfflineSessionsWithKeys();
+      if (sessionsWithKeys.isNotEmpty) {
         Logger.info(
-          'Attempting to sync ${offlineSessions.length} granular reading sessions',
+          'Attempting to sync ${sessionsWithKeys.length} granular reading sessions',
           feature: 'Khatmah',
         );
-        final successfulSessions = <ReadingSessionModel>[];
-        await Future.wait(
-          offlineSessions.map((session) async {
-            try {
-              await goalsRemoteDataSource.postReadingSession(
-                chapterNumber: session.surahId,
-                verseNumber: session.endVerse,
-              );
-              successfulSessions.add(session);
-            } catch (e) {
-              Logger.warning(
-                'Failed to sync granular session for surah ${session.surahId}: $e',
-                feature: 'Khatmah',
-              );
-            }
-          }),
-        );
-
-        if (successfulSessions.isNotEmpty) {
-          final failures = offlineSessions
-              .where((s) => !successfulSessions.contains(s))
-              .toList();
-          await localDataSource.clearOfflineSessions();
-          for (final f in failures) {
-            await localDataSource.saveOfflineSession(f);
+        final successfulKeys = <int>[];
+        for (final entry in sessionsWithKeys.entries) {
+          final key = entry.key;
+          final session = entry.value;
+          try {
+            await goalsRemoteDataSource.postReadingSession(
+              chapterNumber: session.surahId,
+              verseNumber: session.endVerse,
+            );
+            successfulKeys.add(key);
+          } catch (e) {
+            Logger.warning(
+              'Failed to sync granular session for surah ${session.surahId}: $e',
+              feature: 'Khatmah',
+            );
           }
+        }
+
+        if (successfulKeys.isNotEmpty) {
+          await localDataSource.deleteOfflineSessions(successfulKeys);
           Logger.info(
-            'Successfully synced ${successfulSessions.length} granular sessions',
+            'Successfully synced ${successfulKeys.length} granular sessions',
             feature: 'Khatmah',
           );
         }
@@ -382,16 +375,19 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         date: _dateKey(log.date),
         mushafId: _resolveMushafId(),
       );
-      // Mark locally as synced
-      final synced = DailyReadingLogModel(
-        date: log.date,
-        versesRead: log.versesRead,
-        juzRead: log.juzRead,
-        surahsVisited: log.surahsVisited,
-        readingDuration: log.readingDuration,
-        syncStatus: SyncStatus.synced,
-      );
-      await localDataSource.saveLog(synced);
+      // Re-read current log to avoid overwriting newer data written concurrently
+      final current = await localDataSource.getLog(log.date);
+      if (current != null) {
+        final synced = DailyReadingLogModel(
+          date: log.date,
+          versesRead: current.versesRead,
+          juzRead: current.juzRead,
+          surahsVisited: current.surahsVisited,
+          readingDuration: current.readingDuration,
+          syncStatus: SyncStatus.synced,
+        );
+        await localDataSource.saveLog(synced);
+      }
     } catch (e) {
       Logger.warning(
         'QF activity day report failed (will retry on next sync): $e',
@@ -404,7 +400,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   Future<void> _syncGoalToQf(int dailyVerseTarget) async {
     try {
       await goalsRemoteDataSource.createGoal(
-        type: 'QURAN_PAGES',
+        type: 'QURAN',
         amount: dailyVerseTarget,
         category: 'QURAN',
         mushafId: _resolveMushafId(),

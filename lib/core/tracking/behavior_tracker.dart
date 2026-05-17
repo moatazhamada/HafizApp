@@ -55,7 +55,7 @@ class BehaviorTracker {
         }
       }
     } catch (e) {
-      Logger.warning('BehaviorTracker analytics sync failed: \$e', feature: 'BehaviorTracker');
+      Logger.warning('BehaviorTracker analytics sync failed: $e', feature: 'BehaviorTracker');
     }
   }
 

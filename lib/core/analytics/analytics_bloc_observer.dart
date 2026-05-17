@@ -107,7 +107,7 @@ class AnalyticsBlocObserver extends BlocObserver {
         );
       }
     } catch (e) {
-      Logger.warning('AnalyticsBlocObserver log failed: \$e', feature: 'Analytics');
+      Logger.warning('AnalyticsBlocObserver log failed: $e', feature: 'Analytics');
     }
   }
 }

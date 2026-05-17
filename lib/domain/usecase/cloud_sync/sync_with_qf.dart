@@ -141,6 +141,15 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   }
 
   int _surahVerseToAbsoluteId(int surahId, int verseNumber) {
+    if (surahId < 1 || surahId > 114) {
+      throw ArgumentError('Invalid surahId: $surahId (must be 1-114)');
+    }
+    final maxVerse = MushafPageIndex.getVerseCount(surahId);
+    if (verseNumber < 1 || verseNumber > maxVerse) {
+      throw ArgumentError(
+        'Invalid verseNumber: $verseNumber for surah $surahId (must be 1-$maxVerse)',
+      );
+    }
     int offset = 0;
     for (int i = 0; i < surahId - 1; i++) {
       offset += MushafPageIndex.getVerseCount(i + 1);
@@ -156,6 +165,9 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   }
 
   String _absoluteIdToVerseKey(int absoluteId) {
+    if (absoluteId < 1) {
+      throw ArgumentError('Invalid absoluteId: $absoluteId (must be ≥1)');
+    }
     int remaining = absoluteId;
     for (int i = 0; i < 114; i++) {
       final count = MushafPageIndex.getVerseCount(i + 1);
@@ -164,6 +176,8 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
       }
       remaining -= count;
     }
-    return '1:1';
+    throw ArgumentError(
+      'absoluteId $absoluteId exceeds total Quran verses',
+    );
   }
 }

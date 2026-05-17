@@ -30,7 +30,7 @@ class AnalyticsService {
       _cached = FirebaseAnalytics.instance;
       return _cached;
     } catch (e) {
-      Logger.warning('Analytics initialization failed: \$e', feature: 'Analytics');
+      Logger.warning('Analytics initialization failed: $e', feature: 'Analytics');
       return null;
     }
   }
@@ -62,7 +62,7 @@ class AnalyticsService {
     try {
       await a.setUserProperty(name: name, value: value);
     } catch (e) {
-      Logger.warning('Set user property failed: \$e', feature: 'Analytics');
+      Logger.warning('Set user property failed: $e', feature: 'Analytics');
     }
   }
 
@@ -72,7 +72,7 @@ class AnalyticsService {
     try {
       await a.setUserId(id: userId);
     } catch (e) {
-      Logger.warning('Set user id failed: \$e', feature: 'Analytics');
+      Logger.warning('Set user id failed: $e', feature: 'Analytics');
     }
   }
 
@@ -159,7 +159,7 @@ class AnalyticsService {
     try {
       await a.logEvent(name: name, parameters: parameters);
     } catch (e) {
-      Logger.warning('Analytics event failed: \$e', feature: 'Analytics');
+      Logger.warning('Analytics event failed: $e', feature: 'Analytics');
     }
   }
 
@@ -183,7 +183,7 @@ class AnalyticsService {
     try {
       await a.logScreenView(screenName: name, screenClass: className);
     } catch (e) {
-      Logger.warning('Screen view failed: \$e', feature: 'Analytics');
+      Logger.warning('Screen view failed: $e', feature: 'Analytics');
     }
   }
 

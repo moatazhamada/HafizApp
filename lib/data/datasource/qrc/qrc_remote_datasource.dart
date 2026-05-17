@@ -33,6 +33,7 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
   static const int _maxReconnectAttempts = 3;
   static const Duration _reconnectBaseDelay = Duration(seconds: 2);
   Timer? _reconnectTimer;
+  void Function()? onReconnected;
 
   @override
   Stream<dynamic> get events => _eventCtrl.stream;
@@ -67,6 +68,12 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       );
 
       send({'method': 'Authenticate', 'api_key': ApiConfig.qrcApiKey});
+
+      // If this is a reconnect, notify that we reconnected so the service can
+      // re-subscribe and re-start the tilawa session.
+      if (_reconnectAttempts > 0) {
+        _eventCtrl.add('reconnected');
+      }
     } catch (e) {
       Logger.error('QRC WebSocket connect failed: $e', feature: 'QRC');
       _handleDisconnect(wasUnexpected: true);

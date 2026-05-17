@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:hafiz_app/core/quran/arabic_normalizer.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class VoiceVerificationService {
@@ -88,10 +89,10 @@ class VoiceVerificationService {
   }) {
     // Tokenize, merge single letters (like Alif Lam Mim), then normalize
     final tokensSpoken = _mergeSingleLetterTokens(_tokenize(spokenText))
-        .map(_normalizeArabic)
+        .map((t) => ArabicNormalizer.forRecitation(t))
         .toList();
     final tokensExpected = _mergeSingleLetterTokens(_tokenize(expectedText))
-        .map(_normalizeArabic)
+        .map((t) => ArabicNormalizer.forRecitation(t))
         .toList();
 
     final isTooShort = tokensSpoken.length < minWords;
@@ -143,26 +144,9 @@ class VoiceVerificationService {
     );
   }
 
-  // Basic normalization for comparison
-  String _normalizeArabic(String input) {
-    // Remove Tashkeel (Diacritics)
-    // Range: 064B - 0652 (Fathatan, Dammatan, Kasratan, Fatha, Damma, Kasra, Shadda, Sukun)
-    // Also 0670 (Superscript Alef)
-    // Also remove Tatweel (0640)
-    String text = input;
-    text = text.replaceAll(RegExp(r'[\u064B-\u0652\u0670\u0640]'), '');
-
-    // Normalize Alefs
-    text = text.replaceAll(RegExp(r'[أإآ]'), 'ا');
-
-    // Normalize Ya/Alef Maqsura
-    text = text.replaceAll('ى', 'ي');
-
-    // Normalize Ta Marbuta
-    text = text.replaceAll('ة', 'ه');
-
-    return text.trim();
-  }
+  // Normalization is delegated to ArabicNormalizer.forRecitation()
+  // for consistent handling across the codebase (hamza variants, madd
+  // diacritics, silent terminal alif, etc.).
 
   List<String> _tokenize(String input) {
     // Split on whitespace and common Arabic punctuation/stop signs

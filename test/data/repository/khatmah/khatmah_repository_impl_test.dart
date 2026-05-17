@@ -58,7 +58,8 @@ void main() {
 
     test('should log reading locally and report activity to remote', () async {
       // arrange
-      when(() => mockLocalDataSource.getLog(any())).thenAnswer((_) async => null);
+      when(() => mockLocalDataSource.getLog(any()))
+          .thenAnswer((_) async => null);
       when(() => mockLocalDataSource.saveLog(any())).thenAnswer((_) async => {});
       when(() => mockActivityRemoteDataSource.postActivityDay(
         type: any(named: 'type'),
@@ -73,7 +74,9 @@ void main() {
       expect(result, const Right(null));
       // Wait for background task
       await Future.delayed(const Duration(milliseconds: 100));
-      verify(() => mockLocalDataSource.saveLog(any())).called(2); // Initial save + sync update
+      // _reportActivityDay re-reads the log after posting;
+      // since getLog returns null, only the initial save occurs
+      verify(() => mockLocalDataSource.saveLog(any())).called(1);
     });
 
     test('should queue reading session offline if remote report fails', () async {

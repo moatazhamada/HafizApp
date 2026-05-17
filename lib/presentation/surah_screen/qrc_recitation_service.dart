@@ -104,6 +104,13 @@ class QrcRecitationService {
   StreamController<Uint8List>? _audioStreamController;
   StreamSubscription<Uint8List>? _audioSub;
 
+  // Saved session parameters for reconnection
+  int? _surahIndex;
+  int? _verseIndex;
+  int _wordIndex = 1;
+  int _hafzLevel = 1;
+  int _tajweedLevel = 3;
+
   QrcRecitationService({QrcRepository? repository})
     : _repository = repository ?? _defaultRepository();
 
@@ -147,6 +154,11 @@ class QrcRecitationService {
     int hafzLevel = 1,
     int tajweedLevel = 3,
   }) async {
+    _surahIndex = surahIndex;
+    _verseIndex = verseIndex;
+    _wordIndex = wordIndex;
+    _hafzLevel = hafzLevel;
+    _tajweedLevel = tajweedLevel;
     _repository.startTilawaSession(
       surahIndex: surahIndex,
       verseIndex: verseIndex,
@@ -157,21 +169,26 @@ class QrcRecitationService {
   }
 
   Future<void> startRecording() async {
-    await _recorder.openRecorder();
-    _audioStreamController = StreamController<Uint8List>();
-    _audioSub = _audioStreamController!.stream.listen((data) {
-      if (data.isNotEmpty) {
-        _repository.sendAudio(data);
-      }
-    });
+    try {
+      await _recorder.openRecorder();
+      _audioStreamController = StreamController<Uint8List>();
+      _audioSub = _audioStreamController!.stream.listen((data) {
+        if (data.isNotEmpty) {
+          _repository.sendAudio(data);
+        }
+      });
 
-    await _recorder.startRecorder(
-      toStream: _audioStreamController!.sink,
-      codec: Codec.opusWebM,
-      numChannels: 1,
-      sampleRate: 16000,
-      bitRate: 32000,
-    );
+      await _recorder.startRecorder(
+        toStream: _audioStreamController!.sink,
+        codec: Codec.opusWebM,
+        numChannels: 1,
+        sampleRate: 16000,
+        bitRate: 32000,
+      );
+    } catch (e) {
+      _events.add(QrcErrorEvent('msg_voice_init_failed'.tr));
+      Logger.warning('QRC recorder start failed: $e', feature: 'QRC');
+    }
   }
 
   Future<void> stopRecording() async {
@@ -183,6 +200,23 @@ class QrcRecitationService {
   }
 
   void _handleRepositoryMessage(dynamic message) {
+    if (message is String && message == 'reconnected') {
+      _events.add(QrcStatusEvent('reconnected'));
+      _repository.subscribeCheckTilawa();
+      final si = _surahIndex;
+      final vi = _verseIndex;
+      if (si != null && vi != null) {
+        _repository.startTilawaSession(
+          surahIndex: si,
+          verseIndex: vi,
+          wordIndex: _wordIndex,
+          hafzLevel: _hafzLevel,
+          tajweedLevel: _tajweedLevel,
+        );
+      }
+      return;
+    }
+
     if (message is QrcWsClosedEvent) {
       if (message.wasUnexpected) {
         _events.add(QrcStatusEvent('reconnecting'));

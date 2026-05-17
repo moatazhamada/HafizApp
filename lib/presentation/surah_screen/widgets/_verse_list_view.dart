@@ -136,8 +136,6 @@ class _VerseListView extends StatelessWidget {
     final List<VerseRange> verseRanges = [];
     int currentOffset = 0;
 
-    onUpdateVerseRanges(verseRanges);
-
     for (var aya in chapters) {
       bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
       bool isRecitationError = errorVerseIds.contains(aya.verseNumber);

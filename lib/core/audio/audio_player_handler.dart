@@ -103,8 +103,7 @@ class AudioPlayerHandler {
     await _completionSub?.cancel();
     _verseCompleter = Completer<void>();
     _completionSub = _player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed ||
-          state == ProcessingState.idle) {
+      if (state == ProcessingState.completed) {
         if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
           _verseCompleter!.complete();
         }

@@ -63,9 +63,7 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
     if (defaultView == 'mushaf') {
       NavigatorService.pushNamed(
         AppRoutes.mushafScreen,
-        arguments: {
-          'initialPage': 0,
-        },
+        arguments: {},
       );
     } else {
       NavigatorService.pushNamed(

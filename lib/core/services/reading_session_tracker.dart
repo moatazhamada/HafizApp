@@ -80,13 +80,15 @@ class ReadingSessionTracker {
     final validSessions = <ReadingSession>[];
 
     if (_batchStartTime != null) {
-      final totalBatchDuration = DateTime.now().difference(_batchStartTime!).inSeconds;
-
       for (var session in _completedSessions) {
         // False Positive Prevention:
-        // If the entire continuous batch of reading lasted less than 10 seconds,
-        // it is likely accidental or just a quick glance. We discard it.
-        if (totalBatchDuration < 10) {
+        // Discard sessions that are likely accidental quick glances.
+        // Short surahs (≤3 verses) get a lower threshold since they can
+        // legitimately be read in under 10 seconds.
+        final threshold = (session.endVerse - session.startVerse + 1) <= 3
+            ? 3
+            : 10;
+        if (session.durationSeconds < threshold) {
           continue;
         }
 

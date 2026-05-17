@@ -174,12 +174,24 @@ class SurahRepositoryImpl implements SurahRepository {
 List<Verse> _searchCacheWorker(Map<String, dynamic> params) {
   final entries = params['entries'] as List<Map<String, dynamic>>;
   final query = params['query'] as String;
+
+  // Normalize query for tashkeel-insensitive matching
+  String normalize(String text) =>
+      text.replaceAll(RegExp(r'[\u064B-\u0652\u0670\u0671\u0640]'), '');
+
+  final normalizedQuery = normalize(query);
   final allMatches = <Verse>[];
   for (final data in entries) {
     try {
       final response = ChapterResponse.fromJson(data);
       for (final verse in response.chapters) {
-        if (verse.arabicText.contains(query)) {
+        // Exclude Bismillah from non-Fatiha surahs
+        if (verse.verseNumber == 1 &&
+            verse.chapterNumber != null &&
+            verse.chapterNumber != 1) {
+          continue;
+        }
+        if (normalize(verse.arabicText).contains(normalizedQuery)) {
           allMatches.add(verse);
         }
       }

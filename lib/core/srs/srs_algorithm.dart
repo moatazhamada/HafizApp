@@ -45,8 +45,8 @@ class SrsResult {
 /// SM-2 Spaced Repetition Algorithm.
 ///
 /// Implementation based on Piotr Woźniak's SuperMemo 2 algorithm.
-/// Ease factor is stored as hundredths (2500 = 2.5) to avoid floating-point
-/// precision issues in Hive/JSON serialization.
+  /// Ease factor is stored as thousandths (2500 = 2.5) to avoid floating-point
+  /// precision issues in Hive/JSON serialization.
 class SrsAlgorithm {
   static const int _defaultEaseFactor = 2500;
   static const int _minEaseFactor = 1300;
@@ -63,7 +63,8 @@ class SrsAlgorithm {
     MemorizationProgress? existing,
     required double score,
   }) {
-    final quality = SrsQuality.fromScore(score);
+    final validScore = _validateScore(score);
+    final quality = SrsQuality.fromScore(validScore);
     final now = DateTime.now();
 
     if (existing == null) {
@@ -159,16 +160,22 @@ class SrsAlgorithm {
 
   /// Adjust ease factor based on recall quality.
   /// EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-  /// Stored as hundredths to avoid floating-point issues.
+  /// Stored as thousandths to avoid floating-point issues.
   static int _adjustEaseFactor(int currentEf, SrsQuality quality) {
     final q = quality.value;
     final adjustment =
-        (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)) * 1000; // hundredths
+        (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)) * 1000;
     final newEf = (currentEf + adjustment.round()).clamp(
       _minEaseFactor,
       _maxEaseFactor,
     );
     return newEf;
+  }
+
+  static double _validateScore(double score) {
+    if (score.isNaN) return 0;
+    if (score.isInfinite) return score.isNegative ? 0 : 100;
+    return score.clamp(0, 100);
   }
 
   /// Check if a given progress entry is due for review today.

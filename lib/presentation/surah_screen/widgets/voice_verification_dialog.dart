@@ -158,6 +158,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       }
       _customFilePath = null;
     }
+    await _whisperService.dispose();
   }
 
   WhisperModel _resolveWhisperModel(String value) {
@@ -208,9 +209,13 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         final micStatus = await Permission.microphone.request();
         if (!micStatus.isGranted) {
           if (!mounted) return;
+          final isPermanentlyDenied = await Permission.microphone.isPermanentlyDenied;
+          if (!mounted) return;
           setState(() {
             _statusColor = AppColors.of(context).needsReviewStatus;
-            _feedbackTitle = 'msg_mic_permission'.tr;
+            _feedbackTitle = isPermanentlyDenied
+                ? 'msg_mic_permission_perm'.tr
+                : 'msg_mic_permission'.tr;
             _showFeedback = true;
           });
           return;

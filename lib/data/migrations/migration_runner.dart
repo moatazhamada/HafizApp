@@ -34,6 +34,7 @@ class MigrationRunner {
       feature: 'Migration',
     );
 
+    bool anyMigrationFailed = false;
     for (final migration in _migrations) {
       try {
         await migration.run();
@@ -44,11 +45,14 @@ class MigrationRunner {
           error: e,
           stackTrace: stackTrace,
         );
+        anyMigrationFailed = true;
         // Continue with other migrations — don't block startup
       }
     }
 
-    PrefUtils().setLastRunVersion(currentVersion);
+    if (!anyMigrationFailed) {
+      PrefUtils().setLastRunVersion(currentVersion);
+    }
     Logger.info('MigrationRunner: completed', feature: 'Migration');
   }
 }

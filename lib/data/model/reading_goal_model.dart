@@ -57,8 +57,10 @@ class ReadingGoalModel extends ReadingGoal {
 
   factory ReadingGoalModel.fromJson(Map<dynamic, dynamic> json) {
     return ReadingGoalModel(
-      dailyVerseTarget: (json['dailyVerseTarget'] as num).toInt(),
-      startDate: DateTime.parse(json['startDate'] as String),
+      dailyVerseTarget: (json['dailyVerseTarget'] as num?)?.toInt() ?? 0,
+      startDate: json['startDate'] != null
+          ? DateTime.tryParse(json['startDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       isActive: json['isActive'] as bool? ?? true,
     );
   }

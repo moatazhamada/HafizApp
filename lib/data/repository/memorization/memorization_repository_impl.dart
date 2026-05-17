@@ -14,6 +14,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 class MemorizationRepositoryImpl implements MemorizationRepository {
   final MemorizationLocalDataSource localDataSource;
   final QfGoalsRemoteDataSource goalsRemoteDataSource;
+  bool _goalsSyncedThisSession = false;
 
   MemorizationRepositoryImpl({
     required this.localDataSource,
@@ -120,6 +121,9 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
   @override
   Future<Either<Failure, void>> syncMemorizationGoalToQf() async {
     try {
+      if (_goalsSyncedThisSession) return const Right(null);
+      _goalsSyncedThisSession = true;
+
       final progress = await localDataSource.getAllProgress();
       final inProgressItems = progress.where(
         (p) =>
@@ -129,7 +133,16 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
 
       for (final item in inProgressItems) {
         try {
-          final verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          int verseCount;
+          try {
+            verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          } catch (e) {
+            Logger.warning(
+              'Failed to get verse count for surah ${item.surahId}: $e',
+              feature: 'Memorization',
+            );
+            continue;
+          }
 
           await goalsRemoteDataSource.createGoal(
             type: 'QURAN_RANGE',

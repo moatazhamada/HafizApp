@@ -16,6 +16,8 @@ abstract class KhatmahLocalDataSource {
   Future<void> saveGoal(ReadingGoalModel goal);
   Future<void> saveOfflineSession(ReadingSessionModel session);
   Future<List<ReadingSessionModel>> getOfflineSessions();
+  Future<Map<int, ReadingSessionModel>> getOfflineSessionsWithKeys();
+  Future<void> deleteOfflineSessions(Iterable<int> keys);
   Future<void> clearOfflineSessions();
 }
 
@@ -168,6 +170,38 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
   Future<void> clearOfflineSessions() async {
     try {
       await offlineSessionBox.clear();
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<Map<int, ReadingSessionModel>> getOfflineSessionsWithKeys() async {
+    try {
+      final sessions = <int, ReadingSessionModel>{};
+      for (final entry in offlineSessionBox.toMap().entries) {
+        final raw = entry.value;
+        if (raw is! Map) continue;
+        try {
+          sessions[entry.key as int] = ReadingSessionModel.fromJson(
+            Map<String, dynamic>.from(raw),
+          );
+        } catch (e) {
+          Logger.warning('Skipping malformed offline session: $e', feature: 'Khatmah');
+        }
+      }
+      return sessions;
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> deleteOfflineSessions(Iterable<int> keys) async {
+    try {
+      for (final key in keys) {
+        await offlineSessionBox.delete(key);
+      }
     } catch (e) {
       throw CacheException();
     }

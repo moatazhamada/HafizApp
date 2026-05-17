@@ -141,9 +141,7 @@ class SurahIndexWidget extends StatelessWidget {
     if (defaultView == 'mushaf') {
       NavigatorService.pushNamed(
         AppRoutes.mushafScreen,
-        arguments: {
-          'initialPage': 0, // Will be resolved by MushafPageIndex
-        },
+        arguments: {},
       );
     } else {
       NavigatorService.pushNamed(

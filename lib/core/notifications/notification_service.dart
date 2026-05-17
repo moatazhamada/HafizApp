@@ -118,12 +118,10 @@ class NotificationService {
     final randomVerse = verseCount > 1 ? Random().nextInt(verseCount) + 1 : 1;
 
     final isAr = PrefUtils().getLocaleCode() == 'ar';
-    final title = isAr
-        ? randomSurah.nameArabic
-        : '${randomSurah.nameEnglish} ${randomSurah.nameArabic}';
+    final title = isAr ? 'آية اليوم' : 'Daily Verse';
     final body = isAr
-        ? 'آية $randomVerse \u2014 افتح حافظ للقراءة'
-        : 'Verse $randomVerse \u2014 Open Hafiz to read';
+        ? 'افتح حافظ لقراءة آية اليوم'
+        : 'Open Hafiz to discover today\'s verse';
 
     const androidDetails = AndroidNotificationDetails(
       _verseChannelId,
@@ -331,6 +329,13 @@ class NotificationService {
     if (kIsWeb) return;
     await _plugin.cancel(_reminderNotificationId);
     Logger.info('Reading reminder cancelled', feature: 'Notifications');
+  }
+
+  /// Cancel Friday Kahf notification only.
+  Future<void> cancelFridayKahf() async {
+    if (kIsWeb) return;
+    await _plugin.cancel(_kahfNotificationId);
+    Logger.info('Friday Kahf notification cancelled', feature: 'Notifications');
   }
 
   Future<bool> _ensurePermission() async {

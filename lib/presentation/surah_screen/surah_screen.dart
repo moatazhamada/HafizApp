@@ -304,7 +304,15 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     });
 
     final urls = _buildVerseAudioUrls();
-    handler.playSurah(surahId: surah!.id, verseAudioUrls: urls);
+    // Resume from last position if same surah
+    final savedVerse = PrefUtils().getLastAudioVerse(surah!.id);
+    final startVerse =
+        savedVerse != null && savedVerse > 0 ? savedVerse : 0;
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: startVerse,
+    );
   }
 
   void _stopListeningMode() {

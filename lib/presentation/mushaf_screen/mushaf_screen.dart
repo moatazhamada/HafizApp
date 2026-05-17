@@ -43,6 +43,8 @@ class _MushafScreenState extends State<MushafScreen>
   bool _isZoomed = false;
   Timer? _overlayTimer;
   final Map<int, List<_VerseText>> _localTextCache = {};
+  final List<int> _cacheAccessOrder = [];
+  static const int _maxCachePages = 20;
 
   // PageStorage bucket key — used as a fallback if prefs are slow/unavailable.
   static const String _kPageStorageKey = 'mushaf_current_page';
@@ -154,6 +156,14 @@ class _MushafScreenState extends State<MushafScreen>
       case AppLifecycleState.detached:
         break;
     }
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    _localTextCache.clear();
+    _cacheAccessOrder.clear();
+    imageCache.clear();
+    imageCache.clearLiveImages();
   }
 
   /// Persist the current page to both prefs and PageStorage so it survives
@@ -268,6 +278,7 @@ class _MushafScreenState extends State<MushafScreen>
     final targetPage = _surahToPageInType(surahId, newType);
 
     _localTextCache.clear();
+    _cacheAccessOrder.clear();
     final oldController = _pageController;
     setState(() {
       _mushafType = newType;
@@ -287,6 +298,9 @@ class _MushafScreenState extends State<MushafScreen>
 
   Future<List<_VerseText>> _loadLocalPageText(int pageNumber) async {
     if (_localTextCache.containsKey(pageNumber)) {
+      // Move to most-recently-used position
+      _cacheAccessOrder.remove(pageNumber);
+      _cacheAccessOrder.add(pageNumber);
       return _localTextCache[pageNumber]!;
     }
 
@@ -346,6 +360,14 @@ class _MushafScreenState extends State<MushafScreen>
     }
 
     _localTextCache[pageNumber] = entries;
+    _cacheAccessOrder.add(pageNumber);
+
+    // LRU eviction: keep only the most recently accessed pages
+    while (_cacheAccessOrder.length > _maxCachePages) {
+      final oldest = _cacheAccessOrder.removeAt(0);
+      _localTextCache.remove(oldest);
+    }
+
     return entries;
   }
 
@@ -459,14 +481,16 @@ class _MushafScreenState extends State<MushafScreen>
   // ─── Page Rendering ─────────────────────────────────────────────
 
   Widget _buildPage(int pageNumber, bool isDark, AppColors colors) {
-    return MushafPageWidget(
-      key: ValueKey('mushaf_page_$pageNumber'),
-      pageNumber: pageNumber,
-      mushafType: _mushafType,
-      fallback: _buildOfflineFallback(pageNumber, isDark, colors),
-      onZoomChanged: (zoomed) {
-        if (mounted) setState(() => _isZoomed = zoomed);
-      },
+    return RepaintBoundary(
+      child: MushafPageWidget(
+        key: ValueKey('mushaf_page_$pageNumber'),
+        pageNumber: pageNumber,
+        mushafType: _mushafType,
+        fallback: _buildOfflineFallback(pageNumber, isDark, colors),
+        onZoomChanged: (zoomed) {
+          if (mounted) setState(() => _isZoomed = zoomed);
+        },
+      ),
     );
   }
 

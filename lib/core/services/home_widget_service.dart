@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hafiz_app/data/datasource/random_verse/random_verse_remote_data_source.dart';
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/navigator_service.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/routes/app_routes.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 class HomeWidgetService {
@@ -58,6 +61,27 @@ class HomeWidgetService {
 
   void _onWidgetClicked(Uri? uri) {
     Logger.info('Widget clicked: $uri', feature: 'HomeWidget');
+    if (uri == null) return;
+
+    // Navigate to the verse displayed on the widget
+    final path = uri.pathSegments;
+    if (path.length >= 2) {
+      final chapterId = int.tryParse(path[0]);
+      final verseNumber = int.tryParse(path[1]);
+      if (chapterId != null &&
+          verseNumber != null &&
+          chapterId >= 1 &&
+          chapterId <= 114) {
+        final surah = QuranIndex.quranSurahs.firstWhere(
+          (s) => s.id == chapterId,
+          orElse: () => QuranIndex.quranSurahs[0],
+        );
+        NavigatorService.pushNamed(
+          AppRoutes.surahPage,
+          arguments: {'surah': surah, 'verseIndex': verseNumber - 1},
+        );
+      }
+    }
   }
 
   Future<void> _refreshWidget() async {
