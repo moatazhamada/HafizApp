@@ -186,9 +186,7 @@ List<Verse> _searchCacheWorker(Map<String, dynamic> params) {
       final response = ChapterResponse.fromJson(data);
       for (final verse in response.chapters) {
         // Exclude Bismillah from non-Fatiha surahs
-        if (verse.verseNumber == 1 &&
-            verse.chapterNumber != null &&
-            verse.chapterNumber != 1) {
+        if (verse.verseNumber == 1 && verse.chapterNumber != 1) {
           continue;
         }
         if (normalize(verse.arabicText).contains(normalizedQuery)) {

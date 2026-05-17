@@ -69,8 +69,28 @@ class _VerseListView extends StatelessWidget {
     );
   }
 
+  // Cached verse states to avoid O(n) filtering on every rebuild.
+  ({Set<int> bookmarkedVerses, Set<int> errorVerses})? _verseStatesCache;
+  int? _cachedBookmarkStateHash;
+  int? _cachedErrorStateHash;
+
   ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates() {
     final surahId = surah?.id ?? -1;
+
+    // Compute cheap hashes to detect state changes
+    final bookmarkHash = bookmarkState is BookmarkLoaded
+        ? (bookmarkState as BookmarkLoaded).bookmarks.length
+        : 0;
+    final errorHash = errorState is RecitationErrorLoaded
+        ? (errorState as RecitationErrorLoaded).errors.length
+        : 0;
+
+    if (_verseStatesCache != null &&
+        _cachedBookmarkStateHash == bookmarkHash &&
+        _cachedErrorStateHash == errorHash) {
+      return _verseStatesCache!;
+    }
+
     final bookmarkedVerses = bookmarkState is BookmarkLoaded
         ? (bookmarkState as BookmarkLoaded).bookmarks
               .where((b) => b.surahId == surahId)
@@ -83,7 +103,11 @@ class _VerseListView extends StatelessWidget {
               .map((m) => m.verseId)
               .toSet()
         : <int>{};
-    return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+
+    _verseStatesCache = (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+    _cachedBookmarkStateHash = bookmarkHash;
+    _cachedErrorStateHash = errorHash;
+    return _verseStatesCache!;
   }
 
   @override
@@ -725,9 +749,17 @@ extension _SurahScreenStateScroll on _SurahScreenState {
         try {
           if (_scrollController.hasClients) {
             final Size size = renderObject.size;
-            final Offset targetLcOffset = Offset(
-              20,
-              (20.0).clamp(0.0, (size.height - 1).clamp(0.0, double.infinity)),
+            // Convert viewport-center to local text coordinates so scrolling
+            // is properly accounted for (previously always checked Offset(20,20)
+            // at the top of the text block regardless of scroll position).
+            final textGlobalPos = renderObject.localToGlobal(Offset.zero);
+            final viewportCenterY =
+                MediaQuery.of(context).size.height * 0.35;
+            final localY = (viewportCenterY - textGlobalPos.dy)
+                .clamp(0.0, size.height - 1);
+            final targetLcOffset = Offset(
+              size.width / 2,
+              localY,
             );
             final textPosition = renderObject.getPositionForOffset(
               targetLcOffset,

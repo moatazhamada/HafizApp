@@ -104,6 +104,11 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       return;
     }
 
+    // Guard against parallel reconnect attempts
+    if (_reconnectTimer != null || _isConnecting) {
+      return;
+    }
+
     _reconnectAttempts++;
     final delay = _reconnectBaseDelay * _reconnectAttempts;
     Logger.info(
@@ -111,8 +116,8 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       feature: 'QRC',
     );
 
-    _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () async {
+      _reconnectTimer = null;
       if (!_intentionalDisconnect) {
         await connect();
       }

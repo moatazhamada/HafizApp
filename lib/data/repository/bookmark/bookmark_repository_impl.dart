@@ -126,11 +126,7 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
   }
 
   int _toAbsoluteVerseId(int surahId, int verseNumber) {
-    int offset = 0;
-    for (int i = 0; i < surahId - 1; i++) {
-      offset += MushafPageIndex.getVerseCount(i + 1);
-    }
-    return offset + verseNumber;
+    return MushafPageIndex.getAbsoluteVerseId(surahId, verseNumber);
   }
 
   @override

@@ -94,7 +94,9 @@ class SrsAlgorithm {
       case SrsQuality.incorrectHard:
       case SrsQuality.incorrectEasy:
       case SrsQuality.completeBlackout:
-        interval = 0;
+        // Minimum interval of 1 day on failure prevents same-day
+        // bombardment that burns out beginners.
+        interval = 1;
         repetition = 0;
         status = MemorizationStatus.needsReview;
         break;
@@ -140,7 +142,10 @@ class SrsAlgorithm {
     MemorizationStatus status;
     if (quality.value < 3) {
       status = MemorizationStatus.needsReview;
-    } else if (repetition >= memorizedThreshold && score >= 80) {
+    } else if (repetition >= memorizedThreshold) {
+      // User has successfully reviewed 5+ times — mark as memorized
+      // regardless of exact score on this review (near-pass shouldn't
+      // block memorization after consistent success).
       status = MemorizationStatus.memorized;
     } else {
       status = MemorizationStatus.inProgress;

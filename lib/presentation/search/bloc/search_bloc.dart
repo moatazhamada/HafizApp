@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/quran/arabic_normalizer.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/data/datasource/qf_search/qf_search_remote_data_source.dart';
@@ -41,9 +42,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       final query = event.query.toLowerCase();
 
       // 1. Search Surah Names (In-Memory, fast)
+      final normalizedQuery = ArabicNormalizer.forDisplay(query);
       final surahResults = QuranIndex.quranSurahs.where((surah) {
         final matchesEnglish = surah.nameEnglish.toLowerCase().contains(query);
-        final matchesArabic = surah.nameArabic.contains(query);
+        final matchesArabic = ArabicNormalizer.forDisplay(surah.nameArabic)
+            .contains(normalizedQuery);
         final matchesId = surah.id.toString().contains(query);
         return matchesEnglish || matchesArabic || matchesId;
       }).toList();
@@ -148,7 +151,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           Verse(
             chapterNumber: surahId,
             verseNumber: verseNum,
-            arabicText: text as String,
+            arabicText: text.toString(),
             translationText: translation,
             audioTimestampMs: 0,
           ),

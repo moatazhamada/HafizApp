@@ -10,6 +10,26 @@ class ReadingSessionModel extends ReadingSession {
     required super.readAt,
   });
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ReadingSessionModel &&
+        other.surahId == surahId &&
+        other.startVerse == startVerse &&
+        other.endVerse == endVerse &&
+        other.durationSeconds == durationSeconds &&
+        other.readAt == readAt;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    surahId,
+    startVerse,
+    endVerse,
+    durationSeconds,
+    readAt,
+  );
+
   Map<String, dynamic> toJson() {
     return {
       'surahId': surahId,

@@ -367,10 +367,21 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             } catch (e) {
               Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
             }
-            final remoteText = await _customAsrService.transcribe(
-              endpoint: customEndpoint,
-              filePath: _customFilePath!,
-            );
+            final remoteText = await _customAsrService
+                .transcribe(
+                  endpoint: customEndpoint,
+                  filePath: _customFilePath!,
+                )
+                .timeout(
+                  const Duration(seconds: 35),
+                  onTimeout: () {
+                    Logger.warning(
+                      'Custom ASR transcription timed out',
+                      feature: 'VoiceVerification',
+                    );
+                    return null;
+                  },
+                );
             if (!mounted) return;
             if (remoteText != null && remoteText.isNotEmpty) {
               effectiveText = remoteText;

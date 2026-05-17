@@ -170,7 +170,10 @@ class QrcRecitationService {
 
   Future<void> startRecording() async {
     try {
-      await _recorder.openRecorder();
+      // Guard against double-open which throws on FlutterSoundRecorder
+      if (_recorder.isStopped) {
+        await _recorder.openRecorder();
+      }
       _audioStreamController = StreamController<Uint8List>();
       _audioSub = _audioStreamController!.stream.listen((data) {
         if (data.isNotEmpty) {

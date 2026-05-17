@@ -53,6 +53,11 @@ class MushafPageIndex {
   static List<MushafPageData> _pages = const [];
   static bool _loaded = false;
 
+  /// Precomputed cumulative verse offsets for O(1) absolute verse ID lookups.
+  /// _verseOffsets[surahId] = total verses before surahId (1-based indexing).
+  static final List<int> _verseOffsets = List.filled(115, 0);
+  static bool _offsetsComputed = false;
+
   static bool get isLoaded => _loaded;
 
   /// Load page index from the bundled JSON asset. Call once at startup.
@@ -314,6 +319,26 @@ class MushafPageIndex {
   // ─── Lookup helpers ─────────────────────────────────────────────
 
   static int getVerseCount(int surahId) => _surahVerseCounts[surahId - 1];
+
+  /// Compute cumulative verse offsets for O(1) absolute verse ID lookups.
+  /// Call once at startup (e.g. after [loadFromAsset]).
+  static void _computeVerseOffsets() {
+    if (_offsetsComputed) return;
+    int offset = 0;
+    for (int i = 0; i < _surahVerseCounts.length; i++) {
+      _verseOffsets[i + 1] = offset;
+      offset += _surahVerseCounts[i];
+    }
+    _offsetsComputed = true;
+  }
+
+  /// Return the 1-based absolute verse ID across the entire Quran.
+  /// Example: Surah 2, verse 1 → 8 (after Al-Fatiha's 7 verses).
+  static int getAbsoluteVerseId(int surahId, int verseNumber) {
+    if (surahId < 1 || surahId > 114) return 0;
+    _computeVerseOffsets();
+    return _verseOffsets[surahId] + verseNumber;
+  }
 
   static int getSurahForPage(int page) {
     if (page < 1 || page > totalPages) return 1;

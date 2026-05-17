@@ -231,7 +231,7 @@ class _WeeklyBarChart extends StatelessWidget {
                 alignment: Alignment.bottomCenter,
                 child: Container(
                   width: 16,
-                  height: 60 * heightFactor.clamp(0.05, 1.0),
+                  height: 60 * heightFactor.clamp(0.0, 1.0),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(
                       alpha: 0.2 + (0.8 * heightFactor),

@@ -86,8 +86,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadRecitationResources() async {
-    final editions = await _qiraatService.fetchEditions();
-    final reciters = await _recitationService.fetchReciters();
+    List<QiraatEdition> editions = [];
+    List<Reciter> reciters = [];
+    try {
+      editions = await _qiraatService.fetchEditions();
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load qiraat editions: $e',
+        feature: 'Settings',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+    try {
+      reciters = await _recitationService.fetchReciters();
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load reciters: $e',
+        feature: 'Settings',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
     if (!mounted) return;
     setState(() {
       _editions = editions;
@@ -710,12 +730,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text('lbl_daily_verse_notification'.tr),
       subtitle: Text('msg_daily_verse_desc'.tr),
       value: _dailyVerseEnabled,
-      onChanged: (val) {
+      onChanged: (val) async {
         setState(() => _dailyVerseEnabled = val);
         PrefUtils().setDailyVerseEnabled(val);
         final notificationService = NotificationService();
         if (val) {
-          notificationService.scheduleDailyVerse();
+          final ok = await notificationService.scheduleDailyVerse();
+          if (!ok && mounted) {
+            // Permission was denied — revert the toggle and inform the user
+            setState(() => _dailyVerseEnabled = false);
+            PrefUtils().setDailyVerseEnabled(false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+            );
+          }
         } else {
           notificationService.cancelDailyVerse();
         }
@@ -751,12 +779,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text('lbl_reading_reminder'.tr),
       subtitle: Text('msg_reading_reminder_desc'.tr),
       value: _readingReminderEnabled,
-      onChanged: (val) {
+      onChanged: (val) async {
         setState(() => _readingReminderEnabled = val);
         PrefUtils().setReadingReminderEnabled(val);
         final notificationService = NotificationService();
         if (val) {
-          notificationService.scheduleReadingReminder();
+          final ok = await notificationService.scheduleReadingReminder();
+          if (!ok && mounted) {
+            setState(() => _readingReminderEnabled = false);
+            PrefUtils().setReadingReminderEnabled(false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+            );
+          }
         } else {
           notificationService.cancelReadingReminder();
         }
@@ -792,12 +827,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text('lbl_friday_kahf'.tr),
       subtitle: Text('msg_friday_kahf_desc'.tr),
       value: _fridayKahfEnabled,
-      onChanged: (val) {
+      onChanged: (val) async {
         setState(() => _fridayKahfEnabled = val);
         PrefUtils().setFridayKahfEnabled(val);
         final notificationService = NotificationService();
         if (val) {
-          notificationService.scheduleFridayKahf();
+          final ok = await notificationService.scheduleFridayKahf();
+          if (!ok && mounted) {
+            setState(() => _fridayKahfEnabled = false);
+            PrefUtils().setFridayKahfEnabled(false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+            );
+          }
         } else {
           notificationService.cancelFridayKahf();
         }

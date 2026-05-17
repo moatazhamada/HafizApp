@@ -160,7 +160,8 @@ class ActivityHeatmap extends StatelessWidget {
   }
 
   String _tooltip(_DayActivity day) {
-    final dateStr = '${day.date.day}/${day.date.month}/${day.date.year}';
+    final dateStr =
+        '${day.date.year}-${day.date.month.toString().padLeft(2, '0')}-${day.date.day.toString().padLeft(2, '0')}';
     if (day.versesRead <= 0) return '$dateStr: ${'lbl_no_reading'.tr}';
     return '$dateStr: ${day.versesRead} ${'lbl_verses_read'.tr}';
   }

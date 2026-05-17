@@ -441,26 +441,40 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       (s) => s.id == surahId,
       orElse: () => QuranIndex.quranSurahs.first,
     );
+    // Clear previous surah's heavy data before switching to avoid
+    // memory pressure on low-end devices when browsing rapidly.
+    _chapters = [];
+    _translations = {};
+    _translationsLoading = false;
     NavigatorService.popAndPushNamed(
       AppRoutes.surahPage,
       arguments: {'surah': targetSurah},
     );
   }
 
+  Timer? _translationDebounce;
+
   Future<void> _loadTranslations() async {
     if (_translations.isNotEmpty || _translationsLoading) return;
     if (surah == null) return;
-    setState(() => _translationsLoading = true);
-    try {
-      final ds = sl<QfTranslationRemoteDataSource>();
-      _translations = await ds.getTranslationsByChapter(surah!.id);
-    } catch (e) {
-      Logger.warning(
-        'Failed to load translations for surah ${surah!.id}: $e',
-        feature: 'Translation',
-      );
-    }
-    if (mounted) setState(() => _translationsLoading = false);
+
+    // Cancel any pending translation load to prevent stacking API calls
+    // when the user rapidly toggles translation on/off.
+    _translationDebounce?.cancel();
+    _translationDebounce = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted || surah == null) return;
+      setState(() => _translationsLoading = true);
+      try {
+        final ds = sl<QfTranslationRemoteDataSource>();
+        _translations = await ds.getTranslationsByChapter(surah!.id);
+      } catch (e) {
+        Logger.warning(
+          'Failed to load translations for surah ${surah!.id}: $e',
+          feature: 'Translation',
+        );
+      }
+      if (mounted) setState(() => _translationsLoading = false);
+    });
   }
 
   void _onLocaleChanged() {

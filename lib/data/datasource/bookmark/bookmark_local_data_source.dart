@@ -37,6 +37,25 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
   @override
   Future<bool> addBookmark(BookmarkModel bookmark) async {
     final key = '${bookmark.surahId}_${bookmark.verseNumber}';
+    // Preserve the original creation timestamp if this bookmark already exists
+    // so duplicate adds don't reset the date.
+    if (box.containsKey(key)) {
+      final existing = box.get(key);
+      if (existing is Map) {
+        final existingCreatedAt = existing['createdAt'];
+        if (existingCreatedAt != null) {
+          final updated = BookmarkModel(
+            surahId: bookmark.surahId,
+            surahName: bookmark.surahName,
+            verseNumber: bookmark.verseNumber,
+            createdAt: DateTime.tryParse(existingCreatedAt.toString()) ??
+                bookmark.createdAt,
+          );
+          await box.put(key, updated.toJson());
+          return true;
+        }
+      }
+    }
     await box.put(key, bookmark.toJson());
     return true;
   }

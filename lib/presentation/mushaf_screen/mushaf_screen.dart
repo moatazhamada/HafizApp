@@ -90,8 +90,11 @@ class _MushafScreenState extends State<MushafScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // If PageStorage has a saved page (e.g. after orientation change),
-    // restore it so the user doesn't jump back to the initial page.
+    // Only restore from PageStorage if the screen was NOT opened with an
+    // explicit initialPage (e.g. deep link). PageStorage is for surviving
+    // orientation changes / rebuilds, not for overriding user intent.
+    if (widget.initialPage != null) return;
+
     final storage = PageStorage.of(context);
     final saved = storage.readState(context, identifier: _kPageStorageKey);
     if (saved is int && saved != _currentPage && saved >= 1 && saved <= _mushafType.totalPages) {
@@ -279,6 +282,13 @@ class _MushafScreenState extends State<MushafScreen>
 
     _localTextCache.clear();
     _cacheAccessOrder.clear();
+    // Clear PageStorage so the old page number (e.g. 500 in 604-page mode)
+    // doesn't carry over to the new mushaf type (e.g. 30-page mode).
+    PageStorage.of(context).writeState(
+      context,
+      null,
+      identifier: _kPageStorageKey,
+    );
     final oldController = _pageController;
     setState(() {
       _mushafType = newType;
@@ -347,15 +357,8 @@ class _MushafScreenState extends State<MushafScreen>
         }
       } catch (e) {
         Logger.warning('Mushaf verse text load failed: $e', feature: 'Mushaf');
-        entries.add(
-          _VerseText(
-            surahId: range.surahId,
-            verseNumber: 0,
-            text: '',
-            surahNameArabic: surah.nameArabic,
-            showBismillah: false,
-          ),
-        );
+        // Do NOT add empty entries — let the fallback UI handle the failure
+        // gracefully instead of showing a partially-blank page.
       }
     }
 

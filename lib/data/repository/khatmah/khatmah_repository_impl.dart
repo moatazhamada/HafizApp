@@ -195,6 +195,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
             await goalsRemoteDataSource.postReadingSession(
               chapterNumber: session.surahId,
               verseNumber: session.endVerse,
+              mushafId: _resolveMushafId(),
             );
             successfulKeys.add(key);
           } catch (e) {
@@ -321,6 +322,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       await goalsRemoteDataSource.postReadingSession(
         chapterNumber: session.surahId,
         verseNumber: session.endVerse,
+        mushafId: _resolveMushafId(),
       );
     } catch (e) {
       Logger.warning(

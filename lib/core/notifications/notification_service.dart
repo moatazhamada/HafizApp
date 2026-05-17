@@ -96,7 +96,8 @@ class NotificationService {
 
   // ── Daily Verse ──
 
-  Future<void> scheduleDailyVerse() async {
+  /// Schedule daily verse notification. Returns true if scheduled successfully.
+  Future<bool> scheduleDailyVerse() async {
     if (kIsWeb) return;
 
     final pref = PrefUtils();
@@ -109,7 +110,7 @@ class NotificationService {
       return;
     }
 
-    if (!await _ensurePermission()) return;
+    if (!await _ensurePermission()) return false;
     await _plugin.cancel(_verseNotificationId);
 
     final surahs = QuranIndex.quranSurahs;
@@ -151,11 +152,13 @@ class NotificationService {
       'Daily verse scheduled: ${randomSurah.nameEnglish} $randomVerse at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
       feature: 'Notifications',
     );
+    return true;
   }
 
   // ── Reading Reminder ──
 
-  Future<void> scheduleReadingReminder() async {
+  /// Schedule reading reminder notification. Returns true if scheduled successfully.
+  Future<bool> scheduleReadingReminder() async {
     if (kIsWeb) return;
 
     final pref = PrefUtils();
@@ -168,7 +171,7 @@ class NotificationService {
       return;
     }
 
-    if (!await _ensurePermission()) return;
+    if (!await _ensurePermission()) return false;
     await _plugin.cancel(_reminderNotificationId);
 
     const androidDetails = AndroidNotificationDetails(
@@ -203,6 +206,7 @@ class NotificationService {
       'Reading reminder scheduled at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
       feature: 'Notifications',
     );
+    return true;
   }
 
   // ── Streak Milestone (immediate) ──
@@ -354,7 +358,8 @@ class NotificationService {
 
   // ── Friday Surah Al-Kahf ──
 
-  Future<void> scheduleFridayKahf() async {
+  /// Schedule Friday Kahf notification. Returns true if scheduled successfully.
+  Future<bool> scheduleFridayKahf() async {
     if (kIsWeb) return;
 
     final pref = PrefUtils();
@@ -367,7 +372,7 @@ class NotificationService {
       return;
     }
 
-    if (!await _ensurePermission()) return;
+    if (!await _ensurePermission()) return false;
     await _plugin.cancel(_kahfNotificationId);
 
     const androidDetails = AndroidNotificationDetails(
@@ -402,6 +407,7 @@ class NotificationService {
       'Friday Kahf scheduled at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
       feature: 'Notifications',
     );
+    return true;
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
