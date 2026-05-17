@@ -1,5 +1,12 @@
 part of '../surah_screen.dart';
 
+/// Mutable cache container so [_VerseListView] can remain const-constructible.
+class _VerseStateCache {
+  ({Set<int> bookmarkedVerses, Set<int> errorVerses})? value;
+  int? bookmarkHash;
+  int? errorHash;
+}
+
 class _VerseListView extends StatelessWidget {
   final List<Verse> chapters;
   final BookmarkState bookmarkState;
@@ -21,7 +28,7 @@ class _VerseListView extends StatelessWidget {
   final void Function(int verseNumber) onPlayOnlyVerse;
   final void Function(int verseNumber) onStartFromVerse;
 
-  const _VerseListView({
+  _VerseListView({
     required this.chapters,
     required this.bookmarkState,
     required this.errorState,
@@ -70,9 +77,7 @@ class _VerseListView extends StatelessWidget {
   }
 
   // Cached verse states to avoid O(n) filtering on every rebuild.
-  ({Set<int> bookmarkedVerses, Set<int> errorVerses})? _verseStatesCache;
-  int? _cachedBookmarkStateHash;
-  int? _cachedErrorStateHash;
+  final _VerseStateCache _verseStateCache = _VerseStateCache();
 
   ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates() {
     final surahId = surah?.id ?? -1;
@@ -85,10 +90,10 @@ class _VerseListView extends StatelessWidget {
         ? (errorState as RecitationErrorLoaded).errors.length
         : 0;
 
-    if (_verseStatesCache != null &&
-        _cachedBookmarkStateHash == bookmarkHash &&
-        _cachedErrorStateHash == errorHash) {
-      return _verseStatesCache!;
+    if (_verseStateCache.value != null &&
+        _verseStateCache.bookmarkHash == bookmarkHash &&
+        _verseStateCache.errorHash == errorHash) {
+      return _verseStateCache.value!;
     }
 
     final bookmarkedVerses = bookmarkState is BookmarkLoaded
@@ -104,10 +109,10 @@ class _VerseListView extends StatelessWidget {
               .toSet()
         : <int>{};
 
-    _verseStatesCache = (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
-    _cachedBookmarkStateHash = bookmarkHash;
-    _cachedErrorStateHash = errorHash;
-    return _verseStatesCache!;
+    _verseStateCache.value = (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
+    _verseStateCache.bookmarkHash = bookmarkHash;
+    _verseStateCache.errorHash = errorHash;
+    return _verseStateCache.value!;
   }
 
   @override

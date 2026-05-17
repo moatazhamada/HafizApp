@@ -74,6 +74,7 @@ class QfOidcConfig {
     final clientType = _detectClientType(
       hasSecret: QfApiConfig.clientSecret.isNotEmpty,
       isProduction: config.isProduction,
+      hasBackendExchangeUrl: QfApiConfig.backendExchangeUrl.isNotEmpty,
     );
 
     return QfOidcConfig(
@@ -92,9 +93,10 @@ class QfOidcConfig {
   static QfOAuthClientType _detectClientType({
     required bool hasSecret,
     required bool isProduction,
+    required bool hasBackendExchangeUrl,
   }) {
-    if (hasSecret) {
-      if (!isProduction) {
+    if (hasSecret || hasBackendExchangeUrl) {
+      if (!isProduction && hasSecret) {
         Logger.warning(
           'Quran Foundation OAuth client has a client_secret — this is a '
           'confidential client. The client_secret should be kept on a backend '

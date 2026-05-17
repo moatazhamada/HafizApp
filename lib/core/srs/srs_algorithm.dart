@@ -134,7 +134,9 @@ class SrsAlgorithm {
     } else {
       // Failed recall — reset
       repetition = 0;
-      interval = 0;
+      // Minimum interval of 1 day on failure prevents same-day
+      // bombardment that burns out beginners.
+      interval = 1;
     }
 
     easeFactor = _adjustEaseFactor(easeFactor, quality);

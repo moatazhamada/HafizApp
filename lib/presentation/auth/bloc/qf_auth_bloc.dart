@@ -25,6 +25,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     on<QfAuthLoginRequested>(_onAuthLoginRequested);
     on<QfAuthLogoutRequested>(_onAuthLogoutRequested);
     on<QfAuthDeleteDataRequested>(_onAuthDeleteDataRequested);
+    on<QfAuthReLoginRequested>(_onAuthReLoginRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -114,6 +115,18 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     } catch (e) {
       Logger.warning('Analytics logout log failed: $e', feature: 'Auth');
     }
+  }
+
+  Future<void> _onAuthReLoginRequested(
+    QfAuthReLoginRequested event,
+    Emitter<QfAuthState> emit,
+  ) async {
+    Logger.info('Re-login requested due to insufficient scope', feature: 'Auth');
+    try {
+      await _authRemoteDataSource.logout();
+    } catch (_) {}
+    emit(QfAuthUnauthenticated());
+    add(const QfAuthLoginRequested());
   }
 
   Future<void> _onAuthDeleteDataRequested(

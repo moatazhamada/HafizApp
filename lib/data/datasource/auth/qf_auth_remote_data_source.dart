@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -414,31 +416,58 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     }
 
     final idToken = await _secureStorage.read(key: _idTokenKey);
-    if (idToken != null && JwtDecoder.isExpired(idToken)) {
-      return await refreshToken();
+    if (idToken != null) {
+      if (JwtDecoder.isExpired(idToken)) {
+        return await refreshToken();
+      }
+      // Re-validate critical claims on app restart — a forged or
+      // misconfigured token that passes expiry must still be rejected.
+      try {
+        QfTokenValidator(config: _oidcConfig).validateIdTokenClaims(idToken);
+      } catch (e) {
+        Logger.warning(
+          'ID token claims invalid on restart (iss/aud): $e',
+          feature: 'QfAuth',
+        );
+        await logout();
+        return false;
+      }
     }
     return true;
   }
 
   @override
   Future<void> revokeAndDeleteData() async {
-    try {
-      final token = await getRefreshToken();
-      if (token != null) {
-        await Dio().post(
+    final refreshToken = await getRefreshToken();
+    final accessToken = await getAccessToken();
+    final dio = Dio();
+    // For confidential clients, include HTTP Basic Auth so the revocation
+    // endpoint can authenticate the caller (RFC 7009 §2.1).
+    final headers = <String, String>{
+      Headers.contentType: Headers.formUrlEncodedContentType,
+    };
+    if (_oidcConfig.isConfidential && QfApiConfig.clientSecret.isNotEmpty) {
+      final auth = base64Encode(
+        utf8.encode('${QfApiConfig.clientId}:${QfApiConfig.clientSecret}'),
+      );
+      headers['Authorization'] = 'Basic $auth';
+    }
+    for (final token in {refreshToken, accessToken}) {
+      if (token == null) continue;
+      try {
+        await dio.post(
           '${_config.authBaseUrl}/oauth2/revoke',
           data: 'token=$token&client_id=${QfApiConfig.clientId}',
-          options: Options(contentType: Headers.formUrlEncodedContentType),
+          options: Options(headers: headers),
         );
         Logger.info('QF token revoked', feature: 'QfAuth');
+      } catch (e) {
+        Logger.warning(
+          'Token revocation failed (continuing with local cleanup): $e',
+          feature: 'QfAuth',
+        );
       }
-    } catch (e) {
-      Logger.warning(
-        'Token revocation failed (continuing with local cleanup): $e',
-        feature: 'QfAuth',
-      );
     }
-
     await logout();
     Logger.info('All QF data deleted', feature: 'QfAuth');
   }

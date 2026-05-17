@@ -98,7 +98,7 @@ class NotificationService {
 
   /// Schedule daily verse notification. Returns true if scheduled successfully.
   Future<bool> scheduleDailyVerse() async {
-    if (kIsWeb) return;
+    if (kIsWeb) return true;
 
     final pref = PrefUtils();
     if (!pref.isDailyVerseEnabled()) {
@@ -107,7 +107,7 @@ class NotificationService {
         'Daily verse notification cancelled (disabled)',
         feature: 'Notifications',
       );
-      return;
+      return true;
     }
 
     if (!await _ensurePermission()) return false;
@@ -159,7 +159,7 @@ class NotificationService {
 
   /// Schedule reading reminder notification. Returns true if scheduled successfully.
   Future<bool> scheduleReadingReminder() async {
-    if (kIsWeb) return;
+    if (kIsWeb) return true;
 
     final pref = PrefUtils();
     if (!pref.isReadingReminderEnabled()) {
@@ -168,7 +168,7 @@ class NotificationService {
         'Reading reminder cancelled (disabled)',
         feature: 'Notifications',
       );
-      return;
+      return true;
     }
 
     if (!await _ensurePermission()) return false;
@@ -360,7 +360,7 @@ class NotificationService {
 
   /// Schedule Friday Kahf notification. Returns true if scheduled successfully.
   Future<bool> scheduleFridayKahf() async {
-    if (kIsWeb) return;
+    if (kIsWeb) return true;
 
     final pref = PrefUtils();
     if (!pref.isFridayKahfEnabled()) {
@@ -369,7 +369,7 @@ class NotificationService {
         'Friday Kahf notification cancelled (disabled)',
         feature: 'Notifications',
       );
-      return;
+      return true;
     }
 
     if (!await _ensurePermission()) return false;

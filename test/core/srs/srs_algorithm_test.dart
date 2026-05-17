@@ -37,7 +37,8 @@ void main() {
       test('creates fresh entry with needsReview on low score', () {
         final result = SrsAlgorithm.computeNext(existing: null, score: 20);
         expect(result.repetition, 0);
-        expect(result.interval, 0);
+        // Minimum interval of 1 day prevents same-day bombardment
+        expect(result.interval, 1);
         expect(result.status, MemorizationStatus.needsReview);
       });
 
@@ -65,7 +66,8 @@ void main() {
 
         final result = SrsAlgorithm.computeNext(existing: existing, score: 30);
         expect(result.repetition, 0);
-        expect(result.interval, 0);
+        // Minimum interval of 1 day prevents same-day bombardment
+        expect(result.interval, 1);
         expect(result.status, MemorizationStatus.needsReview);
       });
 

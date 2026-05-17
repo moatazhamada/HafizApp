@@ -183,6 +183,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
+    _translationDebounce?.cancel();
     _autoScrollTimer?.cancel();
     _listeningSubscription?.cancel();
     if (_isListeningMode) AudioPlayerHandler().stop();

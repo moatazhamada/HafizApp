@@ -732,20 +732,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       value: _dailyVerseEnabled,
       onChanged: (val) async {
         setState(() => _dailyVerseEnabled = val);
-        PrefUtils().setDailyVerseEnabled(val);
+        await PrefUtils().setDailyVerseEnabled(val);
         final notificationService = NotificationService();
         if (val) {
           final ok = await notificationService.scheduleDailyVerse();
           if (!ok && mounted) {
             // Permission was denied — revert the toggle and inform the user
             setState(() => _dailyVerseEnabled = false);
-            PrefUtils().setDailyVerseEnabled(false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
-            );
+            await PrefUtils().setDailyVerseEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
           }
         } else {
-          notificationService.cancelDailyVerse();
+          await notificationService.cancelDailyVerse();
         }
       },
     );
@@ -781,19 +783,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       value: _readingReminderEnabled,
       onChanged: (val) async {
         setState(() => _readingReminderEnabled = val);
-        PrefUtils().setReadingReminderEnabled(val);
+        await PrefUtils().setReadingReminderEnabled(val);
         final notificationService = NotificationService();
         if (val) {
           final ok = await notificationService.scheduleReadingReminder();
           if (!ok && mounted) {
             setState(() => _readingReminderEnabled = false);
-            PrefUtils().setReadingReminderEnabled(false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
-            );
+            await PrefUtils().setReadingReminderEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
           }
         } else {
-          notificationService.cancelReadingReminder();
+          await notificationService.cancelReadingReminder();
         }
       },
     );
@@ -829,19 +833,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       value: _fridayKahfEnabled,
       onChanged: (val) async {
         setState(() => _fridayKahfEnabled = val);
-        PrefUtils().setFridayKahfEnabled(val);
+        await PrefUtils().setFridayKahfEnabled(val);
         final notificationService = NotificationService();
         if (val) {
           final ok = await notificationService.scheduleFridayKahf();
           if (!ok && mounted) {
             setState(() => _fridayKahfEnabled = false);
-            PrefUtils().setFridayKahfEnabled(false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('msg_notification_permission_denied'.tr)),
-            );
+            await PrefUtils().setFridayKahfEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
           }
         } else {
-          notificationService.cancelFridayKahf();
+          await notificationService.cancelFridayKahf();
         }
       },
     );
