@@ -113,6 +113,7 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
     final result = await repository.logReading(
       verses: event.verses,
       surahs: event.surahs,
+      durationSeconds: event.durationSeconds,
     );
     result.fold(
       (failure) => emit(const KhatmahError('msg_operation_failed')),

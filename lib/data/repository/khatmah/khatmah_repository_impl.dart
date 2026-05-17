@@ -34,7 +34,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   }
 
   @override
-  Future<Either<Failure, void>> logReading({int? verses, int? surahs}) async {
+  Future<Either<Failure, void>> logReading({int? verses, int? surahs, int? durationSeconds}) async {
     try {
       final existing = await localDataSource.getLog(_today());
       final updated = DailyReadingLogModel(
@@ -42,7 +42,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         versesRead: (existing?.versesRead ?? 0) + (verses ?? 0),
         juzRead: existing?.juzRead ?? 0,
         surahsVisited: (existing?.surahsVisited ?? 0) + (surahs ?? 0),
-        readingDuration: existing?.readingDuration ?? Duration.zero,
+        readingDuration: (existing?.readingDuration ?? Duration.zero) + Duration(seconds: durationSeconds ?? 0),
         syncStatus: SyncStatus.pending,
       );
       await localDataSource.saveLog(updated);

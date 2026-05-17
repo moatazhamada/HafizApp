@@ -90,7 +90,7 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
         lastReviewDate: DateTime.now(),
         bestScore: existing != null && existing.bestScore > score
             ? existing.bestScore
-            : score,
+            : score.clamp(0.0, 100.0),
       );
 
       await localDataSource.saveProgress(updated);

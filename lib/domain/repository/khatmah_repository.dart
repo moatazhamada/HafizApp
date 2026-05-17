@@ -5,7 +5,7 @@ import 'package:hafiz_app/domain/entities/reading_session.dart';
 
 abstract class KhatmahRepository {
   Future<Either<Failure, DailyReadingLog?>> getTodayLog();
-  Future<Either<Failure, void>> logReading({int? verses, int? surahs});
+  Future<Either<Failure, void>> logReading({int? verses, int? surahs, int? durationSeconds});
   Future<Either<Failure, ReadingGoal?>> getGoal();
   Future<Either<Failure, void>> setGoal(int dailyVerseTarget);
   Future<Either<Failure, List<DailyReadingLog>>> getRecentLogs(int days);

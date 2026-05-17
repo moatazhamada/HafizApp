@@ -126,7 +126,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       await _authRemoteDataSource.logout();
     } catch (_) {}
     emit(QfAuthUnauthenticated());
-    add(const QfAuthLoginRequested());
+    add(QfAuthLoginRequested());
   }
 
   Future<void> _onAuthDeleteDataRequested(

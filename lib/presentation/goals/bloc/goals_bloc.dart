@@ -137,7 +137,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
 
   void _requestReLogin() {
     try {
-      sl<QfAuthBloc>().add(const QfAuthReLoginRequested());
+      sl<QfAuthBloc>().add(QfAuthReLoginRequested());
     } catch (e) {
       Logger.warning('Failed to dispatch re-login: $e', feature: 'Goals');
     }

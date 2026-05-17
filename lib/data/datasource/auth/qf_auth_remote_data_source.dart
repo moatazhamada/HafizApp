@@ -444,7 +444,7 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
     // For confidential clients, include HTTP Basic Auth so the revocation
     // endpoint can authenticate the caller (RFC 7009 §2.1).
     final headers = <String, String>{
-      Headers.contentType: Headers.formUrlEncodedContentType,
+      Headers.contentTypeHeader: Headers.formUrlEncodedContentType,
     };
     if (_oidcConfig.isConfidential && QfApiConfig.clientSecret.isNotEmpty) {
       final auth = base64Encode(

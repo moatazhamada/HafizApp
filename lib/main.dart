@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/services/app_lifecycle_manager.dart';
 
 import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
+import 'core/notifications/notification_service.dart';
 import 'core/theme/app_text_styles.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';

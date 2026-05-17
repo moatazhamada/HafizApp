@@ -39,7 +39,7 @@ void main() {
   });
 
   group('KhatmahRepositoryImpl', () {
-    final tToday = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final tToday = DateTime.utc(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     final tLog = DailyReadingLogModel(
       date: tToday,
       versesRead: 10,

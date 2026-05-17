@@ -28,7 +28,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
       (failure) {
         if (failure is InsufficientScopeFailure) {
           try {
-            sl<QfAuthBloc>().add(const QfAuthReLoginRequested());
+            sl<QfAuthBloc>().add(QfAuthReLoginRequested());
           } catch (e) {
             Logger.warning('Failed to dispatch re-login: $e', feature: 'CloudSync');
           }
