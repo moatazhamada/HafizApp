@@ -48,7 +48,7 @@ class _SurahAppBar extends StatelessWidget {
         button: true,
         label: 'lbl_back'.tr,
         child: IconButton(
-          icon: Icon(rtlBackArrow(context), color: Theme.of(context).colorScheme.onPrimary),
+          icon: Icon(rtlBackArrow(context), color: AppColors.of(context).onPrimary),
           onPressed: () => NavigatorService.goBack(),
           tooltip: 'lbl_back'.tr,
         ),
@@ -69,7 +69,10 @@ class _SurahAppBar extends StatelessWidget {
           button: true,
           label: 'lbl_more_options'.tr,
           child: PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onPrimary),
+            icon: Icon(
+              Icons.more_vert,
+              color: AppColors.of(context).onPrimary,
+            ),
             onSelected: (value) {
               switch (value) {
                 case 'audio':
@@ -118,9 +121,7 @@ class _SurahAppBar extends StatelessWidget {
                     Icon(isHifzMode ? Icons.visibility : Icons.visibility_off),
                     const SizedBox(width: 12),
                     Text(
-                      isHifzMode
-                          ? 'lbl_exit_hifz_mode'.tr
-                          : 'lbl_hifz_mode'.tr,
+                      isHifzMode ? 'lbl_exit_hifz_mode'.tr : 'lbl_hifz_mode'.tr,
                     ),
                   ],
                 ),
@@ -177,9 +178,9 @@ class _SurahAppBar extends StatelessWidget {
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        centerTitle: false,
+        centerTitle: true,
         titlePadding: const EdgeInsetsDirectional.only(
-          start: 72,
+          start: 16,
           end: 16,
           bottom: 16,
         ),
@@ -194,7 +195,7 @@ class _SurahAppBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: AppColors.of(context).onPrimary,
                 fontFamily: 'NotoNaskhArabic',
               ),
               overflow: TextOverflow.ellipsis,

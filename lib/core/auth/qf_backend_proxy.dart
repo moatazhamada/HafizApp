@@ -111,7 +111,7 @@ class QfDioBackendTokenProxy implements QfBackendTokenProxy {
         if (attempt > 0) {
           final jitter = _random.nextInt(_jitterMs);
           final delayMs = min(
-            _baseDelay.inMilliseconds * pow(2, attempt - 1),
+            (_baseDelay.inMilliseconds * pow(2, attempt - 1)).toInt(),
             _maxDelay.inMilliseconds,
           );
           await Future.delayed(Duration(milliseconds: delayMs + jitter));
@@ -129,7 +129,7 @@ class QfDioBackendTokenProxy implements QfBackendTokenProxy {
         if (attempt >= _maxRetries) rethrow;
       }
     }
-    throw lastException ?? QfBackendTokenExchangeException(
+    throw lastException ?? const QfBackendTokenExchangeException(
       statusCode: 0,
       body: 'Unexpected retry exhaustion',
     );

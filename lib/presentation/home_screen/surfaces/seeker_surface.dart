@@ -4,9 +4,7 @@ import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
 import '../../../core/utils/logger.dart';
-import '../../../core/tracking/behavior_tracker.dart';
 import '../../../injection_container.dart';
-import '../../../core/utils/rtl_utils.dart';
 import '../widgets/surah_index_widget.dart';
 import '../widgets/staggered_list_item.dart';
 import '../../../widgets/random_verse_card.dart';
@@ -39,12 +37,6 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     setState(() => _recentSearches = PrefUtils().getRecentSearches());
   }
 
-  void _onSearchTap() {
-    BehaviorTracker.recordSession('search');
-    sl<AnalyticsService>().logSearch('tap');
-    NavigatorService.pushNamed(AppRoutes.searchPage);
-  }
-
   void _onSearchChipTap(String query) {
     PrefUtils().addRecentSearch(query);
     sl<AnalyticsService>().logSearch(query);
@@ -67,68 +59,46 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     final headerChildren = <Widget>[
-      // Prominent Search
+      // Local Surah Search
       StaggeredListItem(
         index: 0,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Semantics(
-            button: true,
-            label: 'lbl_semantics_discovery_card'
-                .tr
-                .replaceAll('{title}', 'lbl_search_quran'.tr)
-                .replaceAll('{subtitle}', 'msg_search_desc'.tr),
-            child: GestureDetector(
-              onTap: _onSearchTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    ExcludeSemantics(
-                      child: Icon(
-                        Icons.search_rounded,
-                        color: colorScheme.primary,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'lbl_search_quran'.tr,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'msg_search_desc'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ExcludeSemantics(
-                      child: Icon(
-                        rtlForwardArrowRounded(context),
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
+          child: TextField(
+            controller: _searchController,
+            textDirection: TextDirection.ltr,
+            decoration: InputDecoration(
+              hintText: 'lbl_search_surah'.tr,
+              hintStyle: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: colorScheme.primary,
+              ),
+              suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = null);
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.5,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
               ),
             ),
+            onChanged: (value) => setState(() => _searchQuery = value),
           ),
         ),
       ),

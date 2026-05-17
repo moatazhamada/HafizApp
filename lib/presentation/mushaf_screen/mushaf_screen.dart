@@ -187,18 +187,25 @@ class _MushafScreenState extends State<MushafScreen>
   int _pageIndexToNumber(int index) => index + 1;
 
   int _surahToPageInType(int surahId, MushafType type) {
-    if (type.totalPages == 604) {
-      return MushafPageIndex.getPageForSurah(surahId).clamp(1, 604);
+    final madaniPage = MushafPageIndex.getPageForSurah(surahId)
+        .clamp(1, MushafPageIndex.totalPages);
+    if (type.totalPages == MushafPageIndex.totalPages) {
+      return madaniPage;
     }
-    // Verse-proportional mapping: compute the cumulative verse fraction
-    // up to this surah's start, and map to target type pages.
-    const totalVerses = 6236;
-    int cumulativeVerses = 0;
-    for (int i = 0; i < surahId - 1; i++) {
-      cumulativeVerses += MushafPageIndex.surahVerseCounts[i];
+    // Map proportionally from the Madani page space to the target type.
+    return (madaniPage / MushafPageIndex.totalPages * type.totalPages)
+        .round()
+        .clamp(1, type.totalPages);
+  }
+
+  /// Convert a page number in the current mushaf type to Madani-equivalent.
+  int _toMadaniPage(int page) {
+    if (_mushafType.totalPages == MushafPageIndex.totalPages) {
+      return page;
     }
-    final fraction = cumulativeVerses / totalVerses;
-    return (fraction * (type.totalPages - 1)).round().clamp(1, type.totalPages);
+    return (page / _mushafType.totalPages * MushafPageIndex.totalPages)
+        .round()
+        .clamp(1, MushafPageIndex.totalPages);
   }
 
   // ─── Page Precaching ────────────────────────────────────────────
@@ -280,7 +287,8 @@ class _MushafScreenState extends State<MushafScreen>
   }
 
   void _switchMushafType(MushafType newType) {
-    final surahId = MushafPageIndex.getSurahForPage(_currentPage);
+    final madaniPage = _toMadaniPage(_currentPage);
+    final surahId = MushafPageIndex.getSurahForPage(madaniPage);
     final targetPage = _surahToPageInType(surahId, newType);
 
     _localTextCache.clear();
@@ -528,7 +536,8 @@ class _MushafScreenState extends State<MushafScreen>
         final verses = snapshot.data ?? [];
         if (verses.isEmpty ||
             (verses.length == 1 && verses.first.text.isEmpty)) {
-          final surahId = MushafPageIndex.getSurahForPage(pageNumber);
+          final madaniPage = _toMadaniPage(pageNumber);
+          final surahId = MushafPageIndex.getSurahForPage(madaniPage);
           final surah = QuranIndex.quranSurahs[surahId - 1];
           return Center(
             child: Column(
@@ -762,14 +771,15 @@ class _MushafScreenState extends State<MushafScreen>
   }
 
   Widget _buildBottomBar(bool isDark, AppColors colors) {
-    final pageData = MushafPageIndex.getPageData(_currentPage);
+    final madaniPage = _toMadaniPage(_currentPage);
+    final pageData = MushafPageIndex.getPageData(madaniPage);
     final surahId =
-        pageData?.surahId ?? MushafPageIndex.getSurahForPage(_currentPage);
+        pageData?.surahId ?? MushafPageIndex.getSurahForPage(madaniPage);
     final surah = surahId >= 1 && surahId <= 114
         ? QuranIndex.quranSurahs[surahId - 1]
         : null;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final juz = MushafPageIndex.getJuzForPage(_currentPage);
+    final juz = MushafPageIndex.getJuzForPage(madaniPage);
 
     return Container(
       decoration: BoxDecoration(

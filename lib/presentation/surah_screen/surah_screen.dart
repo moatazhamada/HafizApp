@@ -24,6 +24,7 @@ import '../../core/utils/rtl_utils.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
+import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/utils/logger.dart';
 import '../../core/services/reading_session_tracker.dart';
@@ -167,8 +168,10 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
             surah!.id,
             _scrollControllerForInit!.offset,
           );
+          PrefUtils().saveLastReadSurah(surah!);
           final visibleVerse = _findVisibleVerseNumber();
           if (visibleVerse != null) {
+            PrefUtils().setSurahVerseIndex(surah!.id, visibleVerse - 1);
             _sessionTracker.updateProgress(visibleVerse);
           }
         });
@@ -346,9 +349,13 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   /// Starts Listening Mode from a specific verse and plays continuously.
   void _startListeningFromVerse(int verseNumber) {
     if (surah == null || _chapters.isEmpty) return;
-    _stopListeningMode();
+    _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
     final handler = AudioPlayerHandler();
-    setState(() => _isListeningMode = true);
+    setState(() {
+      _isListeningMode = true;
+      _highlightedVerse = null;
+    });
 
     _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
       if (!_isListeningMode || !mounted) return;
@@ -387,9 +394,13 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   /// Plays only a single verse inline (no navigation) then stops.
   void _playOnlyVerse(int verseNumber) {
     if (surah == null || _chapters.isEmpty) return;
-    _stopListeningMode();
+    _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
     final handler = AudioPlayerHandler();
-    setState(() => _isListeningMode = true);
+    setState(() {
+      _isListeningMode = true;
+      _highlightedVerse = null;
+    });
 
     _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
       if (!_isListeningMode || !mounted) return;
@@ -397,7 +408,6 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         _stopListeningMode();
         return;
       }
-      // Stop if we moved past the target verse
       if (verseIndex + 1 != verseNumber) {
         _stopListeningMode();
         return;

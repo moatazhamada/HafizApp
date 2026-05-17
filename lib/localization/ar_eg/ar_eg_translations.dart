@@ -187,6 +187,7 @@ final Map<String, String> arEg = {
   'lbl_last_synced': 'آخر مزامنة',
   'lbl_appearance': 'المظهر',
   'lbl_reading': 'القراءة',
+  'lbl_notification_settings': 'الإشعارات',
   'lbl_about': 'حول',
   'msg_qf_logged_in': 'تم تسجيل الدخول عبر Quran.com',
   'msg_qf_not_logged_in': 'غير مسجل الدخول',

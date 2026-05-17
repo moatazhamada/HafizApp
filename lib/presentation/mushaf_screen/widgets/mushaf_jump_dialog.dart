@@ -166,8 +166,16 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           title: Text(
             isArabic ? surah.nameArabic : surah.nameEnglish,
             textDirection: TextDirection.rtl,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-          subtitle: Text('${'lbl_page'.tr} $page'),
+          subtitle: Text(
+            '${'lbl_page'.tr} $page',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
           trailing: Icon(rtlChevron(context), size: 18),
           onTap: () => Navigator.pop(context, page),
         );
@@ -190,41 +198,67 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           ),
           itemCount: 30,
           itemBuilder: (context, index) {
-        final juz = index + 1;
-        final surahId = MushafPageIndex.getSurahForJuz(juz);
-        final page = widget
-            .surahToPage(surahId, widget.mushafType)
-            .clamp(1, widget.totalPages);
-        final isActive = MushafPageIndex.getJuzForPage(_selectedPage) == juz;
-        return GestureDetector(
-          onTap: () => Navigator.pop(context, page),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isActive
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$juz',
-                  style: TextStyle(
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 16,
-                  ),
+            final juz = index + 1;
+            final madaniPage = MushafPageIndex.getPageForJuz(juz);
+            final page = _mapMadaniPage(madaniPage);
+            final currentMadaniPage = _pageToMadani(_selectedPage);
+            final isActive = MushafPageIndex.getJuzForPage(currentMadaniPage) == juz;
+            return GestureDetector(
+              onTap: () => Navigator.pop(context, page),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                 ),
-                Text('p.$page', style: const TextStyle(fontSize: 10)),
-              ],
-            ),
-          ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$juz',
+                      style: TextStyle(
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'p.$page',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
-      },
-    );
+  }
+
+  /// Convert a Madani page number to the current mushaf type's page space.
+  int _mapMadaniPage(int madaniPage) {
+    if (widget.mushafType.totalPages == MushafPageIndex.totalPages) {
+      return madaniPage.clamp(1, widget.totalPages);
+    }
+    return (madaniPage / MushafPageIndex.totalPages * widget.totalPages)
+        .round()
+        .clamp(1, widget.totalPages);
+  }
+
+  /// Convert the current page (in target type space) to Madani-equivalent.
+  int _pageToMadani(int page) {
+    if (widget.mushafType.totalPages == MushafPageIndex.totalPages) {
+      return page;
+    }
+    return (page / widget.totalPages * MushafPageIndex.totalPages)
+        .round()
+        .clamp(1, MushafPageIndex.totalPages);
   }
 
   void _jumpAndClose() {

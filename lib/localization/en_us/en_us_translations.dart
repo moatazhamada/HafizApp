@@ -189,6 +189,7 @@ final Map<String, String> enUs = {
   'lbl_last_synced': 'Last synced',
   'lbl_appearance': 'Appearance',
   'lbl_reading': 'Reading',
+  'lbl_notification_settings': 'Notifications',
   'lbl_about': 'About',
   'msg_qf_logged_in': 'Logged in to Quran.com',
   'msg_qf_not_logged_in': 'Not logged in',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/utils/rtl_utils.dart';
 
 /// Quran navigation bar that always follows RTL semantics:
 /// Next surah is on the left, previous surah is on the right.
@@ -62,7 +61,10 @@ class SurahNavigationBar extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              rtlSkipPreviousIcon(rtlContext, size: 18),
+                              const Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Icon(Icons.skip_previous, size: 18),
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
@@ -114,7 +116,10 @@ class SurahNavigationBar extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              rtlSkipNextIcon(rtlContext, size: 18),
+                              const Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Icon(Icons.skip_next, size: 18),
+                              ),
                             ],
                           ),
                         ),

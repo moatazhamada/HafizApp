@@ -33,13 +33,39 @@ class StudentSurface extends StatelessWidget {
   }
 }
 
-class _StudentBody extends StatelessWidget {
+class _StudentBody extends StatefulWidget {
   const _StudentBody();
+
+  @override
+  State<_StudentBody> createState() => _StudentBodyState();
+}
+
+class _StudentBodyState extends State<_StudentBody> {
+  final TextEditingController _searchController = TextEditingController();
+  String? _searchQuery;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Surah> _filteredSurahs() {
+    final surahs = QuranIndex.quranSurahs;
+    if (_searchQuery == null || _searchQuery!.trim().isEmpty) return surahs;
+    final query = _searchQuery!.trim().toLowerCase();
+    return surahs.where((s) {
+      return s.nameEnglish.toLowerCase().contains(query) ||
+          s.nameArabic.contains(query) ||
+          s.id.toString() == query;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final filteredSurahs = _filteredSurahs();
 
     return Column(
       children: [
@@ -145,9 +171,9 @@ class _StudentBody extends StatelessWidget {
 
               // Compact Surah List
               SliverList.builder(
-                itemCount: QuranIndex.quranSurahs.length,
+                itemCount: filteredSurahs.length,
                 itemBuilder: (context, index) {
-                  final surah = QuranIndex.quranSurahs[index];
+                  final surah = filteredSurahs[index];
                   return StaggeredSliverListItem(
                     index: index,
                     child: _CompactSurahTile(surah: surah),
@@ -166,15 +192,23 @@ class _StudentBody extends StatelessWidget {
   Widget _buildSearchBar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return TextField(
+      controller: _searchController,
       textDirection: TextDirection.ltr,
-      readOnly: true,
-      onTap: () => NavigatorService.pushNamed(AppRoutes.searchPage),
       decoration: InputDecoration(
         hintText: 'lbl_search_surah'.tr,
         hintStyle: TextStyle(
           color: colorScheme.onSurface.withValues(alpha: 0.4),
         ),
         prefixIcon: Icon(Icons.search_rounded, color: colorScheme.primary),
+        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = null);
+                },
+              )
+            : null,
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: OutlineInputBorder(
@@ -183,6 +217,7 @@ class _StudentBody extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
+      onChanged: (value) => setState(() => _searchQuery = value),
     );
   }
 

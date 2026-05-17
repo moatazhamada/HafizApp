@@ -163,7 +163,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildMushafTypeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
-
+            _buildKeepScreenOnTile(),
+          ]),
+          const SizedBox(height: 20),
+          _buildSectionLabel('lbl_notification_settings'.tr),
+          _buildCard([
             _buildDailyVerseTile(),
             if (_dailyVerseEnabled) ...[
               const Divider(height: 1, indent: 16, endIndent: 16),
@@ -181,8 +185,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(height: 1, indent: 16, endIndent: 16),
               _buildFridayKahfTimeTile(),
             ],
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildKeepScreenOnTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),

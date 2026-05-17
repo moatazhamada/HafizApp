@@ -119,7 +119,12 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
                 ),
           );
 
-    final surahId = MushafPageIndex.getSurahForPage(widget.pageNumber);
+    final madaniPage = widget.mushafType.totalPages == MushafPageIndex.totalPages
+        ? widget.pageNumber
+        : (widget.pageNumber / widget.mushafType.totalPages * MushafPageIndex.totalPages)
+            .round()
+            .clamp(1, MushafPageIndex.totalPages);
+    final surahId = MushafPageIndex.getSurahForPage(madaniPage);
     final surah = surahId >= 1 && surahId <= 114
         ? QuranIndex.quranSurahs[surahId - 1]
         : null;

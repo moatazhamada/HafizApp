@@ -64,24 +64,20 @@ IconData rtlForwardArrowRounded(BuildContext context) {
 
 /// Previous-verse icon for the audio player.
 ///
-/// In LTR: `skip_previous` (points left = back in time).
-/// In RTL: horizontally flipped so it points right, matching Arabic
-/// spatial thinking where "previous" content lies to the right.
+/// `skip_previous` natively supports [matchTextDirection] and auto-mirrors
+/// in RTL (points right). No manual flip is needed — and must NOT be
+/// applied, or the icon would be double-flipped.
 Widget rtlSkipPreviousIcon(BuildContext context, {double size = 24}) {
-  final icon = Icon(Icons.skip_previous, size: size);
-  if (isLtr(context)) return icon;
-  return Transform.flip(flipX: true, child: icon);
+  return Icon(Icons.skip_previous, size: size);
 }
 
 /// Next-verse icon for the audio player.
 ///
-/// In LTR: `skip_next` (points right = forward in time).
-/// In RTL: horizontally flipped so it points left, matching Arabic
-/// spatial thinking where "next" content lies to the left.
+/// `skip_next` natively supports [matchTextDirection] and auto-mirrors
+/// in RTL (points left). No manual flip is needed — and must NOT be
+/// applied, or the icon would be double-flipped.
 Widget rtlSkipNextIcon(BuildContext context, {double size = 24}) {
-  final icon = Icon(Icons.skip_next, size: size);
-  if (isLtr(context)) return icon;
-  return Transform.flip(flipX: true, child: icon);
+  return Icon(Icons.skip_next, size: size);
 }
 
 // ─-- Alignment & Inset Helpers ──

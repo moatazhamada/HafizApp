@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/qf_api_config.dart';
 import '../notifications/notification_service.dart';
@@ -83,19 +85,26 @@ class AppInitializer {
       Logger.warning('Hive init failed: $e', feature: 'Init');
     }
 
-    const boxes = [
-      'surah_cache',
+    final cipher = await _encryptionCipher();
+
+    const sensitiveBoxes = [
       'bookmarks',
       'recitation_errors',
       'recitation_sessions',
       'memorization_progress',
       'reading_logs',
       'reading_goal',
+    ];
+    const openBoxes = [
+      'surah_cache',
       'quran_word_cache',
       'offline_reading_sessions',
     ];
     await Future.wait(
-      boxes.map((box) async {
+      sensitiveBoxes.map((box) => _openBoxWithEncryption(box, cipher)),
+    );
+    await Future.wait(
+      openBoxes.map((box) async {
         try {
           await Hive.openBox(box);
         } catch (e) {
@@ -342,6 +351,60 @@ class AppInitializer {
       if (Hive.isBoxOpen(name)) {
         try { await Hive.box(name).compact(); } catch (_) {}
       }
+    }
+  }
+
+  /// Open a box with encryption. If the box already exists unencrypted on
+  /// disk (e.g. upgraded from an earlier version), leave it unencrypted to
+  /// avoid data loss. New boxes are created with AES-256 encryption.
+  static Future<void> _openBoxWithEncryption(String name, HiveAesCipher? cipher) async {
+    try {
+      if (cipher != null) {
+        await Hive.openBox(name, encryptionCipher: cipher);
+      } else {
+        await Hive.openBox(name);
+      }
+    } catch (e) {
+      if (cipher != null && e.toString().contains('invalid')) {
+        // Cipher mismatch — box exists without encryption. Fall back.
+        Logger.warning('Box $name exists without encryption, opening as plaintext', feature: 'Init');
+        try { await Hive.openBox(name); } catch (_) {
+          await _recoverBox(name);
+        }
+      } else {
+        Logger.error('Failed to open box $name: $e', feature: 'Init', error: e);
+        await _recoverBox(name);
+      }
+    }
+  }
+
+  static Future<void> _recoverBox(String name) async {
+    try { await Hive.openBox(name); } catch (_) {
+      try {
+        await Hive.deleteBoxFromDisk(name);
+        await Hive.openBox(name);
+        Logger.error('Box $name was corrupted and had to be recreated.', feature: 'Init');
+      } catch (e) {
+        Logger.error('Box $name unrecoverable: $e', feature: 'Init', error: e);
+      }
+    }
+  }
+
+  /// Return a HiveAesCipher using a persistent key stored in secure storage.
+  /// Returns null on platforms where secure storage is not available (web).
+  static Future<HiveAesCipher?> _encryptionCipher() async {
+    const key = 'hive_encryption_key';
+    try {
+      final storage = const FlutterSecureStorage();
+      var rawKey = await storage.read(key: key);
+      if (rawKey == null || rawKey.isEmpty) {
+        rawKey = base64Encode(Hive.generateSecureKey());
+        await storage.write(key: key, value: rawKey);
+      }
+      return HiveAesCipher(base64Decode(rawKey));
+    } catch (e) {
+      Logger.warning('Hive encryption key unavailable: $e', feature: 'Init');
+      return null;
     }
   }
 }

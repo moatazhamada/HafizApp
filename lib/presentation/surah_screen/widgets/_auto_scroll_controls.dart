@@ -35,7 +35,7 @@ class _AutoScrollControls extends StatelessWidget {
                 isAutoScrolling
                     ? Icons.pause_circle
                     : Icons.play_circle_outline,
-                color: isAutoScrolling ? AppColors.of(context).warning : Theme.of(context).colorScheme.onPrimary,
+                color: isAutoScrolling ? AppColors.of(context).warning : AppColors.of(context).onPrimary,
               ),
             ),
           ),

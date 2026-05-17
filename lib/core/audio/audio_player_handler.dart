@@ -73,6 +73,13 @@ class AudioPlayerHandler {
   }) async {
     if (_isDisposed) return;
     _playGeneration++;
+    await _completionSub?.cancel();
+    _completionSub = null;
+    if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+      _verseCompleter!.complete();
+    }
+    _verseCompleter = null;
+    await _player.stop();
     _currentSurahId = surahId;
     _verseUrls = verseAudioUrls;
     _currentVerseIndex = startVerse;
