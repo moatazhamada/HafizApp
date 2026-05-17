@@ -94,12 +94,14 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                color: widget.isLightBackground
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 Icons.palette_rounded,
-                color: widget.isLightBackground ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 40,
               ),
             ),
@@ -109,7 +111,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
             Text(
               'lbl_choose_theme'.tr,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: widget.isLightBackground ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -120,7 +122,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: widget.isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -141,14 +143,14 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           option.icon,
                           color: widget.isLightBackground
                               ? option.iconColor(context)
-                              : Theme.of(context).colorScheme.onPrimary,
+                              : Theme.of(context).colorScheme.onSurface,
                           size: 24,
                         ),
                       ),
@@ -162,7 +164,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                               style: TextStyle(
                                 color: widget.isLightBackground
                                     ? Theme.of(context).colorScheme.onSurface
-                                    : Theme.of(context).colorScheme.onPrimary,
+                                    : Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -173,7 +175,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                               style: TextStyle(
                                 color: widget.isLightBackground
                                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
-                                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: 13,
                               ),
                             ),
@@ -185,7 +187,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
                           Icons.check_circle_rounded,
                           color: widget.isLightBackground
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onPrimary,
+                              : Theme.of(context).colorScheme.onSurface,
                           size: 24,
                         ),
                     ],

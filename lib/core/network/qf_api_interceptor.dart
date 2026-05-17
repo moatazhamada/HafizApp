@@ -192,10 +192,14 @@ class QfApiInterceptor extends Interceptor {
         newToken = await _authDataSource.getAccessToken();
       }
 
-      _refreshCompleter!.complete(newToken);
+      if (!_refreshCompleter!.isCompleted) {
+        _refreshCompleter!.complete(newToken);
+      }
       return newToken;
     } catch (e) {
-      _refreshCompleter!.completeError(e);
+      if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+        _refreshCompleter!.completeError(e);
+      }
       _refreshCompleter = null;
       rethrow;
     }

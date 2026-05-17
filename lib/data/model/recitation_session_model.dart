@@ -1,3 +1,4 @@
+import '../../core/utils/date_time_utils.dart';
 import '../../domain/entities/recitation_session.dart';
 
 class RecitationSessionModel extends RecitationSession {
@@ -34,7 +35,7 @@ class RecitationSessionModel extends RecitationSession {
       correctCount: (json['correctCount'] as num).toInt(),
       totalCount: (json['totalCount'] as num).toInt(),
       score: (json['score'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseDateTime(json['createdAt']) ?? DateTime.now(),
     );
   }
 }

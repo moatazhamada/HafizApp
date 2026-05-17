@@ -18,9 +18,10 @@ class QfApiConfig {
   );
   static const bool defaultIsProduction = _flavor != 'prelive';
 
-  static const String clientId = defaultIsProduction
-      ? String.fromEnvironment('QF_CLIENT_ID', defaultValue: '')
-      : '5cd47ccf-93e5-47d0-83b5-9bf538bb5759';
+  static const String clientId = String.fromEnvironment(
+    'QF_CLIENT_ID',
+    defaultValue: '',
+  );
   static const String clientSecret = String.fromEnvironment(
     'QF_CLIENT_SECRET',
     defaultValue: '',

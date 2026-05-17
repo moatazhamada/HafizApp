@@ -23,6 +23,7 @@ import 'core/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'presentation/force_update/force_update_screen.dart';
+import 'domain/repository/khatmah_repository.dart';
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
@@ -364,6 +365,17 @@ class _ReadyAppState extends State<_ReadyApp> {
     super.initState();
     _maybeShowChangelog();
     _setInitialUserProperties();
+    _recordAppOpenForStreak();
+  }
+
+  void _recordAppOpenForStreak() {
+    try {
+      if (sl.isRegistered<KhatmahRepository>()) {
+        unawaited(sl<KhatmahRepository>().recordAppOpen());
+      }
+    } catch (e) {
+      Logger.warning('App open streak record failed: $e', feature: 'Streak');
+    }
   }
 
   void _setInitialUserProperties() {

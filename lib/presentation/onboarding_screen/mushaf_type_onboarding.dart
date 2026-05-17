@@ -78,7 +78,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 Text(
                   'lbl_select_mushaf_type'.tr,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
@@ -89,7 +89,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                   child: Text(
                     'msg_mushaf_type_desc'.tr,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -119,12 +119,12 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               width: iconSize,
                               height: iconSize,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(iconRadius),
                               ),
                               child: Icon(
                                 Icons.menu_book_rounded,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 size: iconIconSize,
                               ),
                             ),
@@ -133,7 +133,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                               type.label.tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 15,
                               ),
                               textAlign: TextAlign.center,
@@ -142,7 +142,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                             Text(
                               type.descriptionKey.tr,
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: 12,
                               ),
                               textAlign: TextAlign.center,

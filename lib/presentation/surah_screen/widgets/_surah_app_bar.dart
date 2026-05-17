@@ -177,9 +177,15 @@ class _SurahAppBar extends StatelessWidget {
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true,
+        centerTitle: false,
+        titlePadding: const EdgeInsetsDirectional.only(
+          start: 72,
+          end: 16,
+          bottom: 16,
+        ),
         title: FittedBox(
           fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
           child: Semantics(
             header: true,
             child: Text(

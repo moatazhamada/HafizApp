@@ -64,7 +64,11 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
           final online = await _checkReachability();
           if (!isClosed) {
             emit(
-              state.copyWith(isOnline: online, connectionType: results.first),
+              state.copyWith(
+                isOnline: online,
+                connectionType:
+                    results.firstOrNull ?? ConnectivityResult.none,
+              ),
             );
           }
         }

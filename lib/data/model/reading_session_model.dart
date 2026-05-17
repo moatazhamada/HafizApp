@@ -1,3 +1,4 @@
+import '../../core/utils/date_time_utils.dart';
 import '../../domain/entities/reading_session.dart';
 
 class ReadingSessionModel extends ReadingSession {
@@ -25,7 +26,7 @@ class ReadingSessionModel extends ReadingSession {
       startVerse: (json['startVerse'] as num).toInt(),
       endVerse: (json['endVerse'] as num).toInt(),
       durationSeconds: (json['durationSeconds'] as num).toInt(),
-      readAt: DateTime.parse(json['readAt'] as String),
+      readAt: parseDateTime(json['readAt']) ?? DateTime.now(),
     );
   }
 

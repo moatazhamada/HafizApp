@@ -158,6 +158,7 @@ final Map<String, String> enUs = {
   'msg_mic_permission': 'Microphone Access',
   'msg_mic_permission_desc':
       'Hafiz needs microphone access to verify your recitation. You can change this anytime in your device settings.',
+  'msg_voice_init_failed': 'Voice recognition could not be started. Please try again.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility
@@ -264,6 +265,12 @@ final Map<String, String> enUs = {
   'lbl_day_streak': 'day streak',
   'lbl_keep_going': 'Keep going!',
   'lbl_log_type_selector': 'Log type: Pages or Verses',
+  'lbl_log_reading': 'Log Reading',
+  'lbl_log_manual_reading': 'Log Manual Reading',
+  'lbl_pages': 'Pages',
+  'lbl_number_of_pages': 'Number of pages',
+  'lbl_number_of_verses': 'Number of verses',
+  'msg_log_manual_reading_desc': 'Enter the number of pages or verses you read',
   'msg_enter_amount': 'Enter amount',
   'lbl_save_reading_log': 'Save reading log',
   'lbl_last_7_days': 'Last 7 Days',

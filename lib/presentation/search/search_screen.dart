@@ -406,12 +406,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _removeTashkeel(String text) {
-    final tashkeel = RegExp(
-      r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
-    );
-    return text.replaceAll(tashkeel, '');
-  }
+  static final RegExp _tashkeelPattern = RegExp(
+    r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
+  );
+
+  String _removeTashkeel(String text) => text.replaceAll(_tashkeelPattern, '');
 
   Widget _buildHighlightedText(
     BuildContext context,
@@ -506,11 +505,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  bool _isTashkeel(String char) {
-    return RegExp(
-      r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
-    ).hasMatch(char);
-  }
+  bool _isTashkeel(String char) => _tashkeelPattern.hasMatch(char);
 
   Widget _plainText(BuildContext context, String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

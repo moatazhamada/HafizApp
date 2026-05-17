@@ -84,12 +84,12 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 Icons.language_rounded,
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 40,
               ),
             ),
@@ -99,7 +99,7 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
             Text(
               'lbl_choose_language'.tr,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -110,7 +110,7 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: widget.isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -195,12 +195,12 @@ class _LanguageCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.language_rounded,
-                color: isLightBackground ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7) : Theme.of(context).colorScheme.onPrimary,
+                color: isLightBackground ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7) : Theme.of(context).colorScheme.onSurface,
                 size: 24,
               ),
             )
@@ -211,14 +211,14 @@ class _LanguageCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
                 code!,
                 style: TextStyle(
-                  color: isLightBackground ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -232,7 +232,7 @@ class _LanguageCard extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isLightBackground ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -241,9 +241,7 @@ class _LanguageCard extends StatelessWidget {
                   Text(
                     sublabel,
                     style: TextStyle(
-                      color: isLightBackground
-                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -255,7 +253,7 @@ class _LanguageCard extends StatelessWidget {
               Icons.check_circle_rounded,
               color: isLightBackground
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onPrimary,
+                  : Theme.of(context).colorScheme.onSurface,
               size: 24,
             )
           else
@@ -263,7 +261,7 @@ class _LanguageCard extends StatelessWidget {
               rtlForwardArrowIos(context),
               color: isLightBackground
                   ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)
-                  : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5),
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               size: 16,
             ),
         ],

@@ -72,14 +72,14 @@ class _NotificationPermissionPageState
               decoration: BoxDecoration(
                 color: widget.isLightBackground
                     ? AppColors.of(context).warning.withValues(alpha: 0.15)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 Icons.notifications_active_rounded,
                 color: widget.isLightBackground
                     ? AppColors.of(context).warning
-                    : Theme.of(context).colorScheme.onPrimary,
+                    : Theme.of(context).colorScheme.onSurface,
                 size: 40,
               ),
             ),
@@ -91,7 +91,7 @@ class _NotificationPermissionPageState
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: widget.isLightBackground
                     ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.onPrimary,
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -102,7 +102,7 @@ class _NotificationPermissionPageState
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: widget.isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
@@ -186,12 +186,12 @@ class _BenefitRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: isLightBackground
                 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
-                : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: isLightBackground ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7) : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             size: 22,
           ),
         ),
@@ -203,7 +203,7 @@ class _BenefitRow extends StatelessWidget {
               Text(
                 title,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isLightBackground ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -213,7 +213,7 @@ class _BenefitRow extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isLightBackground
                       ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
-                      : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],

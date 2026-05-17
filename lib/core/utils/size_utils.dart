@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 // Backing field to allow optional override from widgets with context.
@@ -8,9 +7,11 @@ MediaQueryData? _mediaQueryDataOverride;
 MediaQueryData get mediaQueryData {
   final override = _mediaQueryDataOverride;
   if (override != null) return override;
-  final ui.FlutterView view =
-      WidgetsBinding.instance.platformDispatcher.views.first;
-  return MediaQueryData.fromView(view);
+  final views = WidgetsBinding.instance.platformDispatcher.views;
+  if (views.isEmpty) {
+    return const MediaQueryData();
+  }
+  return MediaQueryData.fromView(views.first);
 }
 
 // Allow assignment like `mediaQueryData = MediaQuery.of(context)`.

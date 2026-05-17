@@ -84,7 +84,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                     'msg_no_internet_connection'.tr,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -103,7 +103,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                 imagePath: ImageConstant.imgGroupCircles,
                 height: 150.adaptSize,
                 width: 150.adaptSize,
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -145,7 +145,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                             child: Container(
                               color: widget.isLightBackground
                     ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
-                    : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                               child: CustomImageView(
                                 imagePath: ImageConstant.imgQuranOnboarding,
                                 height: imageHeight,
@@ -164,7 +164,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           style: theme.textTheme.displayMedium?.copyWith(
                             color: widget.isLightBackground
                                 ? Theme.of(context).colorScheme.primary
-                                : AppColors.of(context).primaryLight,
+                                : Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -178,7 +178,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: widget.isLightBackground
                                 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)
-                                : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                             fontFamily: 'Poppins',
                             height: 1.5,
                           ),

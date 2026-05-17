@@ -147,9 +147,18 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
   @override
   Future<List<ReadingSessionModel>> getOfflineSessions() async {
     try {
-      return offlineSessionBox.values
-          .map((raw) => ReadingSessionModel.fromJson(Map<String, dynamic>.from(raw)))
-          .toList();
+      final sessions = <ReadingSessionModel>[];
+      for (final raw in offlineSessionBox.values) {
+        if (raw is! Map) continue;
+        try {
+          sessions.add(
+            ReadingSessionModel.fromJson(Map<String, dynamic>.from(raw)),
+          );
+        } catch (e) {
+          Logger.warning('Skipping malformed offline session: $e', feature: 'Khatmah');
+        }
+      }
+      return sessions;
     } catch (e) {
       throw CacheException();
     }

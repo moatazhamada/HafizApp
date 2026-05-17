@@ -21,6 +21,22 @@ class PrefUtils {
 
   String? getCachedAppVersion() => _cachedAppVersion;
 
+  String? getLastRunVersion() {
+    try {
+      return _requirePrefs().getString('lastRunVersion');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  void setLastRunVersion(String version) {
+    try {
+      _requirePrefs().setString('lastRunVersion', version);
+    } catch (e) {
+      Logger.warning('Failed to set lastRunVersion: $e', feature: 'Preferences');
+    }
+  }
+
   /// Initialise SharedPreferences. Safe to call multiple times; concurrent
   /// callers will coalesce on the same Completer.
   Future<void> init() async {

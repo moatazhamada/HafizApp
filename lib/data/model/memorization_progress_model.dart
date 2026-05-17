@@ -1,3 +1,4 @@
+import '../../core/utils/date_time_utils.dart';
 import '../../domain/entities/memorization_progress.dart';
 
 class MemorizationProgressModel extends MemorizationProgress {
@@ -35,8 +36,8 @@ class MemorizationProgressModel extends MemorizationProgress {
       easeFactor: (json['easeFactor'] as num?)?.toInt() ?? 2500,
       interval: (json['interval'] as num?)?.toInt() ?? 0,
       repetition: (json['repetition'] as num?)?.toInt() ?? 0,
-      nextReviewDate: DateTime.parse(json['nextReviewDate'] as String),
-      lastReviewDate: DateTime.parse(json['lastReviewDate'] as String),
+      nextReviewDate: parseDateTime(json['nextReviewDate']) ?? DateTime.now(),
+      lastReviewDate: parseDateTime(json['lastReviewDate']) ?? DateTime.now(),
       bestScore: (json['bestScore'] as num?)?.toDouble() ?? 0,
     );
   }

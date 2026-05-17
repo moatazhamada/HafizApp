@@ -137,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen>
                           Navigator.pop(context);
                           final surah = QuranIndex.quranSurahs.firstWhere(
                             (s) => s.id == juz.startSurahId,
+                            orElse: () => QuranIndex.quranSurahs.first,
                           );
                           PrefUtils().saveLastReadSurah(surah);
                           homeBloc.add(HomeShowLastSurahEvent());

@@ -156,6 +156,7 @@ final Map<String, String> arEg = {
   'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
   'msg_mic_permission_desc':
       'يحتاج حافظ إلى إذن الميكروفون للتحقق من تلاوتك. يمكنك تغيير هذا في أي وقت من إعدادات جهازك.',
+  'msg_voice_init_failed': 'تعذر بدء التعرف على الصوت. يرجى المحاولة مرة أخرى.',
   'msg_tap_to_resume': 'اضغط للمتابعة',
   'lbl_incorrect': 'تحتاج لتحسين',
   // Accessibility
@@ -260,6 +261,12 @@ final Map<String, String> arEg = {
   'lbl_day_streak': 'يوم متتالي',
   'lbl_keep_going': 'استمر!',
   'lbl_log_type_selector': 'نوع التسجيل: صفحات أو آيات',
+  'lbl_log_reading': 'تسجيل القراءة',
+  'lbl_log_manual_reading': 'تسجيل قراءة يدوية',
+  'lbl_pages': 'صفحات',
+  'lbl_number_of_pages': 'عدد الصفحات',
+  'lbl_number_of_verses': 'عدد الآيات',
+  'msg_log_manual_reading_desc': 'أدخل عدد الصفحات أو الآيات التي قرأتها',
   'msg_enter_amount': 'أدخل الكمية',
   'lbl_save_reading_log': 'حفظ سجل القراءة',
   'lbl_last_7_days': 'آخر ٧ أيام',

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/failures.dart';
 import '../../../core/utils/logger.dart';
@@ -41,14 +42,19 @@ class SurahRepositoryImpl implements SurahRepository {
     final box = Hive.isBoxOpen('surah_cache') ? Hive.box('surah_cache') : null;
     final cached = box?.get(surahId);
     if (cached is Map<String, dynamic>) {
-      try {
-        return Right(ChapterResponse.fromJson(cached).chapters);
-      } catch (e, stackTrace) {
-        Logger.warning(
-          'Failed to decode cached surah $surahId: $e',
-          feature: 'Surah',
-          stackTrace: stackTrace,
-        );
+      // Validate cache version before decoding
+      if (cached['_cacheVersion'] == 1) {
+        try {
+          return Right(ChapterResponse.fromJson(cached).chapters);
+        } catch (e, stackTrace) {
+          Logger.warning(
+            'Failed to decode cached surah $surahId: $e',
+            feature: 'Surah',
+            stackTrace: stackTrace,
+          );
+        }
+      } else {
+        Logger.info('Stale cache version for surah $surahId, re-fetching', feature: 'Surah');
       }
     }
 
@@ -106,6 +112,7 @@ class SurahRepositoryImpl implements SurahRepository {
 
   Map<String, dynamic> _chapterResponseToJson(ChapterResponse resp) {
     return {
+      '_cacheVersion': 1,
       'chapter': resp.chapters
           .map(
             (c) => {
@@ -137,25 +144,17 @@ class SurahRepositoryImpl implements SurahRepository {
     try {
       if (Hive.isBoxOpen('surah_cache')) {
         final box = Hive.box('surah_cache');
-        final allMatches = <Verse>[];
-        // Heuristic: iterating all keys is expensive, but necessary for offline fallback if assets fail
-        // Since we only have 114 Surahs, this is acceptable.
+        final cacheEntries = <Map<String, dynamic>>[];
         for (var key in box.keys) {
           final data = box.get(key);
-          if (data is Map<String, dynamic>) {
-            try {
-              final response = ChapterResponse.fromJson(data);
-              for (final verse in response.chapters) {
-                if (verse.arabicText.contains(query)) {
-                  allMatches.add(verse);
-                }
-              }
-            } catch (e) {
-              // Ignore malformed cache entries
-              Logger.warning('Ignoring malformed cache entry: $e', feature: 'Search');
-            }
+          if (data is Map<String, dynamic> && data['_cacheVersion'] == 1) {
+            cacheEntries.add(data);
           }
         }
+        final allMatches = await compute(_searchCacheWorker, <String, dynamic>{
+          'entries': cacheEntries,
+          'query': query,
+        });
         return Right(allMatches);
       }
     } catch (e, stackTrace) {
@@ -170,4 +169,23 @@ class SurahRepositoryImpl implements SurahRepository {
 
     return const Right([]);
   }
+}
+
+List<Verse> _searchCacheWorker(Map<String, dynamic> params) {
+  final entries = params['entries'] as List<Map<String, dynamic>>;
+  final query = params['query'] as String;
+  final allMatches = <Verse>[];
+  for (final data in entries) {
+    try {
+      final response = ChapterResponse.fromJson(data);
+      for (final verse in response.chapters) {
+        if (verse.arabicText.contains(query)) {
+          allMatches.add(verse);
+        }
+      }
+    } catch (e) {
+      // Ignore malformed cache entries
+    }
+  }
+  return allMatches;
 }

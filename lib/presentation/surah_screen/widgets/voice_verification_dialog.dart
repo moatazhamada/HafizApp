@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:hafiz_app/core/audio/whisper_platform.dart'
     if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
@@ -12,6 +13,7 @@ import '../../../injection_container.dart';
 
 import '../../../domain/entities/verse.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/services/voice_recording_controller.dart';
 import '../custom_asr_service.dart';
 import '../local_whisper_service.dart';
 import '../qrc_recitation_service.dart';
@@ -89,17 +91,42 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   @override
   void initState() {
     super.initState();
+    VoiceRecordingController.register(
+      'voice_verification_dialog_${widget.aya.verseNumber}',
+      _cleanup,
+    );
     _expectedText = widget.expectedText;
     _whisperModel = _resolveWhisperModel(PrefUtils().getWhisperModel());
 
     // Auto-start listening on first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startListening();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await _voiceService.initialize();
+        if (mounted) await _startListening();
+      } catch (e, stackTrace) {
+        Logger.error(
+          'Voice verification auto-start failed: $e',
+          feature: 'VoiceVerification',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        if (mounted) {
+          setState(() {
+            _statusColor = AppColors.of(context).needsReviewStatus;
+            _feedbackTitle = 'msg_voice_init_failed'.tr;
+            _showFeedback = true;
+          });
+        }
+      }
     });
   }
 
   @override
+  @override
   void dispose() {
+    VoiceRecordingController.unregister(
+      'voice_verification_dialog_${widget.aya.verseNumber}',
+    );
     _cleanup();
     super.dispose();
   }
@@ -108,6 +135,11 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     await _voiceService.stop();
     await _qrcSub?.cancel();
     await _qrcService.dispose();
+    try {
+      await _customRecorder.stopRecorder();
+    } catch (e) {
+      // Ignore — may not have been recording
+    }
     try {
       await _customRecorder.closeRecorder();
     } catch (e) {
@@ -151,17 +183,47 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   Future<void> _startListening() async {
     if (_isListening) return;
 
-    setState(() {
-      _resetState();
-      _isListening = true;
-      _statusColor = Theme.of(context).colorScheme.primary;
-    });
-
     final provider = PrefUtils().getRecitationProvider();
     final bool useQrc = provider == 'qrc';
     final bool useCustom = provider == 'custom';
     final bool useWhisper = provider == 'local_whisper';
     final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
+
+    // Recording-based providers need microphone permission
+    if (useQrc || useWhisper || useCustom) {
+      try {
+        final micStatus = await Permission.microphone.request();
+        if (!micStatus.isGranted) {
+          if (!mounted) return;
+          setState(() {
+            _statusColor = AppColors.of(context).needsReviewStatus;
+            _feedbackTitle = 'msg_mic_permission'.tr;
+            _showFeedback = true;
+          });
+          return;
+        }
+      } catch (e, stackTrace) {
+        Logger.error(
+          'Microphone permission request failed: $e',
+          feature: 'VoiceVerification',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_mic_permission'.tr;
+          _showFeedback = true;
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _resetState();
+      _isListening = true;
+      _statusColor = Theme.of(context).colorScheme.primary;
+    });
 
     if (useQrc) {
       setState(() {
@@ -274,7 +336,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           }
 
           if (!mounted) return;
-          _analyzeRecitation(effectiveText);
+          unawaited(_analyzeRecitation(effectiveText));
         },
       );
     }
@@ -336,9 +398,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     });
   }
 
-  void _analyzeRecitation(String effectiveText) {
+  Future<void> _analyzeRecitation(String effectiveText) async {
     if (!mounted) return;
-    final analysis = _voiceService.analyzeRecitation(
+    final analysis = await _voiceService.analyzeRecitationAsync(
       effectiveText,
       _expectedText,
       allowPartial: true,
@@ -446,7 +508,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             });
           }
           if (transcribed != null && transcribed.isNotEmpty) {
-            _analyzeRecitation(transcribed);
+            unawaited(_analyzeRecitation(transcribed));
           }
         }
       } else {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -300,7 +301,7 @@ class _MushafScreenState extends State<MushafScreen>
         final jsonStr = await rootBundle.loadString(
           'assets/quran/uthmani/surah_${range.surahId}.json',
         );
-        final data = json.decode(jsonStr) as Map<String, dynamic>;
+        final data = await compute(_decodeMushafJson, jsonStr);
         final versesRaw = data.containsKey('verses')
             ? data['verses']
             : data['chapter'];
@@ -814,6 +815,10 @@ class _MushafScreenState extends State<MushafScreen>
       return n != null ? d[n] : c;
     }).join();
   }
+}
+
+Map<String, dynamic> _decodeMushafJson(String jsonStr) {
+  return json.decode(jsonStr) as Map<String, dynamic>;
 }
 
 class _VerseText {

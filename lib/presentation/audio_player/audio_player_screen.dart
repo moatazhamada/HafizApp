@@ -339,15 +339,17 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
   }
 
   void _previousVerse() {
-    if (_currentVerse > 0) {
-      _handler.seekToVerse(_currentVerse - 1);
+    final current = _handler.currentVerseIndex;
+    if (current > 0) {
+      _handler.seekToVerse(current - 1);
     }
   }
 
   void _nextVerse() {
     final total = _getVerseCount(widget.surahId);
-    if (_currentVerse < total - 1) {
-      _handler.seekToVerse(_currentVerse + 1);
+    final current = _handler.currentVerseIndex;
+    if (current < total - 1) {
+      _handler.seekToVerse(current + 1);
     }
   }
 
@@ -486,145 +488,122 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
   /// entire screen on every verse change.
 
   Widget _buildControls(ThemeData theme, bool isPlaying) {
-    // In RTL the Quran is read right-to-left, so spatial "previous"
-    // is on the right and "next" is on the left. We flip the skip
-    // icons horizontally so the arrows match the user's mental model.
-    Widget rtlAwareIcon(
-      IconData icon,
-      BuildContext rtlContext, {
-      double size = 24,
-    }) {
-      final isRtl = Directionality.of(rtlContext) == TextDirection.rtl;
-      final child = Icon(icon, size: size);
-      if (!isRtl) return child;
-      // Only flip directional skip icons, not temporal replay/forward.
-      if (icon != Icons.skip_previous && icon != Icons.skip_next) {
-        return child;
-      }
-      return Transform.flip(flipX: true, child: child);
-    }
+    final canControl = isPlaying || _handler.isPlaying || _isLoading;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Builder(
-        builder: (rtlContext) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Previous verse (Spatially on the right in RTL)
-              Semantics(
-                button: true,
-                label: 'lbl_previous_verse'.tr,
-                child: IconButton(
-                  icon: rtlAwareIcon(Icons.skip_previous, rtlContext, size: 32),
-                  tooltip: 'lbl_previous_verse'.tr,
-                  onPressed: isPlaying ? _previousVerse : null,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Rewind 10s
-              Semantics(
-                button: true,
-                label: 'lbl_rewind_10'.tr,
-                child: IconButton(
-                  icon: const Icon(Icons.replay_10, size: 28),
-                  tooltip: 'lbl_rewind_10'.tr,
-                  onPressed: isPlaying
-                      ? () {
-                          _handler.seekRelative(const Duration(seconds: -10));
-                          setState(() {});
-                        }
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Play/Pause
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: _isLoading
-                    ? Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: CircularProgressIndicator(
-                          color: theme.colorScheme.onPrimary,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Semantics(
-                        button: true,
-                        label: _handler.isPlaying
-                            ? 'lbl_pause'.tr
-                            : 'lbl_play'.tr,
-                        child: IconButton(
-                          icon: Icon(
-                            _handler.isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: theme.colorScheme.onPrimary,
-                            size: 36,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Spatial skip: previous in LTR, next in RTL
+        Semantics(
+          button: true,
+          label: 'lbl_previous_verse'.tr,
+          child: IconButton(
+            icon: rtlSkipPreviousIcon(context, size: 32),
+            tooltip: 'lbl_previous_verse'.tr,
+            onPressed: canControl ? _previousVerse : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Rewind 10s — temporal, never flipped
+        Semantics(
+          button: true,
+          label: 'lbl_rewind_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.replay_10, size: 28),
+            tooltip: 'lbl_rewind_10'.tr,
+            onPressed: canControl
+                ? () {
+                    _handler.seekRelative(const Duration(seconds: -10));
+                    setState(() {});
+                  }
+                : null,
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Play/Pause
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            shape: BoxShape.circle,
+          ),
+          child: _isLoading
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.onPrimary,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Semantics(
+                  button: true,
+                  label: _handler.isPlaying
+                      ? 'lbl_pause'.tr
+                      : 'lbl_play'.tr,
+                  child: IconButton(
+                    icon: Icon(
+                      _handler.isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: theme.colorScheme.onPrimary,
+                      size: 36,
+                    ),
+                    tooltip: _handler.isPlaying
+                        ? 'lbl_pause'.tr
+                        : 'lbl_play'.tr,
+                    onPressed: () {
+                      if (_handler.isPlaying) {
+                        _handler.pause();
+                        unawaited(
+                          sl<AnalyticsService>().logAudioPause(
+                            surahId: widget.surahId,
                           ),
-                          tooltip: _handler.isPlaying
-                              ? 'lbl_pause'.tr
-                              : 'lbl_play'.tr,
-                          onPressed: () {
-                            if (_handler.isPlaying) {
-                              _handler.pause();
-                              unawaited(
-                                sl<AnalyticsService>().logAudioPause(
-                                  surahId: widget.surahId,
-                                ),
-                              );
-                            } else if (_handler.currentSurahId ==
-                                widget.surahId) {
-                              _handler.resume();
-                              unawaited(
-                                sl<AnalyticsService>().logAudioPlay(
-                                  surahId: widget.surahId,
-                                  verseNumber: _currentVerse >= 0 ? _currentVerse + 1 : null,
-                                  reciterId: _getReciterCdnId(),
-                                ),
-                              );
-                            } else {
-                              _play();
-                            }
-                            setState(() {});
-                          },
-                        ),
-                      ),
-              ),
-              const SizedBox(width: 16),
-              // Forward 10s
-              Semantics(
-                button: true,
-                label: 'lbl_forward_10'.tr,
-                child: IconButton(
-                  icon: const Icon(Icons.forward_10, size: 28),
-                  tooltip: 'lbl_forward_10'.tr,
-                  onPressed: isPlaying
-                      ? () {
-                          _handler.seekRelative(const Duration(seconds: 10));
-                          setState(() {});
-                        }
-                      : null,
+                        );
+                      } else if (_handler.currentSurahId ==
+                          widget.surahId) {
+                        _handler.resume();
+                        unawaited(
+                          sl<AnalyticsService>().logAudioPlay(
+                            surahId: widget.surahId,
+                            verseNumber: _currentVerse >= 0 ? _currentVerse + 1 : null,
+                            reciterId: _getReciterCdnId(),
+                          ),
+                        );
+                      } else {
+                        _play();
+                      }
+                      setState(() {});
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Next verse
-              Semantics(
-                button: true,
-                label: 'lbl_next_verse'.tr,
-                child: IconButton(
-                  icon: rtlAwareIcon(Icons.skip_next, rtlContext, size: 32),
-                  tooltip: 'lbl_next_verse'.tr,
-                  onPressed: isPlaying ? _nextVerse : null,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+        ),
+        const SizedBox(width: 16),
+        // Forward 10s — temporal, never flipped
+        Semantics(
+          button: true,
+          label: 'lbl_forward_10'.tr,
+          child: IconButton(
+            icon: const Icon(Icons.forward_10, size: 28),
+            tooltip: 'lbl_forward_10'.tr,
+            onPressed: canControl
+                ? () {
+                    _handler.seekRelative(const Duration(seconds: 10));
+                    setState(() {});
+                  }
+                : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Spatial skip: next in LTR, previous in RTL
+        Semantics(
+          button: true,
+          label: 'lbl_next_verse'.tr,
+          child: IconButton(
+            icon: rtlSkipNextIcon(context, size: 32),
+            tooltip: 'lbl_next_verse'.tr,
+            onPressed: canControl ? _nextVerse : null,
+          ),
+        ),
+      ],
     );
   }
 
@@ -713,7 +692,9 @@ class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
     if (!isPlaying) return const SizedBox.shrink();
 
     final displayVerse = _currentVerse + 1;
-    final progress = displayVerse / widget.totalVerses;
+    final progress = widget.totalVerses > 0
+        ? displayVerse / widget.totalVerses
+        : 0.0;
     final theme = Theme.of(context);
 
     return Column(

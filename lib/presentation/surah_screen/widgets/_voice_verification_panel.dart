@@ -24,6 +24,10 @@ class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
   int _sessionTotalCount = 0;
 
   Future<void> show(Verse aya) async {
+    VoiceRecordingController.register(
+      'voice_verification_panel',
+      () async => _voiceService.stop(),
+    );
     bool available = await _voiceService.requestPermission();
 
     if (!mounted) return;
@@ -274,7 +278,10 @@ class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
 
   @override
   void dispose() {
+    VoiceRecordingController.unregister('voice_verification_panel');
     _voiceService.stop();
+    _voiceService.dispose();
+    _qiraatService.dispose();
     super.dispose();
   }
 

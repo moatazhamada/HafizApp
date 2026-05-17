@@ -92,17 +92,14 @@ class SurahListItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
                     // Arabic Name (Right)
-                    Hero(
-                      tag: 'surah-title-$surahId',
-                      child: Text(
-                        nameArabic,
-                        textDirection: TextDirection.rtl,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontFamily: 'NotoNaskhArabic',
-                          color: appColors.primary,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
+                    Text(
+                      nameArabic,
+                      textDirection: TextDirection.rtl,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontFamily: 'NotoNaskhArabic',
+                        color: appColors.primary,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
                       ),
                     ),
                   ]
@@ -112,17 +109,14 @@ class SurahListItem extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Hero(
-                            tag: 'surah-title-$surahId',
-                            child: Text(
-                              nameArabic,
-                              textDirection: TextDirection.rtl,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontFamily: 'NotoNaskhArabic',
-                                color: appColors.primary,
-                                fontWeight: FontWeight.w600,
-                                height: 1.2,
-                              ),
+                          Text(
+                            nameArabic,
+                            textDirection: TextDirection.rtl,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontFamily: 'NotoNaskhArabic',
+                              color: appColors.primary,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
                             ),
                           ),
                           const SizedBox(height: 4),

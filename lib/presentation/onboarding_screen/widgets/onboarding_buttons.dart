@@ -26,18 +26,10 @@ class OnboardingPrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: isLightBackground
-              ? colorScheme.primary
-              : Theme.of(context).colorScheme.onPrimary,
-          foregroundColor: isLightBackground
-              ? Theme.of(context).colorScheme.onPrimary
-              : colorScheme.primary,
-          disabledBackgroundColor: isLightBackground
-              ? colorScheme.primary.withValues(alpha: 0.4)
-              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.4),
-          disabledForegroundColor: isLightBackground
-              ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.5)
-              : colorScheme.primary.withValues(alpha: 0.5),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          disabledBackgroundColor: colorScheme.primary.withValues(alpha: 0.4),
+          disabledForegroundColor: colorScheme.onPrimary.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -79,9 +71,7 @@ class OnboardingSecondaryButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: isLightBackground
-            ? colorScheme.primary
-            : Theme.of(context).colorScheme.onPrimary,
+        foregroundColor: colorScheme.primary,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -120,14 +110,16 @@ class OnboardingSelectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final onSurface = colorScheme.onSurface;
+
     return Material(
       color: isSelected
           ? (isLightBackground
               ? colorScheme.primary.withValues(alpha: 0.1)
-              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2))
+              : onSurface.withValues(alpha: 0.15))
           : (isLightBackground
               ? colorScheme.primary.withValues(alpha: 0.05)
-              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1)),
+              : onSurface.withValues(alpha: 0.08)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -141,7 +133,7 @@ class OnboardingSelectionCard extends StatelessWidget {
               color: isSelected
                   ? (isLightBackground
                       ? colorScheme.primary.withValues(alpha: 0.4)
-                      : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.6))
+                      : onSurface.withValues(alpha: 0.5))
                   : Colors.transparent,
               width: 2,
             ),
@@ -176,12 +168,12 @@ class OnboardingHeader extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.15),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Icon(
             icon,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 40,
           ),
         ),
@@ -189,7 +181,7 @@ class OnboardingHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
           textAlign: TextAlign.center,
@@ -199,7 +191,7 @@ class OnboardingHeader extends StatelessWidget {
           Text(
             subtitle!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
             textAlign: TextAlign.center,
           ),

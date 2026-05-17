@@ -140,6 +140,7 @@ class _DevoteeSurfaceState extends State<DevoteeSurface> {
     if (juzInfo != null) {
       final surah = QuranIndex.quranSurahs.firstWhere(
         (s) => s.id == juzInfo.startSurahId,
+        orElse: () => QuranIndex.quranSurahs.first,
       );
       NavigatorService.pushNamed(
         AppRoutes.surahPage,

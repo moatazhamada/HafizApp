@@ -109,7 +109,8 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         final date = today.subtract(Duration(days: i));
         final key = _dateKey(date);
         final log = logs[key];
-        if (log != null && log.versesRead > 0) {
+        // Count any day the app was opened (log exists) or verses were read
+        if (log != null) {
           streak++;
         } else {
           break;
@@ -295,6 +296,28 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
     } catch (e) {
       Logger.error('Failed to sync activity days from cloud: $e', feature: 'Khatmah');
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> recordAppOpen() async {
+    try {
+      final today = _today();
+      final existing = await localDataSource.getLog(today);
+      if (existing != null) return; // Already recorded today
+
+      await localDataSource.saveLog(
+        DailyReadingLogModel(
+          date: today,
+          versesRead: 0,
+          juzRead: 0,
+          surahsVisited: 0,
+          readingDuration: Duration.zero,
+          syncStatus: SyncStatus.pending,
+        ),
+      );
+    } catch (e) {
+      Logger.warning('Failed to record app open: $e', feature: 'Khatmah');
     }
   }
 

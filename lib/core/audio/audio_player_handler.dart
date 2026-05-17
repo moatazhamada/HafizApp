@@ -21,6 +21,7 @@ class AudioPlayerHandler {
   Timer? _sleepTimer;
   DateTime? _sleepTimerEnd;
   bool _isDisposed = false;
+  int _playGeneration = 0;
   StreamSubscription<ProcessingState>? _completionSub;
   Completer<void>? _verseCompleter;
   
@@ -43,6 +44,7 @@ class AudioPlayerHandler {
     int startVerse = 0,
   }) async {
     if (_isDisposed) return;
+    _playGeneration++;
     _currentSurahId = surahId;
     _verseUrls = verseAudioUrls;
     _currentVerseIndex = startVerse;
@@ -51,6 +53,8 @@ class AudioPlayerHandler {
 
   Future<void> _playCurrentVerse() async {
     if (_isDisposed || _currentSurahId == null) return;
+
+    final generation = _playGeneration;
 
     if (_verseUrls == null || _currentVerseIndex >= _verseUrls!.length) {
       if (_isLooping && _loopStart != null && _loopEnd != null) {
@@ -64,14 +68,14 @@ class AudioPlayerHandler {
 
     try {
       await _player.setUrl(_verseUrls![_currentVerseIndex]);
-      if (_isDisposed || _currentSurahId == null) return;
+      if (_isDisposed || generation != _playGeneration) return;
       _currentVerseController.add(_currentVerseIndex);
       unawaited(_saveState());
       await _player.play();
-      if (_isDisposed || _currentSurahId == null) return;
+      if (_isDisposed || generation != _playGeneration) return;
 
       await _waitForCompletion();
-      if (_isDisposed || _currentSurahId == null) return;
+      if (_isDisposed || generation != _playGeneration) return;
 
       if (_sleepTimerEnd != null && DateTime.now().isAfter(_sleepTimerEnd!)) {
         await pause();
@@ -89,7 +93,7 @@ class AudioPlayerHandler {
 
       await _playCurrentVerse();
     } catch (e) {
-      if (!_isDisposed) {
+      if (!_isDisposed && generation == _playGeneration) {
         _currentVerseController.add(-1);
       }
     }
@@ -99,7 +103,8 @@ class AudioPlayerHandler {
     await _completionSub?.cancel();
     _verseCompleter = Completer<void>();
     _completionSub = _player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
+      if (state == ProcessingState.completed ||
+          state == ProcessingState.idle) {
         if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
           _verseCompleter!.complete();
         }
@@ -172,6 +177,7 @@ class AudioPlayerHandler {
   Future<void> seekToVerse(int verseIndex) async {
     if (_isDisposed || _verseUrls == null) return;
     if (verseIndex < 0 || verseIndex >= _verseUrls!.length) return;
+    _playGeneration++;
     _currentVerseIndex = verseIndex;
     await _completionSub?.cancel();
     _completionSub = null;

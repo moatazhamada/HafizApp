@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'voice_recording_controller.dart';
 
 /// Observes app lifecycle transitions and takes appropriate action:
 /// - Pauses audio when the app is backgrounded
@@ -56,6 +59,12 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
       }
     } catch (e) {
       Logger.warning('Failed to pause audio on background: $e', feature: 'Lifecycle');
+    }
+
+    try {
+      unawaited(VoiceRecordingController.stopAll());
+    } catch (e) {
+      Logger.warning('Failed to stop voice recording on background: $e', feature: 'Lifecycle');
     }
   }
 

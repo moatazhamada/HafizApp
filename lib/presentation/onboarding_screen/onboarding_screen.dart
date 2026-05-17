@@ -143,14 +143,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         decoration: BoxDecoration(
                           color: _isLightBackground
                               ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
-                              : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           rtlBackArrow(context),
                           color: _isLightBackground
                               ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context).colorScheme.onPrimary,
+                              : Theme.of(context).colorScheme.onSurface,
                           size: 20,
                         ),
                       ),

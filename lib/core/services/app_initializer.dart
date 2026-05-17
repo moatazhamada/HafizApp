@@ -20,6 +20,7 @@ import '../quran_index/mushaf_page_index.dart';
 import '../../firebase_options.dart';
 import '../../injection_container.dart' as di;
 import '../../injection_container.dart';
+import '../../data/migrations/migration_runner.dart';
 import 'remote_config_service.dart';
 
 class AppInitializer {
@@ -99,9 +100,25 @@ class AppInitializer {
           await Hive.openBox(box);
         } catch (e) {
           Logger.warning('Failed to open box $box: $e', feature: 'Init');
+          try {
+            await Hive.deleteBoxFromDisk(box);
+            await Hive.openBox(box);
+            Logger.info('Recovered box $box after deletion', feature: 'Init');
+          } catch (e2) {
+            Logger.error('Box $box unrecoverable: $e2', feature: 'Init');
+          }
         }
       }),
     );
+
+    // Run version-based data migrations
+    try {
+      await MigrationRunner([
+        EnsureReadingLogSyncStatusMigration(),
+      ]).run();
+    } catch (e) {
+      Logger.warning('Migration run failed: $e', feature: 'Init');
+    }
 
     try {
       await sl.reset();

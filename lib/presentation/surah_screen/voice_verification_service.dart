@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
@@ -69,7 +70,15 @@ class VoiceVerificationService {
     await _speechToText.stop();
   }
 
+  Future<void> dispose() async {
+    await _speechToText.cancel();
+    await _speechToText.stop();
+  }
+
   /// Analyze spoken vs expected text and return a structured assessment.
+  ///
+  /// Runs on the main isolate for small texts. For longer texts or when
+  /// called from the UI thread, prefer [analyzeRecitationAsync].
   RecitationAnalysis analyzeRecitation(
     String spokenText,
     String expectedText, {
@@ -103,6 +112,34 @@ class VoiceVerificationService {
       isTooShort: isTooShort,
       issues: aligned.issues,
       expectedRange: aligned.expectedRange,
+    );
+  }
+
+  /// Async variant of [analyzeRecitation] that offloads the edit-distance
+  /// computation to a background isolate to avoid jank.
+  Future<RecitationAnalysis> analyzeRecitationAsync(
+    String spokenText,
+    String expectedText, {
+    bool allowPartial = true,
+    double passThreshold = defaultPassThreshold,
+    int minWords = defaultMinWords,
+  }) async {
+    return compute(_analyzeRecitationWorker, <String, dynamic>{
+      'spokenText': spokenText,
+      'expectedText': expectedText,
+      'allowPartial': allowPartial,
+      'passThreshold': passThreshold,
+      'minWords': minWords,
+    });
+  }
+
+  static RecitationAnalysis _analyzeRecitationWorker(Map<String, dynamic> params) {
+    return VoiceVerificationService().analyzeRecitation(
+      params['spokenText'] as String,
+      params['expectedText'] as String,
+      allowPartial: params['allowPartial'] as bool,
+      passThreshold: params['passThreshold'] as double,
+      minWords: params['minWords'] as int,
     );
   }
 

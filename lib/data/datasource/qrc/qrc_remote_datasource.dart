@@ -21,8 +21,11 @@ abstract class QrcRemoteDataSource {
 
 class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
   WebSocketChannel? _channel;
-  StreamController<dynamic>? _eventController =
-      StreamController<dynamic>.broadcast();
+  StreamController<dynamic>? _eventController;
+  StreamController<dynamic> get _eventCtrl {
+    _eventController ??= StreamController<dynamic>.broadcast();
+    return _eventController!;
+  }
 
   bool _intentionalDisconnect = false;
   bool _isConnecting = false;
@@ -32,7 +35,7 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
   Timer? _reconnectTimer;
 
   @override
-  Stream<dynamic> get events => _eventController!.stream;
+  Stream<dynamic> get events => _eventCtrl.stream;
 
   @override
   Future<void> connect() async {
@@ -49,11 +52,11 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       _channel!.stream.listen(
         (message) {
           _reconnectAttempts = 0; // Reset on successful message
-          _eventController?.add(message);
+          _eventCtrl.add(message);
         },
         onError: (e) {
           Logger.error('QRC WebSocket error: $e', feature: 'QRC');
-          _eventController?.addError(e);
+          _eventCtrl.addError(e);
           _handleDisconnect(wasUnexpected: true);
         },
         onDone: () {
@@ -76,10 +79,12 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
     _channel = null;
 
     if (wasUnexpected && !_intentionalDisconnect) {
-      _eventController?.add(const QrcWsClosedEvent(wasUnexpected: true));
+      _eventCtrl.add(const QrcWsClosedEvent(wasUnexpected: true));
       _attemptReconnect();
     } else {
-      _eventController?.add(const QrcWsClosedEvent(wasUnexpected: false));
+      if (_eventController != null) {
+        _eventController!.add(const QrcWsClosedEvent(wasUnexpected: false));
+      }
     }
   }
 

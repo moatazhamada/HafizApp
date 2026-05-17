@@ -21,6 +21,10 @@ abstract class KhatmahRepository {
   /// Fetch Activity Days from QF and merge them into the local database.
   Future<Either<Failure, int>> syncActivityDaysFromCloud();
 
+  /// Record that the user opened the app today. Creates a daily log
+  /// entry if none exists, so the streak counts app opens.
+  Future<void> recordAppOpen();
+
   /// Report a full reading session to QF.
   Future<void> reportReadingSession(ReadingSession session);
 }

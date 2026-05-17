@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'package:hafiz_app/core/services/voice_recording_controller.dart';
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
 import 'widgets/auto_scroll_speed_sheet.dart';
@@ -267,13 +268,16 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
 
     _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
       if (!_isListeningMode || !mounted) return;
-      setState(() {
-        _highlightedVerse = verseIndex >= 0 ? verseIndex + 1 : null;
-      });
-      if (verseIndex >= 0) {
-        _scrollToVerse(verseIndex + 1, chapters);
-        PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+      if (verseIndex < 0) {
+        // Audio finished or error — auto-stop listening mode
+        _stopListeningMode();
+        return;
       }
+      setState(() {
+        _highlightedVerse = verseIndex + 1;
+      });
+      _scrollToVerse(verseIndex + 1, chapters);
+      PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
     });
 
     final urls = _buildVerseAudioUrls();
@@ -284,10 +288,12 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     _listeningSubscription?.cancel();
     _listeningSubscription = null;
     AudioPlayerHandler().stop();
-    setState(() {
-      _isListeningMode = false;
-      _highlightedVerse = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isListeningMode = false;
+        _highlightedVerse = null;
+      });
+    }
   }
 
   /// Starts Listening Mode from a specific verse and plays continuously.
@@ -299,13 +305,15 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
 
     _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
       if (!_isListeningMode || !mounted) return;
-      setState(() {
-        _highlightedVerse = verseIndex >= 0 ? verseIndex + 1 : null;
-      });
-      if (verseIndex >= 0) {
-        _scrollToVerse(verseIndex + 1, _chapters);
-        PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+      if (verseIndex < 0) {
+        _stopListeningMode();
+        return;
       }
+      setState(() {
+        _highlightedVerse = verseIndex + 1;
+      });
+      _scrollToVerse(verseIndex + 1, _chapters);
+      PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
     });
 
     final urls = _buildVerseAudioUrls();
@@ -368,13 +376,16 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-      if (_scrollController.hasClients && _isAutoScrolling) {
-        final max = _scrollController.position.maxScrollExtent;
-        final current = _scrollController.offset;
-        if (current < max) {
-          _scrollController.jumpTo(current + _autoScrollSpeed);
-        } else {
-          _autoScrollTimer?.cancel();
+      if (!mounted || !_scrollController.hasClients || !_isAutoScrolling) {
+        return;
+      }
+      final max = _scrollController.position.maxScrollExtent;
+      final current = _scrollController.offset;
+      if (current < max) {
+        _scrollController.jumpTo(current + _autoScrollSpeed);
+      } else {
+        _autoScrollTimer?.cancel();
+        if (mounted) {
           setState(() => _isAutoScrolling = false);
         }
       }
@@ -393,6 +404,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     if (surahId < 1 || surahId > 114) return;
     final targetSurah = QuranIndex.quranSurahs.firstWhere(
       (s) => s.id == surahId,
+      orElse: () => QuranIndex.quranSurahs.first,
     );
     NavigatorService.popAndPushNamed(
       AppRoutes.surahPage,

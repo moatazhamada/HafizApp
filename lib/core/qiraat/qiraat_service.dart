@@ -27,6 +27,10 @@ class QiraatService {
     if (dio == null) _dio.interceptors.add(DebugLogInterceptor());
   }
 
+  void dispose() {
+    _dio.close(force: true);
+  }
+
   Future<List<QiraatEdition>> fetchEditions() async {
     if (_editionsCache != null && _editionsCache!.isNotEmpty) {
       return _editionsCache!;

@@ -18,6 +18,7 @@ class HomeWidgetService {
   static const _refreshInterval = Duration(hours: 1);
 
   Timer? _refreshTimer;
+  StreamSubscription<Uri?>? _clickSub;
 
   Future<void> initialize() async {
     try {
@@ -26,7 +27,7 @@ class HomeWidgetService {
         await HomeWidget.setAppGroupId('group.com.hafiz.app');
       }
 
-      HomeWidget.widgetClicked.listen(_onWidgetClicked);
+      _clickSub = HomeWidget.widgetClicked.listen(_onWidgetClicked);
 
       // Initial refresh
       await _refreshWidget();
@@ -47,6 +48,7 @@ class HomeWidgetService {
 
   void dispose() {
     _refreshTimer?.cancel();
+    _clickSub?.cancel();
     LocaleController.notifier.removeListener(_onLocaleChanged);
   }
 
