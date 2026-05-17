@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -122,7 +123,6 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   }
 
   @override
-  @override
   void dispose() {
     VoiceRecordingController.unregister(
       'voice_verification_dialog_${widget.aya.verseNumber}',
@@ -144,6 +144,19 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       await _customRecorder.closeRecorder();
     } catch (e) {
       Logger.warning('Recorder close failed: $e', feature: 'VoiceVerification');
+    }
+    // Clean up temp WAV files to prevent storage exhaustion.
+    if (_customFilePath != null) {
+      try {
+        final file = File(_customFilePath!);
+        if (await file.exists()) {
+          await file.delete();
+          Logger.info('Deleted temp audio: $_customFilePath', feature: 'VoiceVerification');
+        }
+      } catch (e) {
+        Logger.warning('Failed to delete temp audio: $e', feature: 'VoiceVerification');
+      }
+      _customFilePath = null;
     }
   }
 
@@ -270,16 +283,40 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       );
       await _qrcService.startRecording();
     } else if (useWhisper) {
-      await _customRecorder.openRecorder();
+      try {
+        await _customRecorder.openRecorder();
+      } catch (e) {
+        Logger.warning('Whisper recorder open failed: $e', feature: 'VoiceVerification');
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_voice_init_failed'.tr;
+          _showFeedback = true;
+          _isListening = false;
+        });
+        return;
+      }
       final dir = await getTemporaryDirectory();
       _customFilePath =
           '${dir.path}/whisper_${widget.surah.id}_${widget.aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
-      await _customRecorder.startRecorder(
-        toFile: _customFilePath,
-        codec: Codec.pcm16WAV,
-        numChannels: 1,
-        sampleRate: 16000,
-      );
+      try {
+        await _customRecorder.startRecorder(
+          toFile: _customFilePath,
+          codec: Codec.pcm16WAV,
+          numChannels: 1,
+          sampleRate: 16000,
+        );
+      } catch (e) {
+        Logger.warning('Whisper recorder start failed: $e', feature: 'VoiceVerification');
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_voice_init_failed'.tr;
+          _showFeedback = true;
+          _isListening = false;
+        });
+        return;
+      }
     } else {
       if (useCustom) {
         if (customEndpoint.isEmpty) {

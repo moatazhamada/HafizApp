@@ -32,7 +32,7 @@ class MemorizationProgressModel extends MemorizationProgress {
     return MemorizationProgressModel(
       surahId: (json['surahId'] as num).toInt(),
       surahName: json['surahName'] as String,
-      status: MemorizationStatus.values[(json['status'] as num?)?.toInt() ?? 0],
+      status: _parseStatus(json['status']),
       easeFactor: (json['easeFactor'] as num?)?.toInt() ?? 2500,
       interval: (json['interval'] as num?)?.toInt() ?? 0,
       repetition: (json['repetition'] as num?)?.toInt() ?? 0,
@@ -40,5 +40,13 @@ class MemorizationProgressModel extends MemorizationProgress {
       lastReviewDate: parseDateTime(json['lastReviewDate']) ?? DateTime.now(),
       bestScore: (json['bestScore'] as num?)?.toDouble() ?? 0,
     );
+  }
+
+  static MemorizationStatus _parseStatus(dynamic raw) {
+    final index = (raw as num?)?.toInt() ?? 0;
+    if (index >= 0 && index < MemorizationStatus.values.length) {
+      return MemorizationStatus.values[index];
+    }
+    return MemorizationStatus.notStarted;
   }
 }

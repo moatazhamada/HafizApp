@@ -125,7 +125,7 @@ class SrsAlgorithm {
       } else if (repetition == 1) {
         interval = 6;
       } else {
-        interval = (interval * easeFactor / 2500).round();
+        interval = (interval * easeFactor / 1000).round();
       }
       repetition++;
     } else {

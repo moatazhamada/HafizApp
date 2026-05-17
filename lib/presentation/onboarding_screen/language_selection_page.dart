@@ -216,7 +216,7 @@ class _LanguageCard extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                code!,
+                code ?? '',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,

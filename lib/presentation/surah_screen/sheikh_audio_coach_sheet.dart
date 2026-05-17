@@ -34,6 +34,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   bool _isLoading = true;
   bool _isPlaying = false;
   bool _isBuffering = false;
+  String? _errorMessage;
   StreamSubscription<Duration>? _posSub;
   StreamSubscription<PlayerState>? _playerSub;
 
@@ -49,17 +50,31 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   }
 
   Future<void> _load() async {
-    final audio = await _recitationService.fetchChapterAudio(
-      reciterId: widget.reciterId,
-      chapterNumber: widget.chapterNumber,
-      segments: true,
-    );
-    if (!mounted) return;
-    setState(() {
-      _audioFile = audio;
-      _verseTiming = _findVerseTiming(audio);
-      _isLoading = false;
-    });
+    try {
+      final audio = await _recitationService.fetchChapterAudio(
+        reciterId: widget.reciterId,
+        chapterNumber: widget.chapterNumber,
+        segments: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _audioFile = audio;
+        _verseTiming = _findVerseTiming(audio);
+        _isLoading = false;
+      });
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load chapter audio: $e',
+        feature: 'SheikhAudioCoach',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'msg_audio_load_error'.tr;
+      });
+    }
   }
 
   VerseTiming? _findVerseTiming(ChapterAudioFile? audio) {
@@ -147,7 +162,17 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
       padding: const EdgeInsets.all(16),
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : _errorMessage != null
+              ? Center(
+                  child: Text(
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                )
+              : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
@@ -7,6 +9,7 @@ import 'khatmah_state.dart';
 
 class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
   final KhatmahRepository repository;
+  DateTime? _lastRecordTime;
 
   KhatmahBloc({required this.repository}) : super(KhatmahInitial()) {
     on<LoadKhatmahDashboard>(_onLoadDashboard);
@@ -97,6 +100,16 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
     RecordReading event,
     Emitter<KhatmahState> emit,
   ) async {
+    // Debounce: ignore duplicate calls within 2 seconds to prevent
+    // inflated stats from rapid FAB double-taps.
+    final now = DateTime.now();
+    if (_lastRecordTime != null &&
+        now.difference(_lastRecordTime!) < const Duration(seconds: 2)) {
+      Logger.info('RecordReading debounced', feature: 'Khatmah');
+      return;
+    }
+    _lastRecordTime = now;
+
     final result = await repository.logReading(
       verses: event.verses,
       surahs: event.surahs,

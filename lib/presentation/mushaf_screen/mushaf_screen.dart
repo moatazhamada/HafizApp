@@ -142,10 +142,17 @@ class _MushafScreenState extends State<MushafScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _finalizeCurrentSession();
-    } else if (state == AppLifecycleState.resumed) {
-      _startMushafSession();
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _sessionTracker.pause();
+        break;
+      case AppLifecycleState.resumed:
+        _sessionTracker.resume();
+        break;
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
@@ -261,16 +268,17 @@ class _MushafScreenState extends State<MushafScreen>
     final targetPage = _surahToPageInType(surahId, newType);
 
     _localTextCache.clear();
+    final oldController = _pageController;
     setState(() {
       _mushafType = newType;
       _currentPage = targetPage;
       _isZoomed = false;
       PrefUtils().setMushafType(newType.name);
     });
-    _pageController.dispose();
     _pageController = PageController(initialPage: _currentPage - 1);
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      oldController.dispose();
       _precacheAdjacentPages(_currentPage);
     });
   }

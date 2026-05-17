@@ -3,6 +3,7 @@ import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/memorization_progress_model.dart';
@@ -98,6 +99,24 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
     }
   }
 
+  /// Maps the user's selected mushaf type to the QF API mushafId.
+  /// Defaults to 4 (UthmaniHafs) for all types until QF provides
+  /// exact IDs for Naskh/Indopak, Warsh, and Shemerly editions.
+  int _resolveMushafId() {
+    if (!PrefUtils.isInitialized) return 4;
+    try {
+      final type = PrefUtils().getMushafType();
+      return switch (type) {
+        'warsh' => 4, // TODO: Replace with actual QF Warsh mushafId when available
+        'naskh' || 'indopak' => 4, // TODO: Replace with actual QF Indopak mushafId
+        'shemerly' || 'egyptian' => 4, // TODO: Replace with actual QF Shemerly mushafId
+        _ => 4, // UthmaniHafs (madani / default)
+      };
+    } catch (_) {
+      return 4;
+    }
+  }
+
   @override
   Future<Either<Failure, void>> syncMemorizationGoalToQf() async {
     try {
@@ -108,7 +127,6 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
             p.status == MemorizationStatus.needsReview,
       );
 
-      // Create a QURAN_RANGE goal for each surah in progress
       for (final item in inProgressItems) {
         try {
           final verseCount = MushafPageIndex.getVerseCount(item.surahId);
@@ -117,7 +135,7 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
             type: 'QURAN_RANGE',
             amount: '${item.surahId}:1-${item.surahId}:$verseCount',
             category: 'QURAN',
-            mushafId: 4, // UthmaniHafs
+            mushafId: _resolveMushafId(),
           );
         } catch (e) {
           Logger.warning(

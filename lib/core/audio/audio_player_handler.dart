@@ -139,10 +139,13 @@ class AudioPlayerHandler {
   }
 
   void setLoopRange(int start, int end) {
-    if (_isDisposed) return;
+    if (_isDisposed || _verseUrls == null || _verseUrls!.isEmpty) return;
+    final maxIndex = _verseUrls!.length - 1;
+    final validStart = start.clamp(0, maxIndex);
+    final validEnd = end.clamp(validStart, maxIndex);
     _isLooping = true;
-    _loopStart = start;
-    _loopEnd = end;
+    _loopStart = validStart;
+    _loopEnd = validEnd;
   }
 
   void clearLoop() {
@@ -155,6 +158,13 @@ class AudioPlayerHandler {
   void setSleepTimer(Duration duration) {
     if (_isDisposed) return;
     _sleepTimerEnd = DateTime.now().add(duration);
+    _sleepTimer?.cancel();
+    _sleepTimer = Timer(duration, () async {
+      if (_sleepTimerEnd != null && DateTime.now().isAfter(_sleepTimerEnd!)) {
+        await pause();
+        _sleepTimerEnd = null;
+      }
+    });
   }
 
   void cancelSleepTimer() {
@@ -165,7 +175,12 @@ class AudioPlayerHandler {
 
   void seekRelative(Duration offset) {
     if (_isDisposed) return;
-    _player.seek(_player.position + offset);
+    final newPosition = _player.position + offset;
+    final maxDuration = _player.duration ?? Duration.zero;
+    final clamped = newPosition < Duration.zero
+        ? Duration.zero
+        : (newPosition > maxDuration ? maxDuration : newPosition);
+    _player.seek(clamped);
   }
 
   Future<void> setSpeed(double speed) async {

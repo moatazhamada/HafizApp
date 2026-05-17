@@ -234,8 +234,15 @@ class MyApp extends StatelessWidget {
               // Clamp text scale to prevent broken layouts at extreme accessibility
               // sizes while still supporting users who need larger text.
               // Handled by AppLifecycleManager wrapper above.
-              // Silently handle unknown routes from navigation state restoration.
-              onUnknownRoute: (_) => null,
+              // Return a minimal scaffold for unknown routes instead of null
+              // to prevent 'No MaterialPageRoute was returned' assertion failures.
+              onUnknownRoute: (settings) => MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  body: Center(
+                    child: Text('Route not found: ${settings.name}'),
+                  ),
+                ),
+              ),
             ),
           );
         },
@@ -395,7 +402,7 @@ class _ReadyAppState extends State<_ReadyApp> {
         );
       }
     } catch (e) {
-      Logger.warning('Initial user properties failed: \$e', feature: 'Analytics');
+      Logger.warning('Initial user properties failed: $e', feature: 'Analytics');
     }
   }
 

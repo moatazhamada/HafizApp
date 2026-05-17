@@ -174,9 +174,12 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     }
   }
 
+  bool _isDisposed = false;
+
   @override
   void dispose() {
     _finalizeCurrentSession();
+    _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
@@ -191,10 +194,17 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _finalizeCurrentSession();
-    } else if (state == AppLifecycleState.resumed) {
-      _startSession();
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _sessionTracker.pause();
+        break;
+      case AppLifecycleState.resumed:
+        _sessionTracker.resume();
+        break;
+      case AppLifecycleState.detached:
+        break;
     }
   }
 
@@ -209,6 +219,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   }
 
   void _finalizeCurrentSession() {
+    if (_isDisposed) return;
     final sessions = _sessionTracker.endSession();
     for (final session in sessions) {
       if (session.endVerse >= session.startVerse) {
@@ -252,13 +263,21 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     }
   }
 
+  bool _isTogglingListeningMode = false;
+
   void _toggleListeningMode() {
+    if (_isTogglingListeningMode) return;
+    _isTogglingListeningMode = true;
     if (_isListeningMode) {
       _stopListeningMode();
     } else {
-      if (_chapters.isEmpty) return;
+      if (_chapters.isEmpty) {
+        _isTogglingListeningMode = false;
+        return;
+      }
       _startListeningMode(_chapters);
     }
+    _isTogglingListeningMode = false;
   }
 
   void _startListeningMode(List<Verse> chapters) {
@@ -276,7 +295,11 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       setState(() {
         _highlightedVerse = verseIndex + 1;
       });
-      _scrollToVerse(verseIndex + 1, chapters);
+      // Don't auto-scroll in hifz mode — it would reveal hidden verses
+      // before the user taps them, defeating the memorization purpose.
+      if (!_isHifzMode) {
+        _scrollToVerse(verseIndex + 1, chapters);
+      }
       PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
     });
 
@@ -312,7 +335,9 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       setState(() {
         _highlightedVerse = verseIndex + 1;
       });
-      _scrollToVerse(verseIndex + 1, _chapters);
+      if (!_isHifzMode) {
+        _scrollToVerse(verseIndex + 1, _chapters);
+      }
       PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
     });
 
@@ -344,7 +369,9 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         return;
       }
       setState(() => _highlightedVerse = verseNumber);
-      _scrollToVerse(verseNumber, _chapters);
+      if (!_isHifzMode) {
+        _scrollToVerse(verseNumber, _chapters);
+      }
     });
 
     final urls = _buildVerseAudioUrls();
@@ -661,7 +688,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                         'surahName': isArabic
                                             ? surah!.nameArabic
                                             : surah!.nameEnglish,
-                                        'startVerse': ?startVerse,
+                                        'startVerse': startVerse,
                                       },
                                     );
                                   },

@@ -319,6 +319,20 @@ class NotificationService {
     Logger.info('Recurring notifications cancelled', feature: 'Notifications');
   }
 
+  /// Cancel daily verse notification only.
+  Future<void> cancelDailyVerse() async {
+    if (kIsWeb) return;
+    await _plugin.cancel(_verseNotificationId);
+    Logger.info('Daily verse notification cancelled', feature: 'Notifications');
+  }
+
+  /// Cancel reading reminder notification only.
+  Future<void> cancelReadingReminder() async {
+    if (kIsWeb) return;
+    await _plugin.cancel(_reminderNotificationId);
+    Logger.info('Reading reminder cancelled', feature: 'Notifications');
+  }
+
   Future<bool> _ensurePermission() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       final hasPermission = await requestPermission();

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/khatmah/khatmah_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_activity/qf_activity_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
@@ -128,9 +129,9 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       final now = DateTime.now();
       int synced = 0;
 
-      // Batch-read all 30 days of logs first to avoid N+1 local reads
+      // Batch-read all 90 days of logs first to avoid N+1 local reads
       final startDate = DateTime(now.year, now.month, now.day).subtract(
-        const Duration(days: 29),
+        const Duration(days: 89),
       );
       final endDate = DateTime(now.year, now.month, now.day);
       final allLogs = await localDataSource.getLogsBatch(startDate, endDate);
@@ -148,7 +149,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
               seconds: log.readingDuration.inSeconds > 0
                   ? log.readingDuration.inSeconds
                   : null,
-              mushafId: 4, // UthmaniHafs
+              mushafId: _resolveMushafId(),
             );
             // Mark as synced
             final updated = DailyReadingLogModel(
@@ -166,14 +167,14 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
               'Failed to sync activity day ${log.date}: $e',
               feature: 'Khatmah',
             );
-            // Mark as failed but continue
+            // Keep as pending so it retries on next sync
             final updated = DailyReadingLogModel(
               date: log.date,
               versesRead: log.versesRead,
               juzRead: log.juzRead,
               surahsVisited: log.surahsVisited,
               readingDuration: log.readingDuration,
-              syncStatus: SyncStatus.failed,
+              syncStatus: SyncStatus.pending,
             );
             await localDataSource.saveLog(updated);
           }
@@ -349,6 +350,24 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
     return DateTime(now.year, now.month, now.day);
   }
 
+  /// Maps the user's selected mushaf type to the QF API mushafId.
+  /// Defaults to 4 (UthmaniHafs) for all types until QF provides
+  /// exact IDs for Naskh/Indopak, Warsh, and Shemerly editions.
+  int _resolveMushafId() {
+    if (!PrefUtils.isInitialized) return 4;
+    try {
+      final type = PrefUtils().getMushafType();
+      return switch (type) {
+        'warsh' => 4, // TODO: Replace with actual QF Warsh mushafId when available
+        'naskh' || 'indopak' => 4, // TODO: Replace with actual QF Indopak mushafId
+        'shemerly' || 'egyptian' => 4, // TODO: Replace with actual QF Shemerly mushafId
+        _ => 4, // UthmaniHafs (madani / default)
+      };
+    } catch (_) {
+      return 4;
+    }
+  }
+
   static String _dateKey(DateTime date) {
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
@@ -361,7 +380,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       await activityRemoteDataSource.postActivityDay(
         type: 'QURAN',
         date: _dateKey(log.date),
-        mushafId: 4, // UthmaniHafs
+        mushafId: _resolveMushafId(),
       );
       // Mark locally as synced
       final synced = DailyReadingLogModel(
@@ -388,7 +407,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
         type: 'QURAN_PAGES',
         amount: dailyVerseTarget,
         category: 'QURAN',
-        mushafId: 4, // UthmaniHafs
+        mushafId: _resolveMushafId(),
       );
     } catch (e) {
       Logger.warning('Failed to sync goal to QF: $e', feature: 'Khatmah');

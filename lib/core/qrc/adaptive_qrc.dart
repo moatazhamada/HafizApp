@@ -20,9 +20,9 @@ class AdaptiveQrc {
 
     // Take the most recent sessions (up to 10)
     final recent = recentSessions.take(10).toList();
+    final scores = recent.map((s) => s.score / 100.0).toList();
     final avgScore =
-        recent.map((s) => s.score / 100.0).reduce((a, b) => a + b) /
-        recent.length;
+        scores.isEmpty ? 0.0 : scores.reduce((a, b) => a + b) / scores.length;
 
     bool changed = false;
     final currentHafz = PrefUtils().getQrcHafzLevel();
@@ -58,12 +58,10 @@ class AdaptiveQrc {
 
     double avgScore = 0;
     if (sessionCount > 0) {
-      avgScore =
-          recentSessions
-              .take(10)
-              .map((s) => s.score / 100.0)
-              .reduce((a, b) => a + b) /
-          recentSessions.take(10).length;
+      final scores = recentSessions.take(10).map((s) => s.score / 100.0).toList();
+      if (scores.isNotEmpty) {
+        avgScore = scores.reduce((a, b) => a + b) / scores.length;
+      }
     }
 
     return AdaptiveQrcStatus(

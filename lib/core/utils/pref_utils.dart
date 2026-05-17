@@ -21,6 +21,8 @@ class PrefUtils {
 
   String? getCachedAppVersion() => _cachedAppVersion;
 
+  static bool get isInitialized => _sharedPreferences != null;
+
   String? getLastRunVersion() {
     try {
       return _requirePrefs().getString('lastRunVersion');
@@ -441,7 +443,8 @@ class PrefUtils {
   // Quran Font Size
   double getQuranFontSize() {
     try {
-      return _requirePrefs().getDouble('quranFontSize') ?? 24.0;
+      final raw = _requirePrefs().getDouble('quranFontSize') ?? 24.0;
+      return raw.clamp(16.0, 40.0);
     } catch (e) {
       return 24.0;
     }

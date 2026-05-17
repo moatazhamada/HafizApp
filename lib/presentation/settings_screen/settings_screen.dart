@@ -717,7 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (val) {
           notificationService.scheduleDailyVerse();
         } else {
-          notificationService.cancelRecurring();
+          notificationService.cancelDailyVerse();
         }
       },
     );
@@ -758,7 +758,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (val) {
           notificationService.scheduleReadingReminder();
         } else {
-          notificationService.cancelRecurring();
+          notificationService.cancelReadingReminder();
         }
       },
     );

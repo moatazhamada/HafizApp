@@ -88,7 +88,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     final saved = PrefUtils().getLastAudioVerse(widget.surahId);
     if (saved != null &&
         saved > 0 &&
-        saved < _getVerseCount(widget.surahId) - 1) {
+        saved < _getVerseCount(widget.surahId)) {
       _resumeFromVerse = saved;
     }
     // Auto-play if a startVerse was explicitly provided
@@ -102,20 +102,29 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     _finalizeCurrentSession();
     WidgetsBinding.instance.removeObserver(this);
     _verseSub?.cancel();
-    _handler.stop();
+    // Only stop audio if this screen's surah is currently playing.
+    // Prevents killing audio started by another screen (e.g. SurahScreen
+    // listening mode) since AudioPlayerHandler is a singleton.
+    if (_handler.currentSurahId == widget.surahId) {
+      _handler.stop();
+    }
     WakelockPlus.disable();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _finalizeCurrentSession();
-    } else if (state == AppLifecycleState.resumed) {
-      _sessionTracker.startSession(
-        surahId: widget.surahId,
-        startVerse: _currentVerse >= 0 ? _currentVerse + 1 : (widget.startVerse ?? 1),
-      );
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _sessionTracker.pause();
+        break;
+      case AppLifecycleState.resumed:
+        _sessionTracker.resume();
+        break;
+      case AppLifecycleState.detached:
+        break;
     }
   }
 

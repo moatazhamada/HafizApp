@@ -69,18 +69,25 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
       }
 
       final toPush = localVerseIds.difference(qfVerseIds);
-      await Future.wait(
-        toPush.map((verseId) async {
-          try {
-            await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
-          } catch (e) {
-            Logger.warning(
-              'Failed to push bookmark $verseId: $e',
-              feature: 'SyncWithQf',
-            );
-          }
-        }),
-      );
+      if (defaultCollectionId != null) {
+        await Future.wait(
+          toPush.map((verseId) async {
+            try {
+              await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
+            } catch (e) {
+              Logger.warning(
+                'Failed to push bookmark $verseId: $e',
+                feature: 'SyncWithQf',
+              );
+            }
+          }),
+        );
+      } else {
+        Logger.warning(
+          'Skipping bookmark push: no default collection ID',
+          feature: 'SyncWithQf',
+        );
+      }
 
       final toPull = qfVerseIds.difference(localVerseIds);
       for (final verseId in toPull) {
