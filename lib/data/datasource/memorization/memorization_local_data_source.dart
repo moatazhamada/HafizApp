@@ -41,7 +41,12 @@ class MemorizationLocalDataSourceImpl implements MemorizationLocalDataSource {
     try {
       final raw = box.get(surahId);
       if (raw is! Map) return null;
-      return MemorizationProgressModel.fromJson(Map<String, dynamic>.from(raw));
+      try {
+        return MemorizationProgressModel.fromJson(Map<String, dynamic>.from(raw));
+      } catch (e) {
+        Logger.warning('Skipping malformed memorization entry for surah $surahId: $e', feature: 'MemorizationLocal');
+        return null;
+      }
     } catch (e) {
       throw CacheException();
     }

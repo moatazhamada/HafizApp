@@ -25,6 +25,7 @@ import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/utils/logger.dart';
 import '../../core/services/reading_session_tracker.dart';
 import '../../domain/entities/reading_session.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
@@ -109,6 +110,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   // Listening Mode (audio-coupled auto-scroll)
   bool _isListeningMode = false;
   StreamSubscription<int>? _listeningSubscription;
+  StreamSubscription<String>? _audioErrorSubscription;
   List<Verse> _chapters = []; // Cached for listening mode toggle
 
   // Reading Session Tracking
@@ -186,6 +188,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     _translationDebounce?.cancel();
     _autoScrollTimer?.cancel();
     _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
     if (_isListeningMode) AudioPlayerHandler().stop();
 
     _scrollControllerForInit?.dispose();
@@ -303,6 +306,16 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       }
       PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
     });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
+    });
 
     final urls = _buildVerseAudioUrls();
     // Resume from last position if same surah
@@ -319,6 +332,8 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   void _stopListeningMode() {
     _listeningSubscription?.cancel();
     _listeningSubscription = null;
+    _audioErrorSubscription?.cancel();
+    _audioErrorSubscription = null;
     AudioPlayerHandler().stop();
     if (mounted) {
       setState(() {
@@ -348,6 +363,16 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         _scrollToVerse(verseIndex + 1, _chapters);
       }
       PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+    });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
     });
 
     final urls = _buildVerseAudioUrls();
@@ -381,6 +406,16 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       if (!_isHifzMode) {
         _scrollToVerse(verseNumber, _chapters);
       }
+    });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
     });
 
     final urls = _buildVerseAudioUrls();
@@ -440,7 +475,10 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     if (surahId < 1 || surahId > 114) return;
     final targetSurah = QuranIndex.quranSurahs.firstWhere(
       (s) => s.id == surahId,
-      orElse: () => QuranIndex.quranSurahs.first,
+          orElse: () {
+            Logger.warning('Invalid surahId: $surahId', feature: 'Surah');
+            return Surah(surahId, 'Surah $surahId', 'سورة $surahId');
+          },
     );
     // Clear previous surah's heavy data before switching to avoid
     // memory pressure on low-end devices when browsing rapidly.

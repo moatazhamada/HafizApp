@@ -142,6 +142,7 @@ void main() {
         when(() => mockRepo.logReading(
               verses: any(named: 'verses'),
               surahs: any(named: 'surahs'),
+              durationSeconds: any(named: 'durationSeconds'),
             )).thenAnswer((_) async => const Right(null));
         when(() => mockRepo.getGoal()).thenAnswer((_) async => Right(testGoal));
         when(() => mockRepo.getTodayLog())
@@ -167,6 +168,7 @@ void main() {
         when(() => mockRepo.logReading(
               verses: any(named: 'verses'),
               surahs: any(named: 'surahs'),
+              durationSeconds: any(named: 'durationSeconds'),
             )).thenAnswer((_) async => Left(CacheFailure('fail')));
         return bloc;
       },

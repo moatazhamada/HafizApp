@@ -16,6 +16,8 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   final KhatmahLocalDataSource localDataSource;
   final QfActivityRemoteDataSource activityRemoteDataSource;
   final QfGoalsRemoteDataSource goalsRemoteDataSource;
+  bool _goalSyncedThisSession = false;
+  final Set<String> _hotPathSyncedDays = {};
 
   KhatmahRepositoryImpl({
     required this.localDataSource,
@@ -137,7 +139,10 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       final allLogs = await localDataSource.getLogsBatch(startDate, endDate);
 
       final pendingLogs = allLogs.values.where(
-        (log) => log.versesRead > 0 && log.syncStatus != SyncStatus.synced,
+        (log) =>
+            log.versesRead > 0 &&
+            log.syncStatus != SyncStatus.synced &&
+            !_hotPathSyncedDays.contains(_dateKey(log.date)),
       );
 
       // Sync pending logs sequentially to avoid rate limits
@@ -254,7 +259,7 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
           final cloudSeconds = dayData['seconds'] as int? ?? 0;
           // Calculate an estimated verses read from QF if they don't provide verses directly
           // We assume roughly 1 verse per 15 seconds as a rough estimate
-          final estimatedVerses = cloudSeconds ~/ 15;
+          final estimatedVerses = cloudSeconds ~/ 20;
 
           final localLog = await localDataSource.getLog(localDate);
 
@@ -377,8 +382,11 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
       await activityRemoteDataSource.postActivityDay(
         type: 'QURAN',
         date: _dateKey(log.date),
+        seconds: log.readingDuration.inSeconds,
         mushafId: _resolveMushafId(),
       );
+      // Mark day as synced in hot path to prevent batch re-sync
+      _hotPathSyncedDays.add(_dateKey(log.date));
       // Re-read current log to avoid overwriting newer data written concurrently
       final current = await localDataSource.getLog(log.date);
       if (current != null) {
@@ -402,6 +410,8 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
 
   /// Sync the local reading goal to QF Goals API.
   Future<void> _syncGoalToQf(int dailyVerseTarget) async {
+    if (_goalSyncedThisSession) return;
+    _goalSyncedThisSession = true;
     try {
       await goalsRemoteDataSource.createGoal(
         type: 'QURAN',

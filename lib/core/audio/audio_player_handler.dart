@@ -1,16 +1,43 @@
 import 'dart:async';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class AudioPlayerHandler {
   static final AudioPlayerHandler _instance = AudioPlayerHandler._internal();
   factory AudioPlayerHandler() => _instance;
 
-  AudioPlayerHandler._internal();
+  AudioPlayerHandler._internal() {
+    _configureAudioSession();
+  }
+
+  Future<void> _configureAudioSession() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playback,
+        avAudioSessionCategoryOptions:
+            AVAudioSessionCategoryOptions.allowBluetooth,
+        avAudioSessionMode: AVAudioSessionMode.defaultMode,
+        androidAudioAttributes: AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType:
+            AndroidAudioFocusGainType.gainTransientMayDuck,
+        androidWillPauseWhenDucked: true,
+      ));
+    } catch (e) {
+      Logger.warning('Audio session configuration failed: $e', feature: 'Audio');
+    }
+  }
 
   final AudioPlayer _player = AudioPlayer();
   final StreamController<int> _currentVerseController =
       StreamController<int>.broadcast();
+  final StreamController<String> _errorController =
+      StreamController<String>.broadcast();
 
   int? _currentSurahId;
   List<String>? _verseUrls;
@@ -30,6 +57,7 @@ class AudioPlayerHandler {
 
   AudioPlayer get player => _player;
   Stream<int> get currentVerseStream => _currentVerseController.stream;
+  Stream<String> get errorStream => _errorController.stream;
   int get currentVerseIndex => _currentVerseIndex;
   int? get currentSurahId => _currentSurahId;
   bool get isPlaying => _player.playing;
@@ -95,6 +123,7 @@ class AudioPlayerHandler {
     } catch (e) {
       if (!_isDisposed && generation == _playGeneration) {
         _currentVerseController.add(-1);
+        _errorController.add('msg_audio_playback_error');
       }
     }
   }
@@ -240,5 +269,6 @@ class AudioPlayerHandler {
     _verseCompleter = null;
     await _player.dispose();
     await _currentVerseController.close();
+    await _errorController.close();
   }
 }

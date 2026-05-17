@@ -50,7 +50,7 @@ class NotificationService {
     if (kIsWeb) return;
 
     tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('UTC'));
+    tz.setLocalLocation(tz.local);
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -411,22 +411,21 @@ class NotificationService {
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final now = DateTime.now();
-    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
-    return tz.TZDateTime.from(scheduled.toUtc(), tz.UTC);
+    return scheduled;
   }
 
   tz.TZDateTime _nextInstanceOfFridayTime(int hour, int minute) {
-    final now = DateTime.now();
-    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
-    // Advance to next Friday (DateTime.friday == 5)
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     while (scheduled.weekday != DateTime.friday || scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
-    return tz.TZDateTime.from(scheduled.toUtc(), tz.UTC);
+    return scheduled;
   }
 
   void _onNotificationTap(NotificationResponse response) {
@@ -440,7 +439,10 @@ class NotificationService {
       if (surahId != null) {
         final surah = QuranIndex.quranSurahs.firstWhere(
           (s) => s.id == surahId,
-          orElse: () => QuranIndex.quranSurahs[0],
+          orElse: () {
+            Logger.warning('Invalid surahId: $surahId', feature: 'Notification');
+            return Surah(surahId, 'Surah $surahId', 'سورة $surahId');
+          },
         );
         NavigatorService.pushNamed(
           AppRoutes.surahPage,

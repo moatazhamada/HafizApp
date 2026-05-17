@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
@@ -135,15 +136,11 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     await _voiceService.stop();
     await _qrcSub?.cancel();
     await _qrcService.dispose();
-    try {
-      await _customRecorder.stopRecorder();
-    } catch (e) {
-      // Ignore — may not have been recording
+    if (_customRecorder.isRecording) {
+      try { await _customRecorder.stopRecorder(); } catch (_) {}
     }
-    try {
-      await _customRecorder.closeRecorder();
-    } catch (e) {
-      Logger.warning('Recorder close failed: $e', feature: 'VoiceVerification');
+    if (!_customRecorder.isStopped) {
+      try { await _customRecorder.closeRecorder(); } catch (_) {}
     }
     // Clean up temp WAV files to prevent storage exhaustion.
     if (_customFilePath != null) {
@@ -159,6 +156,29 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _customFilePath = null;
     }
     await _whisperService.dispose();
+  }
+
+  Future<void> _configureAudioSession() async {
+    try {
+      final session = await AudioSession.instance;
+      final options = AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions: options,
+        avAudioSessionMode: AVAudioSessionMode.measurement,
+        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.notifyOthersOnDeactivation,
+        avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          usage: AndroidAudioUsage.assistanceAccessibility,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      ));
+    } catch (e) {
+      Logger.warning('Audio session config failed: $e', feature: 'VoiceVerification');
+    }
   }
 
   WhisperModel _resolveWhisperModel(String value) {
@@ -235,6 +255,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         });
         return;
       }
+
+      // Configure audio session for recording + playback (Bluetooth, interruption handling)
+      unawaited(_configureAudioSession());
     }
 
     setState(() {
@@ -289,6 +312,10 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       await _qrcService.startRecording();
     } else if (useWhisper) {
       try {
+        if (!_customRecorder.isStopped) {
+          await _customRecorder.stopRecorder();
+          await _customRecorder.closeRecorder();
+        }
         await _customRecorder.openRecorder();
       } catch (e) {
         Logger.warning('Whisper recorder open failed: $e', feature: 'VoiceVerification');
@@ -331,6 +358,10 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             _showFeedback = true;
           });
           return;
+        }
+        if (!_customRecorder.isStopped) {
+          await _customRecorder.stopRecorder();
+          await _customRecorder.closeRecorder();
         }
         await _customRecorder.openRecorder();
         final dir = await getTemporaryDirectory();
@@ -464,6 +495,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         accuracy: (analysis.score * 100).roundToDouble(),
       ),
     );
+    if (!mounted) return;
     setState(() {
       _spokenText = effectiveText;
       final scorePercent = (analysis.score * 100).round();
@@ -560,7 +592,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _whisperTranscribing = false;
             });
           }
-          if (transcribed != null && transcribed.isNotEmpty) {
+          if (mounted && transcribed != null && transcribed.isNotEmpty) {
             unawaited(_analyzeRecitation(transcribed));
           }
         }

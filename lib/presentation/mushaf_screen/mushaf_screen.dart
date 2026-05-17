@@ -42,6 +42,8 @@ class _MushafScreenState extends State<MushafScreen>
   bool _showOverlay = true;
   bool _isZoomed = false;
   Timer? _overlayTimer;
+  Timer? _persistDebounce;
+  Timer? _prefetchDebounce;
   final Map<int, List<_VerseText>> _localTextCache = {};
   final List<int> _cacheAccessOrder = [];
   static const int _maxCachePages = 20;
@@ -138,7 +140,8 @@ class _MushafScreenState extends State<MushafScreen>
   @override
   void dispose() {
     _finalizeCurrentSession();
-    WidgetsBinding.instance.removeObserver(this);
+    _persistDebounce?.cancel();
+    _prefetchDebounce?.cancel();
     _overlayTimer?.cancel();
     _pageController.dispose();
     WakelockPlus.disable();
@@ -201,7 +204,7 @@ class _MushafScreenState extends State<MushafScreen>
   // ─── Page Precaching ────────────────────────────────────────────
 
   void _precacheAdjacentPages(int currentPage) {
-    for (final offset in [1, 2, -1]) {
+    for (final offset in [1, 2, -1, -2]) {
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
       final url = _mushafType.pageImageUrl(target);
@@ -444,8 +447,19 @@ class _MushafScreenState extends State<MushafScreen>
                   onPageChanged: (index) {
                     final page = _pageIndexToNumber(index);
                     _isZoomed = false;
-                    _persistPage(page);
-                    _precacheAdjacentPages(page);
+                    _currentPage = page;
+                    // Debounce persistence — avoid excessive SharedPreferences
+                    // writes during rapid page flips.
+                    _persistDebounce?.cancel();
+                    _persistDebounce = Timer(const Duration(milliseconds: 500), () {
+                      PrefUtils().setMushafLastPageForType(_mushafType.name, page);
+                      PageStorage.of(context).writeState(context, page, identifier: _kPageStorageKey);
+                    });
+                    // Debounce prefetch to reduce image cache contention
+                    _prefetchDebounce?.cancel();
+                    _prefetchDebounce = Timer(const Duration(milliseconds: 200), () {
+                      _precacheAdjacentPages(page);
+                    });
                     _updateMushafSessionProgress(page);
                     if (_showOverlay) {
                       _overlayTimer?.cancel();
@@ -465,14 +479,14 @@ class _MushafScreenState extends State<MushafScreen>
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: _buildTopBar(isDark, colors),
+                  child: RepaintBoundary(child: _buildTopBar(isDark, colors)),
                 ),
               if (_showOverlay)
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: _buildBottomBar(isDark, colors),
+                  child: RepaintBoundary(child: _buildBottomBar(isDark, colors)),
                 ),
             ],
           ),

@@ -47,6 +47,9 @@ class MemorizationScreen extends StatelessWidget {
             );
           }
           if (state is MemorizationLoaded) {
+            if (state.allProgress.isEmpty) {
+              return _EmptyState(isDark: isDark);
+            }
             return RefreshIndicator(
               onRefresh: () async {
                 context.read<MemorizationBloc>().add(
@@ -275,6 +278,50 @@ class _ReviewCard extends StatelessWidget {
                     arguments: {'surah': surah},
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final bool isDark;
+
+  const _EmptyState({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 64,
+              color: AppColors.of(context).notStartedStatus,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'lbl_memorization_empty_title'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'lbl_memorization_empty_subtitle'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.of(context).notStartedStatus,
               ),
             ),
           ],

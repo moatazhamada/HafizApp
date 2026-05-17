@@ -34,10 +34,10 @@ class BookmarkModel extends Bookmark {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'surahId': surahId,
       'surahName': surahName,
       'verseNumber': verseNumber,
-      // Keep for backward compatibility if older builds expect it:
       'verseId': verseNumber,
       'createdAt': createdAt.toIso8601String(),
     };

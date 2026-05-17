@@ -15,6 +15,7 @@ class DailyReadingLogModel extends DailyReadingLog {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'date': _dateKey,
       'versesRead': versesRead,
       'juzRead': juzRead,
@@ -49,6 +50,7 @@ class ReadingGoalModel extends ReadingGoal {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'dailyVerseTarget': dailyVerseTarget,
       'startDate': startDate.toIso8601String(),
       'isActive': isActive,

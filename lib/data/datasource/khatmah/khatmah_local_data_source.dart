@@ -140,6 +140,14 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
   @override
   Future<void> saveOfflineSession(ReadingSessionModel session) async {
     try {
+      if (offlineSessionBox.length >= 500) {
+        final keysToDelete = offlineSessionBox.keys.take(offlineSessionBox.length - 499).toList();
+        await offlineSessionBox.deleteAll(keysToDelete);
+        Logger.warning(
+          'Offline session queue exceeded 500 — evicted ${keysToDelete.length} oldest entries',
+          feature: 'Khatmah',
+        );
+      }
       await offlineSessionBox.add(session.toJson());
     } catch (e) {
       throw CacheException();

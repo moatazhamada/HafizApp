@@ -216,6 +216,9 @@ class AppInitializer {
       Logger.warning('Hive cache open failed: $e', feature: 'Init');
     }
 
+    // Compact Hive boxes to reclaim disk space from deleted entries
+    unawaited(_compactHiveBoxes());
+
     // 3. Global error handlers
     FlutterError.onError = (errorDetails) {
       Logger.error(
@@ -323,6 +326,22 @@ class AppInitializer {
         error: e,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  static Future<void> _compactHiveBoxes() async {
+    const boxes = [
+      'recitation_errors',
+      'bookmarks',
+      'offline_reading_sessions',
+      'reading_logs',
+      'recitation_sessions',
+      'memorization_progress',
+    ];
+    for (final name in boxes) {
+      if (Hive.isBoxOpen(name)) {
+        try { await Hive.box(name).compact(); } catch (_) {}
+      }
     }
   }
 }

@@ -4,13 +4,12 @@ import 'package:hafiz_app/core/utils/logger.dart';
 /// when the app is backgrounded or otherwise interrupted.
 class VoiceRecordingController {
   static final Map<String, Future<void> Function()> _sessions = {};
+  static final _sessionsLock = Object();
 
-  /// Registers a recording session with a unique [id] and a [stop] callback.
   static void register(String id, Future<void> Function() stop) {
     _sessions[id] = stop;
   }
 
-  /// Unregisters a recording session.
   static void unregister(String id) {
     _sessions.remove(id);
   }

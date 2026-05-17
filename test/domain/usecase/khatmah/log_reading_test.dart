@@ -19,24 +19,24 @@ void main() {
   const tParams = ParamsLogReading(verses: 10, surahs: 1);
 
   test('should call logReading on repository with correct params', () async {
-    when(() => mockRepository.logReading(verses: 10, surahs: 1))
+    when(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0))
         .thenAnswer((_) async => const Right(null));
 
     final result = await logReading(tParams);
 
     expect(result, const Right(null));
-    verify(() => mockRepository.logReading(verses: 10, surahs: 1)).called(1);
+    verify(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0)).called(1);
     verifyNoMoreInteractions(mockRepository);
   });
 
   test('should return failure when repository fails', () async {
-    when(() => mockRepository.logReading(verses: 10, surahs: 1))
+    when(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0))
         .thenAnswer((_) async => Left(CacheFailure('error')));
 
     final result = await logReading(tParams);
 
     expect(result, Left(CacheFailure('error')));
-    verify(() => mockRepository.logReading(verses: 10, surahs: 1)).called(1);
+    verify(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0)).called(1);
     verifyNoMoreInteractions(mockRepository);
   });
 }

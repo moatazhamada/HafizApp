@@ -58,7 +58,10 @@ class DeepLinkHandler {
 
     final surah = QuranIndex.quranSurahs.firstWhere(
       (s) => s.id == chapterId,
-      orElse: () => Surah(chapterId, 'Surah $chapterId', ''),
+      orElse: () {
+        Logger.warning('Invalid surahId: $chapterId', feature: 'DeepLink');
+        return Surah(chapterId, 'Surah $chapterId', 'سورة $chapterId');
+      },
     );
 
     Logger.info(

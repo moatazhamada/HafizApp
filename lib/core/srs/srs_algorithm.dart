@@ -87,7 +87,7 @@ class SrsAlgorithm {
         status = MemorizationStatus.inProgress;
         break;
       case SrsQuality.difficultCorrect:
-        interval = 0; // Review again today
+        interval = 1; // Review tomorrow (standard SM-2 for quality 3)
         repetition = 1;
         status = MemorizationStatus.inProgress;
         break;
@@ -144,17 +144,15 @@ class SrsAlgorithm {
     MemorizationStatus status;
     if (quality.value < 3) {
       status = MemorizationStatus.needsReview;
-    } else if (repetition >= memorizedThreshold) {
-      // User has successfully reviewed 5+ times — mark as memorized
-      // regardless of exact score on this review (near-pass shouldn't
-      // block memorization after consistent success).
+    } else if (quality.value >= 4 && repetition >= memorizedThreshold) {
+      // Only mark as memorized after 5+ reviews at quality 4+ (score >= 80)
       status = MemorizationStatus.memorized;
     } else {
       status = MemorizationStatus.inProgress;
     }
 
-    // Ensure interval is at least 0
-    interval = interval.clamp(0, 365 * 2);
+    // Ensure interval is at least 1 day to prevent same-day review flash
+    interval = interval.clamp(1, 365 * 2);
 
     return SrsResult(
       easeFactor: easeFactor,
@@ -194,6 +192,10 @@ class SrsAlgorithm {
       progress.nextReviewDate.month,
       progress.nextReviewDate.day,
     );
+    // Exclude entries set to exactly "now" (just-recorded) from due list
+    if (progress.nextReviewDate.isAfter(now.subtract(const Duration(minutes: 1)))) {
+      return false;
+    }
     return !reviewDate.isAfter(today) &&
         progress.status != MemorizationStatus.notStarted;
   }

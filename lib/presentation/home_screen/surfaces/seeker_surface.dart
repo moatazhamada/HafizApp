@@ -3,6 +3,7 @@ import '../../../core/analytics/analytics_service.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/utils/logger.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../../../injection_container.dart';
 import '../../../core/utils/rtl_utils.dart';
@@ -334,7 +335,10 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     if (juzInfo != null) {
       final surah = QuranIndex.quranSurahs.firstWhere(
         (s) => s.id == juzInfo.startSurahId,
-        orElse: () => QuranIndex.quranSurahs.first,
+          orElse: () {
+            Logger.warning('Invalid surahId: ${juzInfo.startSurahId}', feature: 'Seeker');
+            return Surah(juzInfo.startSurahId, 'Surah ${juzInfo.startSurahId}', 'سورة ${juzInfo.startSurahId}');
+          },
       );
       NavigatorService.pushNamed(
         AppRoutes.surahPage,

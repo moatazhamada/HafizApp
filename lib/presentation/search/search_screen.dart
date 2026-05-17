@@ -6,6 +6,7 @@ import '../../core/analytics/analytics_service.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import '../../core/utils/logger.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
@@ -230,7 +231,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         final verse = state.verseResults[index];
                         final surah = QuranIndex.quranSurahs.firstWhere(
                           (s) => s.id == verse.chapterNumber,
-                          orElse: () => QuranIndex.quranSurahs[0],
+                            orElse: () {
+                              Logger.warning('Invalid surahId: ${verse.chapterNumber}', feature: 'Search');
+                              return Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
+                            },
                         );
 
                         return Semantics(

@@ -32,6 +32,7 @@ class ReadingSessionModel extends ReadingSession {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'surahId': surahId,
       'startVerse': startVerse,
       'endVerse': endVerse,

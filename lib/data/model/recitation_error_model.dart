@@ -17,6 +17,7 @@ class RecitationErrorModel extends Equatable {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'surahId': surahId,
       'surahName': surahName,
       'verseId': verseId,

@@ -139,11 +139,14 @@ class MushafPageVerseMap {
           : (pageOffset * verseCount / effectivePages).floor() + 1;
       final rawEnd = ((pageOffset + 1) * verseCount / effectivePages).ceil();
 
+      final startVerse = rawStart.clamp(1, verseCount);
+      final endVerse = rawEnd.clamp(1, verseCount);
+
       ranges.add(
         MushafPageRange(
           surahId: surahId,
-          startVerse: rawStart.clamp(1, verseCount),
-          endVerse: rawEnd.clamp(1, verseCount),
+          startVerse: startVerse,
+          endVerse: startVerse > endVerse ? startVerse : endVerse,
         ),
       );
     }

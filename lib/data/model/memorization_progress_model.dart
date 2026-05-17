@@ -1,4 +1,5 @@
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/logger.dart';
 import '../../domain/entities/memorization_progress.dart';
 
 class MemorizationProgressModel extends MemorizationProgress {
@@ -16,6 +17,7 @@ class MemorizationProgressModel extends MemorizationProgress {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'surahId': surahId,
       'surahName': surahName,
       'status': status.index,
@@ -47,6 +49,7 @@ class MemorizationProgressModel extends MemorizationProgress {
     if (index >= 0 && index < MemorizationStatus.values.length) {
       return MemorizationStatus.values[index];
     }
+    Logger.warning('Out-of-range MemorizationStatus index: $index, defaulting to notStarted', feature: 'MemorizationLocal');
     return MemorizationStatus.notStarted;
   }
 }

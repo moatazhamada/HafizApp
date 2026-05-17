@@ -3,6 +3,7 @@ import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/recitation_error_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import '../../core/utils/logger.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
@@ -119,7 +120,10 @@ class RecitationErrorScreen extends StatelessWidget {
                             arguments: {
                               'surah': QuranIndex.quranSurahs.firstWhere(
                                 (e) => e.id == error.surahId,
-                                orElse: () => QuranIndex.quranSurahs[0],
+                                orElse: () {
+                                  Logger.warning('Invalid surahId: ${error.surahId}', feature: 'RecitationError');
+                                  return Surah(error.surahId, 'Surah ${error.surahId}', 'سورة ${error.surahId}');
+                                },
                               ),
                               'verseIndex': error.verseId - 1,
                             },

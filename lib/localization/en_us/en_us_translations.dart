@@ -733,4 +733,12 @@ final Map<String, String> enUs = {
   'lbl_ayahs': 'Ayahs',
   'msg_daily_goal_achieved': 'Daily Goal Achieved! Mashallah!',
   'msg_streak_milestone': '{days} Day Streak! Incredible!',
+
+  // Audio / Playback
+  'msg_audio_playback_error': 'Could not play audio. Check your connection.',
+
+  // Memorization Empty State
+  'lbl_memorization_empty_title': 'Start your memorization journey',
+  'lbl_memorization_empty_subtitle':
+      'Open any surah and verify your recitation to begin tracking',
 };

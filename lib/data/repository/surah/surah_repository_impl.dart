@@ -181,7 +181,9 @@ List<Verse> _searchCacheWorker(Map<String, dynamic> params) {
 
   final normalizedQuery = normalize(query);
   final allMatches = <Verse>[];
+  const maxResults = 200;
   for (final data in entries) {
+    if (allMatches.length >= maxResults) break;
     try {
       final response = ChapterResponse.fromJson(data);
       for (final verse in response.chapters) {

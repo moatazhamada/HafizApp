@@ -8,6 +8,7 @@ import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.da
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 
 class QfSyncResult {
   final int pushed;
@@ -122,6 +123,10 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
         (failure) => Logger.warning('Failed to sync activity days from cloud: $failure', feature: 'SyncWithQf'),
         (count) => activityDaysUpdated = count,
       );
+
+      // Clear recently-deleted tracking after a successful sync so future
+      // deletions are tracked from a clean state.
+      await PrefUtils().clearRecentlyDeletedBookmarks();
 
       Logger.info(
         'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}, activity days updated: $activityDaysUpdated',

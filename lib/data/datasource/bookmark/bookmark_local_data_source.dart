@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import '../../model/bookmark_model.dart';
 
 abstract class BookmarkLocalDataSource {
@@ -37,6 +38,18 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
   @override
   Future<bool> addBookmark(BookmarkModel bookmark) async {
     final key = '${bookmark.surahId}_${bookmark.verseNumber}';
+    // If this bookmark was recently deleted locally, skip re-adding it
+    // to prevent cloud sync from pulling back a user-deleted bookmark.
+    if (PrefUtils().isRecentlyDeletedBookmark(
+      bookmark.surahId,
+      bookmark.verseNumber,
+    )) {
+      Logger.info(
+        'Skipping add of recently deleted bookmark $key',
+        feature: 'BookmarkLocal',
+      );
+      return false;
+    }
     // Preserve the original creation timestamp if this bookmark already exists
     // so duplicate adds don't reset the date.
     if (box.containsKey(key)) {
@@ -64,6 +77,7 @@ class BookmarkLocalDataSourceImpl implements BookmarkLocalDataSource {
   Future<bool> removeBookmark(int surahId, int verseNumber) async {
     final key = '${surahId}_$verseNumber';
     await box.delete(key);
+    await PrefUtils().recordDeletedBookmark(surahId, verseNumber);
     return true;
   }
 

@@ -21,7 +21,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
-      (failure) => emit(const MemorizationError('msg_operation_failed')),
+      (failure) => emit(MemorizationError(failure.errorMessage)),
       (progress) {
         final due = progress.where(SrsAlgorithm.isDueForReview).toList();
         final memorized = progress
@@ -54,7 +54,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
   ) async {
     final result = await repository.recordReview(event.surahId, event.score);
     result.fold(
-      (failure) => emit(const MemorizationError('msg_operation_failed')),
+      (failure) => emit(MemorizationError(failure.errorMessage)),
       (_) => add(LoadMemorizationProgress()),
     );
   }
@@ -63,6 +63,22 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadDueReviews event,
     Emitter<MemorizationState> emit,
   ) async {
-    add(LoadMemorizationProgress());
+    emit(MemorizationLoading());
+    final result = await repository.getAllProgress();
+    result.fold(
+      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (progress) {
+        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
+        emit(
+          MemorizationLoaded(
+            allProgress: progress,
+            dueReviews: due,
+            totalMemorized: 0,
+            totalInProgress: 0,
+            totalNotStarted: 0,
+          ),
+        );
+      },
+    );
   }
 }

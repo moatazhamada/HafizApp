@@ -15,6 +15,7 @@ class RecitationSessionModel extends RecitationSession {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'id': id,
       'surahId': surahId,
       'surahName': surahName,

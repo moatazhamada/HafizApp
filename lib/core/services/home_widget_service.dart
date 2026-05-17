@@ -74,7 +74,10 @@ class HomeWidgetService {
           chapterId <= 114) {
         final surah = QuranIndex.quranSurahs.firstWhere(
           (s) => s.id == chapterId,
-          orElse: () => QuranIndex.quranSurahs[0],
+          orElse: () {
+            Logger.warning('Invalid surahId: $chapterId', feature: 'HomeWidget');
+            return Surah(chapterId, 'Surah $chapterId', 'سورة $chapterId');
+          },
         );
         NavigatorService.pushNamed(
           AppRoutes.surahPage,

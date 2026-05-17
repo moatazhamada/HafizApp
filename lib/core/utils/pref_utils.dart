@@ -53,7 +53,6 @@ class PrefUtils {
       _initCompleter!.complete(prefs);
       Logger.info('SharedPreference Initialized', feature: 'Preferences');
     } catch (e) {
-      _initCompleter!.completeError(e);
       _initCompleter = null;
       rethrow;
     }
@@ -781,5 +780,71 @@ class PrefUtils {
 
   Future<void> setLastStreakCelebrated(int milestone) async {
     await _requirePrefs().setInt(_lastStreakCelebratedKey, milestone);
+  }
+
+  // ── Recently Deleted Bookmarks (prevents sync pull-back) ──
+
+  static const String _recentlyDeletedBookmarksKey =
+      'recently_deleted_bookmarks';
+
+  /// Record a bookmark as recently deleted so cloud sync doesn't pull it back.
+  Future<void> recordDeletedBookmark(int surahId, int verseNumber) async {
+    try {
+      final key = '$surahId:$verseNumber';
+      final jsonStr = _requirePrefs().getString(_recentlyDeletedBookmarksKey);
+      final Map<String, dynamic> map =
+          jsonStr != null ? json.decode(jsonStr) : {};
+      map[key] = DateTime.now().toIso8601String();
+      // Keep only the last 50 deletions to prevent unbounded growth.
+      if (map.length > 50) {
+        final sorted = map.entries.toList()
+          ..sort((a, b) => DateTime.parse(a.value)
+              .compareTo(DateTime.parse(b.value)));
+        final toRemove = sorted.take(map.length - 50).map((e) => e.key);
+        for (final k in toRemove) {
+          map.remove(k);
+        }
+      }
+      await _requirePrefs().setString(
+        _recentlyDeletedBookmarksKey,
+        json.encode(map),
+      );
+    } catch (e) {
+      Logger.warning('Failed to record deleted bookmark: $e', feature: 'Prefs');
+    }
+  }
+
+  /// Returns true if this bookmark was deleted locally within the last
+  /// [within] duration (default 24 hours).
+  bool isRecentlyDeletedBookmark(
+    int surahId,
+    int verseNumber, {
+    Duration within = const Duration(hours: 24),
+  }) {
+    try {
+      final key = '$surahId:$verseNumber';
+      final jsonStr = _requirePrefs().getString(_recentlyDeletedBookmarksKey);
+      if (jsonStr == null) return false;
+      final map = json.decode(jsonStr) as Map<String, dynamic>;
+      final deletedAtStr = map[key];
+      if (deletedAtStr == null) return false;
+      final deletedAt = DateTime.tryParse(deletedAtStr.toString());
+      if (deletedAt == null) return false;
+      return DateTime.now().difference(deletedAt) < within;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Clear the recently-deleted tracking (e.g. after a successful sync).
+  Future<void> clearRecentlyDeletedBookmarks() async {
+    try {
+      await _requirePrefs().remove(_recentlyDeletedBookmarksKey);
+    } catch (e) {
+      Logger.warning(
+        'Failed to clear recently deleted bookmarks: $e',
+        feature: 'Prefs',
+      );
+    }
   }
 }

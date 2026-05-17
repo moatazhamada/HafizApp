@@ -3,6 +3,7 @@ import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import '../../core/app_export.dart';
 import 'bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import '../../core/utils/logger.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
@@ -92,7 +93,10 @@ class BookmarksScreen extends StatelessWidget {
                 final bookmark = state.bookmarks[index];
                 final surah = QuranIndex.quranSurahs.firstWhere(
                   (e) => e.id == bookmark.surahId,
-                  orElse: () => QuranIndex.quranSurahs[0],
+                  orElse: () {
+                    Logger.warning('Invalid surahId: ${bookmark.surahId}', feature: 'Bookmarks');
+                    return Surah(bookmark.surahId, 'Surah ${bookmark.surahId}', 'سورة ${bookmark.surahId}');
+                  },
                 );
                 final bookmarkBloc = context.read<BookmarkBloc>();
 

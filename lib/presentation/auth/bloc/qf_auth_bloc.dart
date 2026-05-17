@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hive/hive.dart';
 import 'package:hafiz_app/core/auth/qf_backend_proxy.dart';
 import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
@@ -43,7 +44,17 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
         emit(QfAuthUnauthenticated());
       }
     } catch (e) {
-      emit(const QfAuthError(message: 'msg_connection_error'));
+      if (e.toString().contains('storage') ||
+          e.toString().contains('keystore') ||
+          e.toString().contains('keychain')) {
+        emit(const QfAuthError(message: 'msg_storage_error'));
+      } else if (e.toString().contains('network') ||
+          e.toString().contains('connection') ||
+          e.toString().contains('timeout')) {
+        emit(const QfAuthError(message: 'msg_connection_error'));
+      } else {
+        emit(const QfAuthError(message: 'msg_check_failed'));
+      }
     }
   }
 
@@ -111,9 +122,23 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       Logger.warning('QF pref sync reset failed: $e', feature: 'Auth');
     }
     try {
+      _clearHiveCaches();
+    } catch (e) {
+      Logger.warning('Hive cache clear failed: $e', feature: 'Auth');
+    }
+    try {
       unawaited(sl<AnalyticsService>().logQfLogout());
     } catch (e) {
       Logger.warning('Analytics logout log failed: $e', feature: 'Auth');
+    }
+  }
+
+  void _clearHiveCaches() {
+    const cacheBoxes = ['quran_word_cache', 'qiraat_cache', 'audio_cache'];
+    for (final name in cacheBoxes) {
+      if (Hive.isBoxOpen(name)) {
+        try { Hive.box(name).clear(); } catch (_) {}
+      }
     }
   }
 

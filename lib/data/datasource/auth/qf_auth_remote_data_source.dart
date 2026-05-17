@@ -237,11 +237,20 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
 
   @override
   Future<void> logout() async {
-    await _secureStorage.delete(key: _accessTokenKey);
-    await _secureStorage.delete(key: _refreshTokenKey);
-    await _secureStorage.delete(key: _idTokenKey);
-    await _secureStorage.delete(key: _oidcNonceKey);
-    await _secureStorage.delete(key: QfApiConfig.storedFlavorKey);
+    const keys = [
+      _accessTokenKey,
+      _refreshTokenKey,
+      _idTokenKey,
+      _oidcNonceKey,
+      QfApiConfig.storedFlavorKey,
+    ];
+    for (final key in keys) {
+      try {
+        await _secureStorage.delete(key: key);
+      } catch (e) {
+        Logger.warning('Failed to delete secure storage key $key: $e', feature: 'QfAuth');
+      }
+    }
     Logger.info('Logged out from QF', feature: 'QfAuth');
   }
 

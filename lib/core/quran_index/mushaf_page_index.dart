@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class MushafPageRange {
   final int surahId;
@@ -318,7 +319,13 @@ class MushafPageIndex {
 
   // ─── Lookup helpers ─────────────────────────────────────────────
 
-  static int getVerseCount(int surahId) => _surahVerseCounts[surahId - 1];
+  static int getVerseCount(int surahId) {
+    if (surahId < 1 || surahId > 114) {
+      Logger.warning('Out-of-range surahId: $surahId', feature: 'MushafPageIndex');
+      return 0;
+    }
+    return _surahVerseCounts[surahId - 1];
+  }
 
   /// Compute cumulative verse offsets for O(1) absolute verse ID lookups.
   /// Call once at startup (e.g. after [loadFromAsset]).

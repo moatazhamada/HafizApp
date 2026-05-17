@@ -708,4 +708,12 @@ final Map<String, String> arEg = {
   'lbl_ayahs': 'آيات',
   'msg_daily_goal_achieved': 'تم تحقيق الهدف اليومي! ما شاء الله!',
   'msg_streak_milestone': 'سلسلة لمدة {days} يوم! رائع!',
+
+  // Audio / Playback
+  'msg_audio_playback_error': 'تعذر تشغيل الصوت. تحقق من اتصالك.',
+
+  // Memorization Empty State
+  'lbl_memorization_empty_title': 'ابدأ رحلة حفظك',
+  'lbl_memorization_empty_subtitle':
+      'افتح أي سورة وتحقق من تلاوتك لتبدأ التتبع',
 };
