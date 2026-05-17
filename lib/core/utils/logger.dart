@@ -3,13 +3,44 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 enum LogLevel { debug, info, warning, error }
 
+class _PreInitLogEntry {
+  final LogLevel level;
+  final dynamic message;
+  final String? feature;
+  final StackTrace? stackTrace;
+  final Object? error;
+
+  const _PreInitLogEntry({
+    required this.level,
+    required this.message,
+    this.feature,
+    this.stackTrace,
+    this.error,
+  });
+}
+
 class Logger {
   static LogMode _logMode = LogMode.debug;
   static FirebaseCrashlytics? _crashlytics;
+  static final List<_PreInitLogEntry> _preInitLogs = [];
+  static const int _maxPreInitLogs = 100;
+  static bool _initialized = false;
 
   static void init(LogMode mode, {FirebaseCrashlytics? crashlytics}) {
     Logger._logMode = mode;
     Logger._crashlytics = crashlytics;
+    Logger._initialized = true;
+    final buffered = List<_PreInitLogEntry>.from(_preInitLogs);
+    _preInitLogs.clear();
+    for (final entry in buffered) {
+      Logger._log(
+        entry.level,
+        entry.message,
+        feature: entry.feature,
+        stackTrace: entry.stackTrace,
+        error: entry.error,
+      );
+    }
   }
 
   /// Debug level - only logged in debug mode
@@ -70,6 +101,18 @@ class Logger {
     StackTrace? stackTrace,
     Object? error,
   }) {
+    if (!_initialized) {
+      if (_preInitLogs.length < _maxPreInitLogs) {
+        _preInitLogs.add(_PreInitLogEntry(
+          level: level,
+          message: message,
+          feature: feature,
+          stackTrace: stackTrace,
+          error: error,
+        ));
+      }
+      return;
+    }
     if (_logMode == LogMode.debug || level == LogLevel.error) {
       final prefix = _levelPrefix(level);
       final featureTag = feature != null ? '[$feature] ' : '';

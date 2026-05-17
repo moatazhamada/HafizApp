@@ -79,7 +79,8 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
         emit(const QfAuthError(message: 'msg_login_cancelled'));
       }
     } on QfTokenValidationError catch (e) {
-      emit(QfAuthError(message: e.message));
+      Logger.warning('Token validation: ${e.message}', feature: 'Auth');
+      emit(const QfAuthError(message: 'msg_token_invalid'));
     } on QfBackendTokenExchangeException {
       emit(const QfAuthError(message: 'msg_backend_auth_failed'));
     } on PlatformException catch (e) {

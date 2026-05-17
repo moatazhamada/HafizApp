@@ -754,6 +754,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                     );
                                   },
                                 ),
+                                _JuzProgressIndicator(surah: surah),
                                 SliverPadding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.0,
@@ -830,6 +831,58 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _JuzProgressIndicator extends StatelessWidget {
+  final Surah? surah;
+
+  const _JuzProgressIndicator({required this.surah});
+
+  @override
+  Widget build(BuildContext context) {
+    if (surah == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final page = MushafPageIndex.getPageForSurah(surah!.id);
+    final juz = MushafPageIndex.getJuzForPage(page);
+    final colors = AppColors.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isAr ? 'الجزء $juz' : 'Juz $juz',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: juz / 30.0,
+                  minHeight: 4,
+                  backgroundColor: colors.primary.withValues(alpha: 0.1),
+                  color: colors.primary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

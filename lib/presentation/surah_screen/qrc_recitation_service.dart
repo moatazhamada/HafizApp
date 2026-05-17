@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:get_it/get_it.dart';
@@ -176,9 +177,8 @@ class QrcRecitationService {
       }
       _audioStreamController = StreamController<Uint8List>();
       _audioSub = _audioStreamController!.stream.listen((data) {
-        if (data.isNotEmpty) {
-          _repository.sendAudio(data);
-        }
+        if (data.isEmpty || _audioEnergyDb(data) < -40) return;
+        _repository.sendAudio(data);
       });
 
       await _recorder.startRecorder(
@@ -200,6 +200,18 @@ class QrcRecitationService {
     await _audioStreamController?.close();
     _audioSub = null;
     _audioStreamController = null;
+  }
+
+  double _audioEnergyDb(Uint8List data) {
+    if (data.length < 2) return -160;
+    double sum = 0;
+    for (int i = 0; i < data.length - 1; i += 2) {
+      final sample = (data[i + 1] << 8) | data[i];
+      final signed = sample < 32768 ? sample : sample - 65536;
+      sum += signed * signed;
+    }
+    if (sum == 0) return -160;
+    return 10 * math.log(sum / (data.length ~/ 2)) / math.ln10;
   }
 
   void _handleRepositoryMessage(dynamic message) {

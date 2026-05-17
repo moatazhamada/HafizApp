@@ -24,9 +24,18 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
+  late final int _initialPage;
+  late final PageController _pageController;
   int _currentPage = 0;
   String? _themeMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialPage = PrefUtils().getOnboardingStep().clamp(0, 4);
+    _currentPage = _initialPage;
+    _pageController = PageController(initialPage: _initialPage);
+  }
 
   bool get _isLightBackground {
     if (_themeMode == 'light') return true;
@@ -42,6 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
       setState(() => _currentPage++);
+      unawaited(PrefUtils().setOnboardingStep(_currentPage));
       unawaited(
         sl<AnalyticsService>().logOnboardingStepViewed(
           step: _currentPage + 1,
@@ -49,7 +59,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       );
     } else {
-      // After notification permission, go to mushaf type onboarding
       unawaited(sl<AnalyticsService>().logOnboardingCompleted());
       NavigatorService.pushNamedAndRemoveUntil(
         AppRoutes.mushafTypeOnboarding,

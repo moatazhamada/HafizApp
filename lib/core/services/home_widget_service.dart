@@ -22,6 +22,7 @@ class HomeWidgetService {
 
   Timer? _refreshTimer;
   StreamSubscription<Uri?>? _clickSub;
+  bool _isUpdating = false;
 
   Future<void> initialize() async {
     try {
@@ -88,6 +89,8 @@ class HomeWidgetService {
   }
 
   Future<void> _refreshWidget() async {
+    if (_isUpdating) return;
+    _isUpdating = true;
     try {
       final ds = sl<RandomVerseRemoteDataSource>();
       final verse = await ds.fetchRandomVerse();
@@ -130,6 +133,8 @@ class HomeWidgetService {
     } catch (e) {
       Logger.warning('HomeWidget refresh failed: $e', feature: 'HomeWidget');
       await _setPlaceholder();
+    } finally {
+      _isUpdating = false;
     }
   }
 

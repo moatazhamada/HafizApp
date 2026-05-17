@@ -408,41 +408,50 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
 
   @override
   Future<bool> isAuthenticated() async {
-    final accessToken = await getAccessToken();
-    if (accessToken == null) return false;
+    try {
+      final accessToken = await getAccessToken();
+      if (accessToken == null) return false;
 
-    final storedFlavor = await _secureStorage.read(
-      key: QfApiConfig.storedFlavorKey,
-    );
-    if (storedFlavor != null && storedFlavor != QfApiConfig.currentFlavor) {
-      Logger.warning(
-        'Flavor mismatch: stored=$storedFlavor current=${QfApiConfig.currentFlavor}. '
-        'Clearing stale tokens.',
-        feature: 'QfAuth',
+      final storedFlavor = await _secureStorage.read(
+        key: QfApiConfig.storedFlavorKey,
       );
-      await logout();
-      return false;
-    }
-
-    final idToken = await _secureStorage.read(key: _idTokenKey);
-    if (idToken != null) {
-      if (JwtDecoder.isExpired(idToken)) {
-        return await refreshToken();
-      }
-      // Re-validate critical claims on app restart — a forged or
-      // misconfigured token that passes expiry must still be rejected.
-      try {
-        QfTokenValidator(config: _oidcConfig).validateIdTokenClaims(idToken);
-      } catch (e) {
+      if (storedFlavor != null && storedFlavor != QfApiConfig.currentFlavor) {
         Logger.warning(
-          'ID token claims invalid on restart (iss/aud): $e',
+          'Flavor mismatch: stored=$storedFlavor current=${QfApiConfig.currentFlavor}. '
+          'Clearing stale tokens.',
           feature: 'QfAuth',
         );
         await logout();
         return false;
       }
+
+      final idToken = await _secureStorage.read(key: _idTokenKey);
+      if (idToken != null) {
+        if (JwtDecoder.isExpired(idToken)) {
+          return await refreshToken();
+        }
+        // Re-validate critical claims on app restart — a forged or
+        // misconfigured token that passes expiry must still be rejected.
+        try {
+          QfTokenValidator(config: _oidcConfig).validateIdTokenClaims(idToken);
+        } catch (e) {
+          Logger.warning(
+            'ID token claims invalid on restart (iss/aud): $e',
+            feature: 'QfAuth',
+          );
+          await logout();
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      Logger.error(
+        'Secure storage unavailable during auth check: $e',
+        feature: 'QfAuth',
+        error: e,
+      );
+      return false;
     }
-    return true;
   }
 
   @override

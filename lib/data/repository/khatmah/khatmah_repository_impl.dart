@@ -8,6 +8,7 @@ import 'package:hafiz_app/data/datasource/qf_activity/qf_activity_remote_data_so
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/reading_goal_model.dart';
 import 'package:hafiz_app/data/model/reading_session_model.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
 import 'package:hafiz_app/domain/entities/reading_session.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
@@ -101,8 +102,8 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   Future<Either<Failure, int>> getCurrentStreak() async {
     try {
       int streak = 0;
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      final utcNow = DateTime.now().toUtc();
+      final today = DateTime.utc(utcNow.year, utcNow.month, utcNow.day);
       final startDate = today.subtract(const Duration(days: 365));
 
       // Batch-read all logs for the past year in a single Hive read
@@ -352,21 +353,12 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
     return DateTime.utc(now.year, now.month, now.day);
   }
 
-  /// Maps the user's selected mushaf type to the QF API mushafId.
-  /// Defaults to 4 (UthmaniHafs) for all types until QF provides
-  /// exact IDs for Naskh/Indopak, Warsh, and Shemerly editions.
   int _resolveMushafId() {
-    if (!PrefUtils.isInitialized) return 4;
+    if (!PrefUtils.isInitialized) return MushafType.madani.qfMushafId;
     try {
-      final type = PrefUtils().getMushafType();
-      return switch (type) {
-        'warsh' => 4, // TODO: Replace with actual QF Warsh mushafId when available
-        'naskh' || 'indopak' => 4, // TODO: Replace with actual QF Indopak mushafId
-        'shemerly' || 'egyptian' => 4, // TODO: Replace with actual QF Shemerly mushafId
-        _ => 4, // UthmaniHafs (madani / default)
-      };
+      return MushafType.fromString(PrefUtils().getMushafType()).qfMushafId;
     } catch (_) {
-      return 4;
+      return MushafType.madani.qfMushafId;
     }
   }
 

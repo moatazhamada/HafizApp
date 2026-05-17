@@ -41,6 +41,8 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static NotificationService? _instance;
+  static DateTime? _lastScheduleTime;
+  static const Duration _minScheduleInterval = Duration(minutes: 30);
 
   NotificationService._();
 
@@ -110,6 +112,8 @@ class NotificationService {
       return true;
     }
 
+    if (_shouldThrottle()) return true;
+
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_verseNotificationId);
 
@@ -170,6 +174,8 @@ class NotificationService {
       );
       return true;
     }
+
+    if (_shouldThrottle()) return true;
 
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_reminderNotificationId);
@@ -356,6 +362,17 @@ class NotificationService {
     return true;
   }
 
+  static bool _shouldThrottle() {
+    if (_lastScheduleTime == null) {
+      _lastScheduleTime = DateTime.now();
+      return false;
+    }
+    final elapsed = DateTime.now().difference(_lastScheduleTime!);
+    if (elapsed < _minScheduleInterval) return true;
+    _lastScheduleTime = DateTime.now();
+    return false;
+  }
+
   // ── Friday Surah Al-Kahf ──
 
   /// Schedule Friday Kahf notification. Returns true if scheduled successfully.
@@ -371,6 +388,8 @@ class NotificationService {
       );
       return true;
     }
+
+    if (_shouldThrottle()) return true;
 
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_kahfNotificationId);

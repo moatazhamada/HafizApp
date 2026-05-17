@@ -12,6 +12,7 @@ import 'recitation_models.dart';
 class RecitationService {
   final Dio _dio;
   static final Map<String, ChapterAudioFile> _audioCache = {};
+  static const int _maxAudioCacheSize = 100;
 
   RecitationService([Dio? dio]) : _dio = dio ?? _buildDio();
 
@@ -64,6 +65,9 @@ class RecitationService {
     if (cached != null) return cached;
     final cachedHive = _readCachedAudio(cacheKey);
     if (cachedHive != null) {
+      if (_audioCache.length >= _maxAudioCacheSize) {
+        _audioCache.remove(_audioCache.keys.first);
+      }
       _audioCache[cacheKey] = cachedHive;
       return cachedHive;
     }
@@ -77,6 +81,9 @@ class RecitationService {
         final audioFile = data['audio_file'] ?? data['chapter_recitation'];
         if (audioFile is Map<String, dynamic>) {
           final parsed = ChapterAudioFile.fromJson(audioFile);
+          if (_audioCache.length >= _maxAudioCacheSize) {
+            _audioCache.remove(_audioCache.keys.first);
+          }
           _audioCache[cacheKey] = parsed;
           _writeCachedAudio(cacheKey, parsed);
           return parsed;

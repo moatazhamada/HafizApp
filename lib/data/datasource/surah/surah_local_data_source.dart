@@ -31,6 +31,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 
   /// Clear both caches. Call on locale change or when data must be refreshed.
   static void invalidateCache() {
+    _responseCache.clear();
     _surahCache?.clear();
     _queryCache.clear();
   }

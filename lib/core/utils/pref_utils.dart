@@ -438,6 +438,18 @@ class PrefUtils {
     }
   }
 
+  int getOnboardingStep() {
+    try {
+      return _requirePrefs().getInt('onboarding_step') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> setOnboardingStep(int step) async {
+    await _requirePrefs().setInt('onboarding_step', step);
+  }
+
   /// Returns true if this is the first time the app has ever been opened.
   bool isFirstEverOpen() {
     try {

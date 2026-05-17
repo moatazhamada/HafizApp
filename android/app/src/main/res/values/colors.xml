@@ -4,4 +4,5 @@
     <color name="widget_stroke">#E0E0E0</color>
     <color name="widget_text_primary">#1A1A1A</color>
     <color name="widget_text_secondary">#666666</color>
+    <color name="splash_background">#1C3D2C</color>
 </resources>

@@ -582,7 +582,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _spokenText = 'msg_transcribing'.tr;
             });
           }
-          final transcribed = await _whisperService.transcribe(
+          final result = await _whisperService.transcribe(
             audioPath: _customFilePath!,
             language: 'ar',
             model: _whisperModel,
@@ -592,8 +592,21 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _whisperTranscribing = false;
             });
           }
-          if (mounted && transcribed != null && transcribed.isNotEmpty) {
-            unawaited(_analyzeRecitation(transcribed));
+          if (mounted && result.isSuccess) {
+            unawaited(_analyzeRecitation(result.text!));
+          } else if (mounted && !result.isSuccess) {
+            final msg = switch (result.error) {
+              WhisperError.noAudio => 'msg_whisper_no_audio',
+              WhisperError.modelError => 'msg_whisper_error',
+              WhisperError.permission => 'msg_mic_permission',
+              _ => 'msg_whisper_error',
+            };
+            setState(() {
+              _statusColor = AppColors.of(context).needsReviewStatus;
+              _feedbackTitle = msg.tr;
+              _showFeedback = true;
+              _isListening = false;
+            });
           }
         }
       } else {

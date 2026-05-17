@@ -741,4 +741,5 @@ final Map<String, String> enUs = {
   'lbl_memorization_empty_title': 'Start your memorization journey',
   'lbl_memorization_empty_subtitle':
       'Open any surah and verify your recitation to begin tracking',
+
 };

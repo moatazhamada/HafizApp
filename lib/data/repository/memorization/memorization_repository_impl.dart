@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
@@ -100,21 +101,12 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
     }
   }
 
-  /// Maps the user's selected mushaf type to the QF API mushafId.
-  /// Defaults to 4 (UthmaniHafs) for all types until QF provides
-  /// exact IDs for Naskh/Indopak, Warsh, and Shemerly editions.
   int _resolveMushafId() {
-    if (!PrefUtils.isInitialized) return 4;
+    if (!PrefUtils.isInitialized) return MushafType.madani.qfMushafId;
     try {
-      final type = PrefUtils().getMushafType();
-      return switch (type) {
-        'warsh' => 4, // TODO: Replace with actual QF Warsh mushafId when available
-        'naskh' || 'indopak' => 4, // TODO: Replace with actual QF Indopak mushafId
-        'shemerly' || 'egyptian' => 4, // TODO: Replace with actual QF Shemerly mushafId
-        _ => 4, // UthmaniHafs (madani / default)
-      };
+      return MushafType.fromString(PrefUtils().getMushafType()).qfMushafId;
     } catch (_) {
-      return 4;
+      return MushafType.madani.qfMushafId;
     }
   }
 

@@ -140,18 +140,26 @@ class _NotificationPermissionPageState
             const Spacer(flex: 2),
 
             // Enable button
-            OnboardingPrimaryButton(
-              text: _isLoading ? 'lbl_setting_up'.tr : 'lbl_enable_notifications'.tr,
-              onPressed: _isLoading ? null : _enableNotifications,
-              isLightBackground: widget.isLightBackground,
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 300),
+              child: OnboardingPrimaryButton(
+                text: _isLoading ? 'lbl_setting_up'.tr : 'lbl_enable_notifications'.tr,
+                onPressed: _isLoading ? null : _enableNotifications,
+                isLightBackground: widget.isLightBackground,
+              ),
             ),
             const SizedBox(height: 12),
 
             // Skip button
-            OnboardingSecondaryButton(
-              text: 'lbl_skip_for_now'.tr,
-              onPressed: _isLoading ? null : _skip,
-              isLightBackground: widget.isLightBackground,
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 300),
+              child: OnboardingSecondaryButton(
+                text: 'lbl_skip_for_now'.tr,
+                onPressed: _isLoading ? null : _skip,
+                isLightBackground: widget.isLightBackground,
+              ),
             ),
             const SizedBox(height: 32),
           ],

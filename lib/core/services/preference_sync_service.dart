@@ -27,7 +27,7 @@ class _QfPrefMapping {
 /// Service that syncs local SharedPreferences with Quran.Foundation Preference API.
 ///
 /// Maps local preference keys to QF preference groups/keys and handles
-/// bidirectional sync.
+/// bidirectional sync with latest-write-wins conflict resolution.
 class PreferenceSyncService {
   /// Mapping of local preference identifiers to QF API structure.
   static final List<_QfPrefMapping> _mappings = [
@@ -38,12 +38,10 @@ class PreferenceSyncService {
       setter: (p, v) => p.setThemeMode(v.toString()),
       toQfValue: (v) {
         final s = v.toString();
-        // Map our 'system' to QF's 'auto'
         return s == 'system' ? 'auto' : s;
       },
       fromQfValue: (v) {
         final s = v.toString();
-        // Map QF's 'auto' to our 'system'
         return s == 'auto' ? 'system' : s;
       },
     ),
@@ -54,7 +52,6 @@ class PreferenceSyncService {
       setter: (p, v) => p.setLocaleCode(v.toString()),
       toQfValue: (v) {
         final s = v.toString();
-        // Map our 'system' to a sensible default for QF
         return s == 'system' ? 'en' : s;
       },
       fromQfValue: (v) => v.toString(),
@@ -66,7 +63,6 @@ class PreferenceSyncService {
       setter: (p, v) => p.setMushafType(v.toString()),
       toQfValue: (v) {
         final s = v?.toString() ?? '';
-        // Map local mushaf types to QF quranFont values
         return _mapMushafTypeToQfFont(s);
       },
       fromQfValue: (v) {
@@ -92,7 +88,7 @@ class PreferenceSyncService {
   QfPreferenceRemoteDataSource get _ds =>
       _remote ?? sl<QfPreferenceRemoteDataSource>();
 
-  /// Push all local preferences to QF.
+  /// Push all local preferences to QF, recording last-modified timestamps.
   Future<int> pushLocalToRemote() async {
     final prefs = PrefUtils();
     int pushed = 0;
@@ -107,7 +103,10 @@ class PreferenceSyncService {
         key: mapping.key,
         value: qfValue,
       );
-      if (success) pushed++;
+      if (success) {
+        _setLocalLastModified(mapping.group, mapping.key, DateTime.now());
+        pushed++;
+      }
     }
 
     Logger.info('Pushed $pushed preferences to QF', feature: 'PrefSync');
@@ -121,6 +120,8 @@ class PreferenceSyncService {
   }
 
   /// Pull preferences from QF and apply to local SharedPreferences.
+  /// Uses last-modified timestamps to avoid overwriting newer local changes
+  /// with stale remote data (latest-write-wins).
   Future<int> pullRemoteToLocal() async {
     final remotePrefs = await _ds.getPreferences();
     if (remotePrefs.isEmpty) return 0;
@@ -135,12 +136,25 @@ class PreferenceSyncService {
       final qfValue = groupData[mapping.key];
       if (qfValue == null) continue;
 
+      final remoteTs = groupData['updatedAt'] ?? groupData['updated_at'];
+      final localTs = _getLocalLastModified(mapping.group, mapping.key);
+      if (remoteTs != null && localTs != null &&
+          DateTime.tryParse(remoteTs.toString())?.isBefore(localTs) == true) {
+        Logger.info(
+          'Skipping ${mapping.group}/${mapping.key}: local is newer',
+          feature: 'PrefSync',
+        );
+        continue;
+      }
+
       final localValue = mapping.fromQfValue?.call(qfValue) ?? qfValue;
       await mapping.setter(prefs, localValue);
       applied++;
     }
 
-    Logger.info('Pulled $applied preferences from QF', feature: 'PrefSync');
+    if (applied > 0) {
+      Logger.info('Pulled $applied preferences from QF', feature: 'PrefSync');
+    }
     unawaited(
       sl<AnalyticsService>().logPreferenceSync(
         direction: 'pull',
@@ -155,6 +169,16 @@ class PreferenceSyncService {
     final pulled = await pullRemoteToLocal();
     final pushed = await pushLocalToRemote();
     return (pulled, pushed);
+  }
+
+  void _setLocalLastModified(String group, String key, DateTime time) {
+    PrefUtils().setString('pref_sync_ts_${group}_$key', time.toIso8601String());
+  }
+
+  DateTime? _getLocalLastModified(String group, String key) {
+    final raw = PrefUtils().getString('pref_sync_ts_${group}_$key');
+    if (raw == null || raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
   }
 
   // ── Value mappers ──

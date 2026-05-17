@@ -6,28 +6,7 @@ import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
-const _invertMatrix = <double>[
-  -1,
-  0,
-  0,
-  0,
-  255,
-  0,
-  -1,
-  0,
-  0,
-  255,
-  0,
-  0,
-  -1,
-  0,
-  255,
-  0,
-  0,
-  0,
-  1,
-  0,
-];
+const _invertFilter = ColorFilter.mode(Colors.white, BlendMode.difference);
 
 class MushafPageWidget extends StatefulWidget {
   final int pageNumber;
@@ -83,7 +62,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
 
     final imageWidget = isDark
         ? ColorFiltered(
-            colorFilter: const ColorFilter.matrix(_invertMatrix),
+            colorFilter: _invertFilter,
             child: CachedNetworkImage(
               cacheManager: MushafCacheManager.instance,
               cacheKey: MushafCacheManager.cacheKey(

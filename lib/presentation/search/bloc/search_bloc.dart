@@ -69,9 +69,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (verseResults.length < 5 && query.length > 2) {
         try {
           final isArabicQuery = RegExp(r'[\u0600-\u06FF]').hasMatch(query);
+          final locale = PrefUtils().getLocaleCode();
           final searchLang = isArabicQuery
               ? null
-              : (PrefUtils().getLocaleCode() ?? 'en').split('_').first;
+              : (locale.isEmpty ? 'en' : locale).split('_').first;
           final onlineResults = await searchRemoteDataSource.search(
             event.query,
             size: 20,

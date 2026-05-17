@@ -4,6 +4,15 @@ enum MushafType {
   warsh,
   shemerly;
 
+  /// Quran Foundation API mushaf ID.
+  /// See https://api-docs.quran.com/docs/category/mushaf
+  int get qfMushafId => switch (this) {
+    MushafType.madani => 1,
+    MushafType.naskh => 3,
+    MushafType.warsh => 2,
+    MushafType.shemerly => 1,
+  };
+
   int get totalPages => switch (this) {
     MushafType.madani => 604,
     MushafType.warsh => 604,
