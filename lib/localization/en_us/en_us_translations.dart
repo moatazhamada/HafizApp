@@ -686,6 +686,8 @@ final Map<String, String> enUs = {
   'msg_friday_kahf_desc': 'Weekly reminder to read Surah Al-Kahf on Friday morning',
   'lbl_friday_kahf_time': 'Friday Kahf Time',
   'msg_friday_kahf_benefit': 'Read Surah Al-Kahf every Friday before prayer',
+  'msg_notification_permission_denied':
+      'Notification permission is required to schedule reminders. Please enable it in settings.',
 
   // Wake Lock
   'lbl_keep_screen_on': 'Keep Screen On',

@@ -661,6 +661,8 @@ final Map<String, String> arEg = {
   'msg_friday_kahf_desc': 'تذكير أسبوعي بقراءة سورة الكهف صباح الجمعة',
   'lbl_friday_kahf_time': 'وقت تذكير الكهف',
   'msg_friday_kahf_benefit': 'اقرأ سورة الكهف كل جمعة قبل الصلاة',
+  'msg_notification_permission_denied':
+      'إذن الإشعارات مطلوب لجدولة التذكيرات. يرجى تمكينه من الإعدادات.',
 
   // Wake Lock
   'lbl_keep_screen_on': 'إبقاء الشاشة مضاءة',
