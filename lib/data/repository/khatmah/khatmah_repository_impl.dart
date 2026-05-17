@@ -341,8 +341,10 @@ class KhatmahRepositoryImpl implements KhatmahRepository {
   }
 
   DateTime _today() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
+    // Use UTC midnight for consistent day boundaries across timezones.
+    // This prevents streak breakage when the user travels.
+    final now = DateTime.now().toUtc();
+    return DateTime.utc(now.year, now.month, now.day);
   }
 
   /// Maps the user's selected mushaf type to the QF API mushafId.

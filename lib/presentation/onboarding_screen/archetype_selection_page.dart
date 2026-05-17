@@ -29,6 +29,9 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
 
   void _select(UserArchetype archetype) {
     setState(() => _selected = archetype);
+    // Persist immediately so back-nav doesn't lose the selection
+    PrefUtils().setUserArchetype(archetype.name);
+    PrefUtils().setSurfaceType(archetype.name);
   }
 
   void _continue() {

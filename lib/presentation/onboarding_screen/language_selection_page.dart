@@ -38,6 +38,8 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage> {
 
   void _selectLanguage(String code) {
     setState(() => _selectedCode = code);
+    // Persist immediately so back-nav doesn't lose the selection
+    PrefUtils().setLocaleCode(code);
     Locale newLocale;
     if (code == 'system') {
       final systemLoc = WidgetsBinding.instance.platformDispatcher.locale;

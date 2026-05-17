@@ -8,6 +8,7 @@ import 'package:hafiz_app/domain/usecase/goals/get_todays_plan.dart';
 import 'package:hafiz_app/domain/usecase/goals/update_goal.dart';
 import 'package:hafiz_app/domain/usecase/goals/delete_goal.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 part 'goals_event.dart';
 part 'goals_state.dart';
@@ -44,6 +45,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
 
         if (failure is InsufficientScopeFailure) {
           emit(GoalsError(failure.errorMessage));
+          _requestReLogin();
           return;
         }
 
@@ -78,6 +80,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
       (failure) {
         Logger.warning('Failed to update goal: ${failure.errorMessage}',
             feature: 'Goals');
+        if (failure is InsufficientScopeFailure) _requestReLogin();
         emit(GoalsActionError(failure.errorMessage));
       },
       (_) {
@@ -102,6 +105,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
       (failure) {
         Logger.warning('Failed to delete goal: ${failure.errorMessage}',
             feature: 'Goals');
+        if (failure is InsufficientScopeFailure) _requestReLogin();
         emit(GoalsActionError(failure.errorMessage));
       },
       (_) {
@@ -129,5 +133,13 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     return planData
         .map((item) => PlanItem.fromJson(item as Map<String, dynamic>? ?? {}))
         .toList();
+  }
+
+  void _requestReLogin() {
+    try {
+      sl<QfAuthBloc>().add(const QfAuthReLoginRequested());
+    } catch (e) {
+      Logger.warning('Failed to dispatch re-login: $e', feature: 'Goals');
+    }
   }
 }

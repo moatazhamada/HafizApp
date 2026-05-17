@@ -55,6 +55,9 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
   void _select(String mode) {
     setState(() => _selected = mode);
     widget.onThemeModeChanged(mode);
+    // Apply theme immediately so the user sees the change right away
+    context.read<ThemeBloc>().add(ChangeThemeModeEvent(mode));
+    PrefUtils().setThemeMode(mode);
   }
 
   void _continue() {

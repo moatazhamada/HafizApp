@@ -382,6 +382,14 @@ class PrefUtils {
     await _requirePrefs().setString('qf_last_sync_at', dt.toIso8601String());
   }
 
+  String? getBookmarkCollectionId() {
+    try { return _requirePrefs().getString('qf_bookmark_collection_id'); } catch (_) { return null; }
+  }
+
+  Future<void> setBookmarkCollectionId(String id) async {
+    await _requirePrefs().setString('qf_bookmark_collection_id', id);
+  }
+
   String? getMushafType() {
     try {
       return _requirePrefs().getString('mushafType');

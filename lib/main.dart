@@ -16,6 +16,7 @@ import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'core/analytics/analytics_service.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
@@ -157,6 +158,24 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set up platform channel handler for Android boot receiver
+  // so notifications are rescheduled after device reboot.
+  const MethodChannel('com.hafiz.app.hafiz_app/notifications')
+      .setMethodCallHandler((call) async {
+    if (call.method == 'rescheduleNotifications') {
+      try {
+        final notificationService = NotificationService();
+        await notificationService.scheduleDailyVerse();
+        await notificationService.scheduleReadingReminder();
+        await notificationService.scheduleFridayKahf();
+      } catch (e) {
+        Logger.warning('Boot reschedule failed: $e', feature: 'Notifications');
+      }
+    }
+    return null;
+  });
+
   Bloc.observer = AnalyticsBlocObserver();
   runApp(const BootstrapApp());
 }

@@ -4,6 +4,7 @@ import '../../../core/analytics/analytics_service.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/quran_index/mushaf_page_index.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/utils/pref_utils.dart';
 import '../../../injection_container.dart';
 import '../../datasource/qf_user_api_remote_data_source.dart';
 import '../../model/bookmark_model.dart';
@@ -95,7 +96,8 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
     if (remoteDataSource == null) return;
     try {
       final verseId = _toAbsoluteVerseId(bookmark.surahId, bookmark.verseNumber);
-      await remoteDataSource!.addBookmark(verseId);
+      final collectionId = PrefUtils().getBookmarkCollectionId();
+      await remoteDataSource!.addBookmark(verseId, collectionId: collectionId);
       Logger.info(
         'Synced bookmark ${bookmark.surahId}:${bookmark.verseNumber} to QF',
         feature: 'Bookmarks',
