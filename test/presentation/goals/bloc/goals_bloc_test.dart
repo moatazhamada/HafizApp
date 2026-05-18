@@ -86,7 +86,7 @@ void main() {
       'emits [Loading, Error] on InsufficientScopeFailure',
       build: () {
         when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => Left(InsufficientScopeFailure()));
+            .thenAnswer((_) async => const Left(InsufficientScopeFailure()));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),
@@ -101,7 +101,7 @@ void main() {
       'emits [Loading, Error] on generic failure',
       build: () {
         when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => Left(ServerFailure('fail')));
+            .thenAnswer((_) async => const Left(ServerFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),

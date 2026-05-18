@@ -5,7 +5,6 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/juz_index.dart';
 
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
-import 'package:hafiz_app/core/utils/logger.dart';
 
 import '../../core/analytics/analytics_properties.dart';
 import '../../core/analytics/analytics_service.dart';

@@ -16,8 +16,8 @@ class KhatmahScreen extends StatefulWidget {
   const KhatmahScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider(
-      create: (context) => sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
+    return BlocProvider.value(
+      value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
       child: const KhatmahScreen(),
     );
   }
@@ -182,12 +182,13 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          final bloc = context.read<KhatmahBloc>();
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             builder: (context) => ManualReadingEntryBottomSheet(
               onSubmit: (verses) {
-                context.read<KhatmahBloc>().add(RecordReading(verses: verses));
+                bloc.add(RecordReading(verses: verses));
               },
             ),
           );

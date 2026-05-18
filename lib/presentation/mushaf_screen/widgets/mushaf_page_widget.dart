@@ -6,7 +6,12 @@ import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
-const _invertFilter = ColorFilter.mode(Colors.white, BlendMode.difference);
+const _invertFilter = ColorFilter.matrix([
+  -1,  0,  0,  0, 255,
+   0, -1,  0,  0, 255,
+   0,  0, -1,  0, 255,
+   0,  0,  0,  1,   0,
+]);
 
 class MushafPageWidget extends StatefulWidget {
   final int pageNumber;

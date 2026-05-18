@@ -42,11 +42,11 @@ void main() {
 
   test('should return failure when repository fails', () async {
     when(() => mockRepository.searchVerses(tQuery))
-        .thenAnswer((_) async => Left(ServerFailure('error')));
+        .thenAnswer((_) async => const Left(ServerFailure('error')));
 
     final result = await searchVerses(tParams);
 
-    expect(result, Left(ServerFailure('error')));
+    expect(result, const Left(ServerFailure('error')));
     verify(() => mockRepository.searchVerses(tQuery)).called(1);
     verifyNoMoreInteractions(mockRepository);
   });

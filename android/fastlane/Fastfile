@@ -230,13 +230,13 @@ platform :android do
   lane :deploy_firebase_app_distribution do
     ensure_dart_defines
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build apk --debug --flavor production #{DART_DEFINES_ARG}")
+      sh("flutter build apk --release --flavor production #{DART_DEFINES_ARG}")
     end
 
     version_name = get_version_name
     version_code = get_version_code
 
-    apk_path = File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-debug.apk")
+    apk_path = File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-production-release.apk")
 
     sh(
       "firebase appdistribution:distribute #{apk_path} " \

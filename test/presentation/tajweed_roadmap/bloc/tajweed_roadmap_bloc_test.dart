@@ -93,7 +93,7 @@ void main() {
       'degrades gracefully when session repo fails',
       build: () {
         when(() => mockSessionRepo.getSessions())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockErrorRepo.getRecitationErrors())
             .thenAnswer((_) async => Right([testError]));
         return bloc;

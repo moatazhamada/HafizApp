@@ -34,7 +34,7 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to load bookmarks'));
+      return const Left(CacheFailure('Failed to load bookmarks'));
     }
   }
 
@@ -60,7 +60,7 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to add bookmark'));
+      return const Left(CacheFailure('Failed to add bookmark'));
     }
   }
 
@@ -88,7 +88,7 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to remove bookmark'));
+      return const Left(CacheFailure('Failed to remove bookmark'));
     }
   }
 
@@ -146,7 +146,7 @@ class BookmarkRepositoryImpl implements BookmarkRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to check bookmark status'));
+      return const Left(CacheFailure('Failed to check bookmark status'));
     }
   }
 }

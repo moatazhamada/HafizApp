@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
-import '../../../core/utils/logger.dart';
 import '../../../core/utils/rtl_utils.dart';
 import '../widgets/staggered_list_item.dart';
 import '../widgets/surah_index_widget.dart';

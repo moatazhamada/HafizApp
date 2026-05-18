@@ -22,7 +22,7 @@ class UpdateGoal implements UseCase<void, UpdateGoalParams> {
       );
       return const Right(null);
     } on InsufficientScopeFailure {
-      return Left(InsufficientScopeFailure());
+      return const Left(InsufficientScopeFailure());
     } catch (e) {
       return Left(ServerFailure('$e'));
     }

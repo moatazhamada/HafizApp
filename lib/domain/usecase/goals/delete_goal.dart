@@ -18,7 +18,7 @@ class DeleteGoal implements UseCase<void, DeleteGoalParams> {
       );
       return const Right(null);
     } on InsufficientScopeFailure {
-      return Left(InsufficientScopeFailure());
+      return const Left(InsufficientScopeFailure());
     } catch (e) {
       return Left(ServerFailure('$e'));
     }

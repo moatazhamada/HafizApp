@@ -484,12 +484,7 @@ class _SplashScaffold extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'NotoNaskhArabic',
                       fontSize: 22,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(
-                            alpha: isDark ? 0.87 : 0.87,
-                          ),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -503,12 +498,7 @@ class _SplashScaffold extends StatelessWidget {
                     'Loading...',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(
-                            alpha: isDark ? 0.7 : 0.54,
-                          ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 14,
                     ),
                   ),

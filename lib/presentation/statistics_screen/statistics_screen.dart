@@ -20,9 +20,8 @@ class StatisticsScreen extends StatelessWidget {
           create: (context) =>
               sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
         ),
-        BlocProvider(
-          create: (context) =>
-              sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
+        BlocProvider.value(
+          value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
         ),
       ],
       child: const _StatsBody(),

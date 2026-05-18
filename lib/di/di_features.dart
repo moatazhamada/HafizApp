@@ -70,7 +70,7 @@ void registerFeatureDependencies() {
   ));
   sl.registerLazySingleton(() => UpdateGoal(goalsRemoteDataSource: sl()));
   sl.registerLazySingleton(() => DeleteGoal(goalsRemoteDataSource: sl()));
-  sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
+  sl.registerFactory(() => MemorizationBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
   sl.registerFactory(
     () => TajweedRoadmapBloc(sessionRepository: sl(), errorRepository: sl()),

@@ -51,7 +51,7 @@ class AudioPlayerHandler {
   int _playGeneration = 0;
   StreamSubscription<ProcessingState>? _completionSub;
   Completer<void>? _verseCompleter;
-  
+
   static const String _prefSurahId = 'audio_last_surah_id';
   static const String _prefVerseIndex = 'audio_last_verse_index';
 
@@ -63,8 +63,6 @@ class AudioPlayerHandler {
   bool get isPlaying => _player.playing;
   DateTime? get sleepTimerEnd => _sleepTimerEnd;
   bool get isLooping => _isLooping;
-
-
 
   Future<void> playSurah({
     required int surahId,
@@ -83,7 +81,7 @@ class AudioPlayerHandler {
     _currentSurahId = surahId;
     _verseUrls = verseAudioUrls;
     _currentVerseIndex = startVerse;
-    await _playCurrentVerse();
+    unawaited(_playCurrentVerse());
   }
 
   Future<void> _playCurrentVerse() async {
@@ -94,7 +92,7 @@ class AudioPlayerHandler {
     if (_verseUrls == null || _currentVerseIndex >= _verseUrls!.length) {
       if (_isLooping && _loopStart != null && _loopEnd != null) {
         _currentVerseIndex = _loopStart!;
-        await _playCurrentVerse();
+        unawaited(_playCurrentVerse());
         return;
       }
       _currentVerseController.add(-1);
@@ -121,12 +119,14 @@ class AudioPlayerHandler {
       _currentVerseIndex++;
 
       // If looping, wrap back to loop start when past loop end
-      if (_isLooping && _loopStart != null && _loopEnd != null &&
+      if (_isLooping &&
+          _loopStart != null &&
+          _loopEnd != null &&
           _currentVerseIndex > _loopEnd!) {
         _currentVerseIndex = _loopStart!;
       }
 
-      await _playCurrentVerse();
+      unawaited(_playCurrentVerse());
     } catch (e) {
       if (!_isDisposed && generation == _playGeneration) {
         _currentVerseController.add(-1);
@@ -211,11 +211,41 @@ class AudioPlayerHandler {
   void seekRelative(Duration offset) {
     if (_isDisposed) return;
     final newPosition = _player.position + offset;
-    final maxDuration = _player.duration ?? Duration.zero;
+
+    // Cross-verse seek backward
+    if (newPosition < Duration.zero && _currentVerseIndex > 0) {
+      _seekToVerseIndex(_currentVerseIndex - 1);
+      return;
+    }
+
+    // Cross-verse seek forward
+    final maxDuration = _player.duration;
+    if (maxDuration != null &&
+        _verseUrls != null &&
+        newPosition > maxDuration &&
+        _currentVerseIndex < _verseUrls!.length - 1) {
+      _seekToVerseIndex(_currentVerseIndex + 1);
+      return;
+    }
+
     final clamped = newPosition < Duration.zero
         ? Duration.zero
-        : (newPosition > maxDuration ? maxDuration : newPosition);
+        : (maxDuration != null && newPosition > maxDuration
+            ? maxDuration
+            : newPosition);
     _player.seek(clamped);
+  }
+
+  void _seekToVerseIndex(int index) {
+    _playGeneration++;
+    _currentVerseIndex = index;
+    unawaited(_completionSub?.cancel());
+    _completionSub = null;
+    if (_verseCompleter != null && !_verseCompleter!.isCompleted) {
+      _verseCompleter!.complete();
+    }
+    _verseCompleter = null;
+    unawaited(_player.stop().then((_) => _playCurrentVerse()));
   }
 
   Future<void> setSpeed(double speed) async {
@@ -236,7 +266,7 @@ class AudioPlayerHandler {
     }
     _verseCompleter = null;
     await _player.stop();
-    await _playCurrentVerse();
+    unawaited(_playCurrentVerse());
   }
 
   Future<void> _saveState() async {

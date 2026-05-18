@@ -170,7 +170,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         'Insufficient scope for today\'s plan',
         feature: 'QfGoals',
       );
-      throw InsufficientScopeFailure();
+      throw const InsufficientScopeFailure();
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode == 401 || statusCode == 403) {

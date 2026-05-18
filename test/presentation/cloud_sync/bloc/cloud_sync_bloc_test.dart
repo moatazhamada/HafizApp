@@ -29,7 +29,7 @@ void main() {
 
   test('SyncWithQf use case returns failure as Left', () async {
     when(() => mockUseCase(any()))
-        .thenAnswer((_) async => Left(ServerFailure('test error')));
+        .thenAnswer((_) async => const Left(ServerFailure('test error')));
 
     final result = await mockUseCase(NoParams());
     expect(result.isLeft(), isTrue);
@@ -37,7 +37,7 @@ void main() {
 
   test('SyncWithQf use case returns success as Right', () async {
     when(() => mockUseCase(any()))
-        .thenAnswer((_) async => Right(QfSyncResult(pushed: 5, pulled: 3)));
+        .thenAnswer((_) async => const Right(QfSyncResult(pushed: 5, pulled: 3)));
 
     final result = await mockUseCase(NoParams());
     result.fold(

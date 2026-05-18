@@ -60,11 +60,11 @@ void main() {
 
   test('should return failure when isBookmarked fails', () async {
     when(() => mockRepository.isBookmarked(1, 1))
-        .thenAnswer((_) async => Left(CacheFailure('error')));
+        .thenAnswer((_) async => const Left(CacheFailure('error')));
 
     final result = await toggleBookmark(tParams);
 
-    expect(result, Left(CacheFailure('error')));
+    expect(result, const Left(CacheFailure('error')));
     verify(() => mockRepository.isBookmarked(1, 1)).called(1);
     verifyNoMoreInteractions(mockRepository);
   });

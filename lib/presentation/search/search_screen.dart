@@ -6,7 +6,6 @@ import '../../core/analytics/analytics_service.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import '../../core/utils/logger.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
@@ -22,25 +21,33 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late final SearchBloc _searchBloc;
+  bool _initializedFromRoute = false;
 
   @override
   void initState() {
     super.initState();
     _searchBloc = sl<SearchBloc>();
 
-    // Pre-fill search from route arguments
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map<String, dynamic>) {
-      final initialQuery = args['query'] as String?;
-      if (initialQuery != null && initialQuery.isNotEmpty) {
-        _searchController.text = initialQuery;
-        _searchBloc.add(SearchQueryChanged(initialQuery));
-      }
-    }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initializedFromRoute) {
+      _initializedFromRoute = true;
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        final initialQuery = args['query'] as String?;
+        if (initialQuery != null && initialQuery.isNotEmpty) {
+          _searchController.text = initialQuery;
+          _searchBloc.add(SearchQueryChanged(initialQuery));
+        }
+      }
+    }
   }
 
   @override

@@ -29,11 +29,11 @@ void main() {
 
     when(
       () => mockGetSurah(const ParamsGetSurah(surahId: '-1')),
-    ).thenAnswer((_) async => Left(ServerFailure('server error')));
+    ).thenAnswer((_) async => const Left(ServerFailure('server error')));
 
     when(
       () => mockGetSurah(const ParamsGetSurah(surahId: '-2')),
-    ).thenAnswer((_) async => Left(ConnectionFailure()));
+    ).thenAnswer((_) async => const Left(ConnectionFailure()));
   });
 
   tearDown(() => surahBloc.close());

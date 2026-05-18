@@ -40,11 +40,11 @@ void main() {
 
   test('should return failure when repository fails', () async {
     when(() => mockRepository.getBookmarks())
-        .thenAnswer((_) async => Left(CacheFailure('error')));
+        .thenAnswer((_) async => const Left(CacheFailure('error')));
 
     final result = await loadBookmarks(NoParams());
 
-    expect(result, Left(CacheFailure('error')));
+    expect(result, const Left(CacheFailure('error')));
     verify(() => mockRepository.getBookmarks()).called(1);
     verifyNoMoreInteractions(mockRepository);
   });

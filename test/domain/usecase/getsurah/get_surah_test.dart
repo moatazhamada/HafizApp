@@ -37,10 +37,10 @@ void main() {
   test('make sure get_surah return failure', () async {
     when(
       () => mockSurahRepo.getSurah('114'),
-    ).thenAnswer((_) async => Left(ServerFailure('error')));
+    ).thenAnswer((_) async => const Left(ServerFailure('error')));
 
     var result = await getSurah.call(const ParamsGetSurah(surahId: '114'));
-    expect(result, Left(ServerFailure('error')));
+    expect(result, const Left(ServerFailure('error')));
     verify(() => mockSurahRepo.getSurah('114'));
   });
 }

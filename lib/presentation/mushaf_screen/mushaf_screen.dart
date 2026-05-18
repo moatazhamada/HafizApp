@@ -558,7 +558,7 @@ class _MushafScreenState extends State<MushafScreen>
                   '$pageNumber / ${_mushafType.totalPages}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -580,7 +580,7 @@ class _MushafScreenState extends State<MushafScreen>
   ) {
     final fontSize = PrefUtils().getQuranFontSize();
     final textColor = colors.mushafTextPrimary;
-    final verseNumColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+    final verseNumColor = colors.textSecondary;
 
     final List<InlineSpan> spans = [];
     final arabicVerseNumStyle = TextStyle(

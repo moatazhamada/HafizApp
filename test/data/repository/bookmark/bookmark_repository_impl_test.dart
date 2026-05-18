@@ -76,7 +76,7 @@ void main() {
 
       final result = await repository.getBookmarks();
 
-      expect(result, Left(CacheFailure('Failed to load bookmarks')));
+      expect(result, const Left(CacheFailure('Failed to load bookmarks')));
       verify(() => mockLocalDataSource.getBookmarks()).called(1);
     });
   });
@@ -98,7 +98,7 @@ void main() {
 
       final result = await repository.addBookmark(tBookmark);
 
-      expect(result, Left(CacheFailure('Failed to add bookmark')));
+      expect(result, const Left(CacheFailure('Failed to add bookmark')));
     });
   });
 
@@ -119,7 +119,7 @@ void main() {
 
       final result = await repository.removeBookmark(1, 1);
 
-      expect(result, Left(CacheFailure('Failed to remove bookmark')));
+      expect(result, const Left(CacheFailure('Failed to remove bookmark')));
     });
   });
 
@@ -140,7 +140,7 @@ void main() {
 
       final result = await repository.isBookmarked(1, 1);
 
-      expect(result, Left(CacheFailure('Failed to check bookmark status')));
+      expect(result, const Left(CacheFailure('Failed to check bookmark status')));
     });
   });
 }

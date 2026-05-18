@@ -31,11 +31,11 @@ void main() {
 
   test('should return failure when repository fails', () async {
     when(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0))
-        .thenAnswer((_) async => Left(CacheFailure('error')));
+        .thenAnswer((_) async => const Left(CacheFailure('error')));
 
     final result = await logReading(tParams);
 
-    expect(result, Left(CacheFailure('error')));
+    expect(result, const Left(CacheFailure('error')));
     verify(() => mockRepository.logReading(verses: 10, surahs: 1, durationSeconds: 0)).called(1);
     verifyNoMoreInteractions(mockRepository);
   });

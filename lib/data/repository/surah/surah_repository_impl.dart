@@ -64,7 +64,7 @@ class SurahRepositoryImpl implements SurahRepository {
         'No network connection, returning ConnectionFailure for surah $surahId',
         feature: 'Surah',
       );
-      return Left(ConnectionFailure());
+      return const Left(ConnectionFailure());
     }
 
     try {

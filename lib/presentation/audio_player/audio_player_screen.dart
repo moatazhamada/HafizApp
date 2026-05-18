@@ -31,7 +31,8 @@ class AudioPlayerScreen extends StatefulWidget {
   State<AudioPlayerScreen> createState() => _AudioPlayerScreenState();
 }
 
-class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindingObserver {
+class _AudioPlayerScreenState extends State<AudioPlayerScreen>
+    with WidgetsBindingObserver {
   final AudioPlayerHandler _handler = AudioPlayerHandler();
   final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
   bool _isLoading = false;
@@ -39,6 +40,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
   String? _errorMessage;
   int _currentVerse = -1;
   StreamSubscription<int>? _verseSub;
+  StreamSubscription<String>? _errorSub;
+  Timer? _sleepTimerUpdater;
+  String? _sleepTimerRemaining;
   int? _resumeFromVerse;
 
   static const List<double> _speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -57,7 +61,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
-    
+
     _sessionTracker.startSession(
       surahId: widget.surahId,
       startVerse: widget.startVerse ?? 1,
@@ -77,13 +81,25 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
         if (verseIndex >= 0) {
           PrefUtils().setLastAudioVerse(widget.surahId, verseIndex);
           _sessionTracker.updateProgress(verseIndex + 1);
-          
+
           // Sync global last read surah for home screen consistency
           final surah = QuranIndex.quranSurahs[widget.surahId - 1];
           PrefUtils().saveLastReadSurah(surah);
         }
       }
     });
+
+    _errorSub = _handler.errorStream.listen((errorKey) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = errorKey.tr;
+          _isLoading = false;
+        });
+      }
+    });
+
+    _startSleepTimerUpdater();
+
     // Check if we have a saved position to resume from
     final saved = PrefUtils().getLastAudioVerse(widget.surahId);
     if (saved != null &&
@@ -102,6 +118,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     _finalizeCurrentSession();
     WidgetsBinding.instance.removeObserver(this);
     _verseSub?.cancel();
+    _errorSub?.cancel();
+    _sleepTimerUpdater?.cancel();
     // Only stop audio if this screen's surah is currently playing.
     // Prevents killing audio started by another screen (e.g. SurahScreen
     // listening mode) since AudioPlayerHandler is a singleton.
@@ -128,15 +146,50 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     }
   }
 
+  void _startSleepTimerUpdater() {
+    _sleepTimerUpdater?.cancel();
+    _sleepTimerUpdater = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _updateSleepTimerDisplay(),
+    );
+  }
+
+  void _updateSleepTimerDisplay() {
+    if (!mounted) return;
+    final end = _handler.sleepTimerEnd;
+    if (end == null) {
+      if (_sleepTimerRemaining != null) {
+        setState(() => _sleepTimerRemaining = null);
+      }
+      return;
+    }
+    final remaining = end.difference(DateTime.now());
+    if (remaining.isNegative) {
+      if (_sleepTimerRemaining != null) {
+        setState(() => _sleepTimerRemaining = null);
+      }
+      return;
+    }
+    final minutes = remaining.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = remaining.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final formatted = 'msg_sleep_timer_remaining'
+        .tr
+        .replaceAll('{minutes}', minutes)
+        .replaceAll('{seconds}', seconds);
+    if (formatted != _sleepTimerRemaining) {
+      setState(() => _sleepTimerRemaining = formatted);
+    }
+  }
+
   void _finalizeCurrentSession() {
     final sessions = _sessionTracker.endSession();
     for (final session in sessions) {
       if (session.endVerse >= session.startVerse) {
         final totalVerses = session.endVerse - session.startVerse + 1;
-        
+
         sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
-        
+
         // Analytics
         unawaited(
           sl<AnalyticsService>().logReadingSession(
@@ -145,8 +198,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
             durationSeconds: session.durationSeconds,
           ),
         );
-        unawaited(sl<AnalyticsService>().logAudioCompleted(surahId: widget.surahId));
-        
+        unawaited(
+            sl<AnalyticsService>().logAudioCompleted(surahId: widget.surahId));
+
         Logger.info(
           'Audio session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
           feature: 'ReadingSessions',
@@ -218,6 +272,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                 onTap: () {
                   _handler.setSleepTimer(Duration(minutes: minutes));
                   Navigator.pop(context);
+                  _updateSleepTimerDisplay();
                   setState(() {});
                   unawaited(
                     sl<AnalyticsService>().logSleepTimerSet(minutes),
@@ -232,6 +287,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                 onTap: () {
                   _handler.cancelSleepTimer();
                   Navigator.pop(context);
+                  _updateSleepTimerDisplay();
                   setState(() {});
                 },
               ),
@@ -391,33 +447,43 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           children: [
+            // Sleep timer countdown chip
+            if (_sleepTimerRemaining != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Chip(
+                  avatar: Icon(
+                    Icons.timer,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  label: Text(
+                    _sleepTimerRemaining!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  backgroundColor: theme.colorScheme.primaryContainer
+                      .withValues(alpha: 0.4),
+                  side: BorderSide.none,
+                ),
+              ),
+
             const Spacer(flex: 2),
-            Text(
-              surah.nameArabic,
-              textDirection: TextDirection.rtl,
-              style: const TextStyle(
-                fontFamily: 'NotoNaskhArabic',
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              surah.nameEnglish,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 16),
 
             // Resume prompt
             if (_resumeFromVerse != null && !isPlaying)
               Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Card(
+                  elevation: 0,
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.3,
+                  ),
                   child: InkWell(
                     onTap: _resumeFromSaved,
                     borderRadius: BorderRadius.circular(12),
@@ -481,26 +547,27 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                 child: Text(
                   _errorMessage!,
                   style: TextStyle(color: theme.colorScheme.error),
+                  textAlign: TextAlign.center,
                 ),
               ),
             _buildControls(theme, isPlaying),
             const Spacer(),
             _buildBottomActions(theme),
-            const Spacer(),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  /// Extracted into [_VerseProgressIndicator] to avoid rebuilding the
-  /// entire screen on every verse change.
-
   Widget _buildControls(ThemeData theme, bool isPlaying) {
     final canControl = isPlaying || _handler.isPlaying || _isLoading;
+    final rowDirection =
+        isRtl(context) ? TextDirection.rtl : TextDirection.ltr;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      textDirection: rowDirection,
       children: [
         // Spatial skip: previous in LTR, next in RTL
         Semantics(
@@ -573,7 +640,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
                         unawaited(
                           sl<AnalyticsService>().logAudioPlay(
                             surahId: widget.surahId,
-                            verseNumber: _currentVerse >= 0 ? _currentVerse + 1 : null,
+                            verseNumber: _currentVerse >= 0
+                                ? _currentVerse + 1
+                                : null,
                             reciterId: _getReciterCdnId(),
                           ),
                         );
@@ -620,27 +689,22 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        TextButton.icon(
-          icon: const Icon(Icons.speed),
-          label: Text('lbl_speed_x'.tr.replaceAll('{speed}', '$_speed')),
+        _ActionButton(
+          icon: Icons.speed,
+          label: 'lbl_speed_x'.tr.replaceAll('{speed}', '$_speed'),
+          isActive: _speed != 1.0,
           onPressed: _showSpeedDialog,
         ),
-        TextButton.icon(
-          icon: Icon(
-            Icons.timer,
-            color: _handler.sleepTimerEnd != null
-                ? theme.colorScheme.primary
-                : null,
-          ),
-          label: Text('lbl_sleep_timer'.tr),
+        _ActionButton(
+          icon: Icons.timer,
+          label: 'lbl_sleep_timer'.tr,
+          isActive: _handler.sleepTimerEnd != null,
           onPressed: _showSleepTimerDialog,
         ),
-        TextButton.icon(
-          icon: Icon(
-            Icons.loop,
-            color: _handler.isLooping ? theme.colorScheme.primary : null,
-          ),
-          label: Text('lbl_loop_verses'.tr),
+        _ActionButton(
+          icon: Icons.loop,
+          label: 'lbl_loop_verses'.tr,
+          isActive: _handler.isLooping,
           onPressed: () {
             if (_handler.isLooping) {
               _handler.clearLoop();
@@ -651,6 +715,36 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> with WidgetsBindi
           },
         ),
       ],
+    );
+  }
+}
+
+/// Compact action button used in the bottom actions bar.
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = isActive ? theme.colorScheme.primary : null;
+
+    return TextButton.icon(
+      icon: Icon(icon, color: color),
+      label: Text(
+        label,
+        style: TextStyle(color: color),
+      ),
+      onPressed: onPressed,
     );
   }
 }

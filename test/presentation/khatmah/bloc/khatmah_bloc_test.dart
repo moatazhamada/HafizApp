@@ -75,15 +75,15 @@ void main() {
       'emits [Loading, Error] when all 5 fetches fail',
       build: () {
         when(() => mockRepo.getGoal())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getTodayLog())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getRecentLogs(30))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getReconciledStreak())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getCurrentStreak())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadKhatmahDashboard()),
@@ -125,7 +125,7 @@ void main() {
       'emits [Error] on failure',
       build: () {
         when(() => mockRepo.setGoal(50))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(const SetReadingGoal(50)),
@@ -169,7 +169,7 @@ void main() {
               verses: any(named: 'verses'),
               surahs: any(named: 'surahs'),
               durationSeconds: any(named: 'durationSeconds'),
-            )).thenAnswer((_) async => Left(CacheFailure('fail')));
+            )).thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(const RecordReading(verses: 10, surahs: 1)),

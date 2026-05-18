@@ -321,6 +321,7 @@ final Map<String, String> enUs = {
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_minutes': 'minutes',
+  'msg_sleep_timer_remaining': 'Sleep timer: {minutes}:{seconds}',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
   'lbl_select_verse': 'Select Ayah',
@@ -742,5 +743,8 @@ final Map<String, String> enUs = {
   'lbl_memorization_empty_title': 'Start your memorization journey',
   'lbl_memorization_empty_subtitle':
       'Open any surah and verify your recitation to begin tracking',
+  'lbl_start_tracking': 'Start Tracking',
+  'lbl_select_surahs_to_track': 'Select surahs to track',
+  'msg_surah_marked_memorized': 'Surah marked as memorized',
 
 };

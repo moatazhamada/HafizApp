@@ -317,6 +317,7 @@ final Map<String, String> arEg = {
   'lbl_sleep_timer': 'مؤقت النوم',
   'lbl_cancel_timer': 'إلغاء المؤقت',
   'lbl_minutes': 'دقيقة',
+  'msg_sleep_timer_remaining': 'مؤقت النوم: {minutes}:{seconds}',
   'lbl_loop_verses': 'تكرار',
   'msg_audio_load_error': 'فشل تحميل الصوت',
   'lbl_select_verse': 'اختر الآية',
@@ -717,4 +718,7 @@ final Map<String, String> arEg = {
   'lbl_memorization_empty_title': 'ابدأ رحلة حفظك',
   'lbl_memorization_empty_subtitle':
       'افتح أي سورة وتحقق من تلاوتك لتبدأ التتبع',
+  'lbl_start_tracking': 'ابدأ التتبع',
+  'lbl_select_surahs_to_track': 'اختر السور للتتبع',
+  'msg_surah_marked_memorized': 'تمت إضافة السورة للحفظ',
 };

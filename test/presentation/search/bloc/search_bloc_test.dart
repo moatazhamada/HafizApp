@@ -116,7 +116,7 @@ void main() {
       build: () {
         when(
           () => mockRepository.searchVerses(any()),
-        ).thenAnswer((_) async => Left(CacheFailure('Search failed')));
+        ).thenAnswer((_) async => const Left(CacheFailure('Search failed')));
         return searchBloc;
       },
       act: (bloc) => bloc.add(const SearchQueryChanged('Fatiha')),

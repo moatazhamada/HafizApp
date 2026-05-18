@@ -26,7 +26,6 @@ import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
-import '../../core/utils/logger.dart';
 import '../../core/services/reading_session_tracker.dart';
 import '../../domain/entities/reading_session.dart';
 import '../../core/quran_index/quran_verse_utils.dart';

@@ -69,13 +69,24 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
       (failure) => emit(MemorizationError(failure.errorMessage)),
       (progress) {
         final due = progress.where(SrsAlgorithm.isDueForReview).toList();
+        final memorized = progress
+            .where((p) => p.status == MemorizationStatus.memorized)
+            .length;
+        final inProgress = progress
+            .where(
+              (p) =>
+                  p.status == MemorizationStatus.inProgress ||
+                  p.status == MemorizationStatus.needsReview,
+            )
+            .length;
+        final notStarted = 114 - progress.length;
         emit(
           MemorizationLoaded(
             allProgress: progress,
             dueReviews: due,
-            totalMemorized: 0,
-            totalInProgress: 0,
-            totalNotStarted: 0,
+            totalMemorized: memorized,
+            totalInProgress: inProgress,
+            totalNotStarted: notStarted < 0 ? 0 : notStarted,
           ),
         );
       },

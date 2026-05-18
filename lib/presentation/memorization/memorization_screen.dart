@@ -324,9 +324,114 @@ class _EmptyState extends StatelessWidget {
                 color: AppColors.of(context).notStartedStatus,
               ),
             ),
+            const SizedBox(height: 24),
+            FilledButton.tonal(
+              onPressed: () => _showStartTrackingSheet(context),
+              child: Text('lbl_start_tracking'.tr),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showStartTrackingSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollController) => _StartTrackingSheet(
+          scrollController: scrollController,
+          onSurahSelected: (surahId) {
+            Navigator.pop(sheetContext);
+            context.read<MemorizationBloc>().add(
+              RecordReview(surahId: surahId, score: 100),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('msg_surah_marked_memorized'.tr),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _StartTrackingSheet extends StatelessWidget {
+  final ScrollController scrollController;
+  final ValueChanged<int> onSurahSelected;
+
+  const _StartTrackingSheet({
+    required this.scrollController,
+    required this.onSurahSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final surahs = QuranIndex.quranSurahs;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'lbl_select_surahs_to_track'.tr,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.builder(
+            controller: scrollController,
+            itemCount: surahs.length,
+            itemBuilder: (context, index) {
+              final surah = surahs[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  radius: 16,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  child: Text(
+                    '${surah.id}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  surah.nameArabic,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  surah.nameEnglish,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.of(context).textSecondary,
+                  ),
+                ),
+                onTap: () => onSurahSelected(surah.id),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

@@ -44,11 +44,11 @@ void main() {
   test('should return InsufficientScopeFailure when scope is insufficient',
       () async {
     when(() => mockDataSource.getTodaysPlan(type: any(named: 'type')))
-        .thenThrow(InsufficientScopeFailure());
+        .thenThrow(const InsufficientScopeFailure());
 
     final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
 
-    expect(result, Left(InsufficientScopeFailure()));
+    expect(result, const Left(InsufficientScopeFailure()));
     verify(() => mockDataSource.getTodaysPlan(type: 'QURAN')).called(1);
     verifyNoMoreInteractions(mockDataSource);
   });
