@@ -384,22 +384,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(16),
               onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsetsDirectional.all(16),
                 child: Row(
                   children: [
                     avatar,
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
                             title,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             subtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -407,6 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
                           ),
                         ],
                       ),

@@ -6,6 +6,7 @@ import 'package:hafiz_app/data/datasource/random_verse/random_verse_remote_data_
 import 'package:hafiz_app/data/datasource/verse_media/verse_media_remote_data_source.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/localization/app_localization.dart';
 
 class RandomVerseCard extends StatefulWidget {
   const RandomVerseCard({super.key});
@@ -90,7 +91,9 @@ class _RandomVerseCardState extends State<RandomVerseCard>
       );
     }
 
-    if (_error != null || _data == null) return const SizedBox.shrink();
+    if (_error != null || _data == null) {
+      return _buildErrorCard(context);
+    }
 
     return Card(
       elevation: 1,
@@ -113,7 +116,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                 Icon(Icons.auto_awesome, size: 16, color: colors.primary),
                 const SizedBox(width: 6),
                 Text(
-                  'Verse of the Moment',
+                  'lbl_verse_of_day'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -180,7 +183,70 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                 _loadVerse();
               },
               icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('New Verse', style: TextStyle(fontSize: 12)),
+              label: Text('lbl_new_verse'.tr, style: const TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                foregroundColor: colors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Card(
+      color: colors.errorBackground.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: colors.needsReviewStatus.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              size: 20,
+              color: colors.needsReviewStatus,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'lbl_verse_of_day'.tr,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colors.needsReviewStatus,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'msg_verse_of_day_error'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _loading = true;
+                  _data = null;
+                  _error = null;
+                });
+                _loadVerse();
+              },
+              icon: const Icon(Icons.refresh, size: 16),
+              label: Text('lbl_try_again'.tr, style: const TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(
                 foregroundColor: colors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

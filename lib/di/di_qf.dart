@@ -28,7 +28,7 @@ void registerQfDataSources() {
   );
 
   sl.registerLazySingleton<QfSearchRemoteDataSource>(
-    () => QfSearchRemoteDataSourceImpl(dio: sl()),
+    () => QfSearchRemoteDataSourceImpl(),
   );
 
   sl.registerLazySingleton<QfTafsirRemoteDataSource>(

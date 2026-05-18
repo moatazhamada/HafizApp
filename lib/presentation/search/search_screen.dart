@@ -127,7 +127,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (state.isSemantic)
                     SliverToBoxAdapter(
                       child: Container(
-                        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        margin: const EdgeInsetsDirectional.only(
+                          start: 16,
+                          end: 16,
+                          top: 8,
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -214,11 +218,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (state.verseResults.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          16.0,
-                          16.0,
-                          16.0,
-                          8.0,
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 16,
+                          end: 16,
+                          top: 16,
+                          bottom: 8,
                         ),
                         child: Semantics(
                           header: true,
@@ -244,15 +248,16 @@ class _SearchScreenState extends State<SearchScreen> {
                             },
                         );
 
+                        final subtitleText = verse.translationText != null &&
+                                verse.translationText!.isNotEmpty
+                            ? verse.translationText!
+                            : '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}';
+
                         return Semantics(
                           button: true,
                           label:
                               '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish}, ${'lbl_ayah'.tr} ${verse.verseNumber}',
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
+                          child: InkWell(
                             onTap: () {
                               unawaited(
                                 sl<AnalyticsService>().logSearchResultTapped(
@@ -269,45 +274,75 @@ class _SearchScreenState extends State<SearchScreen> {
                                 },
                               );
                             },
-                            title: _buildHighlightedText(
-                              context,
-                              verse.arabicText,
-                              _searchController.text,
-                            ),
-                            subtitle:
-                                verse.translationText != null &&
-                                    verse.translationText!.isNotEmpty
-                                ? Text(
-                                    verse.translationText!,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
-                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                textDirection: TextDirection.rtl,
+                                children: [
+                                  // Verse number badge (right side in RTL)
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: theme.primaryColor.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      shape: BoxShape.circle,
                                     ),
-                                  )
-                                : Text(
-                                    '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
-                                    style: TextStyle(
-                                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : null,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${verse.verseNumber}',
+                                      style: TextStyle(
+                                        color: theme.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: theme.primaryColor.withValues(
-                                  alpha: 0.1,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '${verse.verseNumber}',
-                                style: TextStyle(
-                                  color: theme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                  const SizedBox(width: 12),
+                                  // Text content (left side in RTL)
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildHighlightedText(
+                                          context,
+                                          verse.arabicText,
+                                          _searchController.text,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          subtitleText,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textDirection:
+                                              verse.translationText != null &&
+                                                      verse.translationText!
+                                                          .isNotEmpty
+                                                  ? TextDirection.ltr
+                                                  : TextDirection.rtl,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDark
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.38)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

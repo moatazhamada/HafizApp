@@ -226,26 +226,32 @@ platform :android do
     deploy_production
   end
 
-  desc "Deploy to Firebase App Distribution for testing"
+  desc "Deploy to Firebase App Distribution (AAB)"
   lane :deploy_firebase_app_distribution do
     ensure_dart_defines
+
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build apk --release --flavor production #{DART_DEFINES_ARG}")
+      sh("flutter build appbundle --release --flavor production #{DART_DEFINES_ARG}")
     end
 
     version_name = get_version_name
     version_code = get_version_code
 
-    apk_path = File.join(PROJECT_ROOT, "build/app/outputs/flutter-apk/app-production-release.apk")
+    testers = ENV['FIREBASE_TESTERS'] || 'motazhamada@gmail.com'
+    groups = ENV['FIREBASE_TESTER_GROUPS']
+    release_notes = ENV['FIREBASE_RELEASE_NOTES'] || "Build v#{version_name}+#{version_code}"
+
+    groups_arg = groups && !groups.empty? ? "--groups '#{groups}' " : ""
 
     sh(
-      "firebase appdistribution:distribute #{apk_path} " \
+      "firebase appdistribution:distribute #{AAB_PATH} " \
         "--app 1:854811938553:android:7a72ac4049b699cff65c28 " \
-        "--testers #{ENV['FIREBASE_TESTERS'] || 'motazhamada@gmail.com'} " \
-        "--release-notes 'Build v#{version_name}+#{version_code}'"
+        "--testers '#{testers}' " \
+        "#{groups_arg}" \
+        "--release-notes '#{release_notes}'"
     )
 
-    UI.success("🚀 Uploaded to Firebase App Distribution!")
+    UI.success("🚀 Uploaded AAB to Firebase App Distribution!")
   end
 
   # --- Prelive (staging) environment lanes ---

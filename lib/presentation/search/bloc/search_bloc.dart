@@ -96,8 +96,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             }
           }
         } catch (e) {
-          emit(SearchError(e.toString()));
-          return;
+          Logger.warning('Online search failed: $e', feature: 'Search');
+          // Don't discard local results when online search fails.
         }
       }
 

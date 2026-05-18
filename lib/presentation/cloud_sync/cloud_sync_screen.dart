@@ -131,151 +131,344 @@ class _AuthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<QfAuthBloc, QfAuthState>(
       builder: (context, state) {
-        final isLoading = state is QfAuthLoading || state is QfAuthInitial;
-        final isAuth = state is QfAuthAuthenticated;
-        final errorMsg = state is QfAuthError ? state.message : null;
+        if (state is QfAuthLoading || state is QfAuthInitial) {
+          return const _AuthLoadingCard();
+        }
+        if (state is QfAuthAuthenticated) {
+          return _AuthAuthenticatedCard(state: state);
+        }
+        if (state is QfAuthError) {
+          return _AuthErrorCard(message: state.message);
+        }
+        return const _AuthUnauthenticatedCard();
+      },
+    );
+  }
+}
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isAuth
-                          ? Icons.verified_user
-                          : (errorMsg != null
-                                ? Icons.error_outline
-                                : Icons.no_accounts),
-                      color: isAuth
-                          ? AppColors.of(context).statBookmark
-                          : (errorMsg != null ? AppColors.of(context).needsReviewStatus : AppColors.of(context).notStartedStatus),
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isAuth
-                                ? 'msg_qf_logged_in'.tr
-                                : 'msg_qf_not_logged_in'.tr,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          if (isAuth) ...[
-                            if (state.profile?.displayName != null)
-                              Text(
-                                state.profile!.displayName,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
-                              ),
-                            if (state.profile?.email != null)
-                              Text(
-                                state.profile!.email!,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
-                              ),
-                            if (state.profile == null && state.userId != null)
-                              Text(
-                                '${'lbl_user'.tr}: ${state.userId}',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.of(context).notStartedStatus),
-                              ),
-                          ],
-                          if (errorMsg != null)
-                            Text(
-                              errorMsg.tr,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.of(context).needsReviewStatus),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (isLoading)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
+class _AuthLoadingCard extends StatelessWidget {
+  const _AuthLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'lbl_checking_account'.tr,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 16),
-                if (isAuth) ...[
-                  OutlinedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () => context.read<QfAuthBloc>().add(
-                            QfAuthLogoutRequested(),
-                          ),
-                    icon: const Icon(Icons.logout),
-                    label: Text('lbl_sign_out'.tr),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthAuthenticatedCard extends StatelessWidget {
+  final QfAuthAuthenticated state;
+
+  const _AuthAuthenticatedCard({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = AppColors.of(context);
+    final profile = state.profile;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colors.statBookmark.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text('lbl_delete_my_data'.tr),
-                                content: Text('msg_delete_data_confirm'.tr),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text('lbl_cancel'.tr),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(ctx);
-                                      context.read<QfAuthBloc>().add(
-                                        QfAuthDeleteDataRequested(),
-                                      );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                    child: Text('lbl_delete_data'.tr),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                    icon: Icon(
-                      Icons.delete_forever,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    label: Text(
-                      'lbl_delete_my_data'.tr,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.verified_user_rounded,
+                    color: colors.statBookmark,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'msg_qf_logged_in'.tr,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colors.statBookmark,
+                        ),
                       ),
-                    ),
-                  ),
-                ] else
-                  FilledButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () => context.read<QfAuthBloc>().add(
-                            QfAuthLoginRequested(),
+                      if (profile?.displayName != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          profile!.displayName,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
                           ),
-                    icon: const Icon(Icons.login),
-                    label: Text('msg_qf_login'.tr),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.of(context).statBookmark,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                        ),
+                      ],
+                      if (profile?.email != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          profile!.email!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.notStartedStatus,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                        ),
+                      ],
+                      if (profile == null && state.userId != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${'lbl_user'.tr}: ${state.userId}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.notStartedStatus,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                        ),
+                      ],
+                    ],
                   ),
+                ),
               ],
             ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => context.read<QfAuthBloc>().add(
+                QfAuthLogoutRequested(),
+              ),
+              icon: const Icon(Icons.logout, size: 18),
+              label: Text('lbl_sign_out'.tr),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => _showDeleteDataDialog(context),
+              icon: Icon(
+                Icons.delete_forever,
+                size: 18,
+                color: theme.colorScheme.error,
+              ),
+              label: Text(
+                'lbl_delete_my_data'.tr,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDataDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('lbl_delete_my_data'.tr),
+        content: Text('msg_delete_data_confirm'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('lbl_cancel'.tr),
           ),
-        );
-      },
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<QfAuthBloc>().add(
+                QfAuthDeleteDataRequested(),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text('lbl_delete_data'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthErrorCard extends StatelessWidget {
+  final String message;
+
+  const _AuthErrorCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = AppColors.of(context);
+
+    return Card(
+      color: colors.errorBackground.withValues(alpha: 0.6),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colors.needsReviewStatus.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    color: colors.needsReviewStatus,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'lbl_auth_error'.tr,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colors.needsReviewStatus,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message.tr,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => context.read<QfAuthBloc>().add(
+                QfAuthLoginRequested(),
+              ),
+              icon: const Icon(Icons.login, size: 18),
+              label: Text('msg_qf_login'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthUnauthenticatedCard extends StatelessWidget {
+  const _AuthUnauthenticatedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = AppColors.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colors.notStartedStatus.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.no_accounts_rounded,
+                    color: colors.notStartedStatus,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'msg_qf_not_logged_in'.tr,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'msg_login_to_sync_desc'.tr,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => context.read<QfAuthBloc>().add(
+                QfAuthLoginRequested(),
+              ),
+              icon: const Icon(Icons.login, size: 18),
+              label: Text('msg_qf_login'.tr),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.statBookmark,
+                foregroundColor: theme.colorScheme.onPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

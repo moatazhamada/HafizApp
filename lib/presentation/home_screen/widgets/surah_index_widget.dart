@@ -13,6 +13,10 @@ class SurahIndexWidget extends StatelessWidget {
   /// Optional sliver widgets to insert before the surah list.
   /// Useful when the entire screen (headers + list) should scroll together.
   final List<Widget>? headerSlivers;
+  /// Optional page storage key for scroll position restoration.
+  /// When null, no PageStorageKey is applied. Callers that manage
+  /// their own scroll state (e.g. via ScrollController) should leave this null.
+  final String? pageStorageKey;
 
   const SurahIndexWidget({
     super.key,
@@ -20,6 +24,7 @@ class SurahIndexWidget extends StatelessWidget {
     this.scrollController,
     this.onSurahTap,
     this.headerSlivers,
+    this.pageStorageKey,
   });
 
   List<_SurahListEntry> _buildEntries() {
@@ -89,7 +94,7 @@ class SurahIndexWidget extends StatelessWidget {
 
     return CustomScrollView(
       controller: scrollController,
-      key: const PageStorageKey('home-scroll'),
+      key: pageStorageKey != null ? PageStorageKey(pageStorageKey) : null,
       slivers: [
         if (headerSlivers != null) ...headerSlivers!,
         SliverList.builder(

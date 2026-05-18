@@ -153,6 +153,7 @@ class _DevoteeSurfaceState extends State<DevoteeSurface> {
 
     return SurahIndexWidget(
       searchQuery: _searchQuery,
+      pageStorageKey: 'devotee-scroll',
       headerSlivers: [
         SliverToBoxAdapter(
           child: Column(

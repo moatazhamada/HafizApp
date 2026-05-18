@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
@@ -6,6 +8,7 @@ import '../../../injection_container.dart';
 import '../../bookmarks/bloc/bookmark_bloc.dart';
 import '../../khatmah/bloc/khatmah_bloc.dart';
 
+import '../../khatmah/bloc/khatmah_event.dart';
 import '../../khatmah/bloc/khatmah_state.dart';
 import '../../memorization/bloc/memorization_bloc.dart';
 import '../../memorization/bloc/memorization_event.dart';
@@ -26,7 +29,9 @@ class StudentSurface extends StatelessWidget {
         BlocProvider(
           create: (_) => sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
         ),
-        BlocProvider.value(value: sl<KhatmahBloc>()),
+        BlocProvider.value(
+          value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
+        ),
       ],
       child: const _StudentBody(),
     );
@@ -304,6 +309,10 @@ class _MemorizationCard extends StatelessWidget {
     final memFrac = total > 0 ? memorized / total : 0.0;
     final progFrac = total > 0 ? inProgress / total : 0.0;
 
+    final memFlex = math.max(1, (memFrac * 100).round());
+    final progFlex = math.max(1, (progFrac * 100).round());
+    final notStartedFlex = math.max(1, (notStarted / total * 100).round());
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
@@ -347,15 +356,15 @@ class _MemorizationCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Expanded(
-                          flex: (memFrac * 100).round(),
+                          flex: memFlex,
                           child: Container(color: AppColors.of(context).memorizedStatus),
                         ),
                         Expanded(
-                          flex: (progFrac * 100).round(),
+                          flex: progFlex,
                           child: Container(color: AppColors.of(context).inProgressStatus),
                         ),
                         Expanded(
-                          flex: (notStarted / total * 100).round(),
+                          flex: notStartedFlex,
                           child: Container(
                             color: Theme.of(context).colorScheme.surfaceContainer,
                           ),

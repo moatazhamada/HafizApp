@@ -98,6 +98,11 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
               ),
             ),
             onChanged: (value) => setState(() => _searchQuery = value),
+            onSubmitted: (value) {
+              if (value.trim().isNotEmpty) {
+                _onSearchChipTap(value.trim());
+              }
+            },
           ),
         ),
       ),
@@ -196,18 +201,22 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
               children: [
                 _SearchChip(
                   label: 'الرحمة',
+                  icon: Icons.search,
                   onTap: () => _onSearchChipTap('الرحمة'),
                 ),
                 _SearchChip(
                   label: 'mercy',
+                  icon: Icons.search,
                   onTap: () => _onSearchChipTap('mercy'),
                 ),
                 _SearchChip(
                   label: 'الصيام',
+                  icon: Icons.search,
                   onTap: () => _onSearchChipTap('الصيام'),
                 ),
                 _SearchChip(
                   label: 'patience',
+                  icon: Icons.search,
                   onTap: () => _onSearchChipTap('patience'),
                 ),
               ],
@@ -256,6 +265,7 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
 
     return SurahIndexWidget(
       searchQuery: _searchQuery,
+      pageStorageKey: 'seeker-scroll',
       headerSlivers: [
         SliverToBoxAdapter(
           child: Column(
@@ -506,14 +516,15 @@ class _WidgetPromoCard extends StatelessWidget {
 
 class _SearchChip extends StatelessWidget {
   final String label;
+  final IconData? icon;
   final VoidCallback? onTap;
 
-  const _SearchChip({required this.label, this.onTap});
+  const _SearchChip({required this.label, this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
-      avatar: const Icon(Icons.history, size: 16),
+      avatar: Icon(icon ?? Icons.history, size: 16),
       label: Text(label),
       onPressed: onTap ?? () => NavigatorService.pushNamed(AppRoutes.searchPage),
     );

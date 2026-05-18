@@ -107,7 +107,7 @@ class SurahListItem extends StatelessWidget {
                     // Text (Right)
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
                             nameArabic,

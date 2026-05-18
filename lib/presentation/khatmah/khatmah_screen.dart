@@ -140,6 +140,7 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
                         _GoalCard(state: state),
                         const SizedBox(height: AppSpacing.lg),
                         _WeeklyHeatmap(state: state),
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
