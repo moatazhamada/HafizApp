@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
-import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
@@ -116,7 +116,8 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'lbl_page_number'.tr,
-              hintText: '1 - ${widget.totalPages}',
+              hintText:
+                  '${1.toLocalizedNumber(context)} - ${widget.totalPages.toLocalizedNumber(context)}',
               border: const OutlineInputBorder(),
             ),
             onSubmitted: (value) => _jumpAndClose(),
@@ -127,7 +128,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             min: 1,
             max: widget.totalPages.toDouble(),
             divisions: widget.totalPages - 1,
-            label: _selectedPage.toString(),
+            label: _selectedPage.toLocalizedNumber(context),
             onChanged: (value) {
               setState(() {
                 _selectedPage = value.toInt();
@@ -156,7 +157,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             radius: 14,
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             child: Text(
-              '${surah.id}',
+              surah.id.toLocalizedNumber(context),
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -171,7 +172,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             ),
           ),
           subtitle: Text(
-            '${'lbl_page'.tr} $page',
+            '${'lbl_page'.tr} ${page.toLocalizedNumber(context)}',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -199,10 +200,9 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           itemCount: 30,
           itemBuilder: (context, index) {
             final juz = index + 1;
-            final madaniPage = MushafPageIndex.getPageForJuz(juz);
-            final page = _mapMadaniPage(madaniPage);
-            final currentMadaniPage = _pageToMadani(_selectedPage);
-            final isActive = MushafPageIndex.getJuzForPage(currentMadaniPage) == juz;
+            final page = widget.mushafType.getJuzPage(juz);
+            final isActive =
+                widget.mushafType.getJuzForPage(_selectedPage) == juz;
             return GestureDetector(
               onTap: () => Navigator.pop(context, page),
               child: Container(
@@ -217,15 +217,16 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '$juz',
+                      juz.toLocalizedNumber(context),
                       style: TextStyle(
                         fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                         fontSize: 16,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
-                      'p.$page',
+                      '${'lbl_page'.tr} ${page.toLocalizedNumber(context)}',
                       style: TextStyle(
                         fontSize: 10,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -239,26 +240,6 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
         );
       },
     );
-  }
-
-  /// Convert a Madani page number to the current mushaf type's page space.
-  int _mapMadaniPage(int madaniPage) {
-    if (widget.mushafType.totalPages == MushafPageIndex.totalPages) {
-      return madaniPage.clamp(1, widget.totalPages);
-    }
-    return (madaniPage / MushafPageIndex.totalPages * widget.totalPages)
-        .round()
-        .clamp(1, widget.totalPages);
-  }
-
-  /// Convert the current page (in target type space) to Madani-equivalent.
-  int _pageToMadani(int page) {
-    if (widget.mushafType.totalPages == MushafPageIndex.totalPages) {
-      return page;
-    }
-    return (page / widget.totalPages * MushafPageIndex.totalPages)
-        .round()
-        .clamp(1, MushafPageIndex.totalPages);
   }
 
   void _jumpAndClose() {

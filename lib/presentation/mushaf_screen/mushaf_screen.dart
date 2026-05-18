@@ -187,15 +187,7 @@ class _MushafScreenState extends State<MushafScreen>
   int _pageIndexToNumber(int index) => index + 1;
 
   int _surahToPageInType(int surahId, MushafType type) {
-    final madaniPage = MushafPageIndex.getPageForSurah(surahId)
-        .clamp(1, MushafPageIndex.totalPages);
-    if (type.totalPages == MushafPageIndex.totalPages) {
-      return madaniPage;
-    }
-    // Map proportionally from the Madani page space to the target type.
-    return (madaniPage / MushafPageIndex.totalPages * type.totalPages)
-        .round()
-        .clamp(1, type.totalPages);
+    return type.getSurahStartPage(surahId);
   }
 
   /// Convert a page number in the current mushaf type to Madani-equivalent.
@@ -779,7 +771,7 @@ class _MushafScreenState extends State<MushafScreen>
         ? QuranIndex.quranSurahs[surahId - 1]
         : null;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final juz = MushafPageIndex.getJuzForPage(madaniPage);
+    final juz = _mushafType.getJuzForPage(_currentPage);
 
     return Container(
       decoration: BoxDecoration(

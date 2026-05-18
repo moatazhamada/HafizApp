@@ -1,3 +1,5 @@
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+
 enum MushafType {
   madani,
   naskh,
@@ -19,6 +21,58 @@ enum MushafType {
     MushafType.naskh => 612,
     MushafType.shemerly => 521,
   };
+
+  // ─── Per-type Juz start pages ───────────────────────────────────
+
+  static const List<int> _madaniJuzPages = [
+    1, 21, 42, 62, 82, 106, 127, 151, 177, 187,
+    208, 224, 249, 255, 266, 282, 293, 305, 322, 342,
+    360, 382, 399, 414, 426, 440, 452, 468, 486, 516,
+  ];
+
+  static const List<int> _naskhJuzPages = [
+    1, 21, 43, 63, 83, 107, 129, 153, 179, 189,
+    211, 227, 252, 258, 269, 286, 297, 309, 326, 346,
+    364, 387, 404, 419, 431, 445, 458, 474, 492, 523,
+  ];
+
+  static const List<int> _shemerlyJuzPages = [
+    1, 18, 36, 53, 71, 91, 110, 130, 153, 161,
+    179, 193, 215, 220, 229, 243, 253, 263, 278, 295,
+    311, 330, 344, 357, 367, 380, 390, 404, 419, 445,
+  ];
+
+  List<int> get juzStartPages => switch (this) {
+    MushafType.madani || MushafType.warsh => _madaniJuzPages,
+    MushafType.naskh => _naskhJuzPages,
+    MushafType.shemerly => _shemerlyJuzPages,
+  };
+
+  /// Returns the first page of [juz] (1–30) for this Mushaf type.
+  int getJuzPage(int juz) {
+    if (juz < 1 || juz > 30) return 1;
+    return juzStartPages[juz - 1];
+  }
+
+  /// Returns which Juz (1–30) contains [page] for this Mushaf type.
+  int getJuzForPage(int page) {
+    if (page < 1 || page > totalPages) return 1;
+    final pages = juzStartPages;
+    for (int i = pages.length - 1; i >= 0; i--) {
+      if (pages[i] <= page) return i + 1;
+    }
+    return 1;
+  }
+
+  /// Returns the start page of [surahId] (1–114) for this Mushaf type.
+  int getSurahStartPage(int surahId) {
+    if (surahId < 1 || surahId > 114) return 1;
+    final madaniPage = MushafPageIndex.getPageForSurah(surahId);
+    if (totalPages == MushafPageIndex.totalPages) return madaniPage;
+    return (madaniPage / MushafPageIndex.totalPages * totalPages)
+        .round()
+        .clamp(1, totalPages);
+  }
 
   String get baseUrl => switch (this) {
     MushafType.madani => 'https://android.quran.com/data/width_1280/page',
