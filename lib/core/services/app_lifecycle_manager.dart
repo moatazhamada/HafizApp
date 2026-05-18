@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/audio/audio_player_handler.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'voice_recording_controller.dart';
 
 /// Observes app lifecycle transitions and takes appropriate action:
-/// - Pauses audio when the app is backgrounded
+/// - Stops voice recording when the app is backgrounded
 /// - Logs lifecycle changes for diagnostics
+///
+/// Audio playback is intentionally NOT paused on backgrounding — users expect
+/// Quran recitation to continue while the app is in the background.
 class AppLifecycleManager extends StatefulWidget {
   final Widget child;
 
@@ -49,22 +51,12 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
   void _onBackgrounded() {
     try {
-      final handler = AudioPlayerHandler();
-      if (handler.isPlaying) {
-        handler.pause();
-        Logger.info(
-          'App backgrounded — audio paused',
-          feature: 'Lifecycle',
-        );
-      }
-    } catch (e) {
-      Logger.warning('Failed to pause audio on background: $e', feature: 'Lifecycle');
-    }
-
-    try {
       unawaited(VoiceRecordingController.stopAll());
     } catch (e) {
-      Logger.warning('Failed to stop voice recording on background: $e', feature: 'Lifecycle');
+      Logger.warning(
+        'Failed to stop voice recording on background: $e',
+        feature: 'Lifecycle',
+      );
     }
   }
 

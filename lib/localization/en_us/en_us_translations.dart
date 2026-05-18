@@ -322,6 +322,8 @@ final Map<String, String> enUs = {
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_minutes': 'minutes',
   'msg_sleep_timer_remaining': 'Sleep timer: {minutes}:{seconds}',
+  'lbl_loop_surah': 'Loop Surah',
+  'lbl_loop_off': 'Loop Off',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
   'lbl_select_verse': 'Select Ayah',

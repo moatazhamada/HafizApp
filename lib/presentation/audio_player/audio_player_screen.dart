@@ -41,7 +41,9 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   int _currentVerse = -1;
   StreamSubscription<int>? _verseSub;
   StreamSubscription<String>? _errorSub;
+  StreamSubscription<bool>? _playingSub;
   Timer? _sleepTimerUpdater;
+  Timer? _uiRefreshTimer;
   String? _sleepTimerRemaining;
   int? _resumeFromVerse;
 
@@ -98,7 +100,12 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       }
     });
 
+    _playingSub = _handler.playingStateStream.listen((isPlaying) {
+      if (mounted) setState(() {});
+    });
+
     _startSleepTimerUpdater();
+    _startUiRefreshTimer();
 
     // Check if we have a saved position to resume from
     final saved = PrefUtils().getLastAudioVerse(widget.surahId);
@@ -115,17 +122,20 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
 
   @override
   void dispose() {
-    _finalizeCurrentSession();
+    // Only finalize the session if audio has actually stopped.
+    // If the user navigated away while audio is still playing, we keep the
+    // audio running in the background and do NOT report a premature session.
+    if (_handler.currentSurahId != widget.surahId || !_handler.isPlaying) {
+      _finalizeCurrentSession();
+    }
     WidgetsBinding.instance.removeObserver(this);
     _verseSub?.cancel();
     _errorSub?.cancel();
+    _playingSub?.cancel();
     _sleepTimerUpdater?.cancel();
-    // Only stop audio if this screen's surah is currently playing.
-    // Prevents killing audio started by another screen (e.g. SurahScreen
-    // listening mode) since AudioPlayerHandler is a singleton.
-    if (_handler.currentSurahId == widget.surahId) {
-      _handler.stop();
-    }
+    _uiRefreshTimer?.cancel();
+    // Intentionally do NOT stop audio here — users expect Quran recitation
+    // to continue even after leaving the audio player screen.
     WakelockPlus.disable();
     super.dispose();
   }
@@ -137,9 +147,15 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
         _sessionTracker.pause();
+        // Allow the screen to lock when the app is backgrounded to save battery.
+        WakelockPlus.disable();
         break;
       case AppLifecycleState.resumed:
         _sessionTracker.resume();
+        // Re-enable wakelock only if we're still actively playing this surah.
+        if (_handler.currentSurahId == widget.surahId && _handler.isPlaying) {
+          WakelockPlus.enable();
+        }
         break;
       case AppLifecycleState.detached:
         break;
@@ -151,6 +167,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     _sleepTimerUpdater = Timer.periodic(
       const Duration(seconds: 1),
       (_) => _updateSleepTimerDisplay(),
+    );
+  }
+
+  /// Periodically refreshes the UI so the play/pause button and progress
+  /// indicator stay in sync with the actual player state. This is a robust
+  /// fallback for any stream synchronization delays or platform quirks.
+  void _startUiRefreshTimer() {
+    _uiRefreshTimer?.cancel();
+    _uiRefreshTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        if (mounted) setState(() {});
+      },
     );
   }
 
@@ -266,7 +295,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            ...[15, 30, 45, 60].map(
+            ...[5, 10, 15, 30, 45, 60].map(
               (minutes) => ListTile(
                 title: Text('$minutes ${'lbl_minutes'.tr}'),
                 onTap: () {
@@ -424,7 +453,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     final surah = QuranIndex.quranSurahs[widget.surahId - 1];
     final totalVerses = _getVerseCount(widget.surahId);
     final isPlaying =
-        _handler.currentSurahId == widget.surahId && _currentVerse >= 0;
+        _handler.currentSurahId == widget.surahId && _handler.isPlaying;
 
     return Scaffold(
       appBar: AppBar(
@@ -561,26 +590,44 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   }
 
   Widget _buildControls(ThemeData theme, bool isPlaying) {
-    final canControl = isPlaying || _handler.isPlaying || _isLoading;
-    final rowDirection =
-        isRtl(context) ? TextDirection.rtl : TextDirection.ltr;
+    // Enable skip/seek whenever this surah is loaded (even if paused),
+    // or when a load is in progress.
+    final canControl =
+        _handler.currentSurahId == widget.surahId || _isLoading;
+    final isRTL = isRtl(context);
+
+    // Spatial buttons swap sides for RTL, but temporal buttons
+    // (rewind / forward) stay in fixed positions per Material guidelines.
+    final leftSpatial = Semantics(
+      button: true,
+      label: isRTL ? 'lbl_next_verse'.tr : 'lbl_previous_verse'.tr,
+      child: IconButton(
+        icon: isRTL
+            ? rtlSkipNextIcon(context, size: 32)
+            : rtlSkipPreviousIcon(context, size: 32),
+        tooltip: isRTL ? 'lbl_next_verse'.tr : 'lbl_previous_verse'.tr,
+        onPressed: canControl ? (isRTL ? _nextVerse : _previousVerse) : null,
+      ),
+    );
+
+    final rightSpatial = Semantics(
+      button: true,
+      label: isRTL ? 'lbl_previous_verse'.tr : 'lbl_next_verse'.tr,
+      child: IconButton(
+        icon: isRTL
+            ? rtlSkipPreviousIcon(context, size: 32)
+            : rtlSkipNextIcon(context, size: 32),
+        tooltip: isRTL ? 'lbl_previous_verse'.tr : 'lbl_next_verse'.tr,
+        onPressed: canControl ? (isRTL ? _previousVerse : _nextVerse) : null,
+      ),
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      textDirection: rowDirection,
       children: [
-        // Spatial skip: previous in LTR, next in RTL
-        Semantics(
-          button: true,
-          label: 'lbl_previous_verse'.tr,
-          child: IconButton(
-            icon: rtlSkipPreviousIcon(context, size: 32),
-            tooltip: 'lbl_previous_verse'.tr,
-            onPressed: canControl ? _previousVerse : null,
-          ),
-        ),
+        leftSpatial,
         const SizedBox(width: 12),
-        // Rewind 10s — temporal, never flipped
+        // Rewind 10s — temporal, fixed position (left of play)
         Semantics(
           button: true,
           label: 'lbl_rewind_10'.tr,
@@ -655,7 +702,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
                 ),
         ),
         const SizedBox(width: 16),
-        // Forward 10s — temporal, never flipped
+        // Forward 10s — temporal, fixed position (right of play)
         Semantics(
           button: true,
           label: 'lbl_forward_10'.tr,
@@ -671,21 +718,16 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           ),
         ),
         const SizedBox(width: 12),
-        // Spatial skip: next in LTR, previous in RTL
-        Semantics(
-          button: true,
-          label: 'lbl_next_verse'.tr,
-          child: IconButton(
-            icon: rtlSkipNextIcon(context, size: 32),
-            tooltip: 'lbl_next_verse'.tr,
-            onPressed: canControl ? _nextVerse : null,
-          ),
-        ),
+        rightSpatial,
       ],
     );
   }
 
   Widget _buildBottomActions(ThemeData theme) {
+    final loopLabel = _handler.isLooping
+        ? 'lbl_loop_surah'.tr
+        : 'lbl_loop_verses'.tr;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -703,7 +745,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
         ),
         _ActionButton(
           icon: Icons.loop,
-          label: 'lbl_loop_verses'.tr,
+          label: loopLabel,
           isActive: _handler.isLooping,
           onPressed: () {
             if (_handler.isLooping) {
@@ -770,7 +812,9 @@ class _VerseProgressIndicator extends StatefulWidget {
 
 class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
   int _currentVerse = -1;
+  bool _isPlayingAudio = false;
   StreamSubscription<int>? _sub;
+  StreamSubscription<bool>? _playingSub;
 
   @override
   void initState() {
@@ -780,19 +824,25 @@ class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
         setState(() => _currentVerse = verseIndex);
       }
     });
+    _playingSub = widget.handler.playingStateStream.listen((isPlaying) {
+      if (mounted && _isPlayingAudio != isPlaying) {
+        setState(() => _isPlayingAudio = isPlaying);
+      }
+    });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _playingSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isPlaying =
+    final hasActiveVerse =
         widget.handler.currentSurahId == widget.surahId && _currentVerse >= 0;
-    if (!isPlaying) return const SizedBox.shrink();
+    if (!hasActiveVerse) return const SizedBox.shrink();
 
     final displayVerse = _currentVerse + 1;
     final progress = widget.totalVerses > 0
@@ -800,36 +850,51 @@ class _VerseProgressIndicatorState extends State<_VerseProgressIndicator> {
         : 0.0;
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'msg_verse_progress'.tr
-                  .replaceAll('{label}', 'lbl_verse_num'.tr)
-                  .replaceAll('{current}', '$displayVerse')
-                  .replaceAll('{total}', '${widget.totalVerses}'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+    // Dim the indicator when paused so it doesn't look "active".
+    final opacity = _isPlayingAudio ? 1.0 : 0.4;
+
+    return Opacity(
+      opacity: opacity,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (!_isPlayingAudio)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 6),
+                  child: Icon(
+                    Icons.pause,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              Text(
+                'msg_verse_progress'.tr
+                    .replaceAll('{label}', 'lbl_verse_num'.tr)
+                    .replaceAll('{current}', '$displayVerse')
+                    .replaceAll('{total}', '${widget.totalVerses}'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            ),
           ),
-        ),
-        const SizedBox(height: 16),
-      ],
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 }

@@ -21,12 +21,11 @@ class AudioPlayerHandler {
             AVAudioSessionCategoryOptions.allowBluetooth,
         avAudioSessionMode: AVAudioSessionMode.defaultMode,
         androidAudioAttributes: AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.speech,
+          contentType: AndroidAudioContentType.music,
           usage: AndroidAudioUsage.media,
         ),
-        androidAudioFocusGainType:
-            AndroidAudioFocusGainType.gainTransientMayDuck,
-        androidWillPauseWhenDucked: true,
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: false,
       ));
     } catch (e) {
       Logger.warning('Audio session configuration failed: $e', feature: 'Audio');
@@ -58,6 +57,8 @@ class AudioPlayerHandler {
   AudioPlayer get player => _player;
   Stream<int> get currentVerseStream => _currentVerseController.stream;
   Stream<String> get errorStream => _errorController.stream;
+  Stream<bool> get playingStateStream =>
+      _player.playerStateStream.map((state) => state.playing);
   int get currentVerseIndex => _currentVerseIndex;
   int? get currentSurahId => _currentSurahId;
   bool get isPlaying => _player.playing;

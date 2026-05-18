@@ -318,6 +318,8 @@ final Map<String, String> arEg = {
   'lbl_cancel_timer': 'إلغاء المؤقت',
   'lbl_minutes': 'دقيقة',
   'msg_sleep_timer_remaining': 'مؤقت النوم: {minutes}:{seconds}',
+  'lbl_loop_surah': 'تكرار السورة',
+  'lbl_loop_off': 'إيقاف التكرار',
   'lbl_loop_verses': 'تكرار',
   'msg_audio_load_error': 'فشل تحميل الصوت',
   'lbl_select_verse': 'اختر الآية',
