@@ -25,16 +25,27 @@ class _GoalsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('goals_title'.tr)),
-      body: BlocListener<GoalsBloc, GoalsState>(
-        listener: (context, state) {
-          if (state is GoalsActionError) {
-            SnackBarHelper.show(
-              context,
-              message: state.message,
-              type: SnackBarType.error,
-            );
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<GoalsBloc, GoalsState>(
+            listener: (context, state) {
+              if (state is GoalsActionError) {
+                SnackBarHelper.show(
+                  context,
+                  message: state.message,
+                  type: SnackBarType.error,
+                );
+              }
+            },
+          ),
+          BlocListener<QfAuthBloc, QfAuthState>(
+            listener: (context, authState) {
+              if (authState is QfAuthAuthenticated) {
+                context.read<GoalsBloc>().add(LoadTodaysPlan());
+              }
+            },
+          ),
+        ],
         child: BlocBuilder<QfAuthBloc, QfAuthState>(
           builder: (context, authState) {
             final isAuth = authState is QfAuthAuthenticated;
