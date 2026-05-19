@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/notifications/notification_service.dart';
 
+import '../../core/analytics/analytics_properties.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/i18n/locale_controller.dart';
 import '../../core/qiraat/qiraat_models.dart';
 import '../../core/qiraat/qiraat_service.dart';
@@ -17,6 +19,9 @@ import 'package:hafiz_app/core/utils/platform_file_utils.dart'
     if (dart.library.html) 'package:hafiz_app/core/utils/platform_file_utils_web.dart';
 import '../../injection_container.dart' as di;
 import '../auth/bloc/qf_auth_bloc.dart';
+import '../../core/models/surface_type.dart';
+import '../../core/utils/rtl_utils.dart';
+import '../../core/mushaf/mushaf_cache_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -39,6 +44,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _defaultQuranView;
   late String _mushafType;
   late bool _dailyVerseEnabled;
+  late TimeOfDay _dailyVerseTime;
+  late bool _readingReminderEnabled;
+  late TimeOfDay _readingReminderTime;
+  late bool _fridayKahfEnabled;
+  late TimeOfDay _fridayKahfTime;
+  late bool _keepScreenOn;
+  late String _surfaceType;
   double? _downloadProgress; // null = not downloading, 0.0–1.0 = progress
   List<QiraatEdition> _editions = [];
   List<Reciter> _reciters = [];
@@ -63,12 +75,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultQuranView = PrefUtils().getDefaultQuranView();
     _mushafType = PrefUtils().getMushafType() ?? 'madani';
     _dailyVerseEnabled = PrefUtils().isDailyVerseEnabled();
+    _dailyVerseTime = _parseTime(PrefUtils().getDailyVerseTime());
+    _readingReminderEnabled = PrefUtils().isReadingReminderEnabled();
+    _readingReminderTime = _parseTime(PrefUtils().getReadingReminderTime());
+    _fridayKahfEnabled = PrefUtils().isFridayKahfEnabled();
+    _fridayKahfTime = _parseTime(PrefUtils().getFridayKahfTime());
+    _keepScreenOn = PrefUtils().isKeepScreenOn();
+    _surfaceType = PrefUtils().getSurfaceType() ?? 'reader';
     _loadRecitationResources();
   }
 
   Future<void> _loadRecitationResources() async {
-    final editions = await _qiraatService.fetchEditions();
-    final reciters = await _recitationService.fetchReciters();
+    List<QiraatEdition> editions = [];
+    List<Reciter> reciters = [];
+    try {
+      editions = await _qiraatService.fetchEditions();
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load qiraat editions: $e',
+        feature: 'Settings',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+    try {
+      reciters = await _recitationService.fetchReciters();
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load reciters: $e',
+        feature: 'Settings',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
     if (!mounted) return;
     setState(() {
       _editions = editions;
@@ -90,9 +129,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text('lbl_settings'.tr)),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLarge = constraints.maxWidth > 900;
+          final horizontalPadding = isLarge ? 32.0 : 16.0;
+
+          Widget content = ListView(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+            children: [
           _buildProfileCard(theme),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_appearance'.tr),
@@ -102,6 +146,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildThemeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildFontSizeTile(),
+          ]),
+          const SizedBox(height: 20),
+          _buildSectionLabel('lbl_home_layout'.tr),
+          _buildCard([
+            _buildHomeLayoutTile(),
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_reading'.tr),
@@ -114,8 +163,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildMushafTypeTile(),
             const Divider(height: 1, indent: 16, endIndent: 16),
-
+            _buildKeepScreenOnTile(),
+          ]),
+          const SizedBox(height: 20),
+          _buildSectionLabel('lbl_notification_settings'.tr),
+          _buildCard([
             _buildDailyVerseTile(),
+            if (_dailyVerseEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildDailyVerseTimeTile(),
+            ],
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildReadingReminderTile(),
+            if (_readingReminderEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildReadingReminderTimeTile(),
+            ],
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            _buildFridayKahfTile(),
+            if (_fridayKahfEnabled) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildFridayKahfTimeTile(),
+            ],
           ]),
           const SizedBox(height: 20),
           _buildSectionLabel('lbl_recitation_coach'.tr),
@@ -123,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: Text('lbl_recitation_provider'.tr),
               subtitle: Text(_recitationProviderLabel(_recitationProvider)),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _selectRecitationProvider,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -134,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? 'lbl_loading'.tr
                     : _editionLabel(_qiraatEdition),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _loadingEditions ? null : _selectQiraatEdition,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -143,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text(
                 _loadingReciters ? 'lbl_loading'.tr : _reciterLabel(_reciterId),
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: _loadingReciters ? null : _selectReciter,
             ),
             const Divider(height: 1, indent: 16, endIndent: 16),
@@ -194,26 +263,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       )
-                    : const Icon(Icons.chevron_right),
+                    : Icon(rtlChevron(context)),
                 onTap: _downloadProgress != null ? null : _selectWhisperModel,
               ),
             ],
           ]),
           const SizedBox(height: 20),
+          _buildSectionLabel('lbl_storage'.tr),
+          _buildCard([
+            ListTile(
+              leading: Icon(
+                Icons.image_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text('lbl_clear_mushaf_cache'.tr),
+              subtitle: Text('msg_clear_mushaf_cache_desc'.tr),
+              trailing: Icon(rtlChevron(context)),
+              onTap: _clearMushafCache,
+            ),
+          ]),
+          const SizedBox(height: 20),
           _buildSectionLabel('lbl_about'.tr),
           _buildCard([
             ListTile(
-              leading: const Icon(Icons.new_releases, color: Colors.teal),
+              leading: Icon(
+                Icons.new_releases,
+                color: theme.colorScheme.primary,
+              ),
               title: Text('lbl_whats_new'.tr),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(rtlChevron(context)),
               onTap: () =>
                   Navigator.pushNamed(context, AppRoutes.changelogScreen),
             ),
           ]),
           const SizedBox(height: 20),
         ],
-      ),
-    );
+      );
+
+      if (isLarge) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: content,
+          ),
+        );
+      }
+
+      return content;
+    },
+  ),
+);
   }
 
   Widget _buildProfileCard(ThemeData theme) {
@@ -224,29 +323,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final String subtitle;
 
         if (state is QfAuthAuthenticated) {
-          final initial = state.userId?.isNotEmpty == true
-              ? state.userId![0].toUpperCase()
-              : null;
+          final profile = state.profile;
+          final initials = profile?.initials ??
+              (state.userId?.isNotEmpty == true
+                  ? state.userId![0].toUpperCase()
+                  : '?');
           avatar = CircleAvatar(
             radius: 26,
             backgroundColor: theme.colorScheme.primary,
-            child: initial != null
-                ? Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  )
-                : const Icon(
-                    Icons.account_circle,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+            child: Text(
+              initials,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
           );
-          title = 'msg_qf_account'.tr;
-          subtitle = 'msg_qf_logged_in'.tr;
+          title = profile?.displayName ?? 'msg_qf_account'.tr;
+          subtitle = profile?.email ?? 'msg_qf_logged_in'.tr;
         } else if (state is QfAuthLoading || state is QfAuthInitial) {
           avatar = CircleAvatar(
             radius: 26,
@@ -277,47 +372,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle = 'lbl_tap_to_sign_in'.tr;
         }
 
-        return Card(
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  avatar,
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+        return Semantics(
+          button: true,
+          label: 'lbl_semantics_profile_card'.tr.replaceAll('{status}', title),
+          child: Card(
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.all(16),
+                child: Row(
+                  children: [
+                    avatar,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    Icon(
+                      rtlChevron(context),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -330,7 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final displayLabel = isArabic ? label : label.toUpperCase();
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
       child: Text(
         displayLabel,
         style: TextStyle(
@@ -360,7 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('about_language_title'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'about_language_title'.tr,
@@ -384,6 +487,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           LocaleController.setLocale(newLocale);
           await PrefUtils().setLocaleCode(value);
           setState(() => _currentLang = value);
+          unawaited(
+            di.sl<AnalyticsService>().logLanguageChange(
+              value == 'system'
+                  ? WidgetsBinding.instance.platformDispatcher.locale.languageCode
+                  : value,
+            ),
+          );
+          unawaited(
+            di.sl<AnalyticsService>().setUserProperty(
+              name: AnalyticsProperties.locale,
+              value: value,
+            ),
+          );
         }
       },
     );
@@ -398,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_theme'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_theme'.tr,
@@ -412,6 +528,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (value != null && value != _themeMode) {
           di.sl<ThemeBloc>().add(ChangeThemeModeEvent(value));
           setState(() => _themeMode = value);
+          unawaited(
+            di.sl<AnalyticsService>().logThemeChange(value == 'dark'),
+          );
+          unawaited(
+            di.sl<AnalyticsService>().setUserProperty(
+              name: AnalyticsProperties.themeMode,
+              value: value,
+            ),
+          );
         }
       },
     );
@@ -471,7 +596,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_orientation'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_orientation'.tr,
@@ -506,7 +631,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           PrefUtils().setVerseViewMode(val);
         });
       },
-      activeThumbColor: Colors.teal,
+      activeThumbColor: Theme.of(context).colorScheme.primary,
     );
   }
 
@@ -517,7 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListTile(
       title: Text('lbl_default_quran_view'.tr),
       subtitle: Text(label),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         final value = await _showSelectionSheet<String>(
           title: 'lbl_default_quran_view'.tr,
@@ -540,7 +665,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       leading: const Icon(Icons.menu_book_outlined),
       title: Text('lbl_mushaf_type'.tr),
       subtitle: Text(_mushafTypeLabel(_mushafType)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(rtlChevron(context)),
       onTap: () async {
         await Navigator.pushNamed(
           context,
@@ -555,21 +680,223 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildHomeLayoutTile() {
+    return ListTile(
+      leading: const Icon(Icons.dashboard_outlined),
+      title: Text('lbl_home_layout'.tr),
+      subtitle: Text(_surfaceTypeLabel(_surfaceType)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: _selectHomeLayout,
+    );
+  }
+
+  void _selectHomeLayout() async {
+    final result = await showDialog<SurfaceType>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('lbl_home_layout'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: SurfaceType.values.map((surface) {
+            final isSelected = _surfaceType == surface.name;
+            return ListTile(
+              leading: Icon(
+                surface.icon,
+                color: isSelected ? surface.color : null,
+              ),
+              title: Text(surface.labelKey.tr),
+              trailing: isSelected
+                  ? Icon(Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () => Navigator.pop(ctx, surface),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+
+    if (result != null && result.name != _surfaceType) {
+      setState(() => _surfaceType = result.name);
+      await PrefUtils().setSurfaceType(result.name);
+      if (mounted) {
+        // Redirect to home so the new surface is rendered immediately
+        unawaited(NavigatorService.pushNamedAndRemoveUntil(AppRoutes.homeScreen));
+      }
+    }
+  }
+
+  String _surfaceTypeLabel(String type) {
+    return SurfaceType.fromString(type).labelKey.tr;
+  }
+
   Widget _buildDailyVerseTile() {
     return SwitchListTile(
       secondary: const Icon(Icons.notifications_outlined),
       title: Text('lbl_daily_verse_notification'.tr),
       subtitle: Text('msg_daily_verse_desc'.tr),
       value: _dailyVerseEnabled,
-      onChanged: (val) {
+      onChanged: (val) async {
         setState(() => _dailyVerseEnabled = val);
-        PrefUtils().setDailyVerseEnabled(val);
-        final notificationService = DailyVerseNotificationService();
+        await PrefUtils().setDailyVerseEnabled(val);
+        final notificationService = NotificationService();
         if (val) {
-          notificationService.scheduleDailyVerse();
+          final ok = await notificationService.scheduleDailyVerse();
+          if (!ok && mounted) {
+            // Permission was denied — revert the toggle and inform the user
+            setState(() => _dailyVerseEnabled = false);
+            await PrefUtils().setDailyVerseEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
+          }
         } else {
-          notificationService.cancelAll();
+          await notificationService.cancelDailyVerse();
         }
+      },
+    );
+  }
+
+  Widget _buildDailyVerseTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_daily_verse_time'.tr),
+      subtitle: Text(_dailyVerseTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _dailyVerseTime,
+        );
+        if (picked != null && picked != _dailyVerseTime) {
+          setState(() => _dailyVerseTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setDailyVerseTime(timeStr);
+          await NotificationService().scheduleDailyVerse();
+        }
+      },
+    );
+  }
+
+  Widget _buildReadingReminderTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.access_time),
+      title: Text('lbl_reading_reminder'.tr),
+      subtitle: Text('msg_reading_reminder_desc'.tr),
+      value: _readingReminderEnabled,
+      onChanged: (val) async {
+        setState(() => _readingReminderEnabled = val);
+        await PrefUtils().setReadingReminderEnabled(val);
+        final notificationService = NotificationService();
+        if (val) {
+          final ok = await notificationService.scheduleReadingReminder();
+          if (!ok && mounted) {
+            setState(() => _readingReminderEnabled = false);
+            await PrefUtils().setReadingReminderEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
+          }
+        } else {
+          await notificationService.cancelReadingReminder();
+        }
+      },
+    );
+  }
+
+  Widget _buildReadingReminderTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_reading_reminder_time'.tr),
+      subtitle: Text(_readingReminderTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _readingReminderTime,
+        );
+        if (picked != null && picked != _readingReminderTime) {
+          setState(() => _readingReminderTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setReadingReminderTime(timeStr);
+          await NotificationService().scheduleReadingReminder();
+        }
+      },
+    );
+  }
+
+  Widget _buildFridayKahfTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.mosque_outlined),
+      title: Text('lbl_friday_kahf'.tr),
+      subtitle: Text('msg_friday_kahf_desc'.tr),
+      value: _fridayKahfEnabled,
+      onChanged: (val) async {
+        setState(() => _fridayKahfEnabled = val);
+        await PrefUtils().setFridayKahfEnabled(val);
+        final notificationService = NotificationService();
+        if (val) {
+          final ok = await notificationService.scheduleFridayKahf();
+          if (!ok && mounted) {
+            setState(() => _fridayKahfEnabled = false);
+            await PrefUtils().setFridayKahfEnabled(false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('msg_notification_permission_denied'.tr)),
+              );
+            }
+          }
+        } else {
+          await notificationService.cancelFridayKahf();
+        }
+      },
+    );
+  }
+
+  Widget _buildFridayKahfTimeTile() {
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text('lbl_friday_kahf_time'.tr),
+      subtitle: Text(_fridayKahfTime.format(context)),
+      trailing: Icon(rtlChevron(context)),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _fridayKahfTime,
+        );
+        if (picked != null && picked != _fridayKahfTime) {
+          setState(() => _fridayKahfTime = picked);
+          final timeStr =
+              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+          await PrefUtils().setFridayKahfTime(timeStr);
+          await NotificationService().scheduleFridayKahf();
+        }
+      },
+    );
+  }
+
+  TimeOfDay _parseTime(String timeStr) {
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  Widget _buildKeepScreenOnTile() {
+    return SwitchListTile(
+      secondary: const Icon(Icons.lightbulb_outline),
+      title: Text('lbl_keep_screen_on'.tr),
+      subtitle: Text('msg_keep_screen_on_desc'.tr),
+      value: _keepScreenOn,
+      onChanged: (val) {
+        setState(() => _keepScreenOn = val);
+        PrefUtils().setKeepScreenOn(val);
       },
     );
   }
@@ -822,11 +1149,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Clean up partial download on failure
       platformDeleteFile(localPath);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('msg_model_download_failed'.tr),
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarHelper.show(
+          context,
+          message: 'msg_model_download_failed'.tr,
+          type: SnackBarType.error,
         );
       }
     } finally {
@@ -875,6 +1201,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _clearMushafCache() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('lbl_clear_mushaf_cache'.tr),
+        content: Text('msg_clear_mushaf_cache_confirm'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('lbl_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('lbl_confirm'.tr),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await MushafCacheManager.clearCache();
+      if (mounted) {
+        SnackBarHelper.show(
+          context,
+          message: 'msg_mushaf_cache_cleared'.tr,
+          type: SnackBarType.success,
+        );
+      }
+    }
   }
 }
 

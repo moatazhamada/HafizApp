@@ -45,8 +45,8 @@ class SrsResult {
 /// SM-2 Spaced Repetition Algorithm.
 ///
 /// Implementation based on Piotr Woźniak's SuperMemo 2 algorithm.
-/// Ease factor is stored as hundredths (2500 = 2.5) to avoid floating-point
-/// precision issues in Hive/JSON serialization.
+  /// Ease factor is stored as thousandths (2500 = 2.5) to avoid floating-point
+  /// precision issues in Hive/JSON serialization.
 class SrsAlgorithm {
   static const int _defaultEaseFactor = 2500;
   static const int _minEaseFactor = 1300;
@@ -63,7 +63,8 @@ class SrsAlgorithm {
     MemorizationProgress? existing,
     required double score,
   }) {
-    final quality = SrsQuality.fromScore(score);
+    final validScore = _validateScore(score);
+    final quality = SrsQuality.fromScore(validScore);
     final now = DateTime.now();
 
     if (existing == null) {
@@ -86,14 +87,16 @@ class SrsAlgorithm {
         status = MemorizationStatus.inProgress;
         break;
       case SrsQuality.difficultCorrect:
-        interval = 0; // Review again today
+        interval = 1; // Review tomorrow (standard SM-2 for quality 3)
         repetition = 1;
         status = MemorizationStatus.inProgress;
         break;
       case SrsQuality.incorrectHard:
       case SrsQuality.incorrectEasy:
       case SrsQuality.completeBlackout:
-        interval = 0;
+        // Minimum interval of 1 day on failure prevents same-day
+        // bombardment that burns out beginners.
+        interval = 1;
         repetition = 0;
         status = MemorizationStatus.needsReview;
         break;
@@ -125,13 +128,15 @@ class SrsAlgorithm {
       } else if (repetition == 1) {
         interval = 6;
       } else {
-        interval = (interval * easeFactor / 2500).round();
+        interval = (interval * easeFactor / 1000).round();
       }
       repetition++;
     } else {
       // Failed recall — reset
       repetition = 0;
-      interval = 0;
+      // Minimum interval of 1 day on failure prevents same-day
+      // bombardment that burns out beginners.
+      interval = 1;
     }
 
     easeFactor = _adjustEaseFactor(easeFactor, quality);
@@ -139,14 +144,15 @@ class SrsAlgorithm {
     MemorizationStatus status;
     if (quality.value < 3) {
       status = MemorizationStatus.needsReview;
-    } else if (repetition >= memorizedThreshold && score >= 80) {
+    } else if (quality.value >= 4 && repetition >= memorizedThreshold) {
+      // Only mark as memorized after 5+ reviews at quality 4+ (score >= 80)
       status = MemorizationStatus.memorized;
     } else {
       status = MemorizationStatus.inProgress;
     }
 
-    // Ensure interval is at least 0
-    interval = interval.clamp(0, 365 * 2);
+    // Ensure interval is at least 1 day to prevent same-day review flash
+    interval = interval.clamp(1, 365 * 2);
 
     return SrsResult(
       easeFactor: easeFactor,
@@ -159,16 +165,22 @@ class SrsAlgorithm {
 
   /// Adjust ease factor based on recall quality.
   /// EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-  /// Stored as hundredths to avoid floating-point issues.
+  /// Stored as thousandths to avoid floating-point issues.
   static int _adjustEaseFactor(int currentEf, SrsQuality quality) {
     final q = quality.value;
     final adjustment =
-        (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)) * 1000; // hundredths
+        (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)) * 1000;
     final newEf = (currentEf + adjustment.round()).clamp(
       _minEaseFactor,
       _maxEaseFactor,
     );
     return newEf;
+  }
+
+  static double _validateScore(double score) {
+    if (score.isNaN) return 0;
+    if (score.isInfinite) return score.isNegative ? 0 : 100;
+    return score.clamp(0, 100);
   }
 
   /// Check if a given progress entry is due for review today.
@@ -180,6 +192,10 @@ class SrsAlgorithm {
       progress.nextReviewDate.month,
       progress.nextReviewDate.day,
     );
+    // Exclude entries set to exactly "now" (just-recorded) from due list
+    if (progress.nextReviewDate.isAfter(now.subtract(const Duration(minutes: 1)))) {
+      return false;
+    }
     return !reviewDate.isAfter(today) &&
         progress.status != MemorizationStatus.notStarted;
   }

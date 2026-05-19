@@ -21,11 +21,12 @@ class SetReadingGoal extends KhatmahEvent {
 class RecordReading extends KhatmahEvent {
   final int verses;
   final int surahs;
+  final int durationSeconds;
 
-  const RecordReading({this.verses = 0, this.surahs = 0});
+  const RecordReading({this.verses = 0, this.surahs = 0, this.durationSeconds = 0});
 
   @override
-  List<Object?> get props => [verses, surahs];
+  List<Object?> get props => [verses, surahs, durationSeconds];
 }
 
 class SyncActivityDays extends KhatmahEvent {}

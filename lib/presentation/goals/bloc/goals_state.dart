@@ -50,10 +50,7 @@ class GoalsLoaded extends GoalsState {
   final List<PlanItem> items;
   final Map<String, dynamic>? rawData;
 
-  const GoalsLoaded({
-    this.items = const [],
-    this.rawData,
-  });
+  const GoalsLoaded({required this.items, this.rawData});
 
   @override
   List<Object?> get props => [items, rawData];
@@ -63,6 +60,19 @@ class GoalsError extends GoalsState {
   final String message;
 
   const GoalsError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// Loading state for an action (update/delete) without replacing the list.
+class GoalsActionLoading extends GoalsState {}
+
+/// Error state for an action (update/delete) without replacing the list.
+class GoalsActionError extends GoalsState {
+  final String message;
+
+  const GoalsActionError(this.message);
 
   @override
   List<Object?> get props => [message];

@@ -1,9 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hafiz_app/core/analytics/analytics_bloc_observer.dart';
 import 'package:hafiz_app/core/services/app_initializer.dart';
+import 'package:hafiz_app/core/services/app_lifecycle_manager.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
+import 'core/notifications/notification_service.dart';
+import 'core/theme/app_text_styles.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
@@ -13,19 +20,73 @@ import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 import 'dart:async';
+import 'package:flutter/services.dart';
+import 'core/analytics/analytics_service.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/analytics/analytics_route_observer.dart';
 import 'core/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:audio_service/audio_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
+import 'domain/repository/khatmah_repository.dart';
+import 'presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'presentation/khatmah/bloc/khatmah_event.dart';
+import 'core/audio/quran_audio_handler.dart';
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(
     seedColor: const Color(0xFF006754), // deep green accent
     brightness: Brightness.light,
+  ).copyWith(
+    secondary: const Color(0xFFFFB300), // gold
+    tertiary: const Color(0xFF1565C0), // sapphire
+    surfaceContainer: const Color(0xFFF5F5F5),
   ),
+  textTheme: const TextTheme(
+    headlineLarge: AppTextStyles.headingLarge,
+    headlineMedium: AppTextStyles.headingMedium,
+    headlineSmall: AppTextStyles.headingSmall,
+    titleLarge: AppTextStyles.headingSmall,
+    titleMedium: AppTextStyles.labelLarge,
+    titleSmall: AppTextStyles.labelMedium,
+    bodyLarge: AppTextStyles.bodyLarge,
+    bodyMedium: AppTextStyles.bodyMedium,
+    bodySmall: AppTextStyles.bodySmall,
+    labelLarge: AppTextStyles.labelLarge,
+    labelMedium: AppTextStyles.labelMedium,
+    labelSmall: AppTextStyles.labelSmall,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    ),
+  ),
+  cardTheme: const CardThemeData(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+  ),
+  bottomSheetTheme: const BottomSheetThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+  ),
+  dialogTheme: const DialogThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+  ),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -43,7 +104,54 @@ final ThemeData darkTheme = ThemeData(
   colorScheme: ColorScheme.fromSeed(
     seedColor: const Color(0xFF87D1A4), // soft green tint for dark
     brightness: Brightness.dark,
+  ).copyWith(
+    secondary: const Color(0xFFFFCA28), // gold
+    tertiary: const Color(0xFF42A5F5), // sapphire
+    surfaceContainer: const Color(0xFF2D2D2D),
   ),
+  textTheme: const TextTheme(
+    headlineLarge: AppTextStyles.headingLarge,
+    headlineMedium: AppTextStyles.headingMedium,
+    headlineSmall: AppTextStyles.headingSmall,
+    titleLarge: AppTextStyles.headingSmall,
+    titleMedium: AppTextStyles.labelLarge,
+    titleSmall: AppTextStyles.labelMedium,
+    bodyLarge: AppTextStyles.bodyLarge,
+    bodyMedium: AppTextStyles.bodyMedium,
+    bodySmall: AppTextStyles.bodySmall,
+    labelLarge: AppTextStyles.labelLarge,
+    labelMedium: AppTextStyles.labelMedium,
+    labelSmall: AppTextStyles.labelSmall,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    ),
+  ),
+  cardTheme: const CardThemeData(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+  ),
+  bottomSheetTheme: const BottomSheetThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+  ),
+  dialogTheme: const DialogThemeData(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+  ),
+  inputDecorationTheme: const InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+    ),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -58,6 +166,60 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize HydratedBloc storage before runApp() so that any
+  // HydratedBloc / HydratedCubit instantiation is guaranteed to find it.
+  try {
+    final storage = await HydratedStorage.build(
+      storageDirectory: kIsWeb
+          ? HydratedStorageDirectory.web
+          : HydratedStorageDirectory(
+              (await getTemporaryDirectory()).path,
+            ),
+    );
+    HydratedBloc.storage = storage;
+  } catch (e, st) {
+    Logger.warning(
+      'HydratedStorage init failed: $e',
+      feature: 'Init',
+      stackTrace: st,
+    );
+    // Continue without hydrated storage; BLoCs will start with default states.
+  }
+
+  // Set up platform channel handler for Android boot receiver
+  // so notifications are rescheduled after device reboot.
+  const MethodChannel('com.hafiz.app.hafiz_app/notifications')
+      .setMethodCallHandler((call) async {
+    if (call.method == 'rescheduleNotifications') {
+      try {
+        final notificationService = NotificationService();
+        await notificationService.scheduleDailyVerse();
+        await notificationService.scheduleReadingReminder();
+        await notificationService.scheduleFridayKahf();
+      } catch (e) {
+        Logger.warning('Boot reschedule failed: $e', feature: 'Notifications');
+      }
+    }
+    return null;
+  });
+
+  Bloc.observer = AnalyticsBlocObserver();
+
+  try {
+    await AudioService.init(
+      builder: () => QuranAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.hafiz.app.hafiz_app.audio',
+        androidNotificationChannelName: 'Quran Recitation',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+  } catch (e) {
+    Logger.warning('AudioService init failed: $e', feature: 'Audio');
+  }
+
   runApp(const BootstrapApp());
 }
 
@@ -75,6 +237,7 @@ class MyApp extends StatelessWidget {
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
   final cloudSyncBloc = sl<CloudSyncBloc>();
+  final khatmahBloc = sl<KhatmahBloc>();
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +255,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
         BlocProvider.value(value: cloudSyncBloc),
+        BlocProvider.value(
+          value: khatmahBloc..add(LoadKhatmahDashboard()),
+        ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -117,8 +283,32 @@ class MyApp extends StatelessWidget {
                   ? AppRoutes.homeScreen
                   : AppRoutes.onboardingScreen,
               routes: AppRoutes.routes,
-              // Silently handle unknown routes from navigation state restoration.
-              onUnknownRoute: (_) => null,
+              builder: (context, child) {
+                final mediaQuery = MediaQuery.of(context);
+                final clampedScale = mediaQuery.textScaler
+                    .scale(1.0)
+                    .clamp(0.8, 2.0);
+                return AppLifecycleManager(
+                  child: MediaQuery(
+                    data: mediaQuery.copyWith(
+                      textScaler: TextScaler.linear(clampedScale),
+                    ),
+                    child: child!,
+                  ),
+                );
+              },
+              // Clamp text scale to prevent broken layouts at extreme accessibility
+              // sizes while still supporting users who need larger text.
+              // Handled by AppLifecycleManager wrapper above.
+              // Return a minimal scaffold for unknown routes instead of null
+              // to prevent 'No MaterialPageRoute was returned' assertion failures.
+              onUnknownRoute: (settings) => MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  body: Center(
+                    child: Text('Route not found: ${settings.name}'),
+                  ),
+                ),
+              ),
             ),
           );
         },
@@ -165,7 +355,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
         const Duration(seconds: 3),
       );
     } catch (e) {
-      debugPrint('Heavy init failed or timed out: $e');
+      Logger.warning('Heavy init failed or timed out: $e', feature: 'Bootstrap');
     }
 
     if (mounted) {
@@ -191,7 +381,11 @@ class _BootstrapAppState extends State<BootstrapApp> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Initialization Failed',
@@ -201,7 +395,12 @@ class _BootstrapAppState extends State<BootstrapApp> {
                   Text(
                     _initError,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5),
+                    ),
                   ),
                 ],
               ),
@@ -238,9 +437,47 @@ class _ReadyAppState extends State<_ReadyApp> {
   void initState() {
     super.initState();
     _maybeShowChangelog();
+    _setInitialUserProperties();
+    _recordAppOpenForStreak();
+  }
+
+  void _recordAppOpenForStreak() {
+    try {
+      if (sl.isRegistered<KhatmahRepository>()) {
+        unawaited(sl<KhatmahRepository>().recordAppOpen());
+      }
+    } catch (e) {
+      Logger.warning('App open streak record failed: $e', feature: 'Streak');
+    }
+  }
+
+  void _setInitialUserProperties() {
+    try {
+      if (sl.isRegistered<AnalyticsService>()) {
+        final analytics = sl<AnalyticsService>();
+        unawaited(
+          analytics.setCoreUserProperties(
+            locale: PrefUtils().getLocaleCode(),
+            themeMode: PrefUtils().getThemeMode(),
+            archetype: PrefUtils().getUserArchetype(),
+            onboardingCompleted: PrefUtils().getOnboardingCompleted(),
+            showTranslation: PrefUtils().getShowTranslation(),
+            mushafType: PrefUtils().getMushafType(),
+            reciterId: PrefUtils().getReciterId().toString(),
+          ),
+        );
+      }
+    } catch (e) {
+      Logger.warning('Initial user properties failed: $e', feature: 'Analytics');
+    }
   }
 
   Future<void> _maybeShowChangelog() async {
+    // Never show changelog during or before onboarding.
+    if (!PrefUtils().getOnboardingCompleted()) return;
+    // Never show changelog on the very first open.
+    if (PrefUtils().isFirstEverOpen()) return;
+
     final version = (await PackageInfo.fromPlatform()).version;
     final key = 'changelog_seen_${version.replaceAll('.', '_')}';
     final prefs = await SharedPreferences.getInstance();
@@ -273,27 +510,49 @@ class _SplashScaffold extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: isDark
+            ? darkTheme.colorScheme.surface
+            : lightTheme.colorScheme.surface,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: isDark
-                    ? const Color(0xFF87D1A4)
-                    : const Color(0xFF006754),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Loading...',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  fontSize: 14,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'بسم الله الرحمن الرحيم',
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(
+                        fontFamily: 'NotoNaskhArabic',
+                        fontSize: 22,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    CircularProgressIndicator(
+                      color: isDark
+                          ? const Color(0xFF87D1A4)
+                          : const Color(0xFF006754),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -152,6 +152,15 @@ class QfApiInterceptor extends Interceptor {
   /// Check if the 403 is due to insufficient OAuth2 scopes.
   bool _isInsufficientScope(DioException err) {
     try {
+      // Check WWW-Authenticate header (standard OAuth2 signal)
+      final wwwAuth = err.response?.headers.value(
+        'www-authenticate',
+      );
+      if (wwwAuth != null &&
+          wwwAuth.toLowerCase().contains('insufficient_scope')) {
+        return true;
+      }
+
       var data = err.response?.data;
 
       // Dio may leave the body as a raw String instead of parsing JSON.
@@ -162,11 +171,15 @@ class QfApiInterceptor extends Interceptor {
       if (data is Map<String, dynamic>) {
         final type = data['type']?.toString().toLowerCase() ?? '';
         final message = data['message']?.toString().toLowerCase() ?? '';
+        final error = data['error']?.toString().toLowerCase() ?? '';
         return type == 'insufficient_scope' ||
+            error == 'insufficient_scope' ||
             message.contains('required scopes') ||
             message.contains('insufficient scope');
       }
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Insufficient scope check failed: $e', feature: 'Auth');
+    }
     return false;
   }
 
@@ -190,10 +203,15 @@ class QfApiInterceptor extends Interceptor {
         newToken = await _authDataSource.getAccessToken();
       }
 
-      _refreshCompleter!.complete(newToken);
+      if (!_refreshCompleter!.isCompleted) {
+        _refreshCompleter!.complete(newToken);
+      }
+      _refreshCompleter = null;
       return newToken;
     } catch (e) {
-      _refreshCompleter!.completeError(e);
+      if (_refreshCompleter != null && !_refreshCompleter!.isCompleted) {
+        _refreshCompleter!.completeError(e);
+      }
       _refreshCompleter = null;
       rethrow;
     }

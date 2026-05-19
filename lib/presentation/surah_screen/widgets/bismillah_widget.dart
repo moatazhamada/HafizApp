@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class BismillahWidget extends StatelessWidget {
   final int surahId;

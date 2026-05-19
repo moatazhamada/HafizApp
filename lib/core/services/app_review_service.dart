@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:in_app_review/in_app_review.dart';
 
@@ -37,7 +36,7 @@ class AppReviewService {
       }
     } catch (e) {
       // In-app review not available on this platform (web, desktop)
-      debugPrint('App review not available: $e');
+      Logger.warning('App review not available: $e', feature: 'AppReview');
     }
   }
 }

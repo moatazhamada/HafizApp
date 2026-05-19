@@ -11,6 +11,12 @@ class AppColors {
   final Color onPrimary;
   final Color accent;
 
+  // Accent palette (modern, colorful)
+  final Color gold;
+  final Color coral;
+  final Color sapphire;
+  final Color sage;
+
   // Surfaces
   final Color surface;
   final Color surfaceVariant;
@@ -24,6 +30,17 @@ class AppColors {
   final Color onError;
   final Color success;
   final Color warning;
+
+  // Semantic status colors
+  final Color memorizedStatus;
+  final Color inProgressStatus;
+  final Color notStartedStatus;
+  final Color needsReviewStatus;
+
+  // Statistics colors
+  final Color statBookmark;
+  final Color statPractice;
+  final Color statCompleted;
 
   // Quran-specific
   final Color bismillahColor;
@@ -58,6 +75,10 @@ class AppColors {
     required this.primaryLight,
     required this.onPrimary,
     required this.accent,
+    required this.gold,
+    required this.coral,
+    required this.sapphire,
+    required this.sage,
     required this.surface,
     required this.surfaceVariant,
     required this.onSurface,
@@ -68,6 +89,13 @@ class AppColors {
     required this.onError,
     required this.success,
     required this.warning,
+    required this.memorizedStatus,
+    required this.inProgressStatus,
+    required this.notStartedStatus,
+    required this.needsReviewStatus,
+    required this.statBookmark,
+    required this.statPractice,
+    required this.statCompleted,
     required this.bismillahColor,
     required this.badgeBorder,
     required this.badgeText,
@@ -98,6 +126,10 @@ class AppColors {
     primaryLight: Color(0xFFE0F2F1),
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFF87D1A4),
+    gold: Color(0xFFFFB300),
+    coral: Color(0xFFFF6F61),
+    sapphire: Color(0xFF1565C0),
+    sage: Color(0xFF81C784),
     surface: Color(0xFFFFFFFF),
     surfaceVariant: Color(0xFFF5F5F5),
     onSurface: Color(0xFF1A1A1A),
@@ -108,6 +140,13 @@ class AppColors {
     onError: Color(0xFFFFFFFF),
     success: Color(0xFF4CAF50),
     warning: Color(0xFFFF9800),
+    memorizedStatus: Color(0xFF4CAF50),
+    inProgressStatus: Color(0xFFFF9800),
+    notStartedStatus: Color(0xFF9E9E9E),
+    needsReviewStatus: Color(0xFFEF5350),
+    statBookmark: Color(0xFF009688),
+    statPractice: Color(0xFFFF5252),
+    statCompleted: Color(0xFF448AFF),
     bismillahColor: Color(0xFF004B40),
     badgeBorder: Color(0xFF006754),
     badgeText: Color(0xFF004B40),
@@ -133,6 +172,10 @@ class AppColors {
     primaryLight: Color(0xFF1E3A35),
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFF87D1A4),
+    gold: Color(0xFFFFCA28),
+    coral: Color(0xFFFF8A80),
+    sapphire: Color(0xFF42A5F5),
+    sage: Color(0xFFA5D6A7),
     surface: Color(0xFF1E1E1E),
     surfaceVariant: Color(0xFF2D2D2D),
     onSurface: Color(0xFFE0E0E0),
@@ -143,6 +186,13 @@ class AppColors {
     onError: Color(0xFF000000),
     success: Color(0xFF66BB6A),
     warning: Color(0xFFFFA726),
+    memorizedStatus: Color(0xFF66BB6A),
+    inProgressStatus: Color(0xFFFFA726),
+    notStartedStatus: Color(0xFFBDBDBD),
+    needsReviewStatus: Color(0xFFEF5350),
+    statBookmark: Color(0xFF4DB6AC),
+    statPractice: Color(0xFFFF5252),
+    statCompleted: Color(0xFF82B1FF),
     bismillahColor: Color(0xFFFFFFFF),
     badgeBorder: Color(0xFF87D1A4),
     badgeText: Color(0xFFFAF6EB),
@@ -154,7 +204,7 @@ class AppColors {
     textPrimary: Color(0xFFE0E0E0),
     textSecondary: Color(0xFFBDBDBD),
     textHint: Color(0xFFAAAAAA),
-    mushafPageBg: Color(0xFF1E1A1A),
+    mushafPageBg: Color(0xFF000000),
     mushafPageBorder: Color(0xFF3D2E2E),
     mushafVerseHover: Color(0xFF2A4A42),
     mushafTextPrimary: Color(0xFFE8D5B7),

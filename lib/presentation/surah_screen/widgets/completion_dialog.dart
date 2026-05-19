@@ -14,8 +14,8 @@ void showCompletionDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const ExcludeSemantics(
-              child: Icon(Icons.celebration, color: Colors.green, size: 50),
+            ExcludeSemantics(
+              child: Icon(Icons.celebration, color: AppColors.of(context).memorizedStatus, size: 50),
             ),
             const SizedBox(height: 16),
             Text(
@@ -46,10 +46,10 @@ void showCompletionDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const ExcludeSemantics(
+            ExcludeSemantics(
               child: Icon(
                 Icons.fitness_center,
-                color: Colors.orange,
+                color: AppColors.of(context).inProgressStatus,
                 size: 50,
               ),
             ),
@@ -65,7 +65,7 @@ void showCompletionDialog(
             Text(
               'msg_keep_practicing'.tr,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
             ),
           ],
         ),

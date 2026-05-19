@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class LocalWhisperService {
   Future<String?> transcribe({
@@ -6,7 +6,7 @@ class LocalWhisperService {
     String language = 'ar',
     dynamic model,
   }) async {
-    debugPrint('Local Whisper not available on web');
+    Logger.warning('Local Whisper not available on web', feature: 'Whisper');
     return null;
   }
 }

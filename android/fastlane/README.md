@@ -109,7 +109,7 @@ Full CI/CD pipeline: Test, Build, Deploy to Production
 [bundle exec] fastlane android deploy_firebase_app_distribution
 ```
 
-Deploy to Firebase App Distribution for testing
+Deploy to Firebase App Distribution (AAB)
 
 ### android build_prelive_apk
 

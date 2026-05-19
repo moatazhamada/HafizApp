@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class PageVerse {
@@ -109,17 +110,19 @@ class CachedQfMushafPageDataSource implements QfMushafPageDataSource {
   }
 
   Future<void> prefetchPages(List<int> pageNumbers) async {
-    for (final page in pageNumbers) {
-      if (!_cache.containsKey(page)) {
-        final data = await _inner.fetchPage(page);
-        if (data != null) {
-          if (_cache.length >= _maxCacheSize) {
-            final oldest = _cacheOrder.removeAt(0);
-            _cache.remove(oldest);
-          }
-          _cache[page] = data;
-          _cacheOrder.add(page);
+    final pagesToFetch = pageNumbers.where((p) => !_cache.containsKey(p)).toList();
+    final results = await Future.wait(
+      pagesToFetch.map((page) => _inner.fetchPage(page)),
+    );
+    for (int i = 0; i < pagesToFetch.length; i++) {
+      final data = results[i];
+      if (data != null) {
+        if (_cache.length >= _maxCacheSize) {
+          final oldest = _cacheOrder.removeAt(0);
+          _cache.remove(oldest);
         }
+        _cache[pagesToFetch[i]] = data;
+        _cacheOrder.add(pagesToFetch[i]);
       }
     }
   }
@@ -133,13 +136,15 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
   @override
   Future<MushafPageData?> fetchPage(int pageNumber) async {
     try {
-      final url =
-          'https://api.quran.com/api/v4/verses/by_page/$pageNumber'
-          '?fields=code_v1,code_v2,v2_page,page_number'
-          '&words=true'
-          '&word_fields=code_v1,code_v2,position,v2_page,line_v2,page_number'
-          '&per_page=300';
-      final response = await _dio.get(url);
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/verses/by_page/$pageNumber',
+        queryParameters: {
+          'fields': 'code_v1,code_v2,v2_page,page_number',
+          'words': 'true',
+          'word_fields': 'code_v1,code_v2,position,v2_page,line_v2,page_number',
+          'per_page': 300,
+        },
+      );
 
       if (response.statusCode != 200) return null;
 
@@ -165,8 +170,11 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
           wordsByVerse[pv.verseKey] = glyphWords;
 
           for (final gw in glyphWords) {
-            lineMap.putIfAbsent(gw.lineV2, () => GlyphLine(lineNumber: gw.lineV2, words: []));
-            lineMap[gw.lineV2]!.words.add(gw);
+            final line = lineMap.putIfAbsent(
+              gw.lineV2,
+              () => GlyphLine(lineNumber: gw.lineV2, words: []),
+            );
+            line.words.add(gw);
           }
         }
       }

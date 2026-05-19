@@ -34,6 +34,8 @@ import '../../domain/usecase/getsurah/get_surah.dart';
 import '../../domain/usecase/bookmark/load_bookmarks.dart';
 import '../../domain/usecase/bookmark/toggle_bookmark.dart';
 import '../../domain/usecase/goals/get_todays_plan.dart';
+import '../../domain/usecase/goals/update_goal.dart';
+import '../../domain/usecase/goals/delete_goal.dart';
 import '../../domain/usecase/khatmah/log_reading.dart';
 import '../../domain/usecase/search/search_verses.dart';
 import '../../presentation/bookmarks/bloc/bookmark_bloc.dart';
@@ -61,8 +63,14 @@ void registerFeatureDependencies() {
   sl.registerLazySingleton(() => RecitationErrorBloc(repository: sl()));
   sl.registerLazySingleton(() => CloudSyncBloc(syncWithQf: sl()));
   sl.registerLazySingleton(() => RecitationSessionBloc(repository: sl()));
-  sl.registerFactory(() => GoalsBloc(getTodaysPlan: sl()));
-  sl.registerLazySingleton(() => MemorizationBloc(repository: sl()));
+  sl.registerFactory(() => GoalsBloc(
+    getTodaysPlan: sl(),
+    updateGoal: sl(),
+    deleteGoal: sl(),
+  ));
+  sl.registerLazySingleton(() => UpdateGoal(goalsRemoteDataSource: sl()));
+  sl.registerLazySingleton(() => DeleteGoal(goalsRemoteDataSource: sl()));
+  sl.registerFactory(() => MemorizationBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
   sl.registerFactory(
     () => TajweedRoadmapBloc(sessionRepository: sl(), errorRepository: sl()),
@@ -71,7 +79,7 @@ void registerFeatureDependencies() {
   // Use Cases
   sl.registerLazySingleton(() => GetSurah(surahRepository: sl()));
   sl.registerLazySingleton(
-    () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl()),
+    () => SyncWithQf(qfUserApi: sl(), bookmarkLocalDataSource: sl(), khatmahRepository: sl()),
   );
 
   sl.registerLazySingleton(() => LoadBookmarks(bookmarkRepository: sl()));
@@ -92,7 +100,10 @@ void registerFeatureDependencies() {
   );
 
   sl.registerLazySingleton<BookmarkRepository>(
-    () => BookmarkRepositoryImpl(localDataSource: sl()),
+    () => BookmarkRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
   );
 
   sl.registerLazySingleton<RecitationErrorRepository>(
@@ -161,6 +172,7 @@ void registerFeatureDependencies() {
     () => KhatmahLocalDataSourceImpl(
       logBox: Hive.box('reading_logs'),
       goalBox: Hive.box('reading_goal'),
+      offlineSessionBox: Hive.box('offline_reading_sessions'),
     ),
   );
 

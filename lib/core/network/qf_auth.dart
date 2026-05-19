@@ -68,9 +68,14 @@ class QfAuthService {
           error: 'OAuth token request failed: ${resp.statusCode}',
         );
       }
+      _refreshCompleter?.complete();
+      _refreshCompleter = null;
+    } catch (e) {
+      _refreshCompleter?.completeError(e);
+      _refreshCompleter = null;
+      rethrow;
     } finally {
       _refreshing = false;
-      _refreshCompleter?.complete();
     }
   }
 }

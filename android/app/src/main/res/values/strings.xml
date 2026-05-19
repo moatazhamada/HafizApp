@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Hafiz App</string>
     <string name="app_widget_description">Daily Quran verse on your home screen</string>
+    <string name="app_widget_placeholder_text">Read in the name of your Lord</string>
 </resources>

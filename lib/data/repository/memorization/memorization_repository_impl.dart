@@ -1,8 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/memorization_progress_model.dart';
@@ -13,6 +15,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 class MemorizationRepositoryImpl implements MemorizationRepository {
   final MemorizationLocalDataSource localDataSource;
   final QfGoalsRemoteDataSource goalsRemoteDataSource;
+  bool _goalsSyncedThisSession = false;
 
   MemorizationRepositoryImpl({
     required this.localDataSource,
@@ -88,7 +91,7 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
         lastReviewDate: DateTime.now(),
         bestScore: existing != null && existing.bestScore > score
             ? existing.bestScore
-            : score,
+            : score.clamp(0.0, 100.0),
       );
 
       await localDataSource.saveProgress(updated);
@@ -98,9 +101,21 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
     }
   }
 
+  int _resolveMushafId() {
+    if (!PrefUtils.isInitialized) return MushafType.madani.qfMushafId;
+    try {
+      return MushafType.fromString(PrefUtils().getMushafType()).qfMushafId;
+    } catch (_) {
+      return MushafType.madani.qfMushafId;
+    }
+  }
+
   @override
   Future<Either<Failure, void>> syncMemorizationGoalToQf() async {
     try {
+      if (_goalsSyncedThisSession) return const Right(null);
+      _goalsSyncedThisSession = true;
+
       final progress = await localDataSource.getAllProgress();
       final inProgressItems = progress.where(
         (p) =>
@@ -108,16 +123,24 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
             p.status == MemorizationStatus.needsReview,
       );
 
-      // Create a QURAN_RANGE goal for each surah in progress
       for (final item in inProgressItems) {
         try {
-          final verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          int verseCount;
+          try {
+            verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          } catch (e) {
+            Logger.warning(
+              'Failed to get verse count for surah ${item.surahId}: $e',
+              feature: 'Memorization',
+            );
+            continue;
+          }
 
           await goalsRemoteDataSource.createGoal(
             type: 'QURAN_RANGE',
             amount: '${item.surahId}:1-${item.surahId}:$verseCount',
             category: 'QURAN',
-            mushafId: 4, // UthmaniHafs
+            mushafId: _resolveMushafId(),
           );
         } catch (e) {
           Logger.warning(

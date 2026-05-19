@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/config/api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 /// Remote data source for online Quran search.
@@ -16,9 +17,19 @@ abstract class QfSearchRemoteDataSource {
 }
 
 class QfSearchRemoteDataSourceImpl implements QfSearchRemoteDataSource {
-  final Dio _dio;
+  late final Dio _dio;
 
-  QfSearchRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
+  QfSearchRemoteDataSourceImpl({Dio? dio}) {
+    // Use a dedicated Dio instance pointing to Quran.com public API
+    // so search works independently of auth-protected QF APIs.
+    _dio = dio ?? Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.quranComBase,
+        connectTimeout: const Duration(seconds: 7),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+  }
 
   @override
   Future<List<Map<String, dynamic>>> search(

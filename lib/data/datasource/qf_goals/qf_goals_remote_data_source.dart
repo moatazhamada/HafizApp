@@ -44,6 +44,11 @@ abstract class QfGoalsRemoteDataSource {
   Future<void> postReadingSession({
     required int chapterNumber,
     required int verseNumber,
+    int? startVerse,
+    int? endVerse,
+    int? duration,
+    DateTime? readAt,
+    int? mushafId,
   });
   Future<List<Map<String, dynamic>>> getReadingSessions({int? first});
 }
@@ -165,7 +170,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         'Insufficient scope for today\'s plan',
         feature: 'QfGoals',
       );
-      throw InsufficientScopeFailure();
+      throw const InsufficientScopeFailure();
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       if (statusCode == 401 || statusCode == 403) {
@@ -176,9 +181,6 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
       } else {
         Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
       }
-      rethrow;
-    } catch (e) {
-      Logger.warning('Failed to get QF todays plan: $e', feature: 'QfGoals');
       rethrow;
     }
   }
@@ -217,11 +219,30 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
   Future<void> postReadingSession({
     required int chapterNumber,
     required int verseNumber,
+    int? startVerse,
+    int? endVerse,
+    int? duration,
+    DateTime? readAt,
+    int? mushafId,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'chapterNumber': chapterNumber,
+        'verseNumber': verseNumber,
+      };
+      if (startVerse != null) body['startVerse'] = startVerse;
+      if (endVerse != null) body['endVerse'] = endVerse;
+      if (duration != null) body['duration'] = duration;
+      if (readAt != null) body['readAt'] = readAt.toIso8601String();
+
+      final query = <String, dynamic>{};
+      if (mushafId != null) query['mushafId'] = mushafId;
+
       await _dio.post(
         '$_baseUrl/reading-sessions',
-        data: {'chapterNumber': chapterNumber, 'verseNumber': verseNumber},
+        data: body,
+        queryParameters: query.isNotEmpty ? query : null,
+        options: _tzOptions,
       );
       Logger.info(
         'Posted reading session $chapterNumber:$verseNumber to QF',

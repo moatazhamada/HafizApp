@@ -8,6 +8,7 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockKhatmahRepository extends Mock implements KhatmahRepository {}
 
@@ -27,6 +28,7 @@ void main() {
   late KhatmahBloc bloc;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockRepo = MockKhatmahRepository();
     bloc = KhatmahBloc(repository: mockRepo);
     when(() => mockRepo.syncPendingActivityDays())
@@ -75,15 +77,15 @@ void main() {
       'emits [Loading, Error] when all 5 fetches fail',
       build: () {
         when(() => mockRepo.getGoal())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getTodayLog())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getRecentLogs(30))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getReconciledStreak())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         when(() => mockRepo.getCurrentStreak())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadKhatmahDashboard()),
@@ -125,7 +127,7 @@ void main() {
       'emits [Error] on failure',
       build: () {
         when(() => mockRepo.setGoal(50))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(const SetReadingGoal(50)),
@@ -142,6 +144,7 @@ void main() {
         when(() => mockRepo.logReading(
               verses: any(named: 'verses'),
               surahs: any(named: 'surahs'),
+              durationSeconds: any(named: 'durationSeconds'),
             )).thenAnswer((_) async => const Right(null));
         when(() => mockRepo.getGoal()).thenAnswer((_) async => Right(testGoal));
         when(() => mockRepo.getTodayLog())
@@ -167,7 +170,8 @@ void main() {
         when(() => mockRepo.logReading(
               verses: any(named: 'verses'),
               surahs: any(named: 'surahs'),
-            )).thenAnswer((_) async => Left(CacheFailure('fail')));
+              durationSeconds: any(named: 'durationSeconds'),
+            )).thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(const RecordReading(verses: 10, surahs: 1)),

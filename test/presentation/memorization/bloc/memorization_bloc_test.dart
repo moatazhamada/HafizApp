@@ -80,7 +80,7 @@ void main() {
       'emits [Loading, Error] on failure',
       build: () {
         when(() => mockRepo.getAllProgress())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadMemorizationProgress()),
@@ -115,7 +115,7 @@ void main() {
       'emits [Error] on failure',
       build: () {
         when(() => mockRepo.recordReview(1, 90))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(const RecordReview(surahId: 1, score: 90)),

@@ -11,7 +11,9 @@ import '../../core/network/connectivity_cubit.dart';
 import '../../core/network/debug_log_interceptor.dart';
 import '../../core/network/network_info.dart';
 import '../../core/network/qf_api_interceptor.dart';
+import '../../core/network/retry_interceptor.dart';
 import '../../core/network/qf_auth.dart';
+import '../../core/quran/quran_word_service.dart';
 import '../../core/scroll/scroll_position_cubit.dart';
 import '../../data/datasource/auth/qf_auth_remote_data_source.dart';
 import '../../presentation/auth/bloc/qf_auth_bloc.dart';
@@ -67,6 +69,7 @@ void registerCoreDependencies() {
     dio.interceptors.add(DebugLogInterceptor());
 
     dio.interceptors.add(QfApiInterceptor(sl<QfAuthRemoteDataSource>(), dio));
+    dio.interceptors.add(RetryInterceptor(dio));
 
     if (ApiConfig.clientId.isNotEmpty && ApiConfig.clientSecret.isNotEmpty) {
       dio.interceptors.add(QfAuthInterceptor(sl<QfAuthService>()));
@@ -90,4 +93,5 @@ void registerCoreDependencies() {
 
   sl.registerLazySingleton<HomeWidgetService>(HomeWidgetService.new);
   sl.registerLazySingleton<DeepLinkHandler>(DeepLinkHandler.new);
+  sl.registerLazySingleton<QuranWordService>(QuranWordService.new);
 }

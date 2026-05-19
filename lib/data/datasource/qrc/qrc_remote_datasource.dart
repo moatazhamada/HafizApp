@@ -21,8 +21,11 @@ abstract class QrcRemoteDataSource {
 
 class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
   WebSocketChannel? _channel;
-  StreamController<dynamic>? _eventController =
-      StreamController<dynamic>.broadcast();
+  StreamController<dynamic>? _eventController;
+  StreamController<dynamic> get _eventCtrl {
+    _eventController ??= StreamController<dynamic>.broadcast();
+    return _eventController!;
+  }
 
   bool _intentionalDisconnect = false;
   bool _isConnecting = false;
@@ -30,9 +33,10 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
   static const int _maxReconnectAttempts = 3;
   static const Duration _reconnectBaseDelay = Duration(seconds: 2);
   Timer? _reconnectTimer;
+  void Function()? onReconnected;
 
   @override
-  Stream<dynamic> get events => _eventController!.stream;
+  Stream<dynamic> get events => _eventCtrl.stream;
 
   @override
   Future<void> connect() async {
@@ -49,11 +53,11 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       _channel!.stream.listen(
         (message) {
           _reconnectAttempts = 0; // Reset on successful message
-          _eventController?.add(message);
+          _eventCtrl.add(message);
         },
         onError: (e) {
           Logger.error('QRC WebSocket error: $e', feature: 'QRC');
-          _eventController?.addError(e);
+          _eventCtrl.addError(e);
           _handleDisconnect(wasUnexpected: true);
         },
         onDone: () {
@@ -64,6 +68,12 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       );
 
       send({'method': 'Authenticate', 'api_key': ApiConfig.qrcApiKey});
+
+      // If this is a reconnect, notify that we reconnected so the service can
+      // re-subscribe and re-start the tilawa session.
+      if (_reconnectAttempts > 0) {
+        _eventCtrl.add('reconnected');
+      }
     } catch (e) {
       Logger.error('QRC WebSocket connect failed: $e', feature: 'QRC');
       _handleDisconnect(wasUnexpected: true);
@@ -76,10 +86,12 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
     _channel = null;
 
     if (wasUnexpected && !_intentionalDisconnect) {
-      _eventController?.add(const QrcWsClosedEvent(wasUnexpected: true));
+      _eventCtrl.add(const QrcWsClosedEvent(wasUnexpected: true));
       _attemptReconnect();
     } else {
-      _eventController?.add(const QrcWsClosedEvent(wasUnexpected: false));
+      if (_eventController != null) {
+        _eventController!.add(const QrcWsClosedEvent(wasUnexpected: false));
+      }
     }
   }
 
@@ -92,6 +104,11 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       return;
     }
 
+    // Guard against parallel reconnect attempts
+    if (_reconnectTimer != null || _isConnecting) {
+      return;
+    }
+
     _reconnectAttempts++;
     final delay = _reconnectBaseDelay * _reconnectAttempts;
     Logger.info(
@@ -99,8 +116,8 @@ class QrcRemoteDataSourceImpl implements QrcRemoteDataSource {
       feature: 'QRC',
     );
 
-    _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () async {
+      _reconnectTimer = null;
       if (!_intentionalDisconnect) {
         await connect();
       }

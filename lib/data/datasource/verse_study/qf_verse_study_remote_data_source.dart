@@ -16,7 +16,17 @@ class VerseStudyData {
 }
 
 abstract class QfVerseStudyRemoteDataSource {
-  Future<VerseStudyData> getVerseStudy(String verseKey);
+  Future<VerseStudyData> getVerseStudy(
+    String verseKey, {
+    String? tafsirId,
+    String? translationId,
+  });
+
+  Future<List<Map<String, dynamic>>> getAvailableTafsirs(String languageCode);
+
+  Future<List<Map<String, dynamic>>> getAvailableTranslations(
+    String languageCode,
+  );
 }
 
 class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
@@ -25,11 +35,15 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   QfVerseStudyRemoteDataSourceImpl({required Dio dio}) : _dio = dio;
 
   @override
-  Future<VerseStudyData> getVerseStudy(String verseKey) async {
+  Future<VerseStudyData> getVerseStudy(
+    String verseKey, {
+    String? tafsirId,
+    String? translationId,
+  }) async {
     final results = await Future.wait([
       _fetchArabic(verseKey),
-      _fetchTranslation(verseKey),
-      _fetchTafsir(verseKey),
+      _fetchTranslation(verseKey, translationId: translationId),
+      _fetchTafsir(verseKey, tafsirId: tafsirId),
     ]);
 
     final arabicText = results[0];
@@ -47,10 +61,60 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     );
   }
 
+  @override
+  Future<List<Map<String, dynamic>>> getAvailableTafsirs(
+    String languageCode,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/resources/tafsirs',
+        queryParameters: {'language': languageCode},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final tafsirs = data['tafsirs'] as List?;
+        if (tafsirs != null) {
+          return tafsirs.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+    } catch (e) {
+      Logger.warning(
+        'Failed to fetch available tafsirs: $e',
+        feature: 'VerseStudy',
+      );
+    }
+    return [];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAvailableTranslations(
+    String languageCode,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConfig.contentBase}/resources/translations',
+        queryParameters: {'language': languageCode},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final translations = data['translations'] as List?;
+        if (translations != null) {
+          return translations.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+    } catch (e) {
+      Logger.warning(
+        'Failed to fetch available translations: $e',
+        feature: 'VerseStudy',
+      );
+    }
+    return [];
+  }
+
   Future<String> _fetchArabic(String verseKey) async {
     try {
       final verseResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
         queryParameters: {'fields': 'text_uthmani'},
       );
       final verse = verseResponse.data['verse'] as Map<String, dynamic>?;
@@ -66,14 +130,18 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     return '';
   }
 
-  Future<String> _fetchTranslation(String verseKey) async {
+  Future<String> _fetchTranslation(
+    String verseKey, {
+    String? translationId,
+  }) async {
     if (_isArabicLocale()) return '';
 
     try {
+      final id = translationId ?? ApiConfig.translationId.toString();
       final translationResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
         queryParameters: {
-          'translations': '${ApiConfig.translationId}',
+          'translations': id,
           'fields': 'text_uthmani',
         },
       );
@@ -91,10 +159,14 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     return '';
   }
 
-  Future<String> _fetchTafsir(String verseKey) async {
+  Future<String> _fetchTafsir(
+    String verseKey, {
+    String? tafsirId,
+  }) async {
     try {
+      final id = tafsirId ?? ApiConfig.tafsirId;
       final tafsirResponse = await _dio.get(
-        '${ApiConfig.quranComBase}/tafsirs/${ApiConfig.tafsirId}/by_ayah/$verseKey',
+        '${ApiConfig.contentBase}/tafsirs/$id/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {
@@ -116,7 +188,8 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   bool _isArabicLocale() {
     try {
       return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to detect Arabic locale: $e', feature: 'VerseStudy');
       return false;
     }
   }

@@ -14,3 +14,5 @@ class QfAuthLoginRequested extends QfAuthEvent {}
 class QfAuthLogoutRequested extends QfAuthEvent {}
 
 class QfAuthDeleteDataRequested extends QfAuthEvent {}
+
+class QfAuthReLoginRequested extends QfAuthEvent {}

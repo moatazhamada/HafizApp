@@ -7,19 +7,27 @@ import 'package:hafiz_app/data/datasource/qf_user_api_remote_data_source.dart';
 import 'package:hafiz_app/data/datasource/bookmark/bookmark_local_data_source.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 
 class QfSyncResult {
   final int pushed;
   final int pulled;
+  final int activityDaysUpdated;
 
-  const QfSyncResult({required this.pushed, required this.pulled});
+  const QfSyncResult({required this.pushed, required this.pulled, this.activityDaysUpdated = 0});
 }
 
 class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   final QfUserApiRemoteDataSource qfUserApi;
   final BookmarkLocalDataSource bookmarkLocalDataSource;
+  final KhatmahRepository khatmahRepository;
 
-  SyncWithQf({required this.qfUserApi, required this.bookmarkLocalDataSource});
+  SyncWithQf({
+    required this.qfUserApi, 
+    required this.bookmarkLocalDataSource,
+    required this.khatmahRepository,
+  });
 
   @override
   Future<Either<Failure, QfSyncResult>> call(NoParams params) async {
@@ -45,7 +53,9 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
           final created = await qfUserApi.createCollection('Hafiz Bookmarks');
           defaultCollectionId = created?['id']?.toString();
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('QF bookmark collection setup failed: $e', feature: 'CloudSync');
+      }
 
       final qfBookmarks = await qfUserApi.getBookmarks();
       final Set<int> qfVerseIds = {};
@@ -60,15 +70,24 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
       }
 
       final toPush = localVerseIds.difference(qfVerseIds);
-      for (final verseId in toPush) {
-        try {
-          await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
-        } catch (e) {
-          Logger.warning(
-            'Failed to push bookmark $verseId: $e',
-            feature: 'SyncWithQf',
-          );
-        }
+      if (defaultCollectionId != null) {
+        await Future.wait(
+          toPush.map((verseId) async {
+            try {
+              await qfUserApi.addBookmark(verseId, collectionId: defaultCollectionId);
+            } catch (e) {
+              Logger.warning(
+                'Failed to push bookmark $verseId: $e',
+                feature: 'SyncWithQf',
+              );
+            }
+          }),
+        );
+      } else {
+        Logger.warning(
+          'Skipping bookmark push: no default collection ID',
+          feature: 'SyncWithQf',
+        );
       }
 
       final toPull = qfVerseIds.difference(localVerseIds);
@@ -98,17 +117,28 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
         }
       }
 
+      int activityDaysUpdated = 0;
+      final activityDaysResult = await khatmahRepository.syncActivityDaysFromCloud();
+      activityDaysResult.fold(
+        (failure) => Logger.warning('Failed to sync activity days from cloud: $failure', feature: 'SyncWithQf'),
+        (count) => activityDaysUpdated = count,
+      );
+
+      // Clear recently-deleted tracking after a successful sync so future
+      // deletions are tracked from a clean state.
+      await PrefUtils().clearRecentlyDeletedBookmarks();
+
       Logger.info(
-        'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}',
+        'QF sync complete: pushed ${toPush.length}, pulled ${toPull.length}, activity days updated: $activityDaysUpdated',
         feature: 'SyncWithQf',
       );
-      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length));
+      return Right(QfSyncResult(pushed: toPush.length, pulled: toPull.length, activityDaysUpdated: activityDaysUpdated));
     } on InsufficientScopeFailure {
       Logger.warning(
         'QF sync blocked by insufficient scope',
         feature: 'SyncWithQf',
       );
-      return Left(InsufficientScopeFailure());
+      return const Left(InsufficientScopeFailure());
     } catch (e) {
       Logger.error('QF sync failed: $e', feature: 'SyncWithQf');
       return Left(ServerFailure('Failed to sync with Quran.com: $e'));
@@ -116,6 +146,15 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   }
 
   int _surahVerseToAbsoluteId(int surahId, int verseNumber) {
+    if (surahId < 1 || surahId > 114) {
+      throw ArgumentError('Invalid surahId: $surahId (must be 1-114)');
+    }
+    final maxVerse = MushafPageIndex.getVerseCount(surahId);
+    if (verseNumber < 1 || verseNumber > maxVerse) {
+      throw ArgumentError(
+        'Invalid verseNumber: $verseNumber for surah $surahId (must be 1-$maxVerse)',
+      );
+    }
     int offset = 0;
     for (int i = 0; i < surahId - 1; i++) {
       offset += MushafPageIndex.getVerseCount(i + 1);
@@ -131,6 +170,9 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
   }
 
   String _absoluteIdToVerseKey(int absoluteId) {
+    if (absoluteId < 1) {
+      throw ArgumentError('Invalid absoluteId: $absoluteId (must be ≥1)');
+    }
     int remaining = absoluteId;
     for (int i = 0; i < 114; i++) {
       final count = MushafPageIndex.getVerseCount(i + 1);
@@ -139,6 +181,8 @@ class SyncWithQf implements UseCase<QfSyncResult, NoParams> {
       }
       remaining -= count;
     }
-    return '1:1';
+    throw ArgumentError(
+      'absoluteId $absoluteId exceeds total Quran verses',
+    );
   }
 }

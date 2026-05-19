@@ -6,23 +6,23 @@ void main() {
 
   group('ServerFailure', () {
     test('make sure toString return true results', () {
-      expect(ServerFailure(tErrorMessage).toString(),
+      expect(const ServerFailure(tErrorMessage).toString(),
           'ServerFailure{errorMessage: $tErrorMessage}');
     });
 
     test('make sure ServerFailure props return [tErrorMessage]', () {
-      expect(ServerFailure(tErrorMessage).props, [tErrorMessage]);
+      expect(const ServerFailure(tErrorMessage).props, [tErrorMessage]);
     });
   });
 
   group('ConnectionFailure', () {
     test('make sure ConnectionFailure toString return true results', () {
-      expect(ConnectionFailure().toString(),
+      expect(const ConnectionFailure().toString(),
           'ConnectionFailure{errorMessage: $messageConnectionFailure}');
     });
 
     test('make sure ConnectionFailure props return [tErrorMessage]', () {
-      expect(ConnectionFailure().props, [messageConnectionFailure]);
+      expect(const ConnectionFailure().props, [messageConnectionFailure]);
     });
   });
 }

@@ -3,18 +3,32 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/domain/usecase/goals/get_todays_plan.dart';
+import 'package:hafiz_app/domain/usecase/goals/update_goal.dart';
+import 'package:hafiz_app/domain/usecase/goals/delete_goal.dart';
 import 'package:hafiz_app/presentation/goals/bloc/goals_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGetTodaysPlan extends Mock implements GetTodaysPlan {}
 
+class MockUpdateGoal extends Mock implements UpdateGoal {}
+
+class MockDeleteGoal extends Mock implements DeleteGoal {}
+
 void main() {
   late MockGetTodaysPlan mockUseCase;
+  late MockUpdateGoal mockUpdateGoal;
+  late MockDeleteGoal mockDeleteGoal;
   late GoalsBloc bloc;
 
   setUp(() {
     mockUseCase = MockGetTodaysPlan();
-    bloc = GoalsBloc(getTodaysPlan: mockUseCase);
+    mockUpdateGoal = MockUpdateGoal();
+    mockDeleteGoal = MockDeleteGoal();
+    bloc = GoalsBloc(
+      getTodaysPlan: mockUseCase,
+      updateGoal: mockUpdateGoal,
+      deleteGoal: mockDeleteGoal,
+    );
   });
 
   tearDown(() => bloc.close());
@@ -72,7 +86,7 @@ void main() {
       'emits [Loading, Error] on InsufficientScopeFailure',
       build: () {
         when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => Left(InsufficientScopeFailure()));
+            .thenAnswer((_) async => const Left(InsufficientScopeFailure()));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),
@@ -87,7 +101,7 @@ void main() {
       'emits [Loading, Error] on generic failure',
       build: () {
         when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => Left(ServerFailure('fail')));
+            .thenAnswer((_) async => const Left(ServerFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),

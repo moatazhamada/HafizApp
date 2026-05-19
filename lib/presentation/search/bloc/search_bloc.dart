@@ -1,7 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hafiz_app/core/quran/arabic_normalizer.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/qf_search/qf_search_remote_data_source.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
 import 'package:hafiz_app/domain/repository/surah/surah_repository.dart';
@@ -13,6 +15,7 @@ part 'search_state.dart';
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final SurahRepository repository;
   final QfSearchRemoteDataSource searchRemoteDataSource;
+  String _latestQuery = '';
 
   SearchBloc({required this.repository, required this.searchRemoteDataSource})
     : super(SearchInitial()) {
@@ -37,13 +40,16 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     emit(SearchLoading());
 
+    _latestQuery = event.query;
     try {
       final query = event.query.toLowerCase();
 
       // 1. Search Surah Names (In-Memory, fast)
+      final normalizedQuery = ArabicNormalizer.forDisplay(query);
       final surahResults = QuranIndex.quranSurahs.where((surah) {
         final matchesEnglish = surah.nameEnglish.toLowerCase().contains(query);
-        final matchesArabic = surah.nameArabic.contains(query);
+        final matchesArabic = ArabicNormalizer.forDisplay(surah.nameArabic)
+            .contains(normalizedQuery);
         final matchesId = surah.id.toString().contains(query);
         return matchesEnglish || matchesArabic || matchesId;
       }).toList();
@@ -63,10 +69,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       if (verseResults.length < 5 && query.length > 2) {
         try {
           final isArabicQuery = RegExp(r'[\u0600-\u06FF]').hasMatch(query);
+          final locale = PrefUtils().getLocaleCode();
+          final searchLang = isArabicQuery
+              ? null
+              : (locale.isEmpty ? 'en' : locale).split('_').first;
           final onlineResults = await searchRemoteDataSource.search(
             event.query,
             size: 20,
-            language: isArabicQuery ? null : 'en',
+            language: isArabicQuery ? null : searchLang,
           );
           if (onlineResults.isNotEmpty) {
             final onlineVerses = _mapSearchResultsToVerses(onlineResults);
@@ -86,12 +96,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             }
           }
         } catch (e) {
-          Logger.warning(
-            'Online search failed, using local results: $e',
-            feature: 'Search',
-          );
+          Logger.warning('Online search failed: $e', feature: 'Search');
+          // Don't discard local results when online search fails.
         }
       }
+
+      // Discard results if the query has changed while we were searching
+      if (_latestQuery != event.query) return;
 
       if (surahResults.isEmpty && verseResults.isEmpty) {
         emit(const SearchEmpty());
@@ -148,7 +159,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           Verse(
             chapterNumber: surahId,
             verseNumber: verseNum,
-            arabicText: text as String,
+            arabicText: text.toString(),
             translationText: translation,
             audioTimestampMs: 0,
           ),

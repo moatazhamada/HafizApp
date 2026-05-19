@@ -63,7 +63,7 @@ void main() {
       'emits [Loading, Error] on failure',
       build: () {
         when(() => mockRepo.getSessions())
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadSessions()),
@@ -95,7 +95,7 @@ void main() {
       'emits [Error] on failure',
       build: () {
         when(() => mockRepo.addSession(any()))
-            .thenAnswer((_) async => Left(CacheFailure('fail')));
+            .thenAnswer((_) async => const Left(CacheFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(SaveSession(testSession)),

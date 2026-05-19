@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import 'bloc/musali_teaser_bloc.dart';
 
@@ -174,7 +173,7 @@ class DecorativeBackgroundElement extends StatelessWidget {
         child: Icon(
           isArabic ? Icons.mosque_rounded : Icons.grass_rounded,
           size: 200,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
     );
@@ -223,7 +222,7 @@ class MainContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -232,12 +231,12 @@ class MainContent extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                   child: Center(
                     child: Text(
                       currentSlide['title_${isArabic ? 'ar' : 'en'}']!,
                       style: theme.textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: isArabic ? 32 : 28,
                         letterSpacing: 0.5,
@@ -254,7 +253,7 @@ class MainContent extends StatelessWidget {
                 subtitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.95),
                   fontFamily: AppTextStyles.latinFont,
                   fontSize: isArabic ? 24 : 18,
                   height: 1.5,
@@ -272,7 +271,7 @@ class MainContent extends StatelessWidget {
                     child: Text(
                       'lbl_skip'.tr,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -283,7 +282,7 @@ class MainContent extends StatelessWidget {
                       child: Text(
                         'lbl_next'.tr,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -295,7 +294,7 @@ class MainContent extends StatelessWidget {
                       child: Text(
                         'lbl_continue'.tr,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),

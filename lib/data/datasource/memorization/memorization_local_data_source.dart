@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/memorization_progress_model.dart';
 
 abstract class MemorizationLocalDataSource {
@@ -24,7 +25,8 @@ class MemorizationLocalDataSourceImpl implements MemorizationLocalDataSource {
           items.add(
             MemorizationProgressModel.fromJson(Map<String, dynamic>.from(e)),
           );
-        } catch (_) {
+        } catch (e) {
+          Logger.warning('Skipping malformed memorization entry: $e', feature: 'MemorizationLocal');
           continue;
         }
       }
@@ -39,7 +41,12 @@ class MemorizationLocalDataSourceImpl implements MemorizationLocalDataSource {
     try {
       final raw = box.get(surahId);
       if (raw is! Map) return null;
-      return MemorizationProgressModel.fromJson(Map<String, dynamic>.from(raw));
+      try {
+        return MemorizationProgressModel.fromJson(Map<String, dynamic>.from(raw));
+      } catch (e) {
+        Logger.warning('Skipping malformed memorization entry for surah $surahId: $e', feature: 'MemorizationLocal');
+        return null;
+      }
     } catch (e) {
       throw CacheException();
     }

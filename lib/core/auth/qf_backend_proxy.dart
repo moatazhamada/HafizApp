@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 
 import 'package:hafiz_app/core/auth/qf_oidc_config.dart';
@@ -89,12 +91,49 @@ class QfNoopBackendTokenProxy implements QfBackendTokenProxy {
 class QfDioBackendTokenProxy implements QfBackendTokenProxy {
   final Dio _dio;
   final QfOidcConfig _config;
+  final Random _random = Random();
+
+  static const int _maxRetries = 3;
+  static const Duration _baseDelay = Duration(seconds: 1);
+  static const Duration _maxDelay = Duration(seconds: 30);
+  static const int _jitterMs = 500;
 
   QfDioBackendTokenProxy({
     required Dio dio,
     required QfOidcConfig config,
   }) : _dio = dio,
        _config = config;
+
+  Future<T> _withRetry<T>(Future<T> Function() operation) async {
+    Exception? lastException;
+    for (int attempt = 0; attempt <= _maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          final jitter = _random.nextInt(_jitterMs);
+          final delayMs = min(
+            (_baseDelay.inMilliseconds * pow(2, attempt - 1)).toInt(),
+            _maxDelay.inMilliseconds,
+          );
+          await Future.delayed(Duration(milliseconds: delayMs + jitter));
+          Logger.info(
+            'Backend proxy retry attempt $attempt',
+            feature: 'QfBackendProxy',
+          );
+        }
+        return await operation();
+      } on QfBackendTokenExchangeException catch (e) {
+        lastException = e;
+        if (attempt >= _maxRetries) rethrow;
+      } on DioException catch (e) {
+        lastException = e;
+        if (attempt >= _maxRetries) rethrow;
+      }
+    }
+    throw lastException ?? const QfBackendTokenExchangeException(
+      statusCode: 0,
+      body: 'Unexpected retry exhaustion',
+    );
+  }
 
   String get _backendExchangeUrl {
     return '${_config.endpoints.apiBaseUrl}/auth/v1/token/exchange';
@@ -106,12 +145,12 @@ class QfDioBackendTokenProxy implements QfBackendTokenProxy {
     required String redirectUri,
     required String codeVerifier,
   }) async {
-    try {
-      Logger.info(
-        'Exchanging authorization code via backend proxy',
-        feature: 'QfBackendProxy',
-      );
+    Logger.info(
+      'Exchanging authorization code via backend proxy',
+      feature: 'QfBackendProxy',
+    );
 
+    return _withRetry(() async {
       final response = await _dio.post(
         _backendExchangeUrl,
         data: {
@@ -140,28 +179,19 @@ class QfDioBackendTokenProxy implements QfBackendTokenProxy {
         statusCode: response.statusCode ?? 0,
         body: response.data.toString(),
       );
-    } on DioException catch (e) {
-      Logger.error(
-        'Backend token exchange network error: ${e.message}',
-        feature: 'QfBackendProxy',
-      );
-      throw QfBackendTokenExchangeException(
-        statusCode: e.response?.statusCode ?? 0,
-        body: e.response?.data?.toString() ?? e.message ?? 'Network error',
-      );
-    }
+    });
   }
 
   @override
   Future<QfBackendTokenExchangeResult> refreshAccessToken({
     required String refreshToken,
   }) async {
-    try {
-      Logger.info(
-        'Refreshing access token via backend proxy',
-        feature: 'QfBackendProxy',
-      );
+    Logger.info(
+      'Refreshing access token via backend proxy',
+      feature: 'QfBackendProxy',
+    );
 
+    return _withRetry(() async {
       final response = await _dio.post(
         _backendExchangeUrl,
         data: {
@@ -184,11 +214,6 @@ class QfDioBackendTokenProxy implements QfBackendTokenProxy {
         statusCode: response.statusCode ?? 0,
         body: response.data.toString(),
       );
-    } on DioException catch (e) {
-      throw QfBackendTokenExchangeException(
-        statusCode: e.response?.statusCode ?? 0,
-        body: e.response?.data?.toString() ?? e.message ?? 'Network error',
-      );
-    }
+    });
   }
 }

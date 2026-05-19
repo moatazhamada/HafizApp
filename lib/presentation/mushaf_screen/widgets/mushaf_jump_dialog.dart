@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/utils/input_formatters.dart';
+import 'package:hafiz_app/core/utils/input_validators.dart';
+import 'package:hafiz_app/core/utils/number_converter.dart';
+import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 
@@ -26,6 +29,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
   late int _selectedPage;
   late TextEditingController _pageController;
   String _tab = 'page';
+  String? _errorText;
 
   @override
   void initState() {
@@ -53,6 +57,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
+              textDirection: TextDirection.rtl,
               children: [
                 _buildTab('page', 'lbl_page'.tr),
                 const SizedBox(width: 8),
@@ -113,11 +118,20 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           TextField(
             controller: _pageController,
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              AppInputFormatters.digitsOnly,
+              AppInputFormatters.maxLength(3),
+            ],
             decoration: InputDecoration(
               labelText: 'lbl_page_number'.tr,
-              hintText: '1 - ${widget.totalPages}',
+              hintText:
+                  '${1.toLocalizedNumber(context)} - ${widget.totalPages.toLocalizedNumber(context)}',
               border: const OutlineInputBorder(),
+              errorText: _errorText,
             ),
+            onChanged: (_) {
+              if (_errorText != null) setState(() => _errorText = null);
+            },
             onSubmitted: (value) => _jumpAndClose(),
           ),
           const SizedBox(height: 16),
@@ -126,7 +140,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             min: 1,
             max: widget.totalPages.toDouble(),
             divisions: widget.totalPages - 1,
-            label: _selectedPage.toString(),
+            label: _selectedPage.toLocalizedNumber(context),
             onChanged: (value) {
               setState(() {
                 _selectedPage = value.toInt();
@@ -155,7 +169,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
             radius: 14,
             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             child: Text(
-              '${surah.id}',
+              surah.id.toLocalizedNumber(context),
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -165,9 +179,17 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           title: Text(
             isArabic ? surah.nameArabic : surah.nameEnglish,
             textDirection: TextDirection.rtl,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-          subtitle: Text('${'lbl_page'.tr} $page'),
-          trailing: const Icon(Icons.chevron_right, size: 18),
+          subtitle: Text(
+            '${'lbl_page'.tr} ${page.toLocalizedNumber(context)}',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: Icon(rtlChevron(context), size: 18),
           onTap: () => Navigator.pop(context, page),
         );
       },
@@ -175,53 +197,75 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
   }
 
   Widget _buildJuzList() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: 30,
-      itemBuilder: (context, index) {
-        final juz = index + 1;
-        final surahId = MushafPageIndex.getSurahForJuz(juz);
-        final page = widget
-            .surahToPage(surahId, widget.mushafType)
-            .clamp(1, widget.totalPages);
-        final isActive = MushafPageIndex.getJuzForPage(_selectedPage) == juz;
-        return GestureDetector(
-          onTap: () => Navigator.pop(context, page),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isActive
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$juz',
-                  style: TextStyle(
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 16,
-                  ),
-                ),
-                Text('p.$page', style: const TextStyle(fontSize: 10)),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final crossAxisCount = width > 600 ? 6 : (width > 400 ? 5 : 4);
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1,
           ),
+          itemCount: 30,
+          itemBuilder: (context, index) {
+            final juz = index + 1;
+            final page = widget.mushafType.getJuzPage(juz);
+            final isActive =
+                widget.mushafType.getJuzForPage(_selectedPage) == juz;
+            return GestureDetector(
+              onTap: () => Navigator.pop(context, page),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      juz.toLocalizedNumber(context),
+                      style: TextStyle(
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${'lbl_page'.tr} ${page.toLocalizedNumber(context)}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
   void _jumpAndClose() {
-    final page = int.tryParse(_pageController.text) ?? _selectedPage;
-    Navigator.pop(context, page.clamp(1, widget.totalPages));
+    final error = InputValidators.numericRange(
+      min: 1,
+      max: widget.totalPages,
+    )(_pageController.text);
+
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
+
+    final page = int.parse(_pageController.text.trim());
+    Navigator.pop(context, page);
   }
 }

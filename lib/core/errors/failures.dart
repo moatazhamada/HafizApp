@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 abstract class Failure extends Equatable {
+  const Failure();
   String get errorMessage;
 }
 
@@ -11,7 +12,7 @@ class ServerFailure extends Failure {
   @override
   final String errorMessage;
 
-  ServerFailure(this.errorMessage);
+  const ServerFailure(this.errorMessage);
 
   @override
   List<Object> get props => [errorMessage];
@@ -26,6 +27,8 @@ class ConnectionFailure extends Failure {
   @override
   final String errorMessage = messageConnectionFailure;
 
+  const ConnectionFailure();
+
   @override
   List<Object> get props => [errorMessage];
 
@@ -39,7 +42,7 @@ class CacheFailure extends Failure {
   @override
   final String errorMessage;
 
-  CacheFailure(this.errorMessage);
+  const CacheFailure(this.errorMessage);
 
   @override
   List<Object> get props => [errorMessage];
@@ -54,7 +57,7 @@ class InsufficientScopeFailure extends Failure {
   @override
   final String errorMessage;
 
-  InsufficientScopeFailure([this.errorMessage = messageInsufficientScope]);
+  const InsufficientScopeFailure([this.errorMessage = messageInsufficientScope]);
 
   @override
   List<Object> get props => [errorMessage];

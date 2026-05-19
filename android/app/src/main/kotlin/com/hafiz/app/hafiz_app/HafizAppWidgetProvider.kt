@@ -8,6 +8,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
+import es.antonborri.home_widget.HomeWidgetPlugin
 
 class HafizAppWidgetProvider : AppWidgetProvider() {
 
@@ -23,7 +24,7 @@ class HafizAppWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: android.content.Intent) {
         super.onReceive(context, intent)
-        // Only handle the home_widget plugin broadcast here;
+        // Handle the home_widget plugin broadcast.
         // super.onReceive() already dispatches ACTION_APPWIDGET_UPDATE → onUpdate().
         if (intent.action == "es.antonborri.home_widget.UPDATE_WIDGET") {
             val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -41,39 +42,57 @@ private fun updateAppWidget(
     appWidgetManager: AppWidgetManager,
     appWidgetId: Int
 ) {
-    val prefs = context.getSharedPreferences(
+    // Try the home_widget plugin's data store first (preferred),
+    // then fall back to FlutterSharedPreferences.
+    val widgetData = HomeWidgetPlugin.getData(context)
+    val flutterPrefs = context.getSharedPreferences(
         "FlutterSharedPreferences",
         Context.MODE_PRIVATE
     )
 
-    val arabicText = prefs.getString("flutter.widget_verse_arabic", "") ?: ""
-    val displayText = prefs.getString("flutter.widget_verse_text", "") ?: ""
-    val verseRef = prefs.getString("flutter.widget_verse_ref", "") ?: ""
-    val chapterId = prefs.getString("flutter.widget_chapter_id", "1") ?: "1"
-    val verseNumber = prefs.getString("flutter.widget_verse_number", "1") ?: "1"
+    val arabicText = widgetData.getString("widget_verse_arabic", null)
+        ?: flutterPrefs.getString("flutter.widget_verse_arabic", "")
+        ?: ""
 
-    // Use arabic text as fallback if display text is empty
-    val finalText = if (displayText.isNotEmpty()) displayText else arabicText
+    val displayText = widgetData.getString("widget_verse_text", null)
+        ?: flutterPrefs.getString("flutter.widget_verse_text", "")
+        ?: ""
+
+    val verseRef = widgetData.getString("widget_verse_ref", null)
+        ?: flutterPrefs.getString("flutter.widget_verse_ref", "")
+        ?: "— 1:1"
+
+    val chapterId = widgetData.getString("widget_chapter_id", null)
+        ?: flutterPrefs.getString("flutter.widget_chapter_id", "1")
+        ?: "1"
+
+    val verseNumber = widgetData.getString("widget_verse_number", null)
+        ?: flutterPrefs.getString("flutter.widget_verse_number", "1")
+        ?: "1"
+
+    // Use display text if available, otherwise fall back to Arabic.
+    val finalText = if (displayText.isNotBlank()) displayText else arabicText
 
     val views = RemoteViews(context.packageName, R.layout.app_widget_layout)
 
-    // Choose text direction: RTL for Arabic, LTR for English
+    // RTL / LTR based on content.
     val isArabic = containsArabic(finalText)
-    if (isArabic) {
-        views.setInt(R.id.widget_verse_text, "setTextDirection", View.TEXT_DIRECTION_RTL)
-    } else {
-        views.setInt(R.id.widget_verse_text, "setTextDirection", View.TEXT_DIRECTION_LTR)
-    }
+    views.setInt(
+        R.id.widget_verse_text,
+        "setTextDirection",
+        if (isArabic) View.TEXT_DIRECTION_RTL else View.TEXT_DIRECTION_LTR
+    )
 
-    if (finalText.isNotEmpty()) {
-        views.setTextViewText(R.id.widget_verse_text, finalText)
-    }
-    if (verseRef.isNotEmpty()) {
-        views.setTextViewText(R.id.widget_verse_ref, verseRef)
-    }
+    views.setTextViewText(
+        R.id.widget_verse_text,
+        if (finalText.isNotBlank()) finalText else context.getString(R.string.app_widget_placeholder_text)
+    )
+    views.setTextViewText(
+        R.id.widget_verse_ref,
+        if (verseRef.isNotBlank()) verseRef else "— 1:1"
+    )
 
-    // Use HomeWidgetLaunchIntent so clicks are routed through
-    // HomeWidget.widgetClicked on the Dart side (DeepLinkHandler).
+    // Deep link into the app when tapped.
     val deepLink = Uri.parse("hafiz://verse/$chapterId/$verseNumber")
     val pendingIntent = HomeWidgetLaunchIntent.getActivity(
         context,
@@ -86,10 +105,6 @@ private fun updateAppWidget(
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }
 
-/**
- * Quick check for Arabic script: if the text contains any character in the
- * Arabic Unicode block (U+0600–U+06FF), treat it as Arabic.
- */
 private fun containsArabic(text: String): Boolean {
     return text.any { it in '\u0600'..'\u06FF' }
 }

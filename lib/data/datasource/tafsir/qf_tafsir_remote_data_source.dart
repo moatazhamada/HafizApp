@@ -20,7 +20,7 @@ class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
     final id = tafsirId ?? ApiConfig.tafsirId;
     try {
       final response = await _dio.get(
-        '${ApiConfig.quranComBase}/tafsirs/$id/by_ayah/$verseKey',
+        '${ApiConfig.contentBase}/tafsirs/$id/by_ayah/$verseKey',
       );
 
       final tafsir = response.data['tafsir'] as Map<String, dynamic>?;
@@ -51,7 +51,7 @@ class QfTafsirRemoteDataSourceImpl implements QfTafsirRemoteDataSource {
     try {
       final allItems = await _fetchAllPages(
         (page) => _dio.get(
-          '${ApiConfig.quranComBase}/tafsirs/$id/by_chapter/$chapterId',
+          '${ApiConfig.contentBase}/tafsirs/$id/by_chapter/$chapterId',
           queryParameters: {'per_page': 50, 'page': page},
         ),
         'tafsirs',

@@ -17,7 +17,7 @@ class GetTodaysPlan implements UseCase<Map<String, dynamic>?, GetTodaysPlanParam
       final result = await goalsRemoteDataSource.getTodaysPlan(type: params.type);
       return Right(result);
     } on InsufficientScopeFailure {
-      return Left(InsufficientScopeFailure());
+      return const Left(InsufficientScopeFailure());
     } catch (e) {
       return Left(ServerFailure('$e'));
     }

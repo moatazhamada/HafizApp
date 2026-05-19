@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
 import 'package:hafiz_app/core/theme/app_spacing.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
@@ -8,14 +9,115 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
 import 'package:hafiz_app/widgets/shimmer_loading.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/presentation/khatmah/widgets/manual_reading_entry_bottom_sheet.dart';
 
-class KhatmahScreen extends StatelessWidget {
+import 'package:hafiz_app/presentation/khatmah/widgets/goal_celebration.dart';
+import 'package:hafiz_app/core/notifications/notification_service.dart';
+import 'package:intl/intl.dart';
+
+class KhatmahScreen extends StatefulWidget {
   const KhatmahScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider(
-      create: (context) => sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
-      child: const KhatmahScreen(),
+    sl<KhatmahBloc>().add(LoadKhatmahDashboard());
+    return const KhatmahScreen();
+  }
+
+  @override
+  State<KhatmahScreen> createState() => _KhatmahScreenState();
+}
+
+class _KhatmahScreenState extends State<KhatmahScreen> {
+  bool _showCelebration = false;
+  String? _celebrationTitle;
+
+  void _checkGoalCelebration(KhatmahState state) {
+    if (state is KhatmahDashboardLoaded) {
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final lastCelebrated = PrefUtils().getLastCelebratedDate();
+
+      // Check daily goal
+      if (state.todayProgress >= 1.0 && lastCelebrated != todayStr) {
+        _triggerCelebration('msg_daily_goal_achieved'.tr, todayStr);
+        return;
+      }
+
+      // Check streak milestones
+      final lastStreakCelebrated = PrefUtils().getLastStreakCelebrated() ?? 0;
+      final currentStreak = state.streak;
+      final milestones = [3, 7, 14, 30, 50, 100, 365];
+
+      for (final m in milestones) {
+        if (currentStreak >= m && lastStreakCelebrated < m) {
+          _triggerCelebration(
+            'msg_streak_milestone'.tr.replaceAll('{days}', m.toString()),
+            null, // Date handled separately for streak
+          );
+          unawaited(NotificationService().showStreakMilestone(m));
+          PrefUtils().setLastStreakCelebrated(m);
+          break;
+        }
+      }
+    }
+  }
+
+  void _triggerCelebration(String title, String? dateKey) {
+    setState(() {
+      _showCelebration = true;
+      _celebrationTitle = title;
+    });
+    if (dateKey != null) {
+      PrefUtils().setLastCelebratedDate(dateKey);
+    }
+    // Hide celebration after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showCelebration = false;
+          _celebrationTitle = null;
+        });
+      }
+    });
+  }
+
+  void _checkKhatmahCompletion(BuildContext context) {
+    if (PrefUtils().shouldShowDuaKhatm()) {
+      PrefUtils().setShouldShowDuaKhatm(false);
+      _showKhatmahCompletionDialog(context);
+    }
+  }
+
+  void _showKhatmahCompletionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: Icon(
+          Icons.menu_book_rounded,
+          color: Theme.of(context).colorScheme.primary,
+          size: 48,
+        ),
+        title: Text(
+          'lbl_khatmah_completed'.tr,
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          'msg_khatmah_completed'.tr,
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('lbl_close'.tr),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              NavigatorService.pushNamed(AppRoutes.duaKhatm);
+            },
+            child: Text('lbl_read_dua'.tr),
+          ),
+        ],
+      ),
     );
   }
 
@@ -23,7 +125,11 @@ class KhatmahScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('lbl_khatmah_tracker'.tr)),
-      body: BlocBuilder<KhatmahBloc, KhatmahState>(
+      body: BlocConsumer<KhatmahBloc, KhatmahState>(
+        listener: (context, state) {
+          _checkGoalCelebration(state);
+          _checkKhatmahCompletion(context);
+        },
         builder: (context, state) {
           if (state is KhatmahLoading) {
             return Padding(
@@ -58,30 +164,89 @@ class KhatmahScreen extends StatelessWidget {
             );
           }
           if (state is KhatmahDashboardLoaded) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<KhatmahBloc>().add(LoadKhatmahDashboard());
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+            return GoalCelebration(
+              showConfetti: _showCelebration,
+              child: Stack(
                 children: [
-                  _TodayProgressCard(state: state),
-                  const SizedBox(height: AppSpacing.lg),
-                  _StreakCard(
-                    streak: state.streak,
-                    cloudStreak: state.cloudStreak,
-                    localStreak: state.localStreak,
+                  RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<KhatmahBloc>().add(LoadKhatmahDashboard());
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      children: [
+                        _TodayProgressCard(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        _StreakCard(
+                          streak: state.streak,
+                          cloudStreak: state.cloudStreak,
+                          localStreak: state.localStreak,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _GoalCard(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        _WeeklyHeatmap(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        _DuaKhatmCard(
+                          completions: PrefUtils().getKhatmahCompletionsCount(),
+                        ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  _GoalCard(state: state),
-                  const SizedBox(height: AppSpacing.lg),
-                  _WeeklyHeatmap(state: state),
+                  if (_showCelebration && _celebrationTitle != null)
+                    Positioned(
+                      top: 100,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Card(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            child: Text(
+                              _celebrationTitle!,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
           }
           return const SizedBox.shrink();
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
+        onPressed: () {
+          final bloc = context.read<KhatmahBloc>();
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => ManualReadingEntryBottomSheet(
+              onSubmit: (verses) {
+                bloc.add(RecordReading(verses: verses));
+              },
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: Text('lbl_log_reading'.tr),
       ),
     );
   }
@@ -123,9 +288,7 @@ class _TodayProgressCard extends StatelessWidget {
                     value: progress,
                     strokeWidth: 12,
                     backgroundColor:
-                        Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]
-                        : Colors.grey[200],
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                   ),
                 ),
@@ -143,7 +306,7 @@ class _TodayProgressCard extends StatelessWidget {
                     Text(
                       '/ $target ${'lbl_verses'.tr}',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -159,7 +322,7 @@ class _TodayProgressCard extends StatelessWidget {
                       '${target - state.versesReadToday}',
                     ),
               style: AppTextStyles.bodyMedium.copyWith(
-                color: progress >= 1.0 ? Colors.green : Colors.grey[600],
+                color: progress >= 1.0 ? AppColors.of(context).memorizedStatus : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: progress >= 1.0
                     ? FontWeight.bold
                     : FontWeight.normal,
@@ -203,14 +366,14 @@ class _StreakCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: streak > 0
-                        ? Colors.orange.withValues(alpha: 0.15)
-                        : Colors.grey.withValues(alpha: 0.15),
+                        ? AppColors.of(context).inProgressStatus.withValues(alpha: 0.15)
+                        : AppColors.of(context).notStartedStatus.withValues(alpha: 0.15),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.local_fire_department,
                     size: 32,
-                    color: streak > 0 ? Colors.orange : Colors.grey,
+                    color: streak > 0 ? AppColors.of(context).inProgressStatus : AppColors.of(context).notStartedStatus,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -227,7 +390,7 @@ class _StreakCard extends StatelessWidget {
                       Text(
                         'lbl_keep_going'.tr,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -240,19 +403,19 @@ class _StreakCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
+                      color: AppColors.of(context).memorizedStatus.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                        Icon(Icons.cloud_done, size: 14, color: AppColors.of(context).success),
                         const SizedBox(width: 4),
                         Text(
                           'lbl_cloud_synced'.tr,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.green[700],
+                            color: AppColors.of(context).success,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -304,19 +467,17 @@ class _StreakSourceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[800]
-            : Colors.grey[100],
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           const SizedBox(width: 4),
           Text(
             '$label: $value',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
           ),
         ],
       ),
@@ -355,13 +516,13 @@ class _GoalCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.cloud_done, size: 14, color: Colors.green[700]),
+                    Icon(Icons.cloud_done, size: 14, color: AppColors.of(context).success),
                     const SizedBox(width: 4),
                     Text(
                       'lbl_cloud_synced'.tr,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.green[700],
+                        color: AppColors.of(context).success,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -381,7 +542,7 @@ class _GoalCard extends StatelessWidget {
                   side: BorderSide(
                     color: isSelected
                         ? colors.primary
-                        : Colors.grey.withValues(alpha: 0.3),
+                        : AppColors.of(context).notStartedStatus.withValues(alpha: 0.3),
                   ),
                   onSelected: (_) {
                     context.read<KhatmahBloc>().add(SetReadingGoal(target));
@@ -395,7 +556,7 @@ class _GoalCard extends StatelessWidget {
                 child: Text(
                   '${'lbl_current_goal'.tr}: $currentTarget ${'lbl_verses'.tr}',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -461,8 +622,8 @@ class _WeeklyHeatmap extends StatelessWidget {
                             : partial
                             ? colors.primary.withValues(alpha: 0.3)
                             : isDark
-                            ? Colors.grey[800]
-                            : Colors.grey[200],
+                            ? Theme.of(context).colorScheme.surfaceContainerHighest
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
                       alignment: Alignment.center,
                       child: met
@@ -472,15 +633,15 @@ class _WeeklyHeatmap extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[700],
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
+                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       _dayAbbr(date.weekday),
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     ),
                   ],
                 );
@@ -503,5 +664,80 @@ class _WeeklyHeatmap extends StatelessWidget {
       'lbl_sun'.tr,
     ];
     return days[(weekday - 1).clamp(0, 6)];
+  }
+}
+
+class _DuaKhatmCard extends StatelessWidget {
+  final int completions;
+
+  const _DuaKhatmCard({this.completions = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+
+    return Card(
+      elevation: 2,
+      color: colors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => NavigatorService.pushNamed(AppRoutes.duaKhatm),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.primary.withValues(alpha: 0.15),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  color: colors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'lbl_dua_khatm'.tr,
+                      style: AppTextStyles.headingSmall.copyWith(
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    if (completions > 0)
+                      Text(
+                        'msg_khatmah_count'
+                            .tr
+                            .replaceAll('{count}', '$completions'),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

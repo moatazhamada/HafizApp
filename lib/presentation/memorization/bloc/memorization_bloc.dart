@@ -18,10 +18,11 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadMemorizationProgress event,
     Emitter<MemorizationState> emit,
   ) async {
+    if (isClosed) return;
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
-      (failure) => emit(const MemorizationError('msg_operation_failed')),
+      (failure) => emit(MemorizationError(failure.errorMessage)),
       (progress) {
         final due = progress.where(SrsAlgorithm.isDueForReview).toList();
         final memorized = progress
@@ -54,8 +55,14 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
   ) async {
     final result = await repository.recordReview(event.surahId, event.score);
     result.fold(
-      (failure) => emit(const MemorizationError('msg_operation_failed')),
-      (_) => add(LoadMemorizationProgress()),
+      (failure) {
+        if (isClosed) return;
+        emit(MemorizationError(failure.errorMessage));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadMemorizationProgress());
+      },
     );
   }
 
@@ -63,6 +70,34 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadDueReviews event,
     Emitter<MemorizationState> emit,
   ) async {
-    add(LoadMemorizationProgress());
+    if (isClosed) return;
+    emit(MemorizationLoading());
+    final result = await repository.getAllProgress();
+    result.fold(
+      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (progress) {
+        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
+        final memorized = progress
+            .where((p) => p.status == MemorizationStatus.memorized)
+            .length;
+        final inProgress = progress
+            .where(
+              (p) =>
+                  p.status == MemorizationStatus.inProgress ||
+                  p.status == MemorizationStatus.needsReview,
+            )
+            .length;
+        final notStarted = 114 - progress.length;
+        emit(
+          MemorizationLoaded(
+            allProgress: progress,
+            dueReviews: due,
+            totalMemorized: memorized,
+            totalInProgress: inProgress,
+            totalNotStarted: notStarted < 0 ? 0 : notStarted,
+          ),
+        );
+      },
+    );
   }
 }

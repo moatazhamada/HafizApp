@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/reading_goal_model.dart';
+import '../../model/reading_session_model.dart';
 
 abstract class KhatmahLocalDataSource {
   Future<DailyReadingLogModel?> getLog(DateTime date);
@@ -12,13 +14,23 @@ abstract class KhatmahLocalDataSource {
   );
   Future<ReadingGoalModel?> getGoal();
   Future<void> saveGoal(ReadingGoalModel goal);
+  Future<void> saveOfflineSession(ReadingSessionModel session);
+  Future<List<ReadingSessionModel>> getOfflineSessions();
+  Future<Map<int, ReadingSessionModel>> getOfflineSessionsWithKeys();
+  Future<void> deleteOfflineSessions(Iterable<int> keys);
+  Future<void> clearOfflineSessions();
 }
 
 class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
   final Box logBox;
   final Box goalBox;
+  final Box offlineSessionBox;
 
-  KhatmahLocalDataSourceImpl({required this.logBox, required this.goalBox});
+  KhatmahLocalDataSourceImpl({
+    required this.logBox,
+    required this.goalBox,
+    required this.offlineSessionBox,
+  });
 
   String _dateKey(DateTime date) =>
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -60,7 +72,9 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
             logs.add(
               DailyReadingLogModel.fromJson(Map<String, dynamic>.from(raw)),
             );
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Daily reading log parse failed: $e', feature: 'Khatmah');
+          }
         }
       }
       return logs;
@@ -92,7 +106,9 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
             result[key] = DailyReadingLogModel.fromJson(
               Map<String, dynamic>.from(raw),
             );
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Daily reading log parse failed: $e', feature: 'Khatmah');
+          }
         }
       }
       return result;
@@ -116,6 +132,84 @@ class KhatmahLocalDataSourceImpl implements KhatmahLocalDataSource {
   Future<void> saveGoal(ReadingGoalModel goal) async {
     try {
       await goalBox.put('active_goal', goal.toJson());
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> saveOfflineSession(ReadingSessionModel session) async {
+    try {
+      if (offlineSessionBox.length >= 500) {
+        final keysToDelete = offlineSessionBox.keys.take(offlineSessionBox.length - 499).toList();
+        await offlineSessionBox.deleteAll(keysToDelete);
+        Logger.warning(
+          'Offline session queue exceeded 500 — evicted ${keysToDelete.length} oldest entries',
+          feature: 'Khatmah',
+        );
+      }
+      await offlineSessionBox.add(session.toJson());
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<List<ReadingSessionModel>> getOfflineSessions() async {
+    try {
+      final sessions = <ReadingSessionModel>[];
+      for (final raw in offlineSessionBox.values) {
+        if (raw is! Map) continue;
+        try {
+          sessions.add(
+            ReadingSessionModel.fromJson(Map<String, dynamic>.from(raw)),
+          );
+        } catch (e) {
+          Logger.warning('Skipping malformed offline session: $e', feature: 'Khatmah');
+        }
+      }
+      return sessions;
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> clearOfflineSessions() async {
+    try {
+      await offlineSessionBox.clear();
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<Map<int, ReadingSessionModel>> getOfflineSessionsWithKeys() async {
+    try {
+      final sessions = <int, ReadingSessionModel>{};
+      for (final entry in offlineSessionBox.toMap().entries) {
+        final raw = entry.value;
+        if (raw is! Map) continue;
+        try {
+          sessions[entry.key as int] = ReadingSessionModel.fromJson(
+            Map<String, dynamic>.from(raw),
+          );
+        } catch (e) {
+          Logger.warning('Skipping malformed offline session: $e', feature: 'Khatmah');
+        }
+      }
+      return sessions;
+    } catch (e) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> deleteOfflineSessions(Iterable<int> keys) async {
+    try {
+      for (final key in keys) {
+        await offlineSessionBox.delete(key);
+      }
     } catch (e) {
       throw CacheException();
     }

@@ -4,6 +4,7 @@
     <style name="LaunchTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Splash background shown before first Flutter frame -->
         <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <!-- Edge-to-edge: draw behind system bars -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:enforceStatusBarContrast">false</item>

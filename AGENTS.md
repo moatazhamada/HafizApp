@@ -128,7 +128,18 @@ Linting is configured in `analysis_options.yaml`. The project includes `package:
 2. **Either<Failure, Success>** — Repositories always return `Either<Failure, T>`. BLoCs map `Left(Failure)` to error states and `Right(Data)` to success states.
 3. **BLoC pattern** — Every major screen has its own BLoC. Events are named `*Event`, states are named `*State`. Use `BlocBuilder` / `BlocListener` in widgets.
 4. **Dependency Injection** — Register shared dependencies as `registerLazySingleton` and per-screen BLoCs as `registerFactory` in the appropriate `di/di_*.dart` file.
-5. **RTL Convention** — All Quran / Arabic text **must** use `textDirection: TextDirection.rtl` regardless of app locale. Surah navigation arrows follow RTL semantics (next = left, previous = right).
+5. **RTL Convention** — This is a Quran app. The Quran is Arabic (RTL). All Quran/Mushaf content **must** use RTL semantics regardless of UI language.
+   - **Centralized helpers:** Use `lib/core/utils/rtl_utils.dart` for all directional icons. Never hardcode `Icons.arrow_back`, `Icons.chevron_right`, `Icons.arrow_forward`, etc. directly in UI code.
+     - `rtlBackArrow(context)` — back arrow (points right in RTL)
+     - `rtlForwardArrow(context)` — forward arrow (points left in RTL)
+     - `rtlChevron(context)` — chevron (left in RTL, right in LTR)
+     - `rtlSkipPreviousIcon(context)` / `rtlSkipNextIcon(context)` — media skip icons flipped in RTL
+   - **All Quran / Arabic text** must use `textDirection: TextDirection.rtl` regardless of app locale.
+   - **Surah navigation** follows RTL semantics: next surah is on the **left**, previous surah is on the **right** (like a physical Quran).
+   - **Mushaf page direction** is immutable RTL: `PageView(reverse: true)` — page 1 on the right, swipe left to advance. Never make this conditional on locale.
+   - **Never** hardcode `TextDirection.ltr` on Quran-specific components (Mushaf, Surah, verse lists, audio player navigation).
+   - Prefer `AlignmentDirectional` over `Alignment`, `EdgeInsetsDirectional` over `EdgeInsets.fromLTRB`, and `TextAlign.start/end` over `left/right`.
+   - **Temporal vs Spatial icons:** Media playback controls (play, pause, replay_10, forward_10) represent **time** and must **not** be flipped. Spatial navigation icons (back, forward, next, previous, chevrons) **must** adapt to RTL.
 6. **Localization keys** — All user-facing strings use translation keys defined in `lib/localization/en_us/en_us_translations.dart` and `lib/localization/ar_eg/ar_eg_translations.dart`.
 
 ---
@@ -179,18 +190,30 @@ lcov --remove coverage/lcov.info 'lib/**/*.g.dart' 'lib/**/*.freezed.dart' 'lib/
 
 - **This is a private repository.**
 - **Keystore:** `android/app/upload-keystore.jks` and `android/keystore.properties` are excluded from git via `.gitignore`.
-- **Secrets:** Quran Foundation OAuth `client_id` and `client_secret` are injected at build time via `--dart-define-from-file` (`.dart_defines.production.json` / `.dart_defines.prelive.json`). In CI they are sourced from GitHub Secrets.
+- **Secrets:** Quran Foundation OAuth `client_id` and `client_secret` are injected at build time via `--dart-define-from-file`. The files `.dart_defines.production.json` and `.dart_defines.prelive.json` are **gitignored** and must never be committed. In CI they are generated on-the-fly from GitHub Secrets; the build fails fast if any required secret is empty.
 - **Token Storage:** Access tokens are stored in `flutter_secure_storage`. Token refresh is handled automatically by `QfApiInterceptor`.
 - **PKCE:** OAuth2 login uses PKCE via `flutter_appauth`.
 - **Confidential vs Public Client:** The app defaults to confidential-client mode (server-side token exchange). Only enable `forcePublicClient` if Quran Foundation explicitly confirms it.
 
 ### Required GitHub Secrets (CI/CD)
 
+**Build will fail if empty:**
+- `QF_CLIENT_ID` — Quran Foundation OAuth client ID
+- `QF_CLIENT_SECRET` — Quran Foundation OAuth client secret
+
+**Android signing & deployment:**
 - `KEYSTORE_BASE64`
 - `KEYSTORE_PASSWORD`
 - `KEY_PASSWORD`
 - `KEY_ALIAS`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT`
+
+**Optional (Firebase key rotation):**
+- `FIREBASE_WEB_API_KEY`
+- `FIREBASE_ANDROID_API_KEY`
+- `FIREBASE_IOS_API_KEY`
+
+> **Note on Firebase API keys:** For native mobile apps, Firebase API keys are embedded in the app binary and are considered public by design. The `firebase_options.dart` file reads them from `String.fromEnvironment` with safe defaults. Security relies on GCP API key restrictions (bundle ID, SHA-1, App Check), not on key secrecy. The optional secrets above allow rotating keys without rebuilding from source.
 
 ---
 

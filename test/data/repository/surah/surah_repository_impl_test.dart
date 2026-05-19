@@ -59,7 +59,7 @@ void main() {
 
     var result = await surahRepositoryImpl.getSurah('114');
     verify(() => mockSurahDataSource.getSurah('114'));
-    expect(result, Left(ServerFailure('Unknown Error')));
+    expect(result, const Left(ServerFailure('Unknown Error')));
   });
 
   test(
@@ -68,7 +68,7 @@ void main() {
       when(() => mockNetworkInfo.isConnected()).thenAnswer((_) async => false);
 
       var result = await surahRepositoryImpl.getSurah('114');
-      expect(result, Left(ConnectionFailure()));
+      expect(result, const Left(ConnectionFailure()));
     },
   );
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +10,7 @@ import 'package:hafiz_app/core/auth/qf_pkce.dart';
 import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/domain/entities/qf_user_profile.dart';
 
 abstract class QfAuthRemoteDataSource {
   Future<bool> login();
@@ -15,6 +18,7 @@ abstract class QfAuthRemoteDataSource {
   Future<String?> getAccessToken();
   Future<String?> getRefreshToken();
   Future<String?> getUserId();
+  Future<QfUserProfile?> getUserProfile();
   Future<bool> refreshToken();
   Future<bool> isAuthenticated();
   Future<void> revokeAndDeleteData();
@@ -233,11 +237,20 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
 
   @override
   Future<void> logout() async {
-    await _secureStorage.delete(key: _accessTokenKey);
-    await _secureStorage.delete(key: _refreshTokenKey);
-    await _secureStorage.delete(key: _idTokenKey);
-    await _secureStorage.delete(key: _oidcNonceKey);
-    await _secureStorage.delete(key: QfApiConfig.storedFlavorKey);
+    const keys = [
+      _accessTokenKey,
+      _refreshTokenKey,
+      _idTokenKey,
+      _oidcNonceKey,
+      QfApiConfig.storedFlavorKey,
+    ];
+    for (final key in keys) {
+      try {
+        await _secureStorage.delete(key: key);
+      } catch (e) {
+        Logger.warning('Failed to delete secure storage key $key: $e', feature: 'QfAuth');
+      }
+    }
     Logger.info('Logged out from QF', feature: 'QfAuth');
   }
 
@@ -262,12 +275,42 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
   }
 
   @override
+  Future<QfUserProfile?> getUserProfile() async {
+    final idToken = await _secureStorage.read(key: _idTokenKey);
+    if (idToken != null) {
+      try {
+        final claims = JwtDecoder.decode(idToken);
+        return QfUserProfile.fromIdTokenClaims(claims);
+      } catch (e) {
+        Logger.warning('Failed to decode user profile from ID token: $e',
+            feature: 'QfAuth');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<bool> refreshToken() async {
     try {
       return await _refreshWithFallback();
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 401 || statusCode == 403) {
+        Logger.error(
+          'Token refresh rejected ($statusCode), logging out',
+          feature: 'QfAuth',
+        );
+        await logout();
+      } else {
+        Logger.error(
+          'Token refresh failed with network error: $e',
+          feature: 'QfAuth',
+        );
+      }
+      return false;
     } catch (e) {
-      Logger.error('Failed to refresh token: $e', feature: 'QfAuth');
-      await logout();
+      Logger.error('Token refresh failed unexpectedly: $e', feature: 'QfAuth');
       return false;
     }
   }
@@ -298,7 +341,8 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
             );
             try {
               return await _refreshWithScopes(QfApiConfig.coreScopes);
-            } catch (_) {
+            } catch (e) {
+              Logger.warning('Token refresh with core scopes failed: $e', feature: 'QfAuth');
               await logout();
               return false;
             }
@@ -364,48 +408,84 @@ class QfAuthRemoteDataSourceImpl implements QfAuthRemoteDataSource {
 
   @override
   Future<bool> isAuthenticated() async {
-    final accessToken = await getAccessToken();
-    if (accessToken == null) return false;
+    try {
+      final accessToken = await getAccessToken();
+      if (accessToken == null) return false;
 
-    final storedFlavor = await _secureStorage.read(
-      key: QfApiConfig.storedFlavorKey,
-    );
-    if (storedFlavor != null && storedFlavor != QfApiConfig.currentFlavor) {
-      Logger.warning(
-        'Flavor mismatch: stored=$storedFlavor current=${QfApiConfig.currentFlavor}. '
-        'Clearing stale tokens.',
-        feature: 'QfAuth',
+      final storedFlavor = await _secureStorage.read(
+        key: QfApiConfig.storedFlavorKey,
       );
-      await logout();
+      if (storedFlavor != null && storedFlavor != QfApiConfig.currentFlavor) {
+        Logger.warning(
+          'Flavor mismatch: stored=$storedFlavor current=${QfApiConfig.currentFlavor}. '
+          'Clearing stale tokens.',
+          feature: 'QfAuth',
+        );
+        await logout();
+        return false;
+      }
+
+      final idToken = await _secureStorage.read(key: _idTokenKey);
+      if (idToken != null) {
+        if (JwtDecoder.isExpired(idToken)) {
+          return await refreshToken();
+        }
+        // Re-validate critical claims on app restart — a forged or
+        // misconfigured token that passes expiry must still be rejected.
+        try {
+          QfTokenValidator(config: _oidcConfig).validateIdTokenClaims(idToken);
+        } catch (e) {
+          Logger.warning(
+            'ID token claims invalid on restart (iss/aud): $e',
+            feature: 'QfAuth',
+          );
+          await logout();
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      Logger.error(
+        'Secure storage unavailable during auth check: $e',
+        feature: 'QfAuth',
+        error: e,
+      );
       return false;
     }
-
-    final idToken = await _secureStorage.read(key: _idTokenKey);
-    if (idToken != null && JwtDecoder.isExpired(idToken)) {
-      return await refreshToken();
-    }
-    return true;
   }
 
   @override
   Future<void> revokeAndDeleteData() async {
-    try {
-      final token = await getRefreshToken();
-      if (token != null) {
-        await Dio().post(
+    final refreshToken = await getRefreshToken();
+    final accessToken = await getAccessToken();
+    final dio = Dio();
+    // For confidential clients, include HTTP Basic Auth so the revocation
+    // endpoint can authenticate the caller (RFC 7009 §2.1).
+    final headers = <String, String>{
+      Headers.contentTypeHeader: Headers.formUrlEncodedContentType,
+    };
+    if (_oidcConfig.isConfidential && QfApiConfig.clientSecret.isNotEmpty) {
+      final auth = base64Encode(
+        utf8.encode('${QfApiConfig.clientId}:${QfApiConfig.clientSecret}'),
+      );
+      headers['Authorization'] = 'Basic $auth';
+    }
+    for (final token in {refreshToken, accessToken}) {
+      if (token == null) continue;
+      try {
+        await dio.post(
           '${_config.authBaseUrl}/oauth2/revoke',
           data: 'token=$token&client_id=${QfApiConfig.clientId}',
-          options: Options(contentType: Headers.formUrlEncodedContentType),
+          options: Options(headers: headers),
         );
         Logger.info('QF token revoked', feature: 'QfAuth');
+      } catch (e) {
+        Logger.warning(
+          'Token revocation failed (continuing with local cleanup): $e',
+          feature: 'QfAuth',
+        );
       }
-    } catch (e) {
-      Logger.warning(
-        'Token revocation failed (continuing with local cleanup): $e',
-        feature: 'QfAuth',
-      );
     }
-
     await logout();
     Logger.info('All QF data deleted', feature: 'QfAuth');
   }

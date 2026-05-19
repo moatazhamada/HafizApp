@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
+import '../../core/services/remote_config_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../../core/utils/input_formatters.dart';
+import '../../core/utils/input_validators.dart';
 import '../../core/utils/platform_info.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
@@ -33,7 +35,9 @@ class _AboutScreenState extends State<AboutScreen> {
       if (mounted) {
         setState(() => _version = info.version);
       }
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Version load failed: $e', feature: 'About');
+    }
   }
 
   @override
@@ -50,9 +54,10 @@ class _AboutScreenState extends State<AboutScreen> {
 
     void copy(String text) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(
+      SnackBarHelper.show(
         context,
-      ).showSnackBar(SnackBar(content: Text('lbl_copied'.tr)));
+        message: 'lbl_copied'.tr,
+      );
     }
 
     Future<void> openExternal(String url) async {
@@ -67,8 +72,10 @@ class _AboutScreenState extends State<AboutScreen> {
         }
         if (!ok) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+            SnackBarHelper.show(
+              context,
+              message: '${"msg_could_not_open".tr}$url',
+              type: SnackBarType.error,
             );
           }
         }
@@ -77,8 +84,10 @@ class _AboutScreenState extends State<AboutScreen> {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${"msg_could_not_open".tr}$url')),
+          SnackBarHelper.show(
+            context,
+            message: '${"msg_could_not_open".tr}$url',
+            type: SnackBarType.error,
           );
         }
       }
@@ -87,6 +96,7 @@ class _AboutScreenState extends State<AboutScreen> {
     Future<void> showFeedbackDialog() async {
       final controller = TextEditingController();
       bool isSending = false;
+      String? errorText;
 
       await showDialog(
         context: context,
@@ -97,10 +107,18 @@ class _AboutScreenState extends State<AboutScreen> {
               controller: controller,
               maxLines: 6,
               enabled: !isSending,
+              inputFormatters: [
+                AppInputFormatters.maxLength(1000),
+                AppInputFormatters.noLeadingSpaces,
+              ],
               decoration: InputDecoration(
                 hintText: 'about_feedback_hint'.tr,
                 border: const OutlineInputBorder(),
+                errorText: errorText,
               ),
+              onChanged: (_) {
+                if (errorText != null) setState(() => errorText = null);
+              },
             ),
             actions: [
               TextButton(
@@ -117,7 +135,15 @@ class _AboutScreenState extends State<AboutScreen> {
                     ? null
                     : () async {
                         final msg = controller.text.trim();
-                        if (msg.isEmpty) return;
+                        final validator = InputValidators.compose([
+                          InputValidators.required(),
+                          InputValidators.minLength(3),
+                        ]);
+                        final validationError = validator(msg);
+                        if (validationError != null) {
+                          setState(() => errorText = validationError);
+                          return;
+                        }
 
                         setState(() => isSending = true);
                         try {
@@ -134,18 +160,16 @@ class _AboutScreenState extends State<AboutScreen> {
                             Navigator.of(ctx).pop();
                             controller.dispose();
                             if (launched) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('about_feedback_sent'.tr),
-                                ),
+                              SnackBarHelper.show(
+                                context,
+                                message: 'about_feedback_sent'.tr,
                               );
                             } else {
                               await Clipboard.setData(ClipboardData(text: msg));
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('msg_feedback_copied'.tr),
-                                  ),
+                                SnackBarHelper.show(
+                                  context,
+                                  message: 'msg_feedback_copied'.tr,
                                 );
                               }
                             }
@@ -156,21 +180,21 @@ class _AboutScreenState extends State<AboutScreen> {
                         } catch (e) {
                           setState(() => isSending = false);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${"msg_error_prefix".tr}$e'),
-                              ),
+                            SnackBarHelper.show(
+                              context,
+                              message: '${"msg_error_prefix".tr}$e',
+                              type: SnackBarType.error,
                             );
                           }
                         }
                       },
                 child: isSending
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : Text('about_feedback_send'.tr),
@@ -297,8 +321,8 @@ class _AboutScreenState extends State<AboutScreen> {
                   leading: const Icon(Icons.public),
                   title: Text('about_source_quran_api'.tr, style: linkStyle),
                   subtitle: Text('about_source_quran_api_desc'.tr),
-                  onTap: () => openExternal('https://api.quran.com/api/v4'),
-                  onLongPress: () => copy('https://api.quran.com/api/v4'),
+                  onTap: () => openExternal('https://api.quran.foundation'),
+                  onLongPress: () => copy('https://api.quran.foundation'),
                   trailing: const Icon(Icons.open_in_new),
                 ),
                 ListTile(
@@ -383,9 +407,10 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 8),
           Text('about_integrity_body'.tr),
-          // TODO: Uncomment when Musali is ready to announce
-          // const SizedBox(height: 24),
-          // const MusaliComingSoonCard(),
+          if (sl<RemoteConfigService>().showMusaliCard) ...[
+            const SizedBox(height: 24),
+            const MusaliComingSoonCard(),
+          ],
         ],
       ),
     );
@@ -399,7 +424,6 @@ class MusaliComingSoonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       child: Column(
@@ -435,9 +459,7 @@ class MusaliComingSoonCard extends StatelessWidget {
                       Text(
                         'musali_status'.tr,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.black.withValues(alpha: 0.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],

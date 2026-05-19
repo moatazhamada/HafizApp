@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
+import 'package:hafiz_app/core/services/voice_recording_controller.dart';
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
 import 'widgets/auto_scroll_speed_sheet.dart';
@@ -16,12 +18,18 @@ import 'widgets/verse_menu_sheet.dart';
 import 'widgets/verse_range.dart';
 import 'widgets/voice_verification_dialog.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
+import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
+import '../../core/services/reading_session_tracker.dart';
+import '../../domain/entities/reading_session.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
+import '../../core/quran_index/sajdah_index.dart';
 import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
@@ -38,11 +46,19 @@ import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart'
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
+import '../../domain/repository/khatmah_repository.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/surah_name_formatter.dart';
-import '../../core/theme/app_colors.dart';
 import 'package:hafiz_app/data/datasource/translation/qf_translation_remote_data_source.dart';
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
+
+part 'widgets/_surah_app_bar.dart';
+part 'widgets/_verse_list_view.dart';
+part 'widgets/_hifz_mode_overlay.dart';
+part 'widgets/_audio_control_bar.dart';
+part 'widgets/_auto_scroll_controls.dart';
+part 'widgets/_completion_celebration.dart';
+part 'widgets/_voice_verification_panel.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -51,7 +67,7 @@ class SurahScreen extends StatefulWidget {
   State<SurahScreen> createState() => _SurahScreenState();
 }
 
-class _SurahScreenState extends State<SurahScreen> {
+class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   final surahBloc = sl<SurahBloc>();
   Surah? surah;
 
@@ -64,8 +80,8 @@ class _SurahScreenState extends State<SurahScreen> {
   // Hifz Mode State
   bool _isHifzMode = false;
   final Set<int> _revealedVerses = {};
-  int? _selectedVerse; // For visual selection feedback
-  int? _highlightedVerse; // Verse to highlight and scroll to
+  int? _selectedVerse;
+  int? _highlightedVerse;
 
   // Translation State
   bool _showTranslation = false;
@@ -77,9 +93,14 @@ class _SurahScreenState extends State<SurahScreen> {
   final Map<int, GlobalKey> _richTextVerseKeys = {};
   List<VerseRange> _currentVerseRanges = [];
 
+  // Key for accurate hit testing on RichText with WidgetSpans
+  final GlobalKey _richTextKey = GlobalKey();
+
   // Voice Verification
-  final VoiceVerificationService _voiceService = VoiceVerificationService();
-  final QiraatService _qiraatService = QiraatService();
+  final GlobalKey<_VoiceVerificationPanelState> _voicePanelKey =
+      GlobalKey<_VoiceVerificationPanelState>();
+  final GlobalKey<_CompletionCelebrationState> _completionKey =
+      GlobalKey<_CompletionCelebrationState>();
 
   // Auto-scroll
   bool _isAutoScrolling = false;
@@ -89,20 +110,21 @@ class _SurahScreenState extends State<SurahScreen> {
   // Listening Mode (audio-coupled auto-scroll)
   bool _isListeningMode = false;
   StreamSubscription<int>? _listeningSubscription;
+  StreamSubscription<String>? _audioErrorSubscription;
   List<Verse> _chapters = []; // Cached for listening mode toggle
 
-  int _sessionCorrectCount = 0;
-  int _sessionTotalCount = 0;
-
-  // Key for accurate hit testing on RichText with WidgetSpans
-  final GlobalKey _richTextKey = GlobalKey();
+  // Reading Session Tracking
+  final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _showTranslation = PrefUtils().getShowTranslation();
     LocaleController.notifier.addListener(_onLocaleChanged);
-    // Logic moved to didChangeDependencies to safely access ModalRoute
+    if (PrefUtils().isKeepScreenOn()) {
+      WakelockPlus.enable();
+    }
   }
 
   @override
@@ -117,11 +139,9 @@ class _SurahScreenState extends State<SurahScreen> {
 
         final vIndex = args['verseIndex'];
         if (vIndex is int) {
-          // Prefer verseIndex for precise scrolling - don't use offset
           _selectedVerse = vIndex + 1;
           _highlightedVerse = vIndex + 1;
         } else {
-          // Use offset only when verseIndex is not provided
           final off = args['offset'];
           if (off is num) initialOffset = off.toDouble();
         }
@@ -131,6 +151,7 @@ class _SurahScreenState extends State<SurahScreen> {
         surahBloc.add(LoadSurahEvent(surahId: surah?.id.toString() ?? ''));
         final isArabic = LocaleController.notifier.value.languageCode == 'ar';
         if (_showTranslation && !isArabic) _loadTranslations();
+        _startSession();
       }
 
       _scrollControllerForInit = ScrollController(
@@ -146,250 +167,95 @@ class _SurahScreenState extends State<SurahScreen> {
             surah!.id,
             _scrollControllerForInit!.offset,
           );
+          PrefUtils().saveLastReadSurah(surah!);
+          final visibleVerse = _findVisibleVerseNumber();
+          if (visibleVerse != null) {
+            PrefUtils().setSurahVerseIndex(surah!.id, visibleVerse - 1);
+            _sessionTracker.updateProgress(visibleVerse);
+          }
         });
       });
     }
   }
 
-  void _scrollToVerseWithRetry(
-    int verseNumber,
-    List<Verse> chapters, {
-    int attempt = 0,
-  }) {
-    // Attempt 0: Check if transition is happening
-    if (attempt == 0) {
-      final route = ModalRoute.of(context);
-      if (route is TransitionRoute) {
-        final animation = route?.animation;
-        if (animation != null &&
-            animation.status != AnimationStatus.completed) {
-          // Wait for transition to finish
-          void handler(AnimationStatus status) {
-            if (status == AnimationStatus.completed) {
-              animation.removeStatusListener(handler);
-              if (mounted) {
-                _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
-              }
-            }
-          }
-
-          animation.addStatusListener(handler);
-          return;
-        }
-      }
-    }
-
-    // Max 20 attempts (~4 seconds total) for layout/rendering
-    if (attempt > 20) return;
-
-    // Standard short delay for layout retry (200ms)
-    // No initial long delay needed since we waited for transition
-    int delay = 200;
-
-    Future.delayed(Duration(milliseconds: delay), () {
-      if (!mounted) return;
-      bool success = _scrollToVerse(verseNumber, chapters);
-      if (!success) {
-        _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
-      } else {
-        // Clear highlight after success + delay
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) {
-            setState(() {
-              _highlightedVerse = null;
-            });
-          }
-        });
-      }
-    });
-  }
-
-  /// Returns true if scroll was initiated successfully
-  bool _scrollToVerse(int verseNumber, List<Verse> chapters) {
-    if (PrefUtils().getVerseViewMode()) {
-      // Single Line Mode - use GlobalKey
-      final key = _verseKeys[verseNumber];
-      if (key != null && key.currentContext != null) {
-        Scrollable.ensureVisible(
-          key.currentContext!,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          alignment: 0.15, // Align slightly below top
-        );
-        return true;
-      }
-      return false; // Key not ready
-    } else {
-      // Mushaf/RichText Mode - prefer anchor keys for reliability
-      final anchorKey = _richTextVerseKeys[verseNumber];
-      if (anchorKey != null && anchorKey.currentContext != null) {
-        Scrollable.ensureVisible(
-          anchorKey.currentContext!,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          alignment: 0.15,
-        );
-        return true;
-      }
-
-      // Fallback: RenderParagraph based scroll
-      final RenderObject? renderObject = _richTextKey.currentContext
-          ?.findRenderObject();
-
-      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
-        // Find the verse range
-        final verseRange = _currentVerseRanges.firstWhere(
-          (r) => r.verse.verseNumber == verseNumber && !r.isBadge,
-          orElse: () => _currentVerseRanges.first,
-        );
-
-        try {
-          final boxes = renderObject.getBoxesForSelection(
-            TextSelection(
-              baseOffset: verseRange.start,
-              extentOffset: verseRange.start + 1,
-            ),
-          );
-
-          if (boxes.isNotEmpty && _scrollController.hasClients) {
-            final boxTop = boxes.first.top;
-            // Calculate absolute position on screen
-            final globalOffset = renderObject.localToGlobal(Offset(0, boxTop));
-
-            // Current scroll offset
-            final currentScroll = _scrollController.offset;
-
-            // Desired position on screen (e.g. 140px from top, below AppBar)
-            const double targetScreenY = 140.0;
-
-            // Calculate delta needed to move globalOffset.dy to targetScreenY
-            final delta = globalOffset.dy - targetScreenY;
-
-            // Calculate new scroll position
-            final targetScroll = (currentScroll + delta).clamp(
-              0.0,
-              _scrollController.position.maxScrollExtent,
-            );
-
-            _scrollController.animateTo(
-              targetScroll,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOut,
-            );
-            return true;
-          }
-        } catch (e) {
-          debugPrint('Scroll error: $e');
-          return false;
-        }
-      }
-      return false;
-    }
-  }
-
-  void _saveReadingProgress() {
-    if (surah == null) return;
-
-    // 1. Always ensure this Surah is marked as the last read one
-    PrefUtils().saveLastReadSurah(surah!);
-
-    // 2. Find the top visible verse to save specific position
-    int? visibleVerseNumber;
-
-    if (PrefUtils().getVerseViewMode()) {
-      // Single Line Mode: Check GlobalKeys
-      // Heuristic: iterate keys, find first one with positive offset relative to viewport
-      // or closest to 0.
-      for (var entry in _verseKeys.entries) {
-        final key = entry.value;
-        if (key.currentContext != null) {
-          final RenderBox? box =
-              key.currentContext!.findRenderObject() as RenderBox?;
-          if (box != null) {
-            final position = box.localToGlobal(Offset.zero);
-            // 70 is rough app bar height+padding offset
-            if (position.dy >= 0 &&
-                position.dy < MediaQuery.of(context).size.height / 2) {
-              visibleVerseNumber = entry.key;
-              break;
-            }
-          }
-        }
-      }
-    } else {
-      // Mushaf/RichText Mode
-      final RenderObject? renderObject = _richTextKey.currentContext
-          ?.findRenderObject();
-      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
-        // We need to find which range is at the current scroll offset.
-        // It's hard to inverse-map generic text spans easily without coordinates.
-        // But we can check our known ranges.
-
-        // Strategy: Check middle of the screen text offset?
-        // Or check dynamic boxes of ranges? Checking 200+ ranges might be acceptable.
-
-        // Optimization: Binary search or check only ranges likely to be visible?
-        // Let's simplified check: Find first range whose box bottom > 0 (relative to viewport)
-        // We really need viewport relative coordinates.
-
-        try {
-          // We can't easily get viewport relative rects for ALL ranges efficiently.
-          // Fallback: Use the scroll offset + heuristic
-          // If we have scroll offset, we know we are at N pixels down.
-          // But text height is variable.
-
-          // Better approach for Mushaf: _currentVerseRanges contains all verses.
-          // We can sample a few points on screen (e.g. top-left content area) and hit-test.
-
-          // Hit testing via renderObject.getPositionForOffset
-          // Offset(0, 0) in the renderParagraph is the very top.
-          // The renderParagraph is inside the ScrollView.
-          // We know the scroll offset.
-          // So, the top visible text is at local offset = (0, _scrollController.offset).
-          // Add a small buffer (e.g. 50px) to skip empty space.
-
-          if (_scrollController.hasClients) {
-            // getPositionForOffset expects local coordinates within RenderParagraph.
-            final Size size = renderObject.size;
-            final Offset targetLcOffset = Offset(
-              20,
-              (20.0).clamp(0.0, (size.height - 1).clamp(0.0, double.infinity)),
-            );
-            final textPosition = renderObject.getPositionForOffset(
-              targetLcOffset,
-            );
-            final textOffset = textPosition.offset;
-
-            // Find range containing this text offset
-            final range = _currentVerseRanges.firstWhere(
-              (r) => textOffset >= r.start && textOffset < r.end,
-              orElse: () => _currentVerseRanges.first,
-            );
-
-            visibleVerseNumber = range.verse.verseNumber;
-          }
-        } catch (_) {
-          // ignore
-        }
-      }
-    }
-
-    if (visibleVerseNumber != null) {
-      PrefUtils().setSurahVerseIndex(surah!.id, visibleVerseNumber - 1);
-    }
-  }
+  bool _isDisposed = false;
 
   @override
   void dispose() {
+    _finalizeCurrentSession();
+    _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     LocaleController.notifier.removeListener(_onLocaleChanged);
     _offsetSaveDebounce?.cancel();
+    _translationDebounce?.cancel();
     _autoScrollTimer?.cancel();
     _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
     if (_isListeningMode) AudioPlayerHandler().stop();
-    _voiceService.stop();
 
     _scrollControllerForInit?.dispose();
+    WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _sessionTracker.pause();
+        break;
+      case AppLifecycleState.resumed:
+        _sessionTracker.resume();
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  void _startSession() {
+    if (surah != null) {
+      _sessionTracker.startSession(
+        surahId: surah!.id,
+        startVerse: _selectedVerse ?? 1,
+      );
+      unawaited(sl<AnalyticsService>().logOpenSurah(surah!.id));
+    }
+  }
+
+  void _finalizeCurrentSession() {
+    if (_isDisposed) return;
+    final sessions = _sessionTracker.endSession();
+    for (final session in sessions) {
+      if (session.endVerse >= session.startVerse) {
+        final totalVerses = session.endVerse - session.startVerse + 1;
+        
+        // Update local dashboard
+        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses, durationSeconds: session.durationSeconds));
+        
+        // Sync to QF
+        unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        // Analytics
+        unawaited(
+          sl<AnalyticsService>().logReadingSession(
+            chapterNumber: session.surahId,
+            versesRead: totalVerses,
+            durationSeconds: session.durationSeconds,
+          ),
+        );
+        
+        Logger.info(
+          'Surah session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+          feature: 'ReadingSessions',
+        );
+      }
+    }
+  }
+
+  void _clearHighlight() {
+    setState(() => _highlightedVerse = null);
   }
 
   void _toggleAutoScroll() {
@@ -403,15 +269,21 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
-  // ─── Listening Mode ───
+  bool _isTogglingListeningMode = false;
 
   void _toggleListeningMode() {
+    if (_isTogglingListeningMode) return;
+    _isTogglingListeningMode = true;
     if (_isListeningMode) {
       _stopListeningMode();
     } else {
-      if (_chapters.isEmpty) return;
+      if (_chapters.isEmpty) {
+        _isTogglingListeningMode = false;
+        return;
+      }
       _startListeningMode(_chapters);
     }
+    _isTogglingListeningMode = false;
   }
 
   void _startListeningMode(List<Verse> chapters) {
@@ -421,16 +293,153 @@ class _SurahScreenState extends State<SurahScreen> {
 
     _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
       if (!_isListeningMode || !mounted) return;
+      if (verseIndex < 0) {
+        // Audio finished or error — auto-stop listening mode
+        _stopListeningMode();
+        return;
+      }
       setState(() {
-        _highlightedVerse = verseIndex >= 0 ? verseIndex + 1 : null;
+        _highlightedVerse = verseIndex + 1;
       });
-      if (verseIndex >= 0) {
+      // Don't auto-scroll in hifz mode — it would reveal hidden verses
+      // before the user taps them, defeating the memorization purpose.
+      if (!_isHifzMode) {
         _scrollToVerse(verseIndex + 1, chapters);
       }
+      PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+    });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
     });
 
+    final urls = _buildVerseAudioUrls();
+    // Resume from last position if same surah
+    final savedVerse = PrefUtils().getLastAudioVerse(surah!.id);
+    final startVerse =
+        savedVerse != null && savedVerse > 0 ? savedVerse : 0;
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: startVerse,
+    );
+  }
+
+  void _stopListeningMode() {
+    _listeningSubscription?.cancel();
+    _listeningSubscription = null;
+    _audioErrorSubscription?.cancel();
+    _audioErrorSubscription = null;
+    AudioPlayerHandler().stop();
+    if (mounted) {
+      setState(() {
+        _isListeningMode = false;
+        _highlightedVerse = null;
+      });
+    }
+  }
+
+  /// Starts Listening Mode from a specific verse and plays continuously.
+  void _startListeningFromVerse(int verseNumber) {
+    if (surah == null || _chapters.isEmpty) return;
+    _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
+    final handler = AudioPlayerHandler();
+    setState(() {
+      _isListeningMode = true;
+      _highlightedVerse = null;
+    });
+
+    _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
+      if (!_isListeningMode || !mounted) return;
+      if (verseIndex < 0) {
+        _stopListeningMode();
+        return;
+      }
+      setState(() {
+        _highlightedVerse = verseIndex + 1;
+      });
+      if (!_isHifzMode) {
+        _scrollToVerse(verseIndex + 1, _chapters);
+      }
+      PrefUtils().setLastAudioVerse(surah!.id, verseIndex);
+    });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
+    });
+
+    final urls = _buildVerseAudioUrls();
+    handler.clearLoop();
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: verseNumber - 1,
+    );
+  }
+
+  /// Plays only a single verse inline (no navigation) then stops.
+  void _playOnlyVerse(int verseNumber) {
+    if (surah == null || _chapters.isEmpty) return;
+    _listeningSubscription?.cancel();
+    _audioErrorSubscription?.cancel();
+    final handler = AudioPlayerHandler();
+    setState(() {
+      _isListeningMode = true;
+      _highlightedVerse = null;
+    });
+
+    _listeningSubscription = handler.currentVerseStream.listen((verseIndex) {
+      if (!_isListeningMode || !mounted) return;
+      if (verseIndex < 0) {
+        _stopListeningMode();
+        return;
+      }
+      if (verseIndex + 1 != verseNumber) {
+        _stopListeningMode();
+        return;
+      }
+      setState(() => _highlightedVerse = verseNumber);
+      if (!_isHifzMode) {
+        _scrollToVerse(verseNumber, _chapters);
+      }
+    });
+    _audioErrorSubscription = handler.errorStream.listen((errorKey) {
+      if (!mounted) return;
+      SnackBarHelper.show(
+        context,
+        message: errorKey.tr,
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 4),
+      );
+      _stopListeningMode();
+    });
+
+    final urls = _buildVerseAudioUrls();
+    handler.clearLoop();
+    handler.playSurah(
+      surahId: surah!.id,
+      verseAudioUrls: urls,
+      startVerse: verseNumber - 1,
+    );
+  }
+
+  /// Builds the full list of verse audio URLs for the current surah.
+  List<String> _buildVerseAudioUrls() {
     final reciterId = PrefUtils().getReciterId();
-    final reciterCdnIds = {
+    const reciterCdnIds = {
       7: 'ar.alafasy',
       9: 'ar.abdurrahmaansudais',
       1: 'ar.abdulbasitmurattal',
@@ -438,34 +447,25 @@ class _SurahScreenState extends State<SurahScreen> {
       17: 'ar.minshawi',
     };
     final cdnId = reciterCdnIds[reciterId] ?? 'ar.alafasy';
-    final totalVerses = chapters.length;
-    final urls = List.generate(totalVerses, (i) {
+    return List.generate(_chapters.length, (i) {
       final absolute = absoluteVerseNumber(surah!.id, i + 1);
       return 'https://cdn.islamic.network/quran/audio/128/$cdnId/$absolute.mp3';
-    });
-    handler.playSurah(surahId: surah!.id, verseAudioUrls: urls);
-  }
-
-  void _stopListeningMode() {
-    _listeningSubscription?.cancel();
-    _listeningSubscription = null;
-    AudioPlayerHandler().stop();
-    setState(() {
-      _isListeningMode = false;
-      _highlightedVerse = null;
     });
   }
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-      if (_scrollController.hasClients && _isAutoScrolling) {
-        final max = _scrollController.position.maxScrollExtent;
-        final current = _scrollController.offset;
-        if (current < max) {
-          _scrollController.jumpTo(current + _autoScrollSpeed);
-        } else {
-          _autoScrollTimer?.cancel();
+      if (!mounted || !_scrollController.hasClients || !_isAutoScrolling) {
+        return;
+      }
+      final max = _scrollController.position.maxScrollExtent;
+      final current = _scrollController.offset;
+      if (current < max) {
+        _scrollController.jumpTo(current + _autoScrollSpeed);
+      } else {
+        _autoScrollTimer?.cancel();
+        if (mounted) {
           setState(() => _isAutoScrolling = false);
         }
       }
@@ -484,79 +484,45 @@ class _SurahScreenState extends State<SurahScreen> {
     if (surahId < 1 || surahId > 114) return;
     final targetSurah = QuranIndex.quranSurahs.firstWhere(
       (s) => s.id == surahId,
+          orElse: () {
+            Logger.warning('Invalid surahId: $surahId', feature: 'Surah');
+            return Surah(surahId, 'Surah $surahId', 'سورة $surahId');
+          },
     );
+    // Clear previous surah's heavy data before switching to avoid
+    // memory pressure on low-end devices when browsing rapidly.
+    _chapters = [];
+    _translations = {};
+    _translationsLoading = false;
     NavigatorService.popAndPushNamed(
       AppRoutes.surahPage,
       arguments: {'surah': targetSurah},
     );
   }
 
-  Widget _buildSurahNavigation(BuildContext context, AppColors colors) {
-    if (surah == null) return const SizedBox.shrink();
-    return SurahNavigationBar(
-      surah: surah!,
-      onNavigate: _navigateToSurah,
-    );
-  }
-
-  void _saveSession(double percentage) {
-    if (surah == null || _sessionTotalCount == 0) return;
-    final session = RecitationSession(
-      id: '${surah!.id}_${DateTime.now().millisecondsSinceEpoch}',
-      surahId: surah!.id,
-      surahName: surah!.localizedName(context),
-      totalVerses: _sessionTotalCount,
-      correctCount: _sessionCorrectCount,
-      totalCount: _sessionTotalCount,
-      score: percentage,
-      createdAt: DateTime.now(),
-    );
-    sl<RecitationSessionBloc>().add(SaveSession(session));
-    sl<MemorizationBloc>().add(
-      RecordReview(surahId: surah!.id, score: percentage),
-    );
-    sl<KhatmahBloc>().add(RecordReading(verses: _sessionTotalCount));
-
-    // Adaptive QRC: evaluate and adjust levels after each session
-    if (PrefUtils().isAdaptiveQrc()) {
-      sl<RecitationSessionBloc>().add(LoadSessions());
-      sl<RecitationSessionBloc>()
-          .stream
-          .firstWhere((s) => s is RecitationSessionLoaded)
-          .timeout(const Duration(seconds: 5))
-          .then((state) {
-            if (state is RecitationSessionLoaded) {
-              AdaptiveQrc.evaluateAndAdjust(state.sessions);
-            }
-          })
-          .catchError((_) {});
-    }
-  }
-
-  void _showTafsirSheet(Verse aya) {
-    if (surah == null) return;
-    showTafsirSheet(
-      context,
-      surahId: surah!.id,
-      surahName: surah!.localizedName(context),
-      verseNumber: aya.verseNumber,
-    );
-  }
+  Timer? _translationDebounce;
 
   Future<void> _loadTranslations() async {
     if (_translations.isNotEmpty || _translationsLoading) return;
     if (surah == null) return;
-    setState(() => _translationsLoading = true);
-    try {
-      final ds = sl<QfTranslationRemoteDataSource>();
-      _translations = await ds.getTranslationsByChapter(surah!.id);
-    } catch (e) {
-      Logger.warning(
-        'Failed to load translations for surah ${surah!.id}: $e',
-        feature: 'Translation',
-      );
-    }
-    if (mounted) setState(() => _translationsLoading = false);
+
+    // Cancel any pending translation load to prevent stacking API calls
+    // when the user rapidly toggles translation on/off.
+    _translationDebounce?.cancel();
+    _translationDebounce = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted || surah == null) return;
+      setState(() => _translationsLoading = true);
+      try {
+        final ds = sl<QfTranslationRemoteDataSource>();
+        _translations = await ds.getTranslationsByChapter(surah!.id);
+      } catch (e) {
+        Logger.warning(
+          'Failed to load translations for surah ${surah!.id}: $e',
+          feature: 'Translation',
+        );
+      }
+      if (mounted) setState(() => _translationsLoading = false);
+    });
   }
 
   void _onLocaleChanged() {
@@ -566,14 +532,17 @@ class _SurahScreenState extends State<SurahScreen> {
       _translations = {};
       _translationsLoading = false;
       if (isArabic) {
+        // Only hide translation temporarily in Arabic mode;
+        // do NOT overwrite the user's preference so it comes back
+        // automatically when they switch back to a non-Arabic locale.
         _showTranslation = false;
-        PrefUtils().setShowTranslation(false);
       }
     });
-    // Clear the singleton cache so re-fetch gets fresh data for the new locale.
     try {
       sl<QfTranslationRemoteDataSource>().clearCache();
-    } catch (_) {}
+    } catch (e) {
+      Logger.warning('Translation cache clear failed: $e', feature: 'Translation');
+    }
     if (!isArabic && PrefUtils().getShowTranslation()) {
       _showTranslation = true;
       _loadTranslations();
@@ -589,13 +558,12 @@ class _SurahScreenState extends State<SurahScreen> {
       child: Scaffold(
         backgroundColor: colors.scaffoldBackground,
         bottomNavigationBar: surah != null
-            ? _buildSurahNavigation(context, colors)
+            ? SurahNavigationBar(surah: surah!, onNavigate: _navigateToSurah)
             : null,
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
-            _saveReadingProgress();
-            // Allow pop to proceed
+            _finalizeCurrentSession();
           },
           child: MultiBlocProvider(
             providers: [
@@ -607,12 +575,10 @@ class _SurahScreenState extends State<SurahScreen> {
                   listener: (context, state) {
                     if (state is BookmarkLoaded &&
                         state.feedbackMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.feedbackMessage!.tr),
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      SnackBarHelper.show(
+                        context,
+                        message: state.feedbackMessage!.tr,
+                        duration: const Duration(seconds: 2),
                       );
                     }
                   },
@@ -621,13 +587,11 @@ class _SurahScreenState extends State<SurahScreen> {
                   listener: (context, state) {
                     if (state is RecitationErrorLoaded &&
                         state.feedbackMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.feedbackMessage!.tr),
-                          backgroundColor: Colors.red[700],
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      SnackBarHelper.show(
+                        context,
+                        message: state.feedbackMessage!.tr,
+                        type: SnackBarType.error,
+                        duration: const Duration(seconds: 2),
                       );
                     }
                   },
@@ -664,38 +628,207 @@ class _SurahScreenState extends State<SurahScreen> {
                   } else {
                     final chapters = (state as SuccessSurahState).chapters;
                     _chapters = chapters;
-                    // Trigger scroll if selectedVerse is set and not scrolled yet
                     if (_selectedVerse != null && chapters.isNotEmpty) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted && _selectedVerse != null) {
                           _scrollToVerseWithRetry(_selectedVerse!, chapters);
-                          _selectedVerse = null; // Clear to avoid re-scrolling
+                          _selectedVerse = null;
                         }
                       });
                     }
 
                     return BlocBuilder<BookmarkBloc, BookmarkState>(
+                      buildWhen: (previous, current) {
+                        final prevBookmarks = previous is BookmarkLoaded
+                            ? previous.bookmarks
+                            : null;
+                        final currBookmarks = current is BookmarkLoaded
+                            ? current.bookmarks
+                            : null;
+                        return prevBookmarks != currBookmarks;
+                      },
                       builder: (context, bookmarkState) {
                         return BlocBuilder<
                           RecitationErrorBloc,
                           RecitationErrorState
                         >(
+                          buildWhen: (previous, current) {
+                            final prevErrors = previous is RecitationErrorLoaded
+                                ? previous.errors
+                                : null;
+                            final currErrors = current is RecitationErrorLoaded
+                                ? current.errors
+                                : null;
+                            return prevErrors != currErrors;
+                          },
                           builder: (context, errorState) {
                             return CustomScrollView(
                               controller: _scrollController,
                               slivers: [
-                                _buildSliverAppBar(isDark),
+                                _SurahAppBar(
+                                  isDark: isDark,
+                                  surah: surah,
+                                  isAutoScrolling: _isAutoScrolling,
+                                  autoScrollSpeed: _autoScrollSpeed,
+                                  isListeningMode: _isListeningMode,
+                                  isHifzMode: _isHifzMode,
+                                  showTranslation: _showTranslation,
+                                  highlightedVerse: _highlightedVerse,
+                                  onToggleAutoScroll: _toggleAutoScroll,
+                                  onShowAutoScrollSpeedDialog:
+                                      _showAutoScrollSpeedDialog,
+                                  onToggleListeningMode: _toggleListeningMode,
+                                  onToggleHifzMode: () {
+                                    HapticFeedback.mediumImpact();
+                                    setState(() {
+                                      _isHifzMode = !_isHifzMode;
+                                      _revealedVerses.clear();
+                                    });
+                                    unawaited(
+                                      sl<AnalyticsService>().logHifzModeToggled(
+                                        _isHifzMode,
+                                      ),
+                                    );
+                                    SemanticsService.sendAnnouncement(
+                                      View.of(context),
+                                      _isHifzMode
+                                          ? 'lbl_hifz_mode_on'.tr
+                                          : 'lbl_hifz_mode_off'.tr,
+                                      TextDirection.ltr,
+                                    );
+                                  },
+                                  onToggleBookmark: () {
+                                    HapticFeedback.lightImpact();
+                                    final blocState =
+                                        context.read<BookmarkBloc>().state;
+                                    final isSurahBookmarked =
+                                        blocState is BookmarkLoaded &&
+                                        blocState.bookmarks.any(
+                                          (b) =>
+                                              b.surahId == surah?.id &&
+                                              b.verseNumber == 1,
+                                        );
+                                    if (isSurahBookmarked) {
+                                      context.read<BookmarkBloc>().add(
+                                        RemoveBookmarkEvent(surah!.id, 1),
+                                      );
+                                    } else {
+                                      context.read<BookmarkBloc>().add(
+                                        AddBookmarkEvent(
+                                          BookmarkModel(
+                                            surahId: surah!.id,
+                                            surahName: surah!.nameEnglish,
+                                            verseNumber: 1,
+                                            createdAt: DateTime.now(),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    try {
+                                      context
+                                          .read<CloudSyncBloc>()
+                                          .add(SyncWithQfEvent());
+                                    } catch (e) {
+                                      Logger.warning(
+                                        'Bookmark sync trigger failed: $e',
+                                        feature: 'Bookmarks',
+                                      );
+                                    }
+                                  },
+                                  onToggleTranslation: () {
+                                    setState(() {
+                                      _showTranslation = !_showTranslation;
+                                      PrefUtils().setShowTranslation(
+                                        _showTranslation,
+                                      );
+                                    });
+                                    if (_showTranslation) _loadTranslations();
+                                  },
+                                  onNavigateToHelp: () => NavigatorService
+                                      .pushNamed(AppRoutes.helpScreen),
+                                  onNavigateToAudioPlayer: (startVerse) {
+                                    if (surah == null) return;
+                                    // Stop inline listening to avoid state conflicts
+                                    if (_isListeningMode) _stopListeningMode();
+                                    final isArabic = Localizations.localeOf(
+                                      context,
+                                    ).languageCode == 'ar';
+                                    NavigatorService.pushNamed(
+                                      AppRoutes.audioPlayerScreen,
+                                      arguments: {
+                                        'surahId': surah!.id,
+                                        'surahName': isArabic
+                                            ? surah!.nameArabic
+                                            : surah!.nameEnglish,
+                                        'startVerse': startVerse,
+                                      },
+                                    );
+                                  },
+                                ),
+                                _JuzProgressIndicator(surah: surah),
                                 SliverPadding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.0,
                                     vertical: 20.v,
                                   ),
-                                  sliver: _buildSurahList(
-                                    context,
-                                    chapters,
-                                    bookmarkState,
-                                    errorState,
-                                    isDark,
+                                  sliver: _VerseListView(
+                                    chapters: chapters,
+                                    bookmarkState: bookmarkState,
+                                    errorState: errorState,
+                                    isDark: isDark,
+                                    surah: surah,
+                                    isHifzMode: _isHifzMode,
+                                    revealedVerses: _revealedVerses,
+                                    highlightedVerse: _highlightedVerse,
+                                    showTranslation: _showTranslation,
+                                    translations: _translations,
+                                    verseKeys: _verseKeys,
+                                    richTextVerseKeys: _richTextVerseKeys,
+                                    richTextKey: _richTextKey,
+                                    currentVerseRanges: _currentVerseRanges,
+                                    onUpdateVerseRanges:
+                                        (ranges) =>
+                                            _currentVerseRanges = ranges,
+                                    onToggleHifzReveal: (verseNumber) {
+                                      setState(() {
+                                        if (_revealedVerses
+                                            .contains(verseNumber)) {
+                                          _revealedVerses
+                                              .remove(verseNumber);
+                                        } else {
+                                          _revealedVerses.add(verseNumber);
+                                        }
+                                      });
+                                      if (surah != null) {
+                                        unawaited(
+                                          sl<AnalyticsService>().logVerseRevealed(
+                                            surahId: surah!.id,
+                                            verseNumber: verseNumber,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    onVerifyRecitation: (aya) =>
+                                        _voicePanelKey.currentState
+                                            ?.show(aya),
+                                    onPlayOnlyVerse: (verseNumber) =>
+                                        _playOnlyVerse(verseNumber),
+                                    onStartFromVerse: (verseNumber) =>
+                                        _startListeningFromVerse(verseNumber),
+                                  ),
+                                ),
+                                SliverToBoxAdapter(
+                                  child: _VoiceVerificationPanel(
+                                    key: _voicePanelKey,
+                                    surah: surah,
+                                    surahBloc: surahBloc,
+                                    completionKey: _completionKey,
+                                  ),
+                                ),
+                                SliverToBoxAdapter(
+                                  child: _CompletionCelebration(
+                                    key: _completionKey,
+                                    surah: surah,
                                   ),
                                 ),
                               ],
@@ -713,1066 +846,56 @@ class _SurahScreenState extends State<SurahScreen> {
       ),
     );
   }
+}
 
-  Widget _buildSliverAppBar(bool isDark) {
-    return SliverAppBar(
-      expandedHeight: 180.0,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.of(context).appBarBackground,
-      leading: Semantics(
-        button: true,
-        label: 'lbl_back'.tr,
-        child: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
-          onPressed: () => NavigatorService.goBack(),
-          tooltip: 'lbl_back'.tr,
-        ),
-      ),
-      actions: [
-        Semantics(
-          button: true,
-          label: _isAutoScrolling
-              ? 'lbl_stop_autoscroll'.tr
-              : 'lbl_start_autoscroll'.tr,
-          child: Tooltip(
-            message: 'lbl_scroll_speed'.tr,
-            child: InkWell(
-              onTap: _toggleAutoScroll,
-              onLongPress: _showAutoScrollSpeedDialog,
-              borderRadius: BorderRadius.circular(24),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Badge(
-                  isLabelVisible: _autoScrollSpeed != 0.5,
-                  label: Text('${_autoScrollSpeed}x'),
-                  child: Icon(
-                    _isAutoScrolling
-                        ? Icons.pause_circle
-                        : Icons.play_circle_outline,
-                    color: _isAutoScrolling ? Colors.amber : Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (surah != null)
-          Semantics(
-            button: true,
-            label: _isListeningMode
-                ? 'lbl_stop_listening'.tr
-                : 'lbl_start_listening'.tr,
-            child: Tooltip(
-              message: _isListeningMode
-                  ? 'lbl_stop_listening'.tr
-                  : 'lbl_start_listening'.tr,
-              child: InkWell(
-                onTap: _toggleListeningMode,
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    _isListeningMode ? Icons.headset : Icons.headset_outlined,
-                    color: _isListeningMode ? Colors.amber : Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        Semantics(
-          button: true,
-          label: 'lbl_more_options'.tr,
-          child: PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
-              switch (value) {
-                case 'audio':
-                  if (surah == null) return;
-                  final isArabic =
-                      Localizations.localeOf(context).languageCode == 'ar';
-                  NavigatorService.pushNamed(
-                    AppRoutes.audioPlayerScreen,
-                    arguments: {
-                      'surahId': surah!.id,
-                      'surahName': isArabic
-                          ? surah!.nameArabic
-                          : surah!.nameEnglish,
-                    },
-                  );
-                  break;
-                case 'help':
-                  NavigatorService.pushNamed(AppRoutes.helpScreen);
-                  break;
-                case 'hifz':
-                  HapticFeedback.mediumImpact();
-                  setState(() {
-                    _isHifzMode = !_isHifzMode;
-                    _revealedVerses.clear();
-                  });
-                  SemanticsService.sendAnnouncement(
-                    View.of(context),
-                    _isHifzMode
-                        ? 'lbl_hifz_mode_on'.tr
-                        : 'lbl_hifz_mode_off'.tr,
-                    TextDirection.ltr,
-                  );
-                  break;
-                case 'bookmark':
-                  HapticFeedback.lightImpact();
-                  final blocState = context.read<BookmarkBloc>().state;
-                  final isSurahBookmarked =
-                      blocState is BookmarkLoaded &&
-                      blocState.bookmarks.any(
-                        (b) => b.surahId == surah?.id && b.verseNumber == 1,
-                      );
-                  if (isSurahBookmarked) {
-                    context.read<BookmarkBloc>().add(
-                      RemoveBookmarkEvent(surah!.id, 1),
-                    );
-                  } else {
-                    context.read<BookmarkBloc>().add(
-                      AddBookmarkEvent(
-                        BookmarkModel(
-                          surahId: surah!.id,
-                          surahName: surah!.nameEnglish,
-                          verseNumber: 1,
-                          createdAt: DateTime.now(),
-                        ),
-                      ),
-                    );
-                  }
-                  try {
-                    context.read<CloudSyncBloc>().add(SyncWithQfEvent());
-                  } catch (_) {}
-                  break;
-                case 'translation':
-                  setState(() {
-                    _showTranslation = !_showTranslation;
-                    PrefUtils().setShowTranslation(_showTranslation);
-                  });
-                  if (_showTranslation) _loadTranslations();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'audio',
-                child: Row(
-                  children: [
-                    const Icon(Icons.headphones),
-                    const SizedBox(width: 12),
-                    Text('lbl_audio_player'.tr),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'help',
-                child: Row(
-                  children: [
-                    const Icon(Icons.help_outline),
-                    const SizedBox(width: 12),
-                    Text('lbl_help'.tr),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'hifz',
-                child: Row(
-                  children: [
-                    Icon(_isHifzMode ? Icons.visibility : Icons.visibility_off),
-                    const SizedBox(width: 12),
-                    Text(
-                      _isHifzMode
-                          ? 'lbl_exit_hifz_mode'.tr
-                          : 'lbl_hifz_mode'.tr,
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'bookmark',
-                child: Builder(
-                  builder: (context) {
-                    final state = context.read<BookmarkBloc>().state;
-                    final isSurahBookmarked =
-                        state is BookmarkLoaded &&
-                        state.bookmarks.any(
-                          (b) => b.surahId == surah?.id && b.verseNumber == 1,
-                        );
-                    return Row(
-                      children: [
-                        Icon(
-                          isSurahBookmarked
-                              ? Icons.bookmark
-                              : Icons.bookmark_border,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          isSurahBookmarked
-                              ? 'lbl_remove_surah_bookmark'.tr
-                              : 'lbl_add_surah_bookmark'.tr,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              if (Localizations.localeOf(context).languageCode != 'ar')
-                PopupMenuItem(
-                  value: 'translation',
-                  child: Row(
-                    children: [
-                      Icon(
-                        _showTranslation
-                            ? Icons.text_fields
-                            : Icons.text_fields_outlined,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        _showTranslation
-                            ? 'lbl_hide_translation'.tr
-                            : 'lbl_show_translation'.tr,
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Semantics(
-            header: true,
-            child: Text(
-              surah?.localizedName(context) ?? '',
-              textDirection: TextDirection.rtl,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                fontFamily: 'NotoNaskhArabic',
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-        ),
-        background: Stack(
+class _JuzProgressIndicator extends StatelessWidget {
+  final Surah? surah;
+
+  const _JuzProgressIndicator({required this.surah});
+
+  @override
+  Widget build(BuildContext context) {
+    if (surah == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final page = MushafPageIndex.getPageForSurah(surah!.id);
+    final juz = MushafPageIndex.getJuzForPage(page);
+    final colors = AppColors.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Row(
           children: [
-            Positioned(
-              right: -55,
-              bottom: -10,
-              child: ExcludeSemantics(
-                child: CustomImageView(
-                  fit: BoxFit.cover,
-                  imagePath: ImageConstant.imgQuranOnboarding,
-                  height: 150.v,
-                  width: 150.h,
-                ),
-              ),
-            ),
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: AppColors.of(context).appBarGradient,
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBismillah(bool isDark) {
-    return BismillahWidget(surahId: surah?.id ?? 0);
-  }
-
-  void _showVerseMenu(
-    BuildContext context,
-    Verse aya,
-    bool isBookmarked,
-    bool isError,
-  ) {
-    if (surah == null) return;
-    showVerseMenu(
-      context,
-      verse: aya,
-      surahId: surah!.id,
-      surahNameEnglish: surah!.nameEnglish,
-      isBookmarked: isBookmarked,
-      isError: isError,
-      onVerifyRecitation: () => _showVoiceDialog(aya),
-      onOpenTafsir: () => _showTafsirSheet(aya),
-    );
-  }
-
-  void _showVoiceDialog(Verse aya) async {
-    // 1. Request Permission Lazy
-    bool available = await _voiceService.requestPermission();
-
-    if (!mounted) return;
-
-    if (!available) {
-      // Show Dialog to guide user to settings
-      await showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text('msg_mic_permission'.tr),
-          content: Text('msg_mic_permission_desc'.tr),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text('lbl_cancel'.tr),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                openAppSettings();
-              },
-              child: Text('lbl_settings'.tr),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    // 2. Prepare Expectation (Strip Bismillah)
-    String expectedText = await resolveExpectedText(aya);
-    if (aya.verseNumber == 1 && surah?.id != 1) {
-      const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
-      const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
-      if (expectedText.startsWith(bismillahPrefix)) {
-        expectedText = expectedText.substring(bismillahPrefix.length).trim();
-      } else if (expectedText.startsWith(bismillahSimple)) {
-        expectedText = expectedText.substring(bismillahSimple.length).trim();
-      }
-    }
-
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => VoiceVerificationDialog(
-        surah: surah!,
-        aya: aya,
-        expectedText: expectedText,
-        onCorrect: () {
-          HapticFeedback.heavyImpact();
-          if (mounted) {
-            _onRecitationCorrect(aya);
-          }
-        },
-        onSaveForPractice: () {
-          HapticFeedback.mediumImpact();
-          if (mounted) {
-            _saveAndAdvanceToNext(aya);
-          }
-        },
-        onWrong: (ctx) {
-          HapticFeedback.mediumImpact();
-          if (mounted) {
-            _showWrongDialog(context, aya);
-          }
-        },
-      ),
-    );
-  }
-
-  Future<String> resolveExpectedText(Verse aya) async {
-    if (surah == null) return aya.arabicText;
-    final edition = PrefUtils().getQiraatEdition();
-    if (edition == 'quran-uthmani' || edition.isEmpty) {
-      return aya.arabicText;
-    }
-    final remoteText = await _qiraatService.fetchAyahText(
-      surahId: surah!.id,
-      verseNumber: aya.verseNumber,
-      edition: edition,
-    );
-    return remoteText ?? aya.arabicText;
-  }
-
-  void _onRecitationCorrect(Verse currentVerse) {
-    if (!mounted) return;
-
-    _sessionCorrectCount++;
-    _sessionTotalCount++;
-
-    // Find next verse
-    final currentState = surahBloc.state;
-    if (currentState is SuccessSurahState) {
-      final chapters = currentState.chapters;
-      final currentIndex = chapters.indexWhere(
-        (v) => v.verseNumber == currentVerse.verseNumber,
-      );
-
-      if (currentIndex != -1 && currentIndex < chapters.length - 1) {
-        // Next verse exists
-        final nextVerse = chapters[currentIndex + 1];
-        _showVoiceDialog(nextVerse);
-      } else {
-        // End of Surah
-        _showCompletionDialog();
-      }
-    }
-  }
-
-  void _saveAndAdvanceToNext(Verse aya) {
-    _sessionTotalCount++;
-    final recitationErrorBloc = context.read<RecitationErrorBloc>();
-    recitationErrorBloc.add(
-      AddRecitationErrorEvent(
-        RecitationErrorModel(
-          surahId: surah!.id,
-          surahName: surah!.nameEnglish,
-          verseId: aya.verseNumber,
-          createdAt: DateTime.now(),
-        ),
-      ),
-    );
-
-    // Move to next verse
-    final currentState = surahBloc.state;
-    if (currentState is SuccessSurahState) {
-      final chapters = currentState.chapters;
-      final currentIndex = chapters.indexWhere(
-        (v) => v.verseNumber == aya.verseNumber,
-      );
-      if (currentIndex != -1 && currentIndex < chapters.length - 1) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            _showVoiceDialog(chapters[currentIndex + 1]);
-          }
-        });
-      } else {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) _showCompletionDialog();
-        });
-      }
-    }
-  }
-
-  void _showWrongDialog(BuildContext parentContext, Verse aya) {
-    _sessionTotalCount++;
-
-    // Capture the bloc reference from parent context before showing dialog
-    final recitationErrorBloc = parentContext.read<RecitationErrorBloc>();
-
-    showDialog(
-      context: parentContext,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('lbl_incorrect'.tr),
-        content: Text('msg_incorrect_recitation'.tr),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              // Wait for pop to finish before opening new dialog
-              Future.delayed(const Duration(milliseconds: 300), () {
-                if (parentContext.mounted) {
-                  _showVoiceDialog(aya);
-                }
-              });
-            },
-            child: Text('lbl_try_again'.tr),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              // Mark for Practice Logic - use captured bloc reference
-              recitationErrorBloc.add(
-                AddRecitationErrorEvent(
-                  RecitationErrorModel(
-                    surahId: surah!.id,
-                    surahName: surah!.nameEnglish,
-                    verseId: aya.verseNumber,
-                    createdAt: DateTime.now(),
-                  ),
-                ),
-              );
-              Navigator.pop(dialogContext);
-
-              // Move to next
-              final currentState = surahBloc.state;
-              if (currentState is SuccessSurahState) {
-                final chapters = currentState.chapters;
-                final currentIndex = chapters.indexWhere(
-                  (v) => v.verseNumber == aya.verseNumber,
-                );
-                if (currentIndex != -1 && currentIndex < chapters.length - 1) {
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    if (parentContext.mounted) {
-                      _showVoiceDialog(chapters[currentIndex + 1]);
-                    }
-                  });
-                } else {
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    if (parentContext.mounted) _showCompletionDialog();
-                  });
-                }
-              }
-            },
-            child: Text('lbl_save_practice'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCompletionDialog() {
-    if (!mounted) return;
-
-    double percentage = 0;
-    if (_sessionTotalCount > 0) {
-      percentage = (_sessionCorrectCount / _sessionTotalCount) * 100;
-    }
-
-    _saveSession(percentage);
-
-    showCompletionDialog(
-      context,
-      percentage: percentage,
-      onClose: () {
-        _sessionCorrectCount = 0;
-        _sessionTotalCount = 0;
-      },
-    );
-  }
-
-  ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates(
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
-  ) {
-    final surahId = surah?.id ?? -1;
-    final bookmarkedVerses = bookmarkState is BookmarkLoaded
-        ? bookmarkState.bookmarks
-              .where((b) => b.surahId == surahId)
-              .map((b) => b.verseNumber)
-              .toSet()
-        : <int>{};
-    final errorVerses = errorState is RecitationErrorLoaded
-        ? errorState.errors
-              .where((m) => m.surahId == surahId)
-              .map((m) => m.verseId)
-              .toSet()
-        : <int>{};
-    return (bookmarkedVerses: bookmarkedVerses, errorVerses: errorVerses);
-  }
-
-  Widget _buildSurahList(
-    BuildContext context,
-    List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
-    bool isDark,
-  ) {
-    if (PrefUtils().getVerseViewMode()) {
-      return SliverMainAxisGroup(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [_buildBismillah(isDark), const SizedBox(height: 16.0)],
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            sliver: _buildSingleLineContentSliver(
-              context,
-              chapters,
-              bookmarkState,
-              errorState,
-              isDark,
-            ),
-          ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 16.0)),
-        ],
-      );
-    } else {
-      return SliverToBoxAdapter(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildBismillah(isDark),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildRichTextContent(
-                context,
-                chapters,
-                bookmarkState,
-                errorState,
-                isDark,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  Widget _buildRichTextContent(
-    BuildContext context,
-    List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
-    bool isDark,
-  ) {
-    final colors = AppColors.of(context);
-    final textColor = colors.textColor;
-    final badgeText = colors.badgeText;
-
-    final verseStates = _getVerseStates(bookmarkState, errorState);
-    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
-    final errorVerseIds = verseStates.errorVerses;
-
-    List<InlineSpan> spans = [];
-    final List<VerseRange> verseRanges = [];
-    int currentOffset = 0;
-
-    _currentVerseRanges = verseRanges;
-
-    for (var aya in chapters) {
-      bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
-      bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
-
-      bool isBlurred =
-          _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
-      bool isHighlighted = _highlightedVerse == aya.verseNumber;
-
-      Color? backgroundColor;
-      if (isHighlighted) {
-        backgroundColor = colors.highlightBackground;
-      } else if (isRecitationError) {
-        backgroundColor = colors.errorBackground;
-      } else if (isBookmarked) {
-        backgroundColor = colors.bookmarkBackground;
-      }
-
-      final Color effectiveColor = isBlurred ? Colors.transparent : textColor;
-      final List<Shadow>? shadows = isBlurred
-          ? [Shadow(color: textColor, blurRadius: 20.0, offset: Offset.zero)]
-          : null;
-
-      String verseText = '${aya.arabicText} ';
-
-      // Strip Bismillah if it's the first verse of a Surah that isn't Al-Fatiha
-      if (aya.verseNumber == 1 && surah?.id != 1) {
-        // EXACT string from the JSON assets (surah_3.json)
-        // characters: Ba, Kasra, Sin, Sukun, Mim, Space, Allah...
-        const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
-
-        // Remove Bismillah and any leading whitespace
-        if (verseText.startsWith(bismillahPrefix)) {
-          verseText = verseText.substring(bismillahPrefix.length).trim();
-        } else {
-          // Fallback: Check for standard Bismillah without the specific diacritics of the local file
-          // just in case some files differ (though unlikely if they are from same source).
-          const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
-          if (verseText.startsWith(bismillahSimple)) {
-            verseText = verseText.substring(bismillahSimple.length).trim();
-          }
-        }
-      }
-
-      // Anchor span for reliable scroll-to-ayah in rich text mode
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: SizedBox(
-            key: _richTextVerseKeys.putIfAbsent(
-              aya.verseNumber,
-              () => GlobalKey(debugLabel: 'verse_anchor_${aya.verseNumber}'),
-            ),
-            width: 0,
-            height: 0,
-          ),
-        ),
-      );
-      // WidgetSpan contributes a placeholder character to text offsets.
-      currentOffset += 1;
-
-      // Record Range (Text)
-      verseRanges.add(
-        VerseRange(
-          start: currentOffset,
-          end: currentOffset + verseText.length,
-          verse: aya,
-          isBadge: false,
-          isBookmarked: isBookmarked,
-          isError: isRecitationError,
-        ),
-      );
-
-      spans.add(
-        TextSpan(
-          text: '$verseText‏',
-          style: TextStyle(
-            fontFamily: 'NotoNaskhArabic',
-            fontSize: PrefUtils().getQuranFontSize(),
-            fontWeight: FontWeight
-                .normal, // Regular weight preserves tashkil/ligatures better
-            color: effectiveColor,
-            backgroundColor: backgroundColor,
-            shadows: shadows,
-            height:
-                2.2, // Increased line height to prevents clipping of high waqf marks
-          ),
-        ),
-      );
-      currentOffset += verseText.length + 1; // +1 for trailing RLM
-
-      // Verse End Badge Span — rendered as ۝ + verse number (TextSpan)
-      // Use TextSpan with ۝ (U+06DD Arabic End of Ayah) instead of WidgetSpan.
-      // WidgetSpan inserts bidi-neutral U+FFFC which causes verse numbers to
-      // swap when two ayahs share a line. TextSpan with RTL characters doesn't.
-      final verseMarker = ' ۝${aya.verseNumber.toLocalizedNumber(context)} ';
-      verseRanges.add(
-        VerseRange(
-          start: currentOffset,
-          end: currentOffset + verseMarker.length,
-          verse: aya,
-          isBadge: true,
-          isBookmarked: isBookmarked,
-          isError: isRecitationError,
-        ),
-      );
-
-      spans.add(
-        TextSpan(
-          text: verseMarker,
-          style: TextStyle(
-            fontFamily: 'NotoNaskhArabic',
-            fontSize: PrefUtils().getQuranFontSize() - 4,
-            fontWeight: FontWeight.bold,
-            color: badgeText,
-            height: 2.2,
-          ),
-        ),
-      );
-      currentOffset += verseMarker.length;
-
-      // RLM after badge ensures strong RTL boundary before next ayah's text,
-      // preventing bidi reordering when two ayahs share the same visual line.
-      spans.add(const TextSpan(text: '‏'));
-      currentOffset += 1;
-
-      // Translation text below the verse
-      if (_showTranslation && _translations[aya.verseNumber] != null) {
-        final translationText = _translations[aya.verseNumber]!;
-        verseRanges.add(
-          VerseRange(
-            start: currentOffset,
-            end: currentOffset + 1,
-            verse: aya,
-            isBadge: false,
-            isBookmarked: isBookmarked,
-            isError: isRecitationError,
-          ),
-        );
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 6.0, bottom: 14.0),
-              child: Text(
-                translationText,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  height: 1.5,
-                  color: colors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-        );
-        currentOffset += 1;
-      }
-    }
-
-    final textSpan = TextSpan(children: spans);
-    _currentVerseRanges = verseRanges; // Update member for scrolling
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Semantics(
-          label: 'lbl_quran_text'.tr,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) {
-              final range = _findRange(details.localPosition, verseRanges);
-              if (range == null) return;
-
-              if (_isHifzMode) {
-                // Unblur (toggle reveal) only
-                setState(() {
-                  if (_revealedVerses.contains(range.verse.verseNumber)) {
-                    _revealedVerses.remove(range.verse.verseNumber);
-                  } else {
-                    _revealedVerses.add(range.verse.verseNumber);
-                  }
-                });
-              } else {
-                // Standard mode: Open menu
-                // Save interaction
-                if (surah != null) {
-                  PrefUtils().setSurahVerseIndex(
-                    surah!.id,
-                    range.verse.verseNumber - 1,
-                  );
-                  PrefUtils().saveLastReadSurah(surah!);
-                }
-                _showVerseMenu(
-                  context,
-                  range.verse,
-                  range.isBookmarked,
-                  range.isError,
-                );
-              }
-            },
-            onLongPressStart: (details) {
-              if (_isHifzMode) {
-                // Hifz mode: Open menu on long press
-                final range = _findRange(details.localPosition, verseRanges);
-                if (range != null) {
-                  _showVerseMenu(
-                    context,
-                    range.verse,
-                    range.isBookmarked,
-                    range.isError,
-                  );
-                }
-              }
-            },
-            child: RichText(
-              key: _richTextKey,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.justify,
-              text: textSpan,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  VerseRange? _findRange(Offset localPosition, List<VerseRange> ranges) {
-    final RenderObject? renderObject = _richTextKey.currentContext
-        ?.findRenderObject();
-    if (renderObject is RenderParagraph) {
-      final TextPosition position = renderObject.getPositionForOffset(
-        localPosition,
-      );
-      final offset = position.offset;
-
-      for (final range in ranges) {
-        if (offset >= range.start && offset < range.end) {
-          return range;
-        }
-      }
-    }
-    return null;
-  }
-
-  Widget _buildSingleLineContentSliver(
-    BuildContext context,
-    List<Verse> chapters,
-    BookmarkState bookmarkState,
-    RecitationErrorState errorState,
-    bool isDark,
-  ) {
-    final colors = AppColors.of(context);
-    final textColor = colors.textColor;
-    final badgeBorder = colors.badgeBorder;
-    final badgeText = colors.badgeText;
-    final badgeGradient = colors.badgeGradient;
-
-    final verseStates = _getVerseStates(bookmarkState, errorState);
-    final bookmarkedVerseNumbers = verseStates.bookmarkedVerses;
-    final errorVerseIds = verseStates.errorVerses;
-
-    return SliverList.builder(
-      itemCount: chapters.length,
-      itemBuilder: (context, index) {
-        final aya = chapters[index];
-        bool isBookmarked = bookmarkedVerseNumbers.contains(aya.verseNumber);
-        bool isRecitationError = errorVerseIds.contains(aya.verseNumber);
-
-        bool isBlurred =
-            _isHifzMode && !_revealedVerses.contains(aya.verseNumber);
-        bool isHighlighted = _highlightedVerse == aya.verseNumber;
-
-        Color? backgroundColor;
-        if (isHighlighted) {
-          backgroundColor = colors.highlightBackground;
-        } else if (isRecitationError) {
-          backgroundColor = colors.errorBackground;
-        } else if (isBookmarked) {
-          backgroundColor = colors.bookmarkBackground;
-        }
-
-        String verseText = aya.arabicText;
-        if (aya.verseNumber == 1 && surah?.id != 1) {
-          const bismillahPrefix = 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ';
-          if (verseText.startsWith(bismillahPrefix)) {
-            verseText = verseText.substring(bismillahPrefix.length).trim();
-          } else {
-            const bismillahSimple = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ';
-            if (verseText.startsWith(bismillahSimple)) {
-              verseText = verseText.substring(bismillahSimple.length).trim();
-            }
-          }
-        }
-
-        return Semantics(
-          button: true,
-          label: '${'lbl_ayah'.tr} ${aya.verseNumber}',
-          child: GestureDetector(
-            onTap: () {
-              if (_isHifzMode) {
-                setState(() {
-                  if (_revealedVerses.contains(aya.verseNumber)) {
-                    _revealedVerses.remove(aya.verseNumber);
-                  } else {
-                    _revealedVerses.add(aya.verseNumber);
-                  }
-                });
-              } else {
-                // Save interaction
-                if (surah != null) {
-                  PrefUtils().setSurahVerseIndex(
-                    surah!.id,
-                    aya.verseNumber - 1,
-                  );
-                  PrefUtils().saveLastReadSurah(surah!);
-                }
-                _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-              }
-            },
-            onLongPress: () {
-              if (_isHifzMode) {
-                _showVerseMenu(context, aya, isBookmarked, isRecitationError);
-              }
-            },
-
-            child: Container(
-              key: _verseKeys.putIfAbsent(
-                aya.verseNumber,
-                () => GlobalKey(debugLabel: 'verse_${aya.verseNumber}'),
-              ),
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              decoration: BoxDecoration(
-                color: backgroundColor,
+                color: colors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: (isBookmarked || isRecitationError || isHighlighted)
-                    ? Border.all(
-                        color: isHighlighted
-                            ? Colors.teal.withValues(alpha: 0.5)
-                            : isRecitationError
-                            ? Colors.red.withValues(alpha: 0.3)
-                            : Colors.teal.withValues(alpha: 0.3),
-                        width: isHighlighted ? 2 : 1,
-                      )
-                    : null,
               ),
-              child: Wrap(
-                alignment: WrapAlignment.start,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                textDirection: TextDirection.rtl,
-                children: [
-                  Text(
-                    verseText,
-                    textAlign: TextAlign.justify,
-                    textDirection: TextDirection.rtl,
-                    style: TextStyle(
-                      fontFamily: 'NotoNaskhArabic',
-                      fontSize: PrefUtils().getQuranFontSize(),
-                      fontWeight: FontWeight.normal, // Regular weight
-                      color: isBlurred ? Colors.transparent : textColor,
-                      height: 2.2, // Taller line height
-                      shadows: isBlurred
-                          ? [
-                              Shadow(
-                                color: textColor,
-                                blurRadius: 20.0,
-                                offset: Offset.zero,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ExcludeSemantics(
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      margin: const EdgeInsets.only(top: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: badgeGradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        border: Border.all(color: badgeBorder, width: 1.2),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        aya.verseNumber.toLocalizedNumber(context),
-                        style: TextStyle(
-                          fontFamily: 'NotoNaskhArabic',
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: badgeText,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_showTranslation &&
-                      _translations[aya.verseNumber] != null)
-                    SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-                        child: Text(
-                          _translations[aya.verseNumber]!,
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 13,
-                            height: 1.5,
-                            color: AppColors.of(context).textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              child: Text(
+                isAr ? 'الجزء $juz' : 'Juz $juz',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.primary,
+                ),
               ),
             ),
-          ),
-        );
-      },
+            const SizedBox(width: 12),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: juz / 30.0,
+                  minHeight: 4,
+                  backgroundColor: colors.primary.withValues(alpha: 0.1),
+                  color: colors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
-
-

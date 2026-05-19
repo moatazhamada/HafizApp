@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/string_utils.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 void showTafsirSheet(
@@ -12,6 +15,12 @@ void showTafsirSheet(
   required String surahName,
   required int verseNumber,
 }) {
+  unawaited(
+    sl<AnalyticsService>().logTafsirOpened(
+      surahId: surahId,
+      verseNumber: verseNumber,
+    ),
+  );
   unawaited(
     showModalBottomSheet(
       context: context,
@@ -25,7 +34,19 @@ void showTafsirSheet(
         maxChildSize: 0.8,
         expand: false,
         builder: (context, scrollController) => FutureBuilder(
-          future: sl<TafsirRepository>().getTafsir(surahId, verseNumber),
+          future: sl<TafsirRepository>().getTafsir(surahId, verseNumber).then((result) {
+            // Track as reading session (estimated 30s for tafsir)
+            sl<KhatmahRepository>().reportReadingSession(
+              ReadingSession(
+                surahId: surahId,
+                startVerse: verseNumber,
+                endVerse: verseNumber,
+                durationSeconds: 30,
+                readAt: DateTime.now(),
+              ),
+            );
+            return result;
+          }),
           builder: (context, snapshot) {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return Column(
@@ -33,6 +54,7 @@ void showTafsirSheet(
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
+                    textDirection: TextDirection.rtl,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
@@ -42,14 +64,14 @@ void showTafsirSheet(
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
                       IconButton(
                         icon: Icon(
                           Icons.close,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         onPressed: () => Navigator.pop(context),
                         tooltip: 'lbl_close'.tr,
@@ -71,13 +93,13 @@ void showTafsirSheet(
                                 Icon(
                                   Icons.error_outline,
                                   size: 48,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'msg_tafsir_error'.tr,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                                 ),
                               ],
                             ),
@@ -89,7 +111,7 @@ void showTafsirSheet(
                           child: snapshot.data!.fold(
                             (failure) => Text(
                               'msg_tafsir_error'.tr,
-                              style: TextStyle(color: Colors.grey[600]),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                             ),
                             (tafsir) => Text(
                               stripHtmlTags(tafsir.text),
@@ -98,8 +120,8 @@ void showTafsirSheet(
                                 fontSize: 16,
                                 height: 1.8,
                                 color: isDark
-                                    ? Colors.grey[300]
-                                    : Colors.black87,
+                                    ? Theme.of(context).colorScheme.onSurface
+                                    : Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),

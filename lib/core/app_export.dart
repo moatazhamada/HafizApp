@@ -7,8 +7,10 @@ export 'package:hafiz_app/core/utils/logger.dart';
 export 'package:hafiz_app/core/utils/navigator_service.dart';
 export 'package:hafiz_app/core/utils/pref_utils.dart';
 export 'package:hafiz_app/core/utils/size_utils.dart';
+export 'package:hafiz_app/core/utils/snackbar_helper.dart';
 export 'package:hafiz_app/localization/app_localization.dart';
 export 'package:hafiz_app/routes/app_routes.dart';
 export 'package:hafiz_app/widgets/custom_image_view.dart';
 
 export '../theme/bloc/theme_bloc.dart';
+export 'package:hafiz_app/core/theme/app_colors.dart';
