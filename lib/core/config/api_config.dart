@@ -44,7 +44,7 @@ class ApiConfig {
   // Content API base (if using Quran.Foundation content APIs)
   static const String qfContentBase = String.fromEnvironment(
     'QF_CONTENT_BASE',
-    defaultValue: 'https://api.quran.foundation',
+    defaultValue: 'https://apis.quran.foundation',
   );
 
   // Quran.com public API base (v4)
@@ -91,6 +91,6 @@ class ApiConfig {
   /// Quran.Foundation Search API base URL.
   static const String qfSearchBase = String.fromEnvironment(
     'QF_SEARCH_BASE',
-    defaultValue: 'https://api.quran.foundation',
+    defaultValue: 'https://apis.quran.foundation',
   );
 }

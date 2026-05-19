@@ -24,8 +24,10 @@ import 'core/analytics/analytics_route_observer.dart';
 import 'core/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:audio_service/audio_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
 import 'domain/repository/khatmah_repository.dart';
+import 'core/audio/quran_audio_handler.dart';
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
@@ -178,6 +180,21 @@ Future<void> main() async {
   });
 
   Bloc.observer = AnalyticsBlocObserver();
+
+  try {
+    await AudioService.init(
+      builder: () => QuranAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.hafiz.app.hafiz_app.audio',
+        androidNotificationChannelName: 'Quran Recitation',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+  } catch (e) {
+    Logger.warning('AudioService init failed: $e', feature: 'Audio');
+  }
+
   runApp(const BootstrapApp());
 }
 

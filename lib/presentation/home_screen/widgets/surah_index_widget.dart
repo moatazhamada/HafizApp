@@ -169,7 +169,7 @@ class _JuzHeader extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      padding: const EdgeInsetsDirectional.only(start: 16, top: 20, end: 16, bottom: 8),
       child: Row(
         children: [
           Expanded(
@@ -182,6 +182,8 @@ class _JuzHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               JuzIndex.getJuzName(juz.juzNumber, isArabic: isArabic),
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+              textAlign: TextAlign.start,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.bold,

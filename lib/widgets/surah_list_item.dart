@@ -60,7 +60,7 @@ class SurahListItem extends StatelessWidget {
                       child: Text(
                         surahId.toLocalizedNumber(context),
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: appColors.primary,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -97,7 +97,7 @@ class SurahListItem extends StatelessWidget {
                       textDirection: TextDirection.rtl,
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontFamily: 'NotoNaskhArabic',
-                        color: appColors.primary,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         height: 1.2,
                       ),
@@ -112,9 +112,10 @@ class SurahListItem extends StatelessWidget {
                           Text(
                             nameArabic,
                             textDirection: TextDirection.rtl,
+                            textAlign: TextAlign.start,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontFamily: 'NotoNaskhArabic',
-                              color: appColors.primary,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                               height: 1.2,
                             ),
@@ -123,6 +124,7 @@ class SurahListItem extends StatelessWidget {
                           Text(
                             '$ayahLocalizedCount $ayahsText • $revelationText',
                             textDirection: TextDirection.rtl,
+                            textAlign: TextAlign.start,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: appColors.textSecondary,
                               fontWeight: FontWeight.w500,
@@ -144,7 +146,7 @@ class SurahListItem extends StatelessWidget {
                       child: Text(
                         surahId.toLocalizedNumber(context),
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: appColors.primary,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

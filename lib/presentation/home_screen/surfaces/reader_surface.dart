@@ -27,19 +27,6 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final saved = sl<ScrollPositionCubit>().getOffset('home');
-      if (saved != null && _scrollController.hasClients) {
-        try {
-          _scrollController.jumpTo(saved);
-        } catch (e) {
-          Logger.warning('Scroll position restore failed: $e', feature: 'Home');
-        }
-      }
-    });
-    _scrollController.addListener(() {
-      sl<ScrollPositionCubit>().saveOffset('home', _scrollController.offset);
-    });
   }
 
   @override
