@@ -39,6 +39,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     final result = await repository.addBookmark(event.bookmark);
     result.fold(
       (failure) {
+        if (isClosed) return;
         // Preserve any previously loaded bookmarks on error
         final current = state;
         if (current is BookmarkLoaded) {
@@ -47,8 +48,10 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
           emit(BookmarkError(_mapFailureToMessage(failure)));
         }
       },
-      (_) =>
-          add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added')),
+      (_) {
+        if (isClosed) return;
+        add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added'));
+      },
     );
   }
 
@@ -62,6 +65,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     );
     result.fold(
       (failure) {
+        if (isClosed) return;
         // Preserve any previously loaded bookmarks on error
         final current = state;
         if (current is BookmarkLoaded) {
@@ -70,9 +74,10 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
           emit(BookmarkError(_mapFailureToMessage(failure)));
         }
       },
-      (_) => add(
-        const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'),
-      ),
+      (_) {
+        if (isClosed) return;
+        add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'));
+      },
     );
   }
 

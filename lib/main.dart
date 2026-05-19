@@ -27,6 +27,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:audio_service/audio_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
 import 'domain/repository/khatmah_repository.dart';
+import 'presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'presentation/khatmah/bloc/khatmah_event.dart';
 import 'core/audio/quran_audio_handler.dart';
 
 final ThemeData lightTheme = ThemeData(
@@ -212,6 +214,7 @@ class MyApp extends StatelessWidget {
   final bookmarkBloc = sl<BookmarkBloc>();
   final recitationErrorBloc = sl<RecitationErrorBloc>();
   final cloudSyncBloc = sl<CloudSyncBloc>();
+  final khatmahBloc = sl<KhatmahBloc>();
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +232,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
         BlocProvider.value(value: cloudSyncBloc),
+        BlocProvider.value(
+          value: khatmahBloc..add(LoadKhatmahDashboard()),
+        ),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {

@@ -38,10 +38,14 @@ class RecitationErrorBloc
   ) async {
     final result = await repository.addRecitationError(event.error);
     result.fold(
-      (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),
-      (_) => add(
-        const LoadRecitationErrorsEvent(feedbackMessage: 'msg_marked_error'),
-      ),
+      (failure) {
+        if (isClosed) return;
+        emit(RecitationErrorError(_mapFailureToMessage(failure)));
+      },
+      (_) {
+        if (isClosed) return;
+        add(const LoadRecitationErrorsEvent(feedbackMessage: 'msg_marked_error'));
+      },
     );
   }
 
@@ -54,10 +58,14 @@ class RecitationErrorBloc
       event.verseId,
     );
     result.fold(
-      (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),
-      (_) => add(
-        const LoadRecitationErrorsEvent(feedbackMessage: 'msg_error_removed'),
-      ),
+      (failure) {
+        if (isClosed) return;
+        emit(RecitationErrorError(_mapFailureToMessage(failure)));
+      },
+      (_) {
+        if (isClosed) return;
+        add(const LoadRecitationErrorsEvent(feedbackMessage: 'msg_error_removed'));
+      },
     );
   }
 

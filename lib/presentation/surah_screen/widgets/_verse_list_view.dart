@@ -73,6 +73,7 @@ class _VerseListView extends StatelessWidget {
       ),
       onReadThisAyah: () => onPlayOnlyVerse(aya.verseNumber),
       onStartFromHere: () => onStartFromVerse(aya.verseNumber),
+      bookmarkBloc: context.read<BookmarkBloc>(),
     );
   }
 

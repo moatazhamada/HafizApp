@@ -8,7 +8,6 @@ import '../../../injection_container.dart';
 import '../../bookmarks/bloc/bookmark_bloc.dart';
 import '../../khatmah/bloc/khatmah_bloc.dart';
 
-import '../../khatmah/bloc/khatmah_event.dart';
 import '../../khatmah/bloc/khatmah_state.dart';
 import '../../memorization/bloc/memorization_bloc.dart';
 import '../../memorization/bloc/memorization_event.dart';
@@ -24,15 +23,17 @@ class StudentSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
-        ),
-        BlocProvider.value(
-          value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
-        ),
-      ],
+    MemorizationBloc? bloc;
+    try {
+      bloc = sl<MemorizationBloc>()..add(LoadMemorizationProgress());
+    } catch (e, s) {
+      Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
+    }
+    if (bloc == null) {
+      return const _StudentBody();
+    }
+    return BlocProvider.value(
+      value: bloc,
       child: const _StudentBody(),
     );
   }
@@ -438,7 +439,7 @@ class _StatPill extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
@@ -522,7 +523,7 @@ class _CompactSurahTile extends StatelessWidget {
                         surah.nameArabic,
                         textDirection: TextDirection.rtl,
                         textAlign: TextAlign.right,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontFamily: 'NotoNaskhArabic',
                           color: colorScheme.primary,
                         ),
@@ -567,7 +568,7 @@ class _CompactSurahTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           surah.nameEnglish,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -576,7 +577,7 @@ class _CompactSurahTile extends StatelessWidget {
                         surah.nameArabic,
                         textDirection: TextDirection.rtl,
                         textAlign: TextAlign.right,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleLarge?.copyWith(
                           fontFamily: 'NotoNaskhArabic',
                           color: colorScheme.primary,
                         ),

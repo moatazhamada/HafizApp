@@ -12,9 +12,19 @@ class MemorizationScreen extends StatelessWidget {
   const MemorizationScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
+    MemorizationBloc? bloc;
+    try {
+      bloc = sl<MemorizationBloc>()..add(LoadMemorizationProgress());
+    } catch (e, s) {
+      Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
+    }
+    if (bloc == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return BlocProvider.value(
+      value: bloc,
       child: const MemorizationScreen(),
     );
   }

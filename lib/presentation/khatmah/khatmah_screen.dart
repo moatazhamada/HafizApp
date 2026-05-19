@@ -16,10 +16,8 @@ class KhatmahScreen extends StatefulWidget {
   const KhatmahScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider.value(
-      value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
-      child: const KhatmahScreen(),
-    );
+    sl<KhatmahBloc>().add(LoadKhatmahDashboard());
+    return const KhatmahScreen();
   }
 
   @override
@@ -230,6 +228,7 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () {
           final bloc = context.read<KhatmahBloc>();
           showModalBottomSheet(

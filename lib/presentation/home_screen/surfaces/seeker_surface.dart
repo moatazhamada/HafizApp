@@ -147,9 +147,9 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
                   onTap: () => _onSearchChipTap('الرحمة'),
                 ),
                 _SearchChip(
-                  label: 'mercy',
+                  label: 'الصبر',
                   icon: Icons.search,
-                  onTap: () => _onSearchChipTap('mercy'),
+                  onTap: () => _onSearchChipTap('الصبر'),
                 ),
                 _SearchChip(
                   label: 'الصيام',
@@ -157,31 +157,32 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
                   onTap: () => _onSearchChipTap('الصيام'),
                 ),
                 _SearchChip(
-                  label: 'patience',
+                  label: 'الجنة',
                   icon: Icons.search,
-                  onTap: () => _onSearchChipTap('patience'),
+                  onTap: () => _onSearchChipTap('الجنة'),
                 ),
               ],
             ),
           ),
         ),
 
+      // TODO: Re-enable QuranReflect integration when ready
       // Quran Reflect Community
-      StaggeredListItem(
-        index: 4,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: _DiscoveryCard(
-            icon: Icons.forum_outlined,
-            title: 'lbl_quran_reflect'.tr,
-            subtitle: 'msg_quran_reflect_desc'.tr,
-            color: Theme.of(context).colorScheme.primary,
-            onTap: () => NavigatorService.pushNamed(
-              AppRoutes.quranReflectFeed,
-            ),
-          ),
-        ),
-      ),
+      // StaggeredListItem(
+      //   index: 4,
+      //   child: Padding(
+      //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      //     child: _DiscoveryCard(
+      //       icon: Icons.forum_outlined,
+      //       title: 'lbl_quran_reflect'.tr,
+      //       subtitle: 'msg_quran_reflect_desc'.tr,
+      //       color: Theme.of(context).colorScheme.primary,
+      //       onTap: () => NavigatorService.pushNamed(
+      //         AppRoutes.quranReflectFeed,
+      //       ),
+      //     ),
+      //   ),
+      // ),
 
       const SizedBox(height: 8),
 

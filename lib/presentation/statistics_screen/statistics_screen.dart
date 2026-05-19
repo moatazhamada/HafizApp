@@ -14,16 +14,17 @@ class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) =>
-              sl<MemorizationBloc>()..add(LoadMemorizationProgress()),
-        ),
-        BlocProvider.value(
-          value: sl<KhatmahBloc>()..add(LoadKhatmahDashboard()),
-        ),
-      ],
+    MemorizationBloc? bloc;
+    try {
+      bloc = sl<MemorizationBloc>()..add(LoadMemorizationProgress());
+    } catch (e, s) {
+      Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
+    }
+    if (bloc == null) {
+      return const _StatsBody();
+    }
+    return BlocProvider.value(
+      value: bloc,
       child: const _StatsBody(),
     );
   }

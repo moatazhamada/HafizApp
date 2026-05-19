@@ -30,7 +30,11 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchBloc = sl<SearchBloc>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
+      if (!mounted) return;
+      // Defer focus request to avoid _ModalScopeStatus race during route transition
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
     });
   }
 

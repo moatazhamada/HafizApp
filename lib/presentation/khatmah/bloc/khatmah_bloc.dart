@@ -81,9 +81,9 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
         );
       }
 
-      add(SyncActivityDays());
+      if (!isClosed) add(SyncActivityDays());
     } catch (e) {
-      emit(const KhatmahError('msg_operation_failed'));
+      if (!isClosed) emit(const KhatmahError('msg_operation_failed'));
     }
   }
 
@@ -93,8 +93,14 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
   ) async {
     final result = await repository.setGoal(event.dailyVerseTarget);
     result.fold(
-      (failure) => emit(const KhatmahError('msg_operation_failed')),
-      (_) => add(LoadKhatmahDashboard()),
+      (failure) {
+        if (isClosed) return;
+        emit(const KhatmahError('msg_operation_failed'));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadKhatmahDashboard());
+      },
     );
   }
 

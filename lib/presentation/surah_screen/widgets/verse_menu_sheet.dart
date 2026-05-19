@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/share_as_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/data/model/recitation_error_model.dart';
 import 'package:hafiz_app/domain/entities/verse.dart';
@@ -26,14 +25,16 @@ void showVerseMenu(
   required VoidCallback onOpenTafsir,
   required VoidCallback onReadThisAyah,
   required VoidCallback onStartFromHere,
+  BookmarkBloc? bookmarkBloc,
 }) {
+  final bloc = bookmarkBloc ?? context.read<BookmarkBloc>();
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (context) => SafeArea(
+    builder: (_) => SafeArea(
       child: SingleChildScrollView(
         child: Wrap(
           children: [
@@ -56,12 +57,12 @@ void showVerseMenu(
                 Navigator.pop(context);
                 if (isBookmarked) {
                   HapticFeedback.lightImpact();
-                  context.read<BookmarkBloc>().add(
+                  bloc.add(
                     RemoveBookmarkEvent(surahId, verse.verseNumber),
                   );
                 } else {
                   HapticFeedback.lightImpact();
-                  context.read<BookmarkBloc>().add(
+                  bloc.add(
                     AddBookmarkEvent(
                       BookmarkModel(
                         surahId: surahId,
@@ -228,26 +229,27 @@ void showVerseMenu(
               },
             ),
           ),
-          Semantics(
-            button: true,
-            label: 'lbl_share_to_quran_reflect'.tr,
-            child: ListTile(
-              leading: Icon(
-                Icons.forum_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text('lbl_share_to_quran_reflect'.tr),
-              onTap: () async {
-                Navigator.pop(context);
-                final url = Uri.parse(
-                  'https://quranreflect.com/verses/$surahId/${verse.verseNumber}',
-                );
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                }
-              },
-            ),
-          ),
+          // TODO: Re-enable QuranReflect integration when ready
+          // Semantics(
+          //   button: true,
+          //   label: 'lbl_share_to_quran_reflect'.tr,
+          //   child: ListTile(
+          //     leading: Icon(
+          //       Icons.forum_outlined,
+          //       color: Theme.of(context).colorScheme.primary,
+          //     ),
+          //     title: Text('lbl_share_to_quran_reflect'.tr),
+          //     onTap: () async {
+          //       Navigator.pop(context);
+          //       final url = Uri.parse(
+          //         'https://quranreflect.com/verses/$surahId/${verse.verseNumber}',
+          //       );
+          //       if (await canLaunchUrl(url)) {
+          //         await launchUrl(url, mode: LaunchMode.externalApplication);
+          //       }
+          //     },
+          //   ),
+          // ),
         ],
       ),
       ),

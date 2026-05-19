@@ -18,6 +18,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadMemorizationProgress event,
     Emitter<MemorizationState> emit,
   ) async {
+    if (isClosed) return;
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
@@ -54,8 +55,14 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
   ) async {
     final result = await repository.recordReview(event.surahId, event.score);
     result.fold(
-      (failure) => emit(MemorizationError(failure.errorMessage)),
-      (_) => add(LoadMemorizationProgress()),
+      (failure) {
+        if (isClosed) return;
+        emit(MemorizationError(failure.errorMessage));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadMemorizationProgress());
+      },
     );
   }
 
@@ -63,6 +70,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadDueReviews event,
     Emitter<MemorizationState> emit,
   ) async {
+    if (isClosed) return;
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
