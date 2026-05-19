@@ -67,7 +67,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   ) async {
     try {
       final response = await _dio.get(
-        '${ApiConfig.contentBase}/resources/tafsirs',
+        '${ApiConfig.contentApiBase}/resources/tafsirs',
         queryParameters: {'language': languageCode},
       );
       final data = response.data;
@@ -92,7 +92,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   ) async {
     try {
       final response = await _dio.get(
-        '${ApiConfig.contentBase}/resources/translations',
+        '${ApiConfig.contentApiBase}/resources/translations',
         queryParameters: {'language': languageCode},
       );
       final data = response.data;
@@ -114,7 +114,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
   Future<String> _fetchArabic(String verseKey) async {
     try {
       final verseResponse = await _dio.get(
-        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentApiBase}/verses/by_key/$verseKey',
         queryParameters: {'fields': 'text_uthmani'},
       );
       final verse = verseResponse.data['verse'] as Map<String, dynamic>?;
@@ -139,7 +139,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     try {
       final id = translationId ?? ApiConfig.translationId.toString();
       final translationResponse = await _dio.get(
-        '${ApiConfig.contentBase}/verses/by_key/$verseKey',
+        '${ApiConfig.contentApiBase}/verses/by_key/$verseKey',
         queryParameters: {
           'translations': id,
           'fields': 'text_uthmani',
@@ -166,7 +166,7 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     try {
       final id = tafsirId ?? ApiConfig.tafsirId;
       final tafsirResponse = await _dio.get(
-        '${ApiConfig.contentBase}/tafsirs/$id/by_ayah/$verseKey',
+        '${ApiConfig.contentApiBase}/tafsirs/$id/by_ayah/$verseKey',
       );
       final tafsirData = tafsirResponse.data['tafsir'] as Map<String, dynamic>?;
       if (tafsirData != null) {

@@ -6,6 +6,8 @@ import 'package:hafiz_app/core/network/network_manager.dart';
 import 'package:hafiz_app/data/datasource/surah/surah_remote_data_source.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:hafiz_app/core/config/api_config.dart';
+
 import '../../../fixture/fixture_reader.dart';
 
 class MockDio extends Mock implements Dio {}
@@ -67,7 +69,7 @@ void main() {
       expect(result.chapters.first.verseNumber, 1);
       verify(
         () => mockDio.get(
-          '/verses/by_chapter/114',
+          '${ApiConfig.contentApiBase}/verses/by_chapter/114',
           queryParameters: any(named: 'queryParameters'),
           options: any(named: 'options'),
         ),
