@@ -8,6 +8,7 @@ import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockKhatmahRepository extends Mock implements KhatmahRepository {}
 
@@ -27,6 +28,7 @@ void main() {
   late KhatmahBloc bloc;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockRepo = MockKhatmahRepository();
     bloc = KhatmahBloc(repository: mockRepo);
     when(() => mockRepo.syncPendingActivityDays())

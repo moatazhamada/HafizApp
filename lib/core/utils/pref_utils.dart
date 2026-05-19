@@ -794,6 +794,48 @@ class PrefUtils {
     await _requirePrefs().setInt(_lastStreakCelebratedKey, milestone);
   }
 
+  // ── Khatmah Completion Tracking ──
+
+  static const String _totalVersesReadKey = 'total_verses_read';
+  static const String _khatmahCompletionsKey = 'khatmah_completions';
+  static const String _showDuaKhatmKey = 'show_dua_khatm';
+
+  int getTotalVersesRead() {
+    try {
+      return _requirePrefs().getInt(_totalVersesReadKey) ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<void> setTotalVersesRead(int value) async {
+    await _requirePrefs().setInt(_totalVersesReadKey, value);
+  }
+
+  int getKhatmahCompletionsCount() {
+    try {
+      return _requirePrefs().getInt(_khatmahCompletionsKey) ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<void> setKhatmahCompletionsCount(int value) async {
+    await _requirePrefs().setInt(_khatmahCompletionsKey, value);
+  }
+
+  bool shouldShowDuaKhatm() {
+    try {
+      return _requirePrefs().getBool(_showDuaKhatmKey) ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> setShouldShowDuaKhatm(bool value) async {
+    await _requirePrefs().setBool(_showDuaKhatmKey, value);
+  }
+
   // ── Recently Deleted Bookmarks (prevents sync pull-back) ──
 
   static const String _recentlyDeletedBookmarksKey =

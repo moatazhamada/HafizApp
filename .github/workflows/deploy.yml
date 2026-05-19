@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feature/sheikh-recitation-coach
+      - develop
     tags:
       - 'v*'
   pull_request:

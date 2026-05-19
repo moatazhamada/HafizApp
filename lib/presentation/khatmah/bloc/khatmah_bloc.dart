@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/domain/entities/reading_goal.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'khatmah_event.dart';
@@ -115,10 +117,35 @@ class KhatmahBloc extends Bloc<KhatmahEvent, KhatmahState> {
       surahs: event.surahs,
       durationSeconds: event.durationSeconds,
     );
+
+    if (result.isRight()) {
+      await _trackKhatmahProgress(event.verses);
+    }
+
     result.fold(
       (failure) => emit(const KhatmahError('msg_operation_failed')),
       (_) => add(LoadKhatmahDashboard()),
     );
+  }
+
+  Future<void> _trackKhatmahProgress(int verses) async {
+    try {
+      final currentTotal = PrefUtils().getTotalVersesRead();
+      final newTotal = currentTotal + verses;
+      await PrefUtils().setTotalVersesRead(newTotal);
+
+      final totalQuranVerses =
+          MushafPageIndex.surahVerseCounts.fold(0, (sum, count) => sum + count);
+      final newKhatmahCount = newTotal ~/ totalQuranVerses;
+      final oldKhatmahCount = PrefUtils().getKhatmahCompletionsCount();
+
+      if (newKhatmahCount > oldKhatmahCount) {
+        await PrefUtils().setKhatmahCompletionsCount(newKhatmahCount);
+        await PrefUtils().setShouldShowDuaKhatm(true);
+      }
+    } catch (e) {
+      Logger.warning('Failed to track khatmah progress: $e', feature: 'Khatmah');
+    }
   }
 
   Future<void> _onSyncActivityDays(

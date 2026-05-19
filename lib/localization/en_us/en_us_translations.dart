@@ -754,4 +754,14 @@ final Map<String, String> enUs = {
   'lbl_select_surahs_to_track': 'Select surahs to track',
   'msg_surah_marked_memorized': 'Surah marked as memorized',
 
+  // Dua Khatm
+  'lbl_dua_khatm': 'Dua for Completing the Quran',
+  'lbl_khatmah_completed': 'Khatmah Completed!',
+  'msg_khatmah_completed':
+      'Congratulations! You have completed a full reading of the Quran (Khatmah).',
+  'lbl_read_dua': 'Read Dua',
+  'msg_khatmah_count': '{count} Khatmah completed',
+  'msg_dua_khatm_source':
+      'A supplication traditionally recited upon completing the Quran.',
+
 };

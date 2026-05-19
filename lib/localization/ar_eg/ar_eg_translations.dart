@@ -728,4 +728,15 @@ final Map<String, String> arEg = {
   'lbl_start_tracking': 'ابدأ التتبع',
   'lbl_select_surahs_to_track': 'اختر السور للتتبع',
   'msg_surah_marked_memorized': 'تمت إضافة السورة للحفظ',
+
+  // دعاء ختم القرآن
+  'lbl_dua_khatm': 'دعاء ختم القرآن',
+  'lbl_khatmah_completed': 'ختمة مكتملة!',
+  'msg_khatmah_completed':
+      'تهانينا! لقد أكملت ختمة كاملة للقرآن الكريم.',
+  'lbl_read_dua': 'اقرأ الدعاء',
+  'msg_khatmah_count': 'عدد الختمات: {count}',
+  'msg_dua_khatm_source':
+      'دعاء مستحب عند ختم القرآن الكريم.',
+
 };
