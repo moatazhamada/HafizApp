@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
@@ -10,6 +12,7 @@ import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/presentation/khatmah/widgets/manual_reading_entry_bottom_sheet.dart';
 
 import 'package:hafiz_app/presentation/khatmah/widgets/goal_celebration.dart';
+import 'package:hafiz_app/core/notifications/notification_service.dart';
 import 'package:intl/intl.dart';
 
 class KhatmahScreen extends StatefulWidget {
@@ -50,6 +53,7 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
             'msg_streak_milestone'.tr.replaceAll('{days}', m.toString()),
             null, // Date handled separately for streak
           );
+          unawaited(NotificationService().showStreakMilestone(m));
           PrefUtils().setLastStreakCelebrated(m);
           break;
         }

@@ -41,7 +41,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static NotificationService? _instance;
-  static DateTime? _lastScheduleTime;
+  static final Map<int, DateTime> _lastScheduleTime = {};
   static const Duration _minScheduleInterval = Duration(minutes: 30);
 
   NotificationService._();
@@ -73,20 +73,38 @@ class NotificationService {
     );
   }
 
-  /// Request notification permission on Android 13+ (API 33).
+  /// Request notification permission.
+  /// On Android 13+ (API 33) requests POST_NOTIFICATIONS.
+  /// On iOS requests alert, badge, and sound permissions.
   /// Returns true if permission is granted.
   Future<bool> requestPermission() async {
-    if (defaultTargetPlatform != TargetPlatform.android) return true;
-
     try {
-      final androidPlugin = _plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      if (androidPlugin == null) return true;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidPlugin = _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+        if (androidPlugin == null) return true;
+        final granted = await androidPlugin.requestNotificationsPermission();
+        return granted ?? false;
+      }
 
-      final granted = await androidPlugin.requestNotificationsPermission();
-      return granted ?? false;
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosPlugin = _plugin
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
+        if (iosPlugin == null) return true;
+        final result = await iosPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return result ?? false;
+      }
+
+      // Other platforms (macOS, Linux, Windows) — assume granted
+      return true;
     } catch (e) {
       Logger.warning(
         'Notification permission request failed: $e',
@@ -112,7 +130,7 @@ class NotificationService {
       return true;
     }
 
-    if (_shouldThrottle()) return true;
+    if (_shouldThrottle(_verseNotificationId)) return true;
 
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_verseNotificationId);
@@ -175,7 +193,7 @@ class NotificationService {
       return true;
     }
 
-    if (_shouldThrottle()) return true;
+    if (_shouldThrottle(_reminderNotificationId)) return true;
 
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_reminderNotificationId);
@@ -349,27 +367,26 @@ class NotificationService {
   }
 
   Future<bool> _ensurePermission() async {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      final hasPermission = await requestPermission();
-      if (!hasPermission) {
-        Logger.warning(
-          'Notification permission not granted',
-          feature: 'Notifications',
-        );
-        return false;
-      }
+    final hasPermission = await requestPermission();
+    if (!hasPermission) {
+      Logger.warning(
+        'Notification permission not granted',
+        feature: 'Notifications',
+      );
+      return false;
     }
     return true;
   }
 
-  static bool _shouldThrottle() {
-    if (_lastScheduleTime == null) {
-      _lastScheduleTime = DateTime.now();
+  static bool _shouldThrottle(int notificationId) {
+    final last = _lastScheduleTime[notificationId];
+    if (last == null) {
+      _lastScheduleTime[notificationId] = DateTime.now();
       return false;
     }
-    final elapsed = DateTime.now().difference(_lastScheduleTime!);
+    final elapsed = DateTime.now().difference(last);
     if (elapsed < _minScheduleInterval) return true;
-    _lastScheduleTime = DateTime.now();
+    _lastScheduleTime[notificationId] = DateTime.now();
     return false;
   }
 
@@ -389,7 +406,7 @@ class NotificationService {
       return true;
     }
 
-    if (_shouldThrottle()) return true;
+    if (_shouldThrottle(_kahfNotificationId)) return true;
 
     if (!await _ensurePermission()) return false;
     await _plugin.cancel(_kahfNotificationId);
