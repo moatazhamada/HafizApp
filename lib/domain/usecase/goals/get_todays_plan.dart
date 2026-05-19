@@ -14,7 +14,10 @@ class GetTodaysPlan implements UseCase<Map<String, dynamic>?, GetTodaysPlanParam
     GetTodaysPlanParams params,
   ) async {
     try {
-      final result = await goalsRemoteDataSource.getTodaysPlan(type: params.type);
+      final result = await goalsRemoteDataSource.getTodaysPlan(
+        type: params.type,
+        mushafId: params.mushafId,
+      );
       return Right(result);
     } on InsufficientScopeFailure {
       return const Left(InsufficientScopeFailure());
@@ -26,9 +29,10 @@ class GetTodaysPlan implements UseCase<Map<String, dynamic>?, GetTodaysPlanParam
 
 class GetTodaysPlanParams extends Equatable {
   final String? type;
+  final int mushafId;
 
-  const GetTodaysPlanParams({this.type});
+  const GetTodaysPlanParams({this.type, this.mushafId = 4});
 
   @override
-  List<Object?> get props => [type];
+  List<Object?> get props => [type, mushafId];
 }

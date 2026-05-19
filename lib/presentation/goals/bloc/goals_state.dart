@@ -49,11 +49,16 @@ class GoalsLoading extends GoalsState {}
 class GoalsLoaded extends GoalsState {
   final List<PlanItem> items;
   final Map<String, dynamic>? rawData;
+  final String? mushafLabelKey;
 
-  const GoalsLoaded({required this.items, this.rawData});
+  const GoalsLoaded({
+    required this.items,
+    this.rawData,
+    this.mushafLabelKey,
+  });
 
   @override
-  List<Object?> get props => [items, rawData];
+  List<Object?> get props => [items, rawData, mushafLabelKey];
 }
 
 class GoalsError extends GoalsState {

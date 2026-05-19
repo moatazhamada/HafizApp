@@ -23,7 +23,7 @@ class VerseStudyScreen extends StatelessWidget {
         postDataSource: di.sl<QfPostRemoteDataSource>(),
       )..add(LoadVerseStudy(verseKey)),
       child: DefaultTabController(
-        length: 5,
+        length: 4,
         child: Scaffold(
           appBar: AppBar(
             title: Text('lbl_verse_study_title'.tr.replaceAll('{key}', verseKey)),
@@ -34,7 +34,7 @@ class VerseStudyScreen extends StatelessWidget {
                 Tab(text: 'lbl_tab_tafsir'.tr),
                 Tab(text: 'lbl_tab_translation'.tr),
                 Tab(text: 'lbl_tab_word_by_word'.tr),
-                Tab(text: 'lbl_tab_reflections'.tr),
+                // TODO: Re-enable reflections tab when QuranReflect integration is ready
               ],
             ),
           ),
@@ -93,7 +93,8 @@ class _VerseStudyView extends StatelessWidget {
               _TafsirTab(state: state),
               _TranslationTab(state: state),
               WordByWordSection(words: state.words),
-              _ReflectionsTab(state: state),
+              // TODO: Re-enable reflections tab when QuranReflect integration is ready
+              // _ReflectionsTab(state: state),
             ],
           );
         }
@@ -231,6 +232,7 @@ class _TranslationTab extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _ReflectionsTab extends StatelessWidget {
   final VerseStudyLoaded state;
 

@@ -12,6 +12,12 @@ class ApiConfig {
   static String get contentBase =>
       useQfContent ? qfContentBase : quranComBase;
 
+  /// Returns the full content API base URL including the version path.
+  /// QF Content API: `https://apis.quran.foundation/content/api/v4`
+  /// Quran.com fallback: `https://api.quran.com/api/v4`
+  static String get contentApiBase =>
+      useQfContent ? '$qfContentBase/content/api/v4' : quranComBase;
+
   // Detect whether this is a production build from the flavor name.
   // Flutter passes --dart-define=flavor=<name> automatically when --flavor is used.
   // Prelive flavor → not production; everything else → production.

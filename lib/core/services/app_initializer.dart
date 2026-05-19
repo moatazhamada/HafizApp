@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -11,6 +12,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/qf_api_config.dart';
+import '../../domain/repository/hifz_repository.dart';
 import '../notifications/notification_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/deep_link_handler.dart';
@@ -80,6 +82,7 @@ class AppInitializer {
       'recitation_errors',
       'recitation_sessions',
       'memorization_progress',
+      'hifz_entries',
       'reading_logs',
       'reading_goal',
     ];
@@ -147,6 +150,15 @@ class AppInitializer {
       await MushafPageIndex.loadFromAsset();
     } catch (e) {
       Logger.warning('MushafPageIndex load failed: $e', feature: 'Init');
+    }
+
+    // Migrate old memorization data to new Hifz format
+    try {
+      if (sl.isRegistered<HifzRepository>()) {
+        await sl<HifzRepository>().migrateOldData();
+      }
+    } catch (e) {
+      Logger.warning('Hifz migration failed: $e', feature: 'Init');
     }
 
     try {
@@ -265,9 +277,13 @@ class AppInitializer {
       final notificationService = NotificationService();
       await notificationService.initialize();
       if (PrefUtils().getOnboardingCompleted()) {
-        await notificationService.scheduleDailyVerse();
-        await notificationService.scheduleReadingReminder();
-        await notificationService.scheduleFridayKahf();
+        // Defer scheduling to after the first frame so the Android
+        // activity is attached before requesting notification permissions.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(notificationService.scheduleDailyVerse());
+          unawaited(notificationService.scheduleReadingReminder());
+          unawaited(notificationService.scheduleFridayKahf());
+        });
       }
     } catch (e) {
       Logger.warning(
@@ -334,6 +350,7 @@ class AppInitializer {
       'reading_logs',
       'recitation_sessions',
       'memorization_progress',
+      'hifz_entries',
     ];
     for (final name in boxes) {
       if (Hive.isBoxOpen(name)) {

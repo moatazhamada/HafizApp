@@ -469,6 +469,7 @@ final Map<String, String> enUs = {
 
   // Goals
   'goals_title': "Today's Plan",
+  'goals_mushaf_hint': 'All data shown is for {mushaf} Mushaf',
   'goals_no_plan': 'No plan for today',
   'goals_no_plan_hint':
       'Create a reading goal in the Khatmah tracker to see your daily plan here.',
@@ -502,6 +503,7 @@ final Map<String, String> enUs = {
   'lbl_mushaf_shemerly': 'Shemerly (Egyptian)',
   'lbl_mushaf_naskh': 'Naskh (Hafs)',
   'lbl_mushaf_warsh': 'Warsh (North Africa)',
+  'lbl_mushaf_uthmani_hafs': 'Uthmani Hafs',
   'lbl_mushaf_madani_desc': 'Hafs from Madinah',
   'lbl_mushaf_shemerly_desc': 'Egyptian script',
   'lbl_mushaf_naskh_desc': 'Naskh script',
@@ -767,6 +769,72 @@ final Map<String, String> enUs = {
   'lbl_start_tracking': 'Start Tracking',
   'lbl_select_surahs_to_track': 'Select surahs to track',
   'msg_surah_marked_memorized': 'Surah marked as memorized',
+
+  // Memorization Help
+  'memorization_help_title': 'How Memorization Works',
+  'memorization_help_desc':
+      'This screen tracks your Quran memorization using Spaced Repetition (SRS).\n\n'
+      '• Tap the + button to add a surah to track.\n'
+      '• Review cards appear when a surah is due for revision.\n'
+      '• Tap the checkmark on a due card to log your recall quality.\n'
+      '• Use the menu on any tracked surah to log a manual review.\n'
+      '• Perfect recall increases the review interval; failure resets it.\n'
+      '• A surah is marked "Memorized" after 5 successful reviews.\n\n'
+      'Statuses:\n'
+      '• Memorized — solid recall, long intervals\n'
+      '• In Progress — actively learning\n'
+      '• Needs Review — struggling, review soon',
+
+  // Review Dialog
+  'dlg_review_title': 'How was your recall?',
+  'btn_perfect': 'Perfect',
+  'btn_hesitant': 'Hesitant',
+  'btn_difficult': 'Difficult',
+  'btn_hard': 'Hard',
+  'btn_failed': 'Failed',
+  'msg_review_logged': 'Review logged',
+  'lbl_log_review': 'Log Review',
+
+  // Hifz (Memorization Journal)
+  'lbl_my_hifz': 'My Hifz',
+  'hifz_help_title': 'How Hifz Works',
+  'hifz_help_desc':
+      'Track your Quran memorization in portions (verse ranges) using a review cycle inspired by traditional hifz methods.\n\n'
+      '• Tap + to add a new portion you are memorizing.\n'
+      '• New lessons are reviewed daily (Sabaq).\n'
+      '• Recent lessons are reviewed every 2–3 days (Sabaq Qadaim).\n'
+      '• Solid portions are reviewed weekly (Dawr).\n'
+      '• Mastered portions are reviewed every 2 weeks.\n'
+      '• If you struggle, the portion becomes Weak and needs daily practice.\n\n'
+      'Statuses:\n'
+      '• New — currently memorizing, review daily\n'
+      '• Recent — cementing, review every 2–3 days\n'
+      '• Solid — stable, review weekly\n'
+      '• Mastered — fully retained, review every 2 weeks\n'
+      '• Weak — needs extra practice',
+  'lbl_due_today': 'Due Today',
+  'lbl_due_tomorrow': 'Due Tomorrow',
+  'lbl_new_lessons': 'New Lessons',
+  'lbl_recent_lessons': 'Recent',
+  'lbl_solid': 'Solid',
+  'lbl_mastered': 'Mastered',
+  'lbl_weak': 'Weak',
+  'lbl_hifz_progress': 'Hifz Progress',
+  'lbl_new': 'New',
+  'lbl_overdue': 'Overdue',
+  'lbl_hifz_empty_title': 'Start your hifz journey',
+  'lbl_hifz_empty_subtitle': 'Add a verse range to begin tracking your memorization',
+  'lbl_add_hifz_entry': 'Add Entry',
+  'lbl_select_surah': 'Select Surah',
+  'lbl_start_verse': 'Start Verse',
+  'lbl_end_verse': 'End Verse',
+  'lbl_optional_title': 'Optional Title',
+  'lbl_optional_title_hint': 'e.g., Page 1',
+  'lbl_review_history': 'Review History',
+  'msg_confirm_delete_hifz': 'Delete this memorization entry?',
+  'btn_good': 'Good',
+  'btn_okay': 'Okay',
+  'btn_forgot': 'Forgot',
 
   // Dua Khatm
   'lbl_dua_khatm': 'Dua for Completing the Quran',

@@ -3,6 +3,7 @@ import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/network/qf_api_interceptor.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/timezone_helper.dart';
 
 /// Remote data source for QF Goals & Reading Sessions APIs.
 ///
@@ -32,7 +33,7 @@ abstract class QfGoalsRemoteDataSource {
     int? mushafId,
   });
   Future<void> deleteGoal(String id, {String? category});
-  Future<Map<String, dynamic>?> getTodaysPlan({String? type});
+  Future<Map<String, dynamic>?> getTodaysPlan({String? type, int? mushafId});
   Future<Map<String, dynamic>?> estimateGoal({
     required String type,
     required dynamic amount,
@@ -63,8 +64,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
 
   String get _baseUrl => '${_config.apiBaseUrl}/auth/v1';
 
-  Options get _tzOptions =>
-      Options(headers: {'x-timezone': DateTime.now().timeZoneName});
+
 
   @override
   Future<Map<String, dynamic>?> createGoal({
@@ -89,7 +89,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         '$_baseUrl/goals',
         data: body,
         queryParameters: query,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         Logger.info('Created QF goal', feature: 'QfGoals');
@@ -125,7 +125,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         '$_baseUrl/goals/$id',
         data: body,
         queryParameters: query,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       Logger.info('Updated QF goal $id', feature: 'QfGoals');
     } catch (e) {
@@ -142,7 +142,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
       await _dio.delete(
         '$_baseUrl/goals/$id',
         queryParameters: query,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       Logger.info('Deleted QF goal $id', feature: 'QfGoals');
     } catch (e) {
@@ -151,15 +151,17 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>?> getTodaysPlan({String? type}) async {
+  Future<Map<String, dynamic>?> getTodaysPlan({String? type, int? mushafId}) async {
     try {
-      final query = <String, dynamic>{};
+      final query = <String, dynamic>{
+        'mushafId': mushafId ?? 4,
+      };
       if (type != null) query['type'] = type;
 
       final response = await _dio.get(
         '$_baseUrl/goals/get-todays-plan',
         queryParameters: query,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>?;
@@ -203,7 +205,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
       final response = await _dio.get(
         '$_baseUrl/goals/estimate',
         queryParameters: query,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>?;
@@ -242,7 +244,7 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
         '$_baseUrl/reading-sessions',
         data: body,
         queryParameters: query.isNotEmpty ? query : null,
-        options: _tzOptions,
+        options: await buildTzOptions(),
       );
       Logger.info(
         'Posted reading session $chapterNumber:$verseNumber to QF',

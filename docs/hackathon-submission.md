@@ -1,9 +1,11 @@
 # Hafiz App — Quran Foundation Hackathon Submission
 
-> **Version:** 3.3.0+23  
+> **Latest Version:** 3.3.0+23 (in review)  
+> **Store Version:** 3.1.0 ([Play Store](https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app))  
 > **Live Demo:** https://moatazhamada.github.io/HafizApp/  
-> **Video Walkthrough:** https://youtu.be/A9g0FEGydnY  
-> **Download:** [APK](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.apk) | [AAB](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.aab)
+> **Video Walkthrough:** https://youtu.be/A9g0FEGydnY (v3.1.0)  
+> **Download:** [APK](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.apk) | [AAB](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.aab)  
+> **Firebase Testers:** https://appdistribution.firebase.dev/i/666b22e0b5074ff4
 
 ## Project Overview
 

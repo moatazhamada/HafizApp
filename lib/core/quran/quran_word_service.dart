@@ -19,9 +19,7 @@ class QuranWordService {
   static Dio _buildDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: ApiConfig.useQfContent
-            ? ApiConfig.qfContentBase
-            : ApiConfig.quranComBase,
+        baseUrl: ApiConfig.contentApiBase,
         connectTimeout: const Duration(seconds: 7),
         receiveTimeout: const Duration(seconds: 12),
       ),

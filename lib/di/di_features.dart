@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import '../../core/network/network_manager.dart';
 import '../../data/datasource/bookmark/bookmark_local_data_source.dart';
 import '../../data/datasource/khatmah/khatmah_local_data_source.dart';
+import '../../data/datasource/hifz/hifz_local_data_source.dart';
 import '../../data/datasource/memorization/memorization_local_data_source.dart';
 import '../../data/datasource/qf_activity/qf_activity_remote_data_source.dart';
 import '../../data/datasource/qf_goals/qf_goals_remote_data_source.dart';
@@ -15,6 +16,7 @@ import '../../data/datasource/surah/surah_remote_data_source.dart';
 import '../../data/datasource/tafsir/tafsir_remote_data_source.dart';
 import '../../data/repository/bookmark/bookmark_repository_impl.dart';
 import '../../data/repository/khatmah/khatmah_repository_impl.dart';
+import '../../data/repository/hifz/hifz_repository_impl.dart';
 import '../../data/repository/memorization/memorization_repository_impl.dart';
 import '../../data/repository/qrc/qrc_repository_impl.dart';
 import '../../data/repository/recitation_error/recitation_error_repository_impl.dart';
@@ -23,6 +25,7 @@ import '../../data/repository/surah/surah_repository_impl.dart';
 import '../../data/repository/tafsir/tafsir_repository_impl.dart';
 import '../../domain/repository/bookmark_repository.dart';
 import '../../domain/repository/khatmah_repository.dart';
+import '../../domain/repository/hifz_repository.dart';
 import '../../domain/repository/memorization_repository.dart';
 import '../../domain/repository/qrc/qrc_repository.dart';
 import '../../domain/repository/recitation_error_repository.dart';
@@ -42,6 +45,7 @@ import '../../presentation/bookmarks/bloc/bookmark_bloc.dart';
 import '../../presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import '../../presentation/goals/bloc/goals_bloc.dart';
 import '../../presentation/khatmah/bloc/khatmah_bloc.dart';
+import '../../presentation/hifz/bloc/hifz_bloc.dart';
 import '../../presentation/memorization/bloc/memorization_bloc.dart';
 import '../../presentation/recitation_error/bloc/recitation_error_bloc.dart';
 import '../../presentation/recitation_session/bloc/recitation_session_bloc.dart';
@@ -71,6 +75,7 @@ void registerFeatureDependencies() {
   sl.registerLazySingleton(() => UpdateGoal(goalsRemoteDataSource: sl()));
   sl.registerLazySingleton(() => DeleteGoal(goalsRemoteDataSource: sl()));
   sl.registerFactory(() => MemorizationBloc(repository: sl()));
+  sl.registerFactory(() => HifzBloc(repository: sl()));
   sl.registerLazySingleton(() => KhatmahBloc(repository: sl()));
   sl.registerFactory(
     () => TajweedRoadmapBloc(sessionRepository: sl(), errorRepository: sl()),
@@ -128,6 +133,13 @@ void registerFeatureDependencies() {
     ),
   );
 
+  sl.registerLazySingleton<HifzRepository>(
+    () => HifzRepositoryImpl(
+      hifzLocal: sl(),
+      oldLocal: sl(),
+    ),
+  );
+
   sl.registerLazySingleton<KhatmahRepository>(
     () => KhatmahRepositoryImpl(
       localDataSource: sl(),
@@ -166,6 +178,10 @@ void registerFeatureDependencies() {
   sl.registerLazySingleton<MemorizationLocalDataSource>(
     () =>
         MemorizationLocalDataSourceImpl(box: Hive.box('memorization_progress')),
+  );
+
+  sl.registerLazySingleton<HifzLocalDataSource>(
+    () => HifzLocalDataSourceImpl(box: Hive.box('hifz_entries')),
   );
 
   sl.registerLazySingleton<KhatmahLocalDataSource>(

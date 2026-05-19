@@ -570,6 +570,7 @@ class _CompactSurahTile extends StatelessWidget {
                           surah.nameEnglish,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),

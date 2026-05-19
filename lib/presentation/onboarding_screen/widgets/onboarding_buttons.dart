@@ -115,11 +115,11 @@ class OnboardingSelectionCard extends StatelessWidget {
     return Material(
       color: isSelected
           ? (isLightBackground
-              ? colorScheme.primary.withValues(alpha: 0.1)
-              : onSurface.withValues(alpha: 0.15))
+              ? colorScheme.primary.withValues(alpha: 0.50)
+              : onSurface.withValues(alpha: 0.35))
           : (isLightBackground
-              ? colorScheme.primary.withValues(alpha: 0.05)
-              : onSurface.withValues(alpha: 0.08)),
+              ? colorScheme.primary.withValues(alpha: 0.25)
+              : onSurface.withValues(alpha: 0.15)),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -132,8 +132,8 @@ class OnboardingSelectionCard extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? (isLightBackground
-                      ? colorScheme.primary.withValues(alpha: 0.4)
-                      : onSurface.withValues(alpha: 0.5))
+                      ? colorScheme.primary.withValues(alpha: 0.85)
+                      : onSurface.withValues(alpha: 0.90))
                   : Colors.transparent,
               width: 2,
             ),
