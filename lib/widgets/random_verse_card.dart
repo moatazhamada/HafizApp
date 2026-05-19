@@ -28,16 +28,19 @@ class _RandomVerseCardState extends State<RandomVerseCard>
   @override
   void initState() {
     super.initState();
-    _loadVerse();
+    _loadVerse(daily: true);
   }
 
-  Future<void> _loadVerse() async {
+  Future<void> _loadVerse({bool daily = false}) async {
     try {
       final ds = sl<RandomVerseRemoteDataSource>();
-      final verse = await ds.fetchRandomVerse();
+      var verse = await ds.fetchRandomVerse();
+      // Fallback to local assets when the API is unreachable
+      verse ??= await ds.fetchLocalRandomVerse(daily: daily);
       if (mounted) {
         setState(() {
           _data = verse;
+          _error = null;
           _loading = false;
         });
       }
@@ -180,7 +183,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                   _data = null;
                   _error = null;
                 });
-                _loadVerse();
+                _loadVerse(daily: false);
               },
               icon: const Icon(Icons.refresh, size: 16),
               label: Text('lbl_new_verse'.tr, style: const TextStyle(fontSize: 12)),
@@ -243,7 +246,7 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                   _data = null;
                   _error = null;
                 });
-                _loadVerse();
+                _loadVerse(daily: true);
               },
               icon: const Icon(Icons.refresh, size: 16),
               label: Text('lbl_try_again'.tr, style: const TextStyle(fontSize: 12)),

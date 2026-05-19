@@ -532,8 +532,10 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
       _translations = {};
       _translationsLoading = false;
       if (isArabic) {
+        // Only hide translation temporarily in Arabic mode;
+        // do NOT overwrite the user's preference so it comes back
+        // automatically when they switch back to a non-Arabic locale.
         _showTranslation = false;
-        PrefUtils().setShowTranslation(false);
       }
     });
     try {

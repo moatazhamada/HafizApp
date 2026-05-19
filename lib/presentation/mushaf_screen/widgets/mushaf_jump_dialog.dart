@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/input_formatters.dart';
+import 'package:hafiz_app/core/utils/input_validators.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
@@ -27,6 +29,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
   late int _selectedPage;
   late TextEditingController _pageController;
   String _tab = 'page';
+  String? _errorText;
 
   @override
   void initState() {
@@ -114,12 +117,20 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           TextField(
             controller: _pageController,
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              AppInputFormatters.digitsOnly,
+              AppInputFormatters.maxLength(3),
+            ],
             decoration: InputDecoration(
               labelText: 'lbl_page_number'.tr,
               hintText:
                   '${1.toLocalizedNumber(context)} - ${widget.totalPages.toLocalizedNumber(context)}',
               border: const OutlineInputBorder(),
+              errorText: _errorText,
             ),
+            onChanged: (_) {
+              if (_errorText != null) setState(() => _errorText = null);
+            },
             onSubmitted: (value) => _jumpAndClose(),
           ),
           const SizedBox(height: 16),
@@ -243,7 +254,17 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
   }
 
   void _jumpAndClose() {
-    final page = int.tryParse(_pageController.text) ?? _selectedPage;
-    Navigator.pop(context, page.clamp(1, widget.totalPages));
+    final error = InputValidators.numericRange(
+      min: 1,
+      max: widget.totalPages,
+    )(_pageController.text);
+
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
+
+    final page = int.parse(_pageController.text.trim());
+    Navigator.pop(context, page);
   }
 }

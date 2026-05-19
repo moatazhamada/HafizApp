@@ -5,6 +5,8 @@ import 'package:hafiz_app/injection_container.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/services/remote_config_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../../core/utils/input_formatters.dart';
+import '../../core/utils/input_validators.dart';
 import '../../core/utils/platform_info.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
@@ -94,6 +96,7 @@ class _AboutScreenState extends State<AboutScreen> {
     Future<void> showFeedbackDialog() async {
       final controller = TextEditingController();
       bool isSending = false;
+      String? errorText;
 
       await showDialog(
         context: context,
@@ -104,10 +107,18 @@ class _AboutScreenState extends State<AboutScreen> {
               controller: controller,
               maxLines: 6,
               enabled: !isSending,
+              inputFormatters: [
+                AppInputFormatters.maxLength(1000),
+                AppInputFormatters.noLeadingSpaces,
+              ],
               decoration: InputDecoration(
                 hintText: 'about_feedback_hint'.tr,
                 border: const OutlineInputBorder(),
+                errorText: errorText,
               ),
+              onChanged: (_) {
+                if (errorText != null) setState(() => errorText = null);
+              },
             ),
             actions: [
               TextButton(
@@ -124,7 +135,15 @@ class _AboutScreenState extends State<AboutScreen> {
                     ? null
                     : () async {
                         final msg = controller.text.trim();
-                        if (msg.isEmpty) return;
+                        final validator = InputValidators.compose([
+                          InputValidators.required(),
+                          InputValidators.minLength(3),
+                        ]);
+                        final validationError = validator(msg);
+                        if (validationError != null) {
+                          setState(() => errorText = validationError);
+                          return;
+                        }
 
                         setState(() => isSending = true);
                         try {

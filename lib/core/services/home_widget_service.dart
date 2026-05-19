@@ -93,7 +93,9 @@ class HomeWidgetService {
     _isUpdating = true;
     try {
       final ds = sl<RandomVerseRemoteDataSource>();
-      final verse = await ds.fetchRandomVerse();
+      final verse =
+          await ds.fetchRandomVerse() ??
+          await ds.fetchLocalRandomVerse(daily: true);
       if (verse == null) {
         await _setPlaceholder();
         return;

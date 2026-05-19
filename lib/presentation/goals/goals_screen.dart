@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../core/utils/input_formatters.dart';
+import '../../core/utils/input_validators.dart';
 import '../../injection_container.dart' as di;
 import 'bloc/goals_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
@@ -488,28 +490,48 @@ class _PlanItemCard extends StatelessWidget {
     final durationCtrl = TextEditingController(
       text: item.duration?.toString() ?? '',
     );
+    String? errorText;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('goals_edit_title'.tr),
-        content: TextField(
-          controller: durationCtrl,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'goals_duration_label'.tr,
-            border: const OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('goals_edit_title'.tr),
+          content: TextField(
+            controller: durationCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              AppInputFormatters.digitsOnly,
+              AppInputFormatters.maxLength(4),
+            ],
+            decoration: InputDecoration(
+              labelText: 'goals_duration_label'.tr,
+              border: const OutlineInputBorder(),
+              errorText: errorText,
+            ),
+            onChanged: (_) {
+              if (errorText != null) setState(() => errorText = null);
+            },
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('lbl_cancel'.tr),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              final newDuration = int.tryParse(durationCtrl.text);
-              if (newDuration != null) {
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('lbl_cancel'.tr),
+            ),
+            FilledButton(
+              onPressed: () {
+                final validationError = InputValidators.numericRange(
+                  min: 1,
+                  max: 3650,
+                )(durationCtrl.text);
+
+                if (validationError != null) {
+                  setState(() => errorText = validationError);
+                  return;
+                }
+
+                Navigator.pop(ctx);
+                final newDuration = int.parse(durationCtrl.text.trim());
                 context.read<GoalsBloc>().add(UpdateGoalEvent(
                   id: item.id,
                   type: item.type,
@@ -517,11 +539,11 @@ class _PlanItemCard extends StatelessWidget {
                   category: item.category,
                   duration: newDuration,
                 ));
-              }
-            },
-            child: Text('lbl_save'.tr),
-          ),
-        ],
+              },
+              child: Text('lbl_save'.tr),
+            ),
+          ],
+        ),
       ),
     );
   }

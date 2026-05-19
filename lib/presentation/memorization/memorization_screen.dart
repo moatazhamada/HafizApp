@@ -419,13 +419,15 @@ class _StartTrackingSheet extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                subtitle: Text(
-                  surah.nameEnglish,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.of(context).textSecondary,
-                  ),
-                ),
+                subtitle: Localizations.localeOf(context).languageCode != 'ar'
+                    ? Text(
+                        surah.nameEnglish,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.of(context).textSecondary,
+                        ),
+                      )
+                    : null,
                 onTap: () => onSurahSelected(surah.id),
               );
             },

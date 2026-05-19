@@ -23,8 +23,6 @@ class ReaderSurface extends StatefulWidget {
 
 class _ReaderSurfaceState extends State<ReaderSurface> {
   final ScrollController _scrollController = ScrollController();
-  final TextEditingController _searchController = TextEditingController();
-  String? _searchQuery;
 
   @override
   void initState() {
@@ -47,7 +45,6 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -79,55 +76,8 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Column(
       children: [
-        // Search Bar
-        StaggeredListItem(
-          index: 0,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              textDirection: TextDirection.ltr,
-              decoration: InputDecoration(
-                hintText: 'lbl_search_surah'.tr,
-                hintStyle: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: colorScheme.primary,
-                ),
-                suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = null);
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
-            ),
-          ),
-        ),
-
         // Continue Reading Card
         if (widget.lastReadSurah != null)
           StaggeredListItem(
@@ -142,7 +92,6 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
         // Surah Index
         Expanded(
           child: SurahIndexWidget(
-            searchQuery: _searchQuery,
             scrollController: _scrollController,
           ),
         ),

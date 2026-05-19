@@ -293,6 +293,19 @@ final Map<String, String> arEg = {
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Validation errors
+  'val_required': 'هذا الحقل مطلوب',
+  'val_max_length': 'لا يمكن أن يتجاوز {max} حرف',
+  'val_min_length': 'يجب أن يكون على الأقل {min} أحرف',
+  'val_invalid_number': 'يرجى إدخال رقم صحيح',
+  'val_min_value': 'يجب أن يكون على الأقل {min}',
+  'val_max_value': 'يجب ألا يتجاوز {max}',
+  'val_quran_page_range': 'يجب أن يكون رقم الصفحة بين 1 و {max}',
+  'val_quran_surah_range': 'يجب أن يكون رقم السورة بين 1 و 114',
+  'val_quran_juz_range': 'يجب أن يكون رقم الجزء بين 1 و 30',
+  'val_quran_verse_range': 'يجب أن يكون رقم الآية بين 1 و {max}',
+  'val_search_max_length': 'نص البحث طويل جداً',
+
   // Failure Messages
   'msg_server_error': 'حدث خطأ في الخادم',
   'msg_cache_error': 'خطأ في البيانات المحلية',

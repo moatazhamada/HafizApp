@@ -297,6 +297,19 @@ final Map<String, String> enUs = {
   'musali_teaser_slide4_sub': 'Think again.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Validation errors
+  'val_required': 'This field is required',
+  'val_max_length': 'Cannot exceed {max} characters',
+  'val_min_length': 'Must be at least {min} characters',
+  'val_invalid_number': 'Please enter a valid number',
+  'val_min_value': 'Must be at least {min}',
+  'val_max_value': 'Must not exceed {max}',
+  'val_quran_page_range': 'Page must be between 1 and {max}',
+  'val_quran_surah_range': 'Surah must be between 1 and 114',
+  'val_quran_juz_range': 'Juz must be between 1 and 30',
+  'val_quran_verse_range': 'Ayah must be between 1 and {max}',
+  'val_search_max_length': 'Search query is too long',
+
   // Failure Messages
   'msg_server_error': 'Server error occurred',
   'msg_cache_error': 'Local data error',

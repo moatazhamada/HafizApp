@@ -29,12 +29,14 @@ void showVerseMenu(
 }) {
   showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (context) => SafeArea(
-      child: Wrap(
-        children: [
+      child: SingleChildScrollView(
+        child: Wrap(
+          children: [
           Semantics(
             button: true,
             label: isBookmarked
@@ -247,6 +249,7 @@ void showVerseMenu(
             ),
           ),
         ],
+      ),
       ),
     ),
   );

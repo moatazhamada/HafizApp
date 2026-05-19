@@ -16,20 +16,12 @@ class SeekerSurface extends StatefulWidget {
 }
 
 class _SeekerSurfaceState extends State<SeekerSurface> {
-  final TextEditingController _searchController = TextEditingController();
-  String? _searchQuery;
   List<String> _recentSearches = [];
 
   @override
   void initState() {
     super.initState();
     _loadRecentSearches();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   void _loadRecentSearches() {
@@ -54,59 +46,9 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     final headerChildren = <Widget>[
-      // Local Surah Search
-      StaggeredListItem(
-        index: 0,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            textDirection: TextDirection.ltr,
-            decoration: InputDecoration(
-              hintText: 'lbl_search_surah'.tr,
-              hintStyle: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: colorScheme.primary,
-              ),
-              suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = null);
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.5,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-            onChanged: (value) => setState(() => _searchQuery = value),
-            onSubmitted: (value) {
-              if (value.trim().isNotEmpty) {
-                _onSearchChipTap(value.trim());
-              }
-            },
-          ),
-        ),
-      ),
-
       // Discovery Cards
       StaggeredListItem(
         index: 1,
@@ -264,7 +206,6 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
     ];
 
     return SurahIndexWidget(
-      searchQuery: _searchQuery,
       pageStorageKey: 'seeker-scroll',
       headerSlivers: [
         SliverToBoxAdapter(

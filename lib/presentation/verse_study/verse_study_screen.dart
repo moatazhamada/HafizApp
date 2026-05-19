@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/utils/input_formatters.dart';
+import 'package:hafiz_app/core/utils/input_validators.dart';
 import 'package:hafiz_app/injection_container.dart' as di;
 import 'package:hafiz_app/core/quran/quran_word_service.dart';
 import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data_source.dart';
@@ -423,6 +425,7 @@ class _ReflectionsSection extends StatefulWidget {
 class _ReflectionsSectionState extends State<_ReflectionsSection> {
   final _controller = TextEditingController();
   bool _isSubmitting = false;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -441,9 +444,20 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
 
   void _submitReflection() {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    final validator = InputValidators.compose([
+      InputValidators.required(),
+      InputValidators.maxLength(2000),
+    ]);
+    final error = validator(text);
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _errorText = null;
+    });
     context.read<VerseStudyBloc>().add(
       CreateReflection(verseKey: widget.verseKey, text: text),
     );
@@ -471,11 +485,19 @@ class _ReflectionsSectionState extends State<_ReflectionsSection> {
               controller: _controller,
               maxLines: 3,
               textInputAction: TextInputAction.newline,
+              inputFormatters: [
+                AppInputFormatters.maxLength(2000),
+                AppInputFormatters.noLeadingSpaces,
+              ],
               decoration: InputDecoration(
                 hintText: 'lbl_write_reflection'.tr,
                 border: const OutlineInputBorder(),
                 isDense: true,
+                errorText: _errorText,
               ),
+              onChanged: (_) {
+                if (_errorText != null) setState(() => _errorText = null);
+              },
             ),
             const SizedBox(height: 8),
             Align(

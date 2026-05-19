@@ -10,7 +10,9 @@ class ConnectivityState extends Equatable {
   final ConnectivityResult connectionType;
 
   const ConnectivityState({
-    this.isOnline = false,
+    // Default to true (optimistic) so the offline banner does not flash
+    // on every cold start while the reachability check is in flight.
+    this.isOnline = true,
     this.connectionType = ConnectivityResult.none,
   });
 

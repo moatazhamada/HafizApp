@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../core/analytics/analytics_service.dart';
+import '../../core/utils/input_formatters.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
@@ -88,6 +89,10 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16),
               cursorColor: Theme.of(context).colorScheme.onPrimary,
               autofocus: true,
+              inputFormatters: [
+                AppInputFormatters.maxLength(100),
+                AppInputFormatters.noLeadingSpaces,
+              ],
               decoration: InputDecoration(
                 hintText: 'lbl_search_surah'.tr,
                 hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)),

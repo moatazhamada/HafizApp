@@ -46,31 +46,10 @@ class _StudentBody extends StatefulWidget {
 }
 
 class _StudentBodyState extends State<_StudentBody> {
-  final TextEditingController _searchController = TextEditingController();
-  String? _searchQuery;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<Surah> _filteredSurahs() {
-    final surahs = QuranIndex.quranSurahs;
-    if (_searchQuery == null || _searchQuery!.trim().isEmpty) return surahs;
-    final query = _searchQuery!.trim().toLowerCase();
-    return surahs.where((s) {
-      return s.nameEnglish.toLowerCase().contains(query) ||
-          s.nameArabic.contains(query) ||
-          s.id.toString() == query;
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final filteredSurahs = _filteredSurahs();
 
     return Column(
       children: [
@@ -78,13 +57,6 @@ class _StudentBodyState extends State<_StudentBody> {
         Expanded(
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: _buildSearchBar(context),
-                ),
-              ),
-
               // Memorization Progress Card
               SliverToBoxAdapter(
                 child: BlocBuilder<MemorizationBloc, MemorizationState>(
@@ -176,9 +148,9 @@ class _StudentBodyState extends State<_StudentBody> {
 
               // Compact Surah List
               SliverList.builder(
-                itemCount: filteredSurahs.length,
+                itemCount: QuranIndex.quranSurahs.length,
                 itemBuilder: (context, index) {
-                  final surah = filteredSurahs[index];
+                  final surah = QuranIndex.quranSurahs[index];
                   return StaggeredSliverListItem(
                     index: index,
                     child: _CompactSurahTile(surah: surah),
@@ -191,38 +163,6 @@ class _StudentBodyState extends State<_StudentBody> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return TextField(
-      controller: _searchController,
-      textDirection: TextDirection.ltr,
-      decoration: InputDecoration(
-        hintText: 'lbl_search_surah'.tr,
-        hintStyle: TextStyle(
-          color: colorScheme.onSurface.withValues(alpha: 0.4),
-        ),
-        prefixIcon: Icon(Icons.search_rounded, color: colorScheme.primary),
-        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchQuery = null);
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      onChanged: (value) => setState(() => _searchQuery = value),
     );
   }
 
@@ -576,44 +516,72 @@ class _CompactSurahTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${surah.id}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (!isArabic) ...[
-                  Expanded(
-                    child: Text(
-                      surah.nameEnglish,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+              children: isArabic
+                  ? [
+                      Text(
+                        surah.nameArabic,
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontFamily: 'NotoNaskhArabic',
+                          color: colorScheme.primary,
+                        ),
                       ),
-                    ),
-                  ),
-                ] else
-                  const Spacer(),
-                Text(
-                  surah.nameArabic,
-                  textDirection: TextDirection.rtl,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontFamily: 'NotoNaskhArabic',
-                    color: colorScheme.primary,
-                  ),
-                ),
-              ],
+                      const Spacer(),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${surah.id}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ]
+                  : [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${surah.id}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          surah.nameEnglish,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        surah.nameArabic,
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontFamily: 'NotoNaskhArabic',
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
             ),
           ),
         ),

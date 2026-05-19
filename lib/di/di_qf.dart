@@ -48,7 +48,10 @@ void registerQfDataSources() {
   );
 
   sl.registerLazySingleton<RandomVerseRemoteDataSource>(
-    () => RandomVerseRemoteDataSource(dio: sl()),
+    () => RandomVerseRemoteDataSource(
+      dio: sl(),
+      localDataSource: sl(),
+    ),
   );
 
   sl.registerLazySingleton<VerseMediaRemoteDataSource>(

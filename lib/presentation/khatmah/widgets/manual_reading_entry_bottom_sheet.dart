@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/theme/app_spacing.dart';
 import 'package:hafiz_app/core/theme/app_text_styles.dart';
+import 'package:hafiz_app/core/utils/input_formatters.dart';
+import 'package:hafiz_app/core/utils/input_validators.dart';
 
 class ManualReadingEntryBottomSheet extends StatefulWidget {
   final Function(int verses) onSubmit;
@@ -15,6 +18,7 @@ class ManualReadingEntryBottomSheet extends StatefulWidget {
 class _ManualReadingEntryBottomSheetState extends State<ManualReadingEntryBottomSheet> {
   final _controller = TextEditingController();
   bool _isPages = true;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -23,12 +27,26 @@ class _ManualReadingEntryBottomSheetState extends State<ManualReadingEntryBottom
   }
 
   void _submit() {
-    final value = int.tryParse(_controller.text.trim()) ?? 0;
-    if (value > 0) {
-      final verses = _isPages ? value * 15 : value; // Estimate 15 verses per page if pages selected
-      widget.onSubmit(verses);
-      Navigator.of(context).pop();
+    final value = int.tryParse(_controller.text.trim());
+    if (value == null) {
+      setState(() => _errorText = 'val_invalid_number'.tr);
+      return;
     }
+
+    final mushafType = MushafType.fromString(PrefUtils().getMushafType());
+    final validator = _isPages
+        ? InputValidators.numericRange(min: 1, max: mushafType.totalPages)
+        : InputValidators.numericRange(min: 1, max: 6236);
+    final error = validator(value.toString());
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
+
+    setState(() => _errorText = null);
+    final verses = _isPages ? value * 15 : value;
+    widget.onSubmit(verses);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -87,10 +105,18 @@ class _ManualReadingEntryBottomSheetState extends State<ManualReadingEntryBottom
             child: TextField(
               controller: _controller,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                AppInputFormatters.digitsOnly,
+                AppInputFormatters.maxLength(_isPages ? 3 : 4),
+              ],
               decoration: InputDecoration(
                 labelText: _isPages ? 'lbl_number_of_pages'.tr : 'lbl_number_of_verses'.tr,
                 border: const OutlineInputBorder(),
+                errorText: _errorText,
               ),
+              onChanged: (_) {
+                if (_errorText != null) setState(() => _errorText = null);
+              },
               onSubmitted: (_) => _submit(),
             ),
           ),

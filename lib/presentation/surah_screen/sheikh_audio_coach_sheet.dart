@@ -80,15 +80,13 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   VerseTiming? _findVerseTiming(ChapterAudioFile? audio) {
     if (audio == null) return null;
     final key = '${widget.chapterNumber}:${widget.verseNumber}';
-    return audio.timings.firstWhere(
-      (t) => t.verseKey == key,
-      orElse: () => const VerseTiming(
-        verseKey: '',
-        timestampFrom: 0,
-        timestampTo: 0,
-        segments: [],
-      ),
-    );
+    try {
+      return audio.timings.firstWhere(
+        (t) => t.verseKey == key && t.timestampTo > 0,
+      );
+    } on StateError catch (_) {
+      return null;
+    }
   }
 
   Future<void> _play() async {
@@ -120,7 +118,13 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
 
   Future<void> _stop() async {
     await _player.pause();
-    setState(() => _isPlaying = false);
+    await _posSub?.cancel();
+    _posSub = null;
+    await _playerSub?.cancel();
+    _playerSub = null;
+    if (mounted) {
+      setState(() => _isPlaying = false);
+    }
   }
 
   Future<void> _repeatWord() async {
@@ -129,11 +133,14 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
     if (timing == null || audio == null || audio.audioUrl.isEmpty) return;
     if (timing.segments.isEmpty) {
       await _player.seek(Duration(milliseconds: timing.timestampFrom));
-      return;
+    } else {
+      final idx = (_currentWordIndex - 1).clamp(0, timing.segments.length - 1);
+      final seg = timing.segments[idx];
+      await _player.seek(Duration(milliseconds: seg.startMs));
     }
-    final idx = (_currentWordIndex - 1).clamp(0, timing.segments.length - 1);
-    final seg = timing.segments[idx];
-    await _player.seek(Duration(milliseconds: seg.startMs));
+    if (!_isPlaying) {
+      await _play();
+    }
   }
 
   void _updateWordIndex(int currentMs, VerseTiming timing) {
