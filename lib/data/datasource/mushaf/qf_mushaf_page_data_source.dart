@@ -137,7 +137,7 @@ class QfMushafPageDataSourceImpl implements QfMushafPageDataSource {
   Future<MushafPageData?> fetchPage(int pageNumber) async {
     try {
       final response = await _dio.get(
-        '${ApiConfig.contentBase}/verses/by_page/$pageNumber',
+        '${ApiConfig.contentApiBase}/verses/by_page/$pageNumber',
         queryParameters: {
           'fields': 'code_v1,code_v2,v2_page,page_number',
           'words': 'true',

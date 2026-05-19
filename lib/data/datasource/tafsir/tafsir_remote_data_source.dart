@@ -13,7 +13,7 @@ class TafsirRemoteDataSourceImpl implements TafsirRemoteDataSource {
   @override
   Future<String> getTafsir(int surahNumber, int verseNumber) async {
     final response = await dio.get(
-      '/verses/by_key/$surahNumber:$verseNumber',
+      '${ApiConfig.contentApiBase}/verses/by_key/$surahNumber:$verseNumber',
       queryParameters: {
         'translations': ApiConfig.tafsirId,
         'fields': 'text_uthmani',

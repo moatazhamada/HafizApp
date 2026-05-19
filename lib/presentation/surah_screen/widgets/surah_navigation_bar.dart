@@ -61,7 +61,7 @@ class SurahNavigationBar extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.chevron_left, size: 18),
+                              const Icon(Icons.chevron_left, size: 18),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
@@ -113,7 +113,7 @@ class SurahNavigationBar extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Icon(Icons.chevron_right, size: 18),
+                              const Icon(Icons.chevron_right, size: 18),
                             ],
                           ),
                         ),

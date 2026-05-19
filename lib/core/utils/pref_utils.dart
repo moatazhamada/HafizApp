@@ -438,6 +438,18 @@ class PrefUtils {
     }
   }
 
+  bool getHifzMigrationCompleted() {
+    try {
+      return _requirePrefs().getBool('hifz_migration_completed') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> setHifzMigrationCompleted(bool value) async {
+    await _requirePrefs().setBool('hifz_migration_completed', value);
+  }
+
   int getOnboardingStep() {
     try {
       return _requirePrefs().getInt('onboarding_step') ?? 0;

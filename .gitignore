@@ -75,7 +75,6 @@ qf_credentials.properties
 android/qf_credentials.properties
 
 # Build artifacts
-/appbundle/
 
 # ===========================================
 # iOS / macOS / Xcode

@@ -20,47 +20,67 @@ void main() {
   final tPlan = <String, dynamic>{'type': 'QURAN', 'amount': 10};
 
   test('should return today\'s plan from remote data source', () async {
-    when(() => mockDataSource.getTodaysPlan(type: any(named: 'type')))
-        .thenAnswer((_) async => tPlan);
+    when(() => mockDataSource.getTodaysPlan(
+      type: any(named: 'type'),
+      mushafId: any(named: 'mushafId'),
+    )).thenAnswer((_) async => tPlan);
 
     final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
 
     expect(result, Right(tPlan));
-    verify(() => mockDataSource.getTodaysPlan(type: 'QURAN')).called(1);
+    verify(() => mockDataSource.getTodaysPlan(
+      type: 'QURAN',
+      mushafId: 4,
+    )).called(1);
     verifyNoMoreInteractions(mockDataSource);
   });
 
   test('should return null when no plan exists', () async {
-    when(() => mockDataSource.getTodaysPlan(type: any(named: 'type')))
-        .thenAnswer((_) async => null);
+    when(() => mockDataSource.getTodaysPlan(
+      type: any(named: 'type'),
+      mushafId: any(named: 'mushafId'),
+    )).thenAnswer((_) async => null);
 
     final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
 
     expect(result, const Right(null));
-    verify(() => mockDataSource.getTodaysPlan(type: 'QURAN')).called(1);
+    verify(() => mockDataSource.getTodaysPlan(
+      type: 'QURAN',
+      mushafId: 4,
+    )).called(1);
     verifyNoMoreInteractions(mockDataSource);
   });
 
   test('should return InsufficientScopeFailure when scope is insufficient',
       () async {
-    when(() => mockDataSource.getTodaysPlan(type: any(named: 'type')))
-        .thenThrow(const InsufficientScopeFailure());
+    when(() => mockDataSource.getTodaysPlan(
+      type: any(named: 'type'),
+      mushafId: any(named: 'mushafId'),
+    )).thenThrow(const InsufficientScopeFailure());
 
     final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
 
     expect(result, const Left(InsufficientScopeFailure()));
-    verify(() => mockDataSource.getTodaysPlan(type: 'QURAN')).called(1);
+    verify(() => mockDataSource.getTodaysPlan(
+      type: 'QURAN',
+      mushafId: 4,
+    )).called(1);
     verifyNoMoreInteractions(mockDataSource);
   });
 
   test('should return ServerFailure on unexpected error', () async {
-    when(() => mockDataSource.getTodaysPlan(type: any(named: 'type')))
-        .thenThrow(Exception('network error'));
+    when(() => mockDataSource.getTodaysPlan(
+      type: any(named: 'type'),
+      mushafId: any(named: 'mushafId'),
+    )).thenThrow(Exception('network error'));
 
     final result = await getTodaysPlan(const GetTodaysPlanParams(type: 'QURAN'));
 
     expect(result, isA<Left<Failure, Map<String, dynamic>?>>());
-    verify(() => mockDataSource.getTodaysPlan(type: 'QURAN')).called(1);
+    verify(() => mockDataSource.getTodaysPlan(
+      type: 'QURAN',
+      mushafId: 4,
+    )).called(1);
     verifyNoMoreInteractions(mockDataSource);
   });
 }
