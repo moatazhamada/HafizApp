@@ -15,19 +15,7 @@ class HifzScreen extends StatelessWidget {
   const HifzScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    HifzBloc? bloc;
-    try {
-      bloc = sl<HifzBloc>()..add(LoadHifzEntries());
-    } catch (e, s) {
-      Logger.error('Failed to create HifzBloc: $e\n$s', feature: 'Hifz');
-    }
-    if (bloc == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    return BlocProvider.value(
-      value: bloc,
-      child: const HifzScreen(),
-    );
+    return _HifzScreenLoader();
   }
 
   @override
@@ -241,6 +229,97 @@ class HifzScreen extends StatelessWidget {
 
   static String _formatDate(DateTime d) {
     return '${d.day}/${d.month}';
+  }
+}
+
+class _HifzScreenLoader extends StatefulWidget {
+  @override
+  State<_HifzScreenLoader> createState() => _HifzScreenLoaderState();
+}
+
+class _HifzScreenLoaderState extends State<_HifzScreenLoader> {
+  HifzBloc? _bloc;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _createBloc();
+  }
+
+  void _createBloc() {
+    setState(() {
+      _error = null;
+    });
+    try {
+      final bloc = sl<HifzBloc>()..add(LoadHifzEntries());
+      setState(() {
+        _bloc = bloc;
+      });
+    } catch (e, s) {
+      Logger.error('Failed to create HifzBloc: $e\n$s', feature: 'Hifz');
+      setState(() {
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final error = _error;
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text('lbl_my_hifz'.tr)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'msg_operation_failed'.tr,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.tonal(
+                  onPressed: _createBloc,
+                  child: Text('lbl_retry'.tr),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bloc = _bloc;
+    if (bloc == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return BlocProvider.value(
+      value: bloc,
+      child: const HifzScreen(),
+    );
   }
 }
 

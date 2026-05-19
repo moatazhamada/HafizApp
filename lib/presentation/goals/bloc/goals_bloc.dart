@@ -63,13 +63,21 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     }
 
     if (allItems.isNotEmpty) {
-      emit(GoalsLoaded(items: allItems, rawData: firstData));
+      emit(GoalsLoaded(
+        items: allItems,
+        rawData: firstData,
+        mushafLabelKey: 'lbl_mushaf_uthmani_hafs',
+      ));
       return;
     }
 
     final failure = firstFailure;
     if (failure == null) {
-      emit(GoalsLoaded(items: const [], rawData: firstData));
+      emit(GoalsLoaded(
+        items: const [],
+        rawData: firstData,
+        mushafLabelKey: 'lbl_mushaf_uthmani_hafs',
+      ));
       return;
     }
 

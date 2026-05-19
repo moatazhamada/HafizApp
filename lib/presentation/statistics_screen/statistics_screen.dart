@@ -14,24 +14,105 @@ class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    MemorizationBloc? bloc;
-    try {
-      bloc = sl<MemorizationBloc>()..add(LoadMemorizationProgress());
-    } catch (e, s) {
-      Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
-    }
-    if (bloc == null) {
-      return const _StatsBody();
-    }
-    return BlocProvider.value(
-      value: bloc,
-      child: const _StatsBody(),
-    );
+    return const _StatisticsScreenLoader();
   }
 
   @override
   Widget build(BuildContext context) {
     return const _StatsBody();
+  }
+}
+
+class _StatisticsScreenLoader extends StatefulWidget {
+  const _StatisticsScreenLoader();
+
+  @override
+  State<_StatisticsScreenLoader> createState() => _StatisticsScreenLoaderState();
+}
+
+class _StatisticsScreenLoaderState extends State<_StatisticsScreenLoader> {
+  MemorizationBloc? _bloc;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _createBloc();
+  }
+
+  void _createBloc() {
+    setState(() {
+      _error = null;
+    });
+    try {
+      final bloc = sl<MemorizationBloc>()..add(LoadMemorizationProgress());
+      setState(() {
+        _bloc = bloc;
+      });
+    } catch (e, s) {
+      Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
+      setState(() {
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final error = _error;
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text('stats_title'.tr)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'msg_operation_failed'.tr,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.tonal(
+                  onPressed: _createBloc,
+                  child: Text('lbl_retry'.tr),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bloc = _bloc;
+    if (bloc == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return BlocProvider.value(
+      value: bloc,
+      child: const _StatsBody(),
+    );
   }
 }
 

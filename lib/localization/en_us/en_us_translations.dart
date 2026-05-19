@@ -469,6 +469,7 @@ final Map<String, String> enUs = {
 
   // Goals
   'goals_title': "Today's Plan",
+  'goals_mushaf_hint': 'All data shown is for {mushaf} Mushaf',
   'goals_no_plan': 'No plan for today',
   'goals_no_plan_hint':
       'Create a reading goal in the Khatmah tracker to see your daily plan here.',
@@ -502,6 +503,7 @@ final Map<String, String> enUs = {
   'lbl_mushaf_shemerly': 'Shemerly (Egyptian)',
   'lbl_mushaf_naskh': 'Naskh (Hafs)',
   'lbl_mushaf_warsh': 'Warsh (North Africa)',
+  'lbl_mushaf_uthmani_hafs': 'Uthmani Hafs',
   'lbl_mushaf_madani_desc': 'Hafs from Madinah',
   'lbl_mushaf_shemerly_desc': 'Egyptian script',
   'lbl_mushaf_naskh_desc': 'Naskh script',

@@ -164,6 +164,60 @@
     }
     .video-meta a { color: var(--primary); text-decoration: none; }
     .video-meta a:hover { text-decoration: underline; }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .gallery-grid img {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .platform-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: white;
+    }
+    .platform-badge.published { background: rgba(255,255,255,0.3); }
+    .platform-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .platform-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .platform-chip.published { color: var(--primary); border-color: var(--primary); background: rgba(31,110,69,0.08); }
+    .gallery-grid img:hover {
+      transform: scale(1.02);
+    }
     @media (max-width: 600px) {
       header h1 { font-size: 1.8rem; }
       .btn-group { flex-direction: column; }
@@ -177,7 +231,14 @@
   <div class="container">
     <h1>Hafiz</h1>
     <p>Adaptive Quran Memorization Assistant — powered by Quran.Foundation APIs</p>
-    <span class="version-badge">Latest: v3.3.0+23 (In Review) &middot; Store: v3.1.0</span>
+    <span class="version-badge">Latest: v3.3.0+25 (In Review) &middot; Store: v3.1.0</span>
+    <div class="platform-badges">
+      <span class="platform-badge published">🤖 Android — Published</span>
+      <span class="platform-badge">🍎 iOS — Coming Soon</span>
+      <span class="platform-badge">🖥 macOS — Coming Soon</span>
+      <span class="platform-badge">🪟 Windows — Coming Soon</span>
+      <span class="platform-badge">🌐 Web — Coming Soon</span>
+    </div>
   </div>
 </header>
 
@@ -186,16 +247,32 @@
   <!-- Video Demo -->
   <section class="section">
     <h2 class="section-title">Live Demo</h2>
+
+    <!-- v3.3.0+25 Demo -->
     <div class="card">
       <div class="video-wrapper">
-        <iframe src="https://www.youtube.com/embed/A9g0FEGydnY" title="Hafiz App Demo" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/gk_molLx7yE" title="Hafiz App Demo v3.3.0" allowfullscreen></iframe>
+      </div>
+      <div class="video-meta">
+        <span>📺</span>
+        <span>YouTube Demo (v3.3.0+25) — <a href="https://youtu.be/gk_molLx7yE" target="_blank">open in new tab</a></span>
+      </div>
+      <div class="note">
+        <strong>Note:</strong> This video demonstrates <strong>v3.3.0+25</strong>, the latest hackathon build with all new features including the Quran Reflect feed, activity heatmap, and enhanced adaptive surfaces. Sheikh recitation audio was playing during this demo but is not captured in screen recordings.
+      </div>
+    </div>
+
+    <!-- v3.1.0 Demo -->
+    <div class="card">
+      <div class="video-wrapper">
+        <iframe src="https://www.youtube.com/embed/A9g0FEGydnY" title="Hafiz App Demo v3.1.0" allowfullscreen></iframe>
       </div>
       <div class="video-meta">
         <span>📺</span>
         <span>YouTube Demo (v3.1.0) — <a href="https://youtu.be/A9g0FEGydnY" target="_blank">open in new tab</a></span>
       </div>
       <div class="note">
-        <strong>Note:</strong> This video demonstrates <strong>v3.1.0</strong>, the current stable release on the Play Store. The downloadable builds below are <strong>v3.3.0+23</strong> with additional features including the Quran Reflect feed, activity heatmap, and enhanced adaptive surfaces. If the video and app differ slightly, v3.3.0+23 is the authoritative hackathon build.
+        <strong>Note:</strong> This video demonstrates <strong>v3.1.0</strong>, the first version applied with and the current stable release on the Play Store.
       </div>
     </div>
   </section>
@@ -205,6 +282,9 @@
     <h2 class="section-title">Get the App</h2>
     <div class="card">
       <p style="margin-bottom:16px">Choose the easiest way to try Hafiz. The APK is the fastest for immediate install on Android.</p>
+      <div class="note" style="margin-bottom:16px">
+        <strong>Cross-platform:</strong> Hafiz is built with <strong>Flutter</strong> and also runs on iOS, macOS, Windows, and Web. Only Android is published right now — other platforms are coming soon.
+      </div>
       <div class="download-grid">
         <div class="download-card">
           <h3>Google Play</h3>
@@ -214,21 +294,21 @@
         </div>
         <div class="download-card">
           <h3>Firebase Distribution</h3>
-          <p>Latest v3.3.0+23 — join as tester</p>
+          <p>Latest v3.3.0+25 — join as tester</p>
           <a href="https://appdistribution.firebase.dev/i/666b22e0b5074ff4" class="btn btn-primary" style="width:100%;justify-content:center" target="_blank">Become a Tester</a>
           <p class="file-size">Instant access &middot; no store wait</p>
         </div>
         <div class="download-card">
           <h3>APK (Direct)</h3>
           <p>Android install file</p>
-          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.apk" class="btn btn-primary" style="width:100%;justify-content:center">Download APK</a>
-          <p class="file-size">v3.3.0+23 &middot; production signed</p>
+          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+25.apk" class="btn btn-primary" style="width:100%;justify-content:center">Download APK</a>
+          <p class="file-size">v3.3.0+25 &middot; production signed</p>
         </div>
         <div class="download-card">
           <h3>AAB (Bundle)</h3>
           <p>Android App Bundle</p>
-          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.aab" class="btn btn-secondary" style="width:100%;justify-content:center">Download AAB</a>
-          <p class="file-size">v3.3.0+23 &middot; production signed</p>
+          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+25.aab" class="btn btn-secondary" style="width:100%;justify-content:center">Download AAB</a>
+          <p class="file-size">v3.3.0+25 &middot; production signed</p>
         </div>
       </div>
     </div>
@@ -311,6 +391,22 @@
             <p>PKCE flow with refresh tokens, scope fallback, and confidential client exchange</p>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshots Gallery -->
+  <section class="section">
+    <h2 class="section-title">Screenshots Gallery (v3.3.0)</h2>
+    <div class="card">
+      <div class="gallery-grid">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204012.png" alt="Screenshot 1" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204050.png" alt="Screenshot 2" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204111.png" alt="Screenshot 3" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204121.png" alt="Screenshot 4" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204138.png" alt="Screenshot 5" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204149.png" alt="Screenshot 6" loading="lazy">
+        <img src="appbundle/screenshots/phone/v3.3.0/Screenshot_20260519_204424.png" alt="Screenshot 7" loading="lazy">
       </div>
     </div>
   </section>

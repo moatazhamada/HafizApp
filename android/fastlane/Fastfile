@@ -238,10 +238,11 @@ platform :android do
     version_code = get_version_code
 
     testers = ENV['FIREBASE_TESTERS'] || 'motazhamada@gmail.com'
-    groups = ENV['FIREBASE_TESTER_GROUPS']
+    env_groups = ENV['FIREBASE_TESTER_GROUPS'] || ''
+    groups = env_groups.empty? ? 'QFHackathon' : "QFHackathon,#{env_groups}"
     release_notes = ENV['FIREBASE_RELEASE_NOTES'] || "Build v#{version_name}+#{version_code}"
 
-    groups_arg = groups && !groups.empty? ? "--groups '#{groups}' " : ""
+    groups_arg = "--groups '#{groups}' "
 
     sh(
       "firebase appdistribution:distribute #{AAB_PATH} " \

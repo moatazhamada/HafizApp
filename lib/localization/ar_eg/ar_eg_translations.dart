@@ -448,6 +448,7 @@ final Map<String, String> arEg = {
 
   // Goals
   'goals_title': 'خطة اليوم',
+  'goals_mushaf_hint': 'جميع البيانات المعروضة للمصحف {mushaf}',
   'goals_no_plan': 'لا توجد خطة لليوم',
   'goals_no_plan_hint':
       'أنشئ هدف قراءة في متتبع الختمة لرؤية خطتك اليومية هنا.',
@@ -480,6 +481,7 @@ final Map<String, String> arEg = {
   'lbl_mushaf_shemerly': 'شمرلي (مصري)',
   'lbl_mushaf_naskh': 'نسخ (حفص)',
   'lbl_mushaf_warsh': 'ورش (شمال أفريقيا)',
+  'lbl_mushaf_uthmani_hafs': 'العثماني حفص',
   'lbl_mushaf_madani_desc': 'حفص من المدينة المنورة',
   'lbl_mushaf_shemerly_desc': 'الخط المصري',
   'lbl_mushaf_naskh_desc': 'خط النسخ',

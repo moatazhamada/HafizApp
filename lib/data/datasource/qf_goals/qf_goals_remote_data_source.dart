@@ -33,7 +33,7 @@ abstract class QfGoalsRemoteDataSource {
     int? mushafId,
   });
   Future<void> deleteGoal(String id, {String? category});
-  Future<Map<String, dynamic>?> getTodaysPlan({String? type});
+  Future<Map<String, dynamic>?> getTodaysPlan({String? type, int? mushafId});
   Future<Map<String, dynamic>?> estimateGoal({
     required String type,
     required dynamic amount,
@@ -151,9 +151,11 @@ class QfGoalsRemoteDataSourceImpl implements QfGoalsRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>?> getTodaysPlan({String? type}) async {
+  Future<Map<String, dynamic>?> getTodaysPlan({String? type, int? mushafId}) async {
     try {
-      final query = <String, dynamic>{};
+      final query = <String, dynamic>{
+        'mushafId': mushafId ?? 4,
+      };
       if (type != null) query['type'] = type;
 
       final response = await _dio.get(
