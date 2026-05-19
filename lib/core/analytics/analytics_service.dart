@@ -363,6 +363,11 @@ class AnalyticsService {
     AnalyticsEvents.memorizationProgressViewed,
   );
 
+  Future<void> logHelpOpened({required String feature}) => _logEvent(
+    AnalyticsEvents.helpOpened,
+    parameters: {AnalyticsParams.source: feature},
+  );
+
   // ── Voice Recitation / QRC ──
 
   Future<void> logRecitationStarted({required int surahId}) => _logEvent(

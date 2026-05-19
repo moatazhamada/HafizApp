@@ -28,15 +28,7 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
     PrefUtils().setMushafType(type.name);
   }
 
-  void _skip() {
-    PrefUtils().setMushafType(MushafType.madani.name);
-    _finish();
-  }
-
   void _continue() {
-    if (_selected == null) {
-      PrefUtils().setMushafType(MushafType.madani.name);
-    }
     _finish();
   }
 
@@ -155,19 +147,9 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      OnboardingSecondaryButton(
-                        text: 'lbl_skip'.tr,
-                        onPressed: _skip,
-                      ),
-                      const Spacer(),
-                      OnboardingPrimaryButton(
-                        text: 'lbl_next'.tr,
-                        onPressed: _continue,
-                        width: 120,
-                      ),
-                    ],
+                  child: OnboardingPrimaryButton(
+                    text: 'lbl_next'.tr,
+                    onPressed: _continue,
                   ),
                 ),
               ],

@@ -28,40 +28,68 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     on<DeleteGoalEvent>(_onDeleteGoal);
   }
 
+  static const List<String> _planTypes = [
+    'QURAN_TIME',
+    'QURAN_PAGES',
+    'QURAN_RANGE',
+  ];
+
   Future<void> _onLoadTodaysPlan(
     LoadTodaysPlan event,
     Emitter<GoalsState> emit,
   ) async {
     emit(GoalsLoading());
-    final result = await getTodaysPlan(
-      const GetTodaysPlanParams(type: 'QURAN'),
-    );
-    result.fold(
-      (failure) {
-        Logger.warning(
-          'Failed to load today\'s plan: ${failure.errorMessage}',
-          feature: 'Goals',
-        );
 
-        if (failure is InsufficientScopeFailure) {
-          emit(GoalsError(failure.errorMessage));
-          _requestReLogin();
-          return;
-        }
-
-        // Distinguish auth errors from general failures
-        final msg = failure.errorMessage;
-        if (_isAuthError(msg)) {
-          emit(const GoalsError('goals_error_auth'));
-        } else {
-          emit(const GoalsError('msg_operation_failed'));
-        }
-      },
-      (data) {
-        final items = _parsePlanItems(data);
-        emit(GoalsLoaded(items: items, rawData: data));
-      },
+    final results = await Future.wait(
+      _planTypes.map(
+        (type) => getTodaysPlan(GetTodaysPlanParams(type: type)),
+      ),
     );
+
+    final allItems = <PlanItem>[];
+    Map<String, dynamic>? firstData;
+    Failure? firstFailure;
+
+    for (final result in results) {
+      result.fold(
+        (failure) {
+          firstFailure ??= failure;
+        },
+        (data) {
+          firstData ??= data;
+          allItems.addAll(_parsePlanItems(data));
+        },
+      );
+    }
+
+    if (allItems.isNotEmpty) {
+      emit(GoalsLoaded(items: allItems, rawData: firstData));
+      return;
+    }
+
+    final failure = firstFailure;
+    if (failure == null) {
+      emit(GoalsLoaded(items: const [], rawData: firstData));
+      return;
+    }
+
+    Logger.warning(
+      'Failed to load today\'s plan: ${failure.errorMessage}',
+      feature: 'Goals',
+    );
+
+    if (failure is InsufficientScopeFailure) {
+      emit(GoalsError(failure.errorMessage));
+      _requestReLogin();
+      return;
+    }
+
+    final msg = failure.errorMessage;
+    if (_isAuthError(msg)) {
+      emit(const GoalsError('goals_error_auth'));
+    } else {
+      emit(const GoalsError('msg_operation_failed'));
+    }
   }
 
   Future<void> _onUpdateGoal(

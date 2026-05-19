@@ -29,7 +29,14 @@ class ThemeSelectionPage extends StatefulWidget {
 }
 
 class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
-  String? _selected;
+  late String _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = PrefUtils().getThemeMode();
+    _selected = (saved == 'light' || saved == 'dark') ? saved : 'system';
+  }
 
   final List<_ThemeOption> _options = const [
     _ThemeOption(
@@ -61,7 +68,7 @@ class _ThemeSelectionPageState extends State<ThemeSelectionPage> {
   }
 
   void _continue() {
-    final mode = _selected ?? 'system';
+    final mode = _selected;
     context.read<ThemeBloc>().add(ChangeThemeModeEvent(mode));
     final brightness = switch (mode) {
       'light' => Brightness.light,

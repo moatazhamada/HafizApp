@@ -104,6 +104,9 @@ class AnalyticsEvents {
   // ── Deep Links ──
   static const String deepLinkOpened = 'deep_link_opened';
 
+  // ── Help ──
+  static const String helpOpened = 'help_opened';
+
   // ── Behavior ──
   static const String behaviorSessionRecorded = 'behavior_session_recorded';
   static const String dominantActionDetected = 'dominant_action_detected';

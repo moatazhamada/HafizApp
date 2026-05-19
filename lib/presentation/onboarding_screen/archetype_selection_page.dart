@@ -25,7 +25,14 @@ class ArchetypeSelectionPage extends StatefulWidget {
 }
 
 class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
-  UserArchetype? _selected;
+  late UserArchetype _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = PrefUtils().getUserArchetype();
+    _selected = UserArchetype.fromString(saved);
+  }
 
   void _select(UserArchetype archetype) {
     setState(() => _selected = archetype);
@@ -35,7 +42,7 @@ class _ArchetypeSelectionPageState extends State<ArchetypeSelectionPage> {
   }
 
   void _continue() {
-    final archetype = _selected ?? UserArchetype.reader;
+    final archetype = _selected;
     PrefUtils().setUserArchetype(archetype.name);
     PrefUtils().setSurfaceType(archetype.name);
     sl<AnalyticsService>().logArchetypeSelected(archetype.name);

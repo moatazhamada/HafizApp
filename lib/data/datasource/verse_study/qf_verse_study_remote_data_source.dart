@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/api_config.dart';
-import 'package:hafiz_app/core/i18n/locale_controller.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class VerseStudyData {
@@ -134,8 +133,6 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     String verseKey, {
     String? translationId,
   }) async {
-    if (_isArabicLocale()) return '';
-
     try {
       final id = translationId ?? ApiConfig.translationId.toString();
       final translationResponse = await _dio.get(
@@ -185,12 +182,4 @@ class QfVerseStudyRemoteDataSourceImpl implements QfVerseStudyRemoteDataSource {
     return '';
   }
 
-  bool _isArabicLocale() {
-    try {
-      return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (e) {
-      Logger.warning('Failed to detect Arabic locale: $e', feature: 'VerseStudy');
-      return false;
-    }
-  }
 }

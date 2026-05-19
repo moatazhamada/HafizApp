@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/domain/entities/memorization_progress.dart';
@@ -33,7 +36,32 @@ class MemorizationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: Text('lbl_memorization'.tr)),
+      appBar: AppBar(
+        title: Text('lbl_memorization'.tr),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'lbl_help'.tr,
+            onPressed: () {
+              unawaited(
+                sl<AnalyticsService>().logHelpOpened(feature: 'memorization'),
+              );
+              _showHelpSheet(context);
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: BlocBuilder<MemorizationBloc, MemorizationState>(
+        builder: (context, state) {
+          if (state is MemorizationLoaded && state.allProgress.isNotEmpty) {
+            return FloatingActionButton(
+              onPressed: () => _showStartTrackingSheet(context),
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
       body: BlocBuilder<MemorizationBloc, MemorizationState>(
         builder: (context, state) {
           if (state is MemorizationLoading) {
@@ -67,7 +95,7 @@ class MemorizationScreen extends StatelessWidget {
                 );
               },
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
                 children: [
                   _ProgressSummary(state: state, isDark: isDark),
                   const SizedBox(height: 24),
@@ -104,6 +132,172 @@ class MemorizationScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  static void _showStartTrackingSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollController) => _StartTrackingSheet(
+          scrollController: scrollController,
+          onSurahSelected: (surahId) {
+            Navigator.pop(sheetContext);
+            context.read<MemorizationBloc>().add(
+              RecordReview(surahId: surahId, score: 100),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('msg_surah_marked_memorized'.tr),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static void _showHelpSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (ctx, sc) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.school,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'memorization_help_title'.tr,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(
+                    'memorization_help_desc'.tr,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.6,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('lbl_got_it'.tr),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _showReviewDialog(
+    BuildContext context, {
+    required int surahId,
+    required String surahName,
+  }) {
+    unawaited(
+      sl<AnalyticsService>().logReviewStarted(surahId: surahId),
+    );
+    final scores = [
+      (label: 'btn_perfect'.tr, score: 100.0, color: Colors.green),
+      (label: 'btn_hesitant'.tr, score: 85.0, color: Colors.lightGreen),
+      (label: 'btn_difficult'.tr, score: 70.0, color: Colors.orange),
+      (label: 'btn_hard'.tr, score: 55.0, color: Colors.deepOrange),
+      (label: 'btn_failed'.tr, score: 20.0, color: Colors.red),
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('dlg_review_title'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              surahName,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...scores.map((s) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: s.color,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    unawaited(
+                      sl<AnalyticsService>().logReviewCompleted(
+                        surahId: surahId,
+                        score: s.score.round(),
+                      ),
+                    );
+                    context.read<MemorizationBloc>().add(
+                      RecordReview(surahId: surahId, score: s.score),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('msg_review_logged'.tr),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Text(s.label),
+                ),
+              ),
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('lbl_cancel'.tr),
+          ),
+        ],
       ),
     );
   }
@@ -271,6 +465,22 @@ class _ReviewCard extends StatelessWidget {
             ),
             Semantics(
               button: true,
+              label: 'lbl_log_review'.tr,
+              child: IconButton(
+                icon: Icon(
+                  Icons.check_circle_outline,
+                  color: AppColors.of(context).memorizedStatus,
+                ),
+                tooltip: 'lbl_log_review'.tr,
+                onPressed: () => MemorizationScreen._showReviewDialog(
+                  context,
+                  surahId: progress.surahId,
+                  surahName: progress.surahName,
+                ),
+              ),
+            ),
+            Semantics(
+              button: true,
               label: 'lbl_read_this_ayah'.tr,
               child: IconButton(
                 icon: Icon(
@@ -336,7 +546,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.tonal(
-              onPressed: () => _showStartTrackingSheet(context),
+              onPressed: () => MemorizationScreen._showStartTrackingSheet(context),
               child: Text('lbl_start_tracking'.tr),
             ),
           ],
@@ -345,33 +555,7 @@ class _EmptyState extends StatelessWidget {
     );
   }
 
-  void _showStartTrackingSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, scrollController) => _StartTrackingSheet(
-          scrollController: scrollController,
-          onSurahSelected: (surahId) {
-            Navigator.pop(sheetContext);
-            context.read<MemorizationBloc>().add(
-              RecordReview(surahId: surahId, score: 100),
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('msg_surah_marked_memorized'.tr),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
+
 }
 
 class _StartTrackingSheet extends StatelessWidget {
@@ -496,9 +680,49 @@ class _SurahProgressCard extends StatelessWidget {
           '$statusLabel • ${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}%',
           style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
         ),
-        trailing: progress.status == MemorizationStatus.memorized
-            ? Icon(Icons.check_circle, color: AppColors.of(context).memorizedStatus)
-            : null,
+        trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: AppColors.of(context).textSecondary),
+          onSelected: (value) {
+            if (value == 'log_review') {
+              MemorizationScreen._showReviewDialog(
+                context,
+                surahId: progress.surahId,
+                surahName: progress.surahName,
+              );
+            } else if (value == 'read') {
+              final surah = QuranIndex.quranSurahs.firstWhere(
+                (s) => s.id == progress.surahId,
+                orElse: () => Surah(progress.surahId, '', ''),
+              );
+              NavigatorService.popAndPushNamed(
+                AppRoutes.surahPage,
+                arguments: {'surah': surah},
+              );
+            }
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'log_review',
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, size: 18, color: AppColors.of(context).memorizedStatus),
+                  const SizedBox(width: 8),
+                  Text('lbl_log_review'.tr),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'read',
+              child: Row(
+                children: [
+                  const Icon(Icons.play_arrow, size: 18),
+                  const SizedBox(width: 8),
+                  Text('lbl_read_this_ayah'.tr),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
