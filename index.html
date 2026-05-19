@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hafiz — Quran Memorization Assistant | Hackathon Demo</title>
+  <style>
+    :root {
+      --primary: #1f6e45;
+      --primary-dark: #165233;
+      --accent: #d4a017;
+      --bg: #f8faf9;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #555555;
+      --border: #e0e0e0;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+    header h1 { font-size: 2.5rem; margin-bottom: 8px; }
+    header p { font-size: 1.1rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+    .version-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-top: 16px;
+    }
+    .section { padding: 40px 0; }
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: var(--primary-dark);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+    .video-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: #000;
+    }
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: var(--radius);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-secondary:hover { background: var(--primary); color: white; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .download-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+    .download-card h3 { font-size: 1rem; margin-bottom: 4px; }
+    .download-card p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; }
+    .download-card .file-size { font-size: 0.75rem; color: #888; margin-top: 8px; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .feature-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--primary);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.2rem;
+    }
+    .feature-item h4 { font-size: 0.95rem; margin-bottom: 2px; }
+    .feature-item p { font-size: 0.85rem; color: var(--text-secondary); }
+    .note {
+      background: #fffbeb;
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+    .note strong { color: #92400e; }
+    footer {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .video-meta a { color: var(--primary); text-decoration: none; }
+    .video-meta a:hover { text-decoration: underline; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.8rem; }
+      .btn-group { flex-direction: column; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Hafiz</h1>
+    <p>Adaptive Quran Memorization Assistant — powered by Quran.Foundation APIs</p>
+    <span class="version-badge">Version 3.3.0+23 &middot; Hackathon Submission</span>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Video Demo -->
+  <section class="section">
+    <h2 class="section-title">Live Demo</h2>
+    <div class="card">
+      <div class="video-wrapper">
+        <iframe src="https://www.youtube.com/embed/A9g0FEGydnY" title="Hafiz App Demo" allowfullscreen></iframe>
+      </div>
+      <div class="video-meta">
+        <span>📺</span>
+        <span>Full demo walkthrough on YouTube — <a href="https://youtu.be/A9g0FEGydnY" target="_blank">open in new tab</a></span>
+      </div>
+      <div class="note">
+        <strong>Tip for judges:</strong> If you prefer to try the app directly, install via the APK link below or join the Firebase testers group for instant access.
+      </div>
+    </div>
+  </section>
+
+  <!-- Install / Download -->
+  <section class="section">
+    <h2 class="section-title">Get the App</h2>
+    <div class="card">
+      <p style="margin-bottom:16px">Choose the easiest way to try Hafiz. The APK is the fastest for immediate install on Android.</p>
+      <div class="download-grid">
+        <div class="download-card">
+          <h3>Google Play</h3>
+          <p>Official store release</p>
+          <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center" onclick="alert('Play Store link will be updated once approval is complete');return false">View on Play Store</a>
+          <p class="file-size">Pending review approval</p>
+        </div>
+        <div class="download-card">
+          <h3>Firebase Distribution</h3>
+          <p>Join as a tester</p>
+          <a href="#" class="btn btn-secondary" style="width:100%;justify-content:center" onclick="alert('Update this link with your Firebase App Distribution tester invite URL');return false">Become a Tester</a>
+          <p class="file-size">Instant access after joining</p>
+        </div>
+        <div class="download-card">
+          <h3>APK (Direct)</h3>
+          <p>Android install file</p>
+          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.apk" class="btn btn-primary" style="width:100%;justify-content:center">Download APK</a>
+          <p class="file-size">v3.3.0+23 &middot; production signed</p>
+        </div>
+        <div class="download-card">
+          <h3>AAB (Bundle)</h3>
+          <p>Android App Bundle</p>
+          <a href="https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.aab" class="btn btn-secondary" style="width:100%;justify-content:center">Download AAB</a>
+          <p class="file-size">v3.3.0+23 &middot; production signed</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <h2 class="section-title">Key Features</h2>
+    <div class="card">
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">🎯</div>
+          <div>
+            <h4>Adaptive Home Surfaces</h4>
+            <p>Interface adapts to Reader, Student, or Seeker archetypes based on behavior</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🧠</div>
+          <div>
+            <h4>Memorization Tracker</h4>
+            <p>Spaced-repetition scheduling with on-device voice verification via Whisper</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔥</div>
+          <div>
+            <h4>Goals & Streaks</h4>
+            <p>Reading plans, activity heatmaps, and streak tracking synced via User API</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔖</div>
+          <div>
+            <h4>Cloud Bookmarks</h4>
+            <p>Bookmarks and collections synced across all devices via Quran.Foundation</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💬</div>
+          <div>
+            <h4>Quran Reflect</h4>
+            <p>Community reflections feed with verse-specific posts and social sharing</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔐</div>
+          <div>
+            <h4>OAuth2 + PKCE</h4>
+            <p>Secure authentication with offline refresh tokens and scoped API access</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Checklist -->
+  <section class="section">
+    <h2 class="section-title">Hackathon Requirements</h2>
+    <div class="card">
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon" style="background:var(--primary)">✓</div>
+          <div>
+            <h4>Content APIs</h4>
+            <p>Verses, Audio, Tafsir, Translations, Search, Verse Media, Posts</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon" style="background:var(--primary)">✓</div>
+          <div>
+            <h4>User APIs</h4>
+            <p>Bookmarks, Collections, Streaks, Activity Days, Goals, Reading Sessions</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon" style="background:var(--primary)">✓</div>
+          <div>
+            <h4>OAuth2 Integration</h4>
+            <p>PKCE flow with refresh tokens, scope fallback, and confidential client exchange</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Links -->
+  <section class="section">
+    <h2 class="section-title">Project Links</h2>
+    <div class="card">
+      <div class="btn-group">
+        <a href="https://github.com/moatazhamada/HafizApp" class="btn btn-secondary" target="_blank">GitHub Repository</a>
+        <a href="https://github.com/moatazhamada/HafizApp/tree/master/docs/hackathon-submission.md" class="btn btn-secondary" target="_blank">Full Submission Doc</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p>Built with Flutter &middot; Powered by Quran.Foundation APIs &middot; Designed for the Ummah</p>
+    <p style="margin-top:4px">&copy; 2026 Hafiz App — Non-profit Quran memorization assistant</p>
+  </div>
+</footer>
+
+</body>
+</html>
