@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/recitation_session_model.dart';
 
 abstract class RecitationSessionLocalDataSource {
@@ -24,7 +25,8 @@ class RecitationSessionLocalDataSourceImpl
           sessions.add(
             RecitationSessionModel.fromJson(Map<String, dynamic>.from(e)),
           );
-        } catch (_) {
+        } catch (e) {
+          Logger.warning('Skipping malformed recitation session entry: $e', feature: 'RecitationSessionLocal');
           continue;
         }
       }

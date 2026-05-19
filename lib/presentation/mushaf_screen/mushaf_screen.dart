@@ -1,14 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hafiz_app/core/mushaf/mushaf_cache_manager.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
+import 'package:hafiz_app/core/utils/rtl_utils.dart';
+import 'package:hafiz_app/core/services/reading_session_tracker.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
+import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
@@ -22,18 +32,52 @@ class MushafScreen extends StatefulWidget {
   State<MushafScreen> createState() => _MushafScreenState();
 }
 
-class _MushafScreenState extends State<MushafScreen> {
+class _MushafScreenState extends State<MushafScreen>
+    with WidgetsBindingObserver {
+  // late final → cannot be reassigned; survives rebuilds, orientation flips,
+  // and any lifecycle event that does NOT fully dispose the State.
   late PageController _pageController;
   late int _currentPage;
   late MushafType _mushafType;
   bool _showOverlay = true;
   bool _isZoomed = false;
   Timer? _overlayTimer;
+  Timer? _persistDebounce;
+  Timer? _prefetchDebounce;
   final Map<int, List<_VerseText>> _localTextCache = {};
+  final List<int> _cacheAccessOrder = [];
+  static const int _maxCachePages = 20;
+
+  // PageStorage bucket key — used as a fallback if prefs are slow/unavailable.
+  static const String _kPageStorageKey = 'mushaf_current_page';
+
+  // Reading Session Tracking
+  final ReadingSessionTracker _sessionTracker = ReadingSessionTracker();
+
+  // --------------------------------------------------------------------------
+  // CRITICAL: Mushaf Page Direction
+  // --------------------------------------------------------------------------
+  // The Mushaf is the physical Quran — it is ALWAYS an Arabic (RTL) book.
+  // Page 1 (Al-Fatiha) MUST appear on the RIGHT side of the screen, and
+  // users swipe LEFT to advance to the next page (page 2, 3, … 604).
+  //
+  // This is NOT affected by the app's UI language. An English-speaking user
+  // reading the Mushaf still turns pages the same way an Arabic-speaking user
+  // does, because the content itself is Arabic.
+  //
+  // Therefore PageView.reverse is HARDCODED to `true` below.
+  // DO NOT make this conditional on TextDirection, locale, or any setting.
+  // If you change this, you will break the Mushaf for every user.
+  // --------------------------------------------------------------------------
+  static const bool _kMushafPageReverse = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (PrefUtils().isKeepScreenOn()) {
+      WakelockPlus.enable();
+    }
     _mushafType = MushafType.fromString(PrefUtils().getMushafType());
     final resolved =
         widget.initialPage ??
@@ -41,40 +85,136 @@ class _MushafScreenState extends State<MushafScreen> {
     _currentPage = resolved.clamp(1, _mushafType.totalPages);
 
     _pageController = PageController(initialPage: _currentPage - 1);
+    _startMushafSession();
+    unawaited(sl<AnalyticsService>().logOpenMushaf(_currentPage));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only restore from PageStorage if the screen was NOT opened with an
+    // explicit initialPage (e.g. deep link). PageStorage is for surviving
+    // orientation changes / rebuilds, not for overriding user intent.
+    if (widget.initialPage != null) return;
+
+    final storage = PageStorage.of(context);
+    final saved = storage.readState(context, identifier: _kPageStorageKey);
+    if (saved is int && saved != _currentPage && saved >= 1 && saved <= _mushafType.totalPages) {
+      _currentPage = saved;
+      // Jump without animation so the user sees the exact page instantly.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_currentPage - 1);
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MushafScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent pushes a new initialPage (e.g. deep-link), honour it.
+    if (widget.initialPage != null &&
+        widget.initialPage != oldWidget.initialPage) {
+      _currentPage = widget.initialPage!.clamp(1, _mushafType.totalPages);
+      _pageController.jumpToPage(_currentPage - 1);
+    }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    // Orientation or split-screen resize can reset the PageView viewport.
+    // Re-assert the correct page after the frame settles.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        final page = _pageController.page?.round() ?? _currentPage - 1;
+        final expected = _currentPage - 1;
+        if (page != expected) {
+          _pageController.jumpToPage(expected);
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _finalizeCurrentSession();
+    _persistDebounce?.cancel();
+    _prefetchDebounce?.cancel();
     _overlayTimer?.cancel();
     _pageController.dispose();
+    WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _sessionTracker.pause();
+        break;
+      case AppLifecycleState.resumed:
+        _sessionTracker.resume();
+        break;
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    _localTextCache.clear();
+    _cacheAccessOrder.clear();
+    imageCache.clear();
+    imageCache.clearLiveImages();
+  }
+
+  /// Persist the current page to both prefs and PageStorage so it survives
+  /// orientation changes, app backgrounding, and even widget disposal.
+  void _persistPage(int page) {
+    _currentPage = page;
+    PrefUtils().setMushafLastPageForType(_mushafType.name, page);
+    PageStorage.of(context).writeState(
+      context,
+      page,
+      identifier: _kPageStorageKey,
+    );
   }
 
   int _pageIndexToNumber(int index) => index + 1;
 
   int _surahToPageInType(int surahId, MushafType type) {
-    if (type.totalPages == 604) {
-      return MushafPageIndex.getPageForSurah(surahId).clamp(1, 604);
+    return type.getSurahStartPage(surahId);
+  }
+
+  /// Convert a page number in the current mushaf type to Madani-equivalent.
+  int _toMadaniPage(int page) {
+    if (_mushafType.totalPages == MushafPageIndex.totalPages) {
+      return page;
     }
-    // Verse-proportional mapping: compute the cumulative verse fraction
-    // up to this surah's start, and map to target type pages.
-    const totalVerses = 6236;
-    int cumulativeVerses = 0;
-    for (int i = 0; i < surahId - 1; i++) {
-      cumulativeVerses += MushafPageIndex.surahVerseCounts[i];
-    }
-    final fraction = cumulativeVerses / totalVerses;
-    return (fraction * (type.totalPages - 1)).round().clamp(1, type.totalPages);
+    return (page / _mushafType.totalPages * MushafPageIndex.totalPages)
+        .round()
+        .clamp(1, MushafPageIndex.totalPages);
   }
 
   // ─── Page Precaching ────────────────────────────────────────────
 
   void _precacheAdjacentPages(int currentPage) {
-    for (final offset in [1, 2, -1]) {
+    for (final offset in [1, 2, -1, -2]) {
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
       final url = _mushafType.pageImageUrl(target);
-      precacheImage(NetworkImage(url), context);
+      precacheImage(
+        CachedNetworkImageProvider(
+          url,
+          cacheManager: MushafCacheManager.instance,
+          cacheKey: MushafCacheManager.cacheKey(_mushafType.name, target),
+        ),
+        context,
+      );
     }
   }
 
@@ -106,9 +246,9 @@ class _MushafScreenState extends State<MushafScreen> {
                     leading: CircleAvatar(
                       backgroundColor: Color(type.colorValue),
                       radius: 16,
-                      child: const Icon(
+                      child: Icon(
                         Icons.menu_book,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 18,
                       ),
                     ),
@@ -139,20 +279,30 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   void _switchMushafType(MushafType newType) {
-    final surahId = MushafPageIndex.getSurahForPage(_currentPage);
+    final madaniPage = _toMadaniPage(_currentPage);
+    final surahId = MushafPageIndex.getSurahForPage(madaniPage);
     final targetPage = _surahToPageInType(surahId, newType);
 
     _localTextCache.clear();
+    _cacheAccessOrder.clear();
+    // Clear PageStorage so the old page number (e.g. 500 in 604-page mode)
+    // doesn't carry over to the new mushaf type (e.g. 30-page mode).
+    PageStorage.of(context).writeState(
+      context,
+      null,
+      identifier: _kPageStorageKey,
+    );
+    final oldController = _pageController;
     setState(() {
       _mushafType = newType;
       _currentPage = targetPage;
       _isZoomed = false;
       PrefUtils().setMushafType(newType.name);
     });
-    _pageController.dispose();
     _pageController = PageController(initialPage: _currentPage - 1);
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      oldController.dispose();
       _precacheAdjacentPages(_currentPage);
     });
   }
@@ -161,6 +311,9 @@ class _MushafScreenState extends State<MushafScreen> {
 
   Future<List<_VerseText>> _loadLocalPageText(int pageNumber) async {
     if (_localTextCache.containsKey(pageNumber)) {
+      // Move to most-recently-used position
+      _cacheAccessOrder.remove(pageNumber);
+      _cacheAccessOrder.add(pageNumber);
       return _localTextCache[pageNumber]!;
     }
 
@@ -183,7 +336,7 @@ class _MushafScreenState extends State<MushafScreen> {
         final jsonStr = await rootBundle.loadString(
           'assets/quran/uthmani/surah_${range.surahId}.json',
         );
-        final data = json.decode(jsonStr) as Map<String, dynamic>;
+        final data = await compute(_decodeMushafJson, jsonStr);
         final versesRaw = data.containsKey('verses')
             ? data['verses']
             : data['chapter'];
@@ -205,20 +358,22 @@ class _MushafScreenState extends State<MushafScreen> {
             );
           }
         }
-      } catch (_) {
-        entries.add(
-          _VerseText(
-            surahId: range.surahId,
-            verseNumber: 0,
-            text: '',
-            surahNameArabic: surah.nameArabic,
-            showBismillah: false,
-          ),
-        );
+      } catch (e) {
+        Logger.warning('Mushaf verse text load failed: $e', feature: 'Mushaf');
+        // Do NOT add empty entries — let the fallback UI handle the failure
+        // gracefully instead of showing a partially-blank page.
       }
     }
 
     _localTextCache[pageNumber] = entries;
+    _cacheAccessOrder.add(pageNumber);
+
+    // LRU eviction: keep only the most recently accessed pages
+    while (_cacheAccessOrder.length > _maxCachePages) {
+      final oldest = _cacheAccessOrder.removeAt(0);
+      _localTextCache.remove(oldest);
+    }
+
     return entries;
   }
 
@@ -226,7 +381,8 @@ class _MushafScreenState extends State<MushafScreen> {
 
   void _goToPage(int page) {
     final target = page.clamp(1, _mushafType.totalPages);
-    setState(() => _currentPage = target);
+    _persistPage(target);
+    setState(() {});
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 300),
@@ -272,45 +428,65 @@ class _MushafScreenState extends State<MushafScreen> {
           onTap: _toggleOverlay,
           child: Stack(
             children: [
-              PageView.builder(
-                reverse: true,
-                key: ValueKey(_mushafType),
-                controller: _pageController,
-                physics: _isZoomed
-                    ? const NeverScrollableScrollPhysics()
-                    : const ClampingScrollPhysics(),
-                itemCount: _mushafType.totalPages,
-                onPageChanged: (index) {
-                  final page = _pageIndexToNumber(index);
-                  _currentPage = page;
-                  _isZoomed = false;
-                  PrefUtils().setMushafLastPageForType(_mushafType.name, page);
-                  _precacheAdjacentPages(page);
-                  if (_showOverlay) {
-                    _overlayTimer?.cancel();
-                    _overlayTimer = Timer(const Duration(seconds: 3), () {
-                      if (mounted) setState(() => _showOverlay = false);
+              // NEVER change reverse — see the _kMushafPageReverse constant
+              // and the class-level comment above initState().
+              //
+              // Force LTR directionality around the PageView so that
+              // reverse:true always puts page 1 on the right and swipe-left
+              // advances, regardless of the app's UI locale (Arabic/English).
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: PageView.builder(
+                  reverse: _kMushafPageReverse,
+                  key: ValueKey(_mushafType),
+                  controller: _pageController,
+                  physics: _isZoomed
+                      ? const NeverScrollableScrollPhysics()
+                      : const ClampingScrollPhysics(),
+                  itemCount: _mushafType.totalPages,
+                  onPageChanged: (index) {
+                    final page = _pageIndexToNumber(index);
+                    _isZoomed = false;
+                    _currentPage = page;
+                    // Debounce persistence — avoid excessive SharedPreferences
+                    // writes during rapid page flips.
+                    _persistDebounce?.cancel();
+                    _persistDebounce = Timer(const Duration(milliseconds: 500), () {
+                      PrefUtils().setMushafLastPageForType(_mushafType.name, page);
+                      PageStorage.of(context).writeState(context, page, identifier: _kPageStorageKey);
                     });
-                  }
-                },
-                itemBuilder: (context, index) {
-                  final pageNumber = _pageIndexToNumber(index);
-                  return _buildPage(pageNumber, isDark, colors);
-                },
+                    // Debounce prefetch to reduce image cache contention
+                    _prefetchDebounce?.cancel();
+                    _prefetchDebounce = Timer(const Duration(milliseconds: 200), () {
+                      _precacheAdjacentPages(page);
+                    });
+                    _updateMushafSessionProgress(page);
+                    if (_showOverlay) {
+                      _overlayTimer?.cancel();
+                      _overlayTimer = Timer(const Duration(seconds: 3), () {
+                        if (mounted) setState(() => _showOverlay = false);
+                      });
+                    }
+                  },
+                  itemBuilder: (context, index) {
+                    final pageNumber = _pageIndexToNumber(index);
+                    return _buildPage(pageNumber, isDark, colors);
+                  },
+                ),
               ),
               if (_showOverlay)
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: _buildTopBar(isDark, colors),
+                  child: RepaintBoundary(child: _buildTopBar(isDark, colors)),
                 ),
               if (_showOverlay)
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: _buildBottomBar(isDark, colors),
+                  child: RepaintBoundary(child: _buildBottomBar(isDark, colors)),
                 ),
             ],
           ),
@@ -322,14 +498,16 @@ class _MushafScreenState extends State<MushafScreen> {
   // ─── Page Rendering ─────────────────────────────────────────────
 
   Widget _buildPage(int pageNumber, bool isDark, AppColors colors) {
-    return MushafPageWidget(
-      key: ValueKey('mushaf_page_$pageNumber'),
-      pageNumber: pageNumber,
-      mushafType: _mushafType,
-      fallback: _buildOfflineFallback(pageNumber, isDark, colors),
-      onZoomChanged: (zoomed) {
-        if (mounted) setState(() => _isZoomed = zoomed);
-      },
+    return RepaintBoundary(
+      child: MushafPageWidget(
+        key: ValueKey('mushaf_page_$pageNumber'),
+        pageNumber: pageNumber,
+        mushafType: _mushafType,
+        fallback: _buildOfflineFallback(pageNumber, isDark, colors),
+        onZoomChanged: (zoomed) {
+          if (mounted) setState(() => _isZoomed = zoomed);
+        },
+      ),
     );
   }
 
@@ -350,7 +528,8 @@ class _MushafScreenState extends State<MushafScreen> {
         final verses = snapshot.data ?? [];
         if (verses.isEmpty ||
             (verses.length == 1 && verses.first.text.isEmpty)) {
-          final surahId = MushafPageIndex.getSurahForPage(pageNumber);
+          final madaniPage = _toMadaniPage(pageNumber);
+          final surahId = MushafPageIndex.getSurahForPage(madaniPage);
           final surah = QuranIndex.quranSurahs[surahId - 1];
           return Center(
             child: Column(
@@ -363,7 +542,7 @@ class _MushafScreenState extends State<MushafScreen> {
                     fontFamily: 'NotoNaskhArabic',
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -371,7 +550,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   '$pageNumber / ${_mushafType.totalPages}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -393,7 +572,7 @@ class _MushafScreenState extends State<MushafScreen> {
   ) {
     final fontSize = PrefUtils().getQuranFontSize();
     final textColor = colors.mushafTextPrimary;
-    final verseNumColor = isDark ? Colors.white38 : Colors.black38;
+    final verseNumColor = colors.textSecondary;
 
     final List<InlineSpan> spans = [];
     final arabicVerseNumStyle = TextStyle(
@@ -429,7 +608,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650\n',
               style: TextStyle(
                 fontFamily: 'NotoNaskhArabic',
-                fontSize: 16,
+                fontSize: PrefUtils().getQuranFontSize() - 8,
                 color: colors.textSecondary,
               ),
             ),
@@ -471,6 +650,65 @@ class _MushafScreenState extends State<MushafScreen> {
 
   // ─── Overlay Bars ───────────────────────────────────────────────
 
+  void _startMushafSession() {
+    final ranges = MushafPageVerseMap.getVersesForPage(
+      _currentPage,
+      totalPages: _mushafType.totalPages,
+    );
+    for (final range in ranges) {
+      _sessionTracker.startSession(
+        surahId: range.surahId,
+        startVerse: range.startVerse,
+      );
+      _sessionTracker.updateProgress(range.endVerse);
+    }
+  }
+
+  void _updateMushafSessionProgress(int page) {
+    final ranges = MushafPageVerseMap.getVersesForPage(
+      page,
+      totalPages: _mushafType.totalPages,
+    );
+    if (ranges.isEmpty) return;
+
+    for (final range in ranges) {
+      _sessionTracker.startSession(
+        surahId: range.surahId,
+        startVerse: range.startVerse,
+      );
+      _sessionTracker.updateProgress(range.endVerse);
+    }
+  }
+
+  void _finalizeCurrentSession() {
+    final sessions = _sessionTracker.endSession();
+    for (final session in sessions) {
+      if (session.endVerse >= session.startVerse) {
+        final totalVerses = session.endVerse - session.startVerse + 1;
+        
+        // Update local dashboard
+        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        
+        // Sync to QF
+        unawaited(sl<KhatmahRepository>().reportReadingSession(session));
+        
+        // Analytics
+        unawaited(
+          sl<AnalyticsService>().logReadingSession(
+            chapterNumber: session.surahId,
+            versesRead: totalVerses,
+            durationSeconds: session.durationSeconds,
+          ),
+        );
+        
+        Logger.info(
+          'Mushaf session finalized: ${session.surahId}:${session.startVerse}-${session.endVerse}',
+          feature: 'ReadingSessions',
+        );
+      }
+    }
+  }
+
   Widget _buildTopBar(bool isDark, AppColors colors) {
     return Container(
       decoration: BoxDecoration(
@@ -488,22 +726,35 @@ class _MushafScreenState extends State<MushafScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
+            textDirection: TextDirection.rtl,
             children: [
-              IconButton(
-                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
-                onPressed: () => NavigatorService.goBack(),
-                tooltip: 'lbl_back'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_back'.tr,
+                child: IconButton(
+                  icon: Icon(rtlBackArrow(context), color: colors.textPrimary),
+                  onPressed: () => NavigatorService.goBack(),
+                  tooltip: 'lbl_back'.tr,
+                ),
               ),
               const Spacer(),
-              IconButton(
-                icon: Icon(Icons.menu_book, color: colors.textPrimary),
-                onPressed: _showMushafTypeSwitcher,
-                tooltip: 'lbl_select_mushaf_type'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_select_mushaf_type'.tr,
+                child: IconButton(
+                  icon: Icon(Icons.menu_book, color: colors.textPrimary),
+                  onPressed: _showMushafTypeSwitcher,
+                  tooltip: 'lbl_select_mushaf_type'.tr,
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.search, color: colors.textPrimary),
-                onPressed: _showJumpDialog,
-                tooltip: 'lbl_jump_to_page'.tr,
+              Semantics(
+                button: true,
+                label: 'lbl_jump_to_page'.tr,
+                child: IconButton(
+                  icon: Icon(Icons.search, color: colors.textPrimary),
+                  onPressed: _showJumpDialog,
+                  tooltip: 'lbl_jump_to_page'.tr,
+                ),
               ),
             ],
           ),
@@ -513,14 +764,15 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   Widget _buildBottomBar(bool isDark, AppColors colors) {
-    final pageData = MushafPageIndex.getPageData(_currentPage);
+    final madaniPage = _toMadaniPage(_currentPage);
+    final pageData = MushafPageIndex.getPageData(madaniPage);
     final surahId =
-        pageData?.surahId ?? MushafPageIndex.getSurahForPage(_currentPage);
+        pageData?.surahId ?? MushafPageIndex.getSurahForPage(madaniPage);
     final surah = surahId >= 1 && surahId <= 114
         ? QuranIndex.quranSurahs[surahId - 1]
         : null;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final juz = MushafPageIndex.getJuzForPage(_currentPage);
+    final juz = _mushafType.getJuzForPage(_currentPage);
 
     return Container(
       decoration: BoxDecoration(
@@ -552,6 +804,7 @@ class _MushafScreenState extends State<MushafScreen> {
                 ),
               const SizedBox(height: 4),
               Row(
+                textDirection: TextDirection.rtl,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
@@ -559,23 +812,30 @@ class _MushafScreenState extends State<MushafScreen> {
                     style: TextStyle(fontSize: 11, color: colors.textSecondary),
                   ),
                   const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _showJumpDialog,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.mushafPageBorder.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
+                  Semantics(
+                    button: true,
+                    label: 'lbl_semantics_page_indicator'
+                        .tr
+                        .replaceAll('{current}', '$_currentPage')
+                        .replaceAll('{total}', '${_mushafType.totalPages}'),
+                    child: GestureDetector(
+                      onTap: _showJumpDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.mushafPageBorder.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -608,6 +868,10 @@ class _MushafScreenState extends State<MushafScreen> {
       return n != null ? d[n] : c;
     }).join();
   }
+}
+
+Map<String, dynamic> _decodeMushafJson(String jsonStr) {
+  return json.decode(jsonStr) as Map<String, dynamic>;
 }
 
 class _VerseText {

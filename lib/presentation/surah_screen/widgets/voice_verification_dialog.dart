@@ -1,14 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:whisper_ggml_plus/whisper_ggml_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:hafiz_app/core/audio/whisper_platform.dart'
+    if (dart.library.html) 'package:hafiz_app/core/audio/whisper_platform_web.dart';
 
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/app_export.dart';
+import '../../../injection_container.dart';
 
 import '../../../domain/entities/verse.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/services/voice_recording_controller.dart';
 import '../custom_asr_service.dart';
 import '../local_whisper_service.dart';
 import '../qrc_recitation_service.dart';
@@ -50,8 +57,16 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
 
   // UI State
   String _spokenText = '';
-  Color _statusColor = Colors.blueAccent;
+  Color _statusColor = Colors.transparent;
   String _feedbackTitle = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_statusColor == Colors.transparent) {
+      _statusColor = Theme.of(context).colorScheme.primary;
+    }
+  }
   String _scoreText = '';
   String _hintLabel = '';
   String _hintWord = '';
@@ -78,17 +93,41 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   @override
   void initState() {
     super.initState();
+    VoiceRecordingController.register(
+      'voice_verification_dialog_${widget.aya.verseNumber}',
+      _cleanup,
+    );
     _expectedText = widget.expectedText;
     _whisperModel = _resolveWhisperModel(PrefUtils().getWhisperModel());
 
     // Auto-start listening on first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startListening();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await _voiceService.initialize();
+        if (mounted) await _startListening();
+      } catch (e, stackTrace) {
+        Logger.error(
+          'Voice verification auto-start failed: $e',
+          feature: 'VoiceVerification',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        if (mounted) {
+          setState(() {
+            _statusColor = AppColors.of(context).needsReviewStatus;
+            _feedbackTitle = 'msg_voice_init_failed'.tr;
+            _showFeedback = true;
+          });
+        }
+      }
     });
   }
 
   @override
   void dispose() {
+    VoiceRecordingController.unregister(
+      'voice_verification_dialog_${widget.aya.verseNumber}',
+    );
     _cleanup();
     super.dispose();
   }
@@ -97,9 +136,49 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     await _voiceService.stop();
     await _qrcSub?.cancel();
     await _qrcService.dispose();
+    if (_customRecorder.isRecording) {
+      try { await _customRecorder.stopRecorder(); } catch (_) {}
+    }
+    if (!_customRecorder.isStopped) {
+      try { await _customRecorder.closeRecorder(); } catch (_) {}
+    }
+    // Clean up temp WAV files to prevent storage exhaustion.
+    if (_customFilePath != null) {
+      try {
+        final file = File(_customFilePath!);
+        if (await file.exists()) {
+          await file.delete();
+          Logger.info('Deleted temp audio: $_customFilePath', feature: 'VoiceVerification');
+        }
+      } catch (e) {
+        Logger.warning('Failed to delete temp audio: $e', feature: 'VoiceVerification');
+      }
+      _customFilePath = null;
+    }
+    await _whisperService.dispose();
+  }
+
+  Future<void> _configureAudioSession() async {
     try {
-      await _customRecorder.closeRecorder();
-    } catch (_) {}
+      final session = await AudioSession.instance;
+      final options = AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions: options,
+        avAudioSessionMode: AVAudioSessionMode.measurement,
+        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.notifyOthersOnDeactivation,
+        avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          usage: AndroidAudioUsage.assistanceAccessibility,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      ));
+    } catch (e) {
+      Logger.warning('Audio session config failed: $e', feature: 'VoiceVerification');
+    }
   }
 
   WhisperModel _resolveWhisperModel(String value) {
@@ -117,7 +196,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   void _resetState() {
     _isListening = false;
     _spokenText = '';
-    _statusColor = Colors.blueAccent;
+    _statusColor = Theme.of(context).colorScheme.primary;
     _feedbackTitle = '';
     _scoreText = '';
     _hintLabel = '';
@@ -138,17 +217,54 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
   Future<void> _startListening() async {
     if (_isListening) return;
 
-    setState(() {
-      _resetState();
-      _isListening = true;
-      _statusColor = Colors.blueAccent;
-    });
-
     final provider = PrefUtils().getRecitationProvider();
     final bool useQrc = provider == 'qrc';
     final bool useCustom = provider == 'custom';
     final bool useWhisper = provider == 'local_whisper';
     final String customEndpoint = PrefUtils().getCustomAsrEndpoint();
+
+    // Recording-based providers need microphone permission
+    if (useQrc || useWhisper || useCustom) {
+      try {
+        final micStatus = await Permission.microphone.request();
+        if (!micStatus.isGranted) {
+          if (!mounted) return;
+          final isPermanentlyDenied = await Permission.microphone.isPermanentlyDenied;
+          if (!mounted) return;
+          setState(() {
+            _statusColor = AppColors.of(context).needsReviewStatus;
+            _feedbackTitle = isPermanentlyDenied
+                ? 'msg_mic_permission_perm'.tr
+                : 'msg_mic_permission'.tr;
+            _showFeedback = true;
+          });
+          return;
+        }
+      } catch (e, stackTrace) {
+        Logger.error(
+          'Microphone permission request failed: $e',
+          feature: 'VoiceVerification',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_mic_permission'.tr;
+          _showFeedback = true;
+        });
+        return;
+      }
+
+      // Configure audio session for recording + playback (Bluetooth, interruption handling)
+      unawaited(_configureAudioSession());
+    }
+
+    setState(() {
+      _resetState();
+      _isListening = true;
+      _statusColor = Theme.of(context).colorScheme.primary;
+    });
 
     if (useQrc) {
       setState(() {
@@ -159,7 +275,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (!connected) {
         if (!mounted) return;
         setState(() {
-          _statusColor = Colors.redAccent;
+          _statusColor = AppColors.of(context).needsReviewStatus;
           _feedbackTitle = 'msg_qrc_missing_key'.tr;
           _qrcConnecting = false;
           _showFeedback = true;
@@ -180,7 +296,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
           _handleQrcCheck(event.data);
         } else if (event is QrcErrorEvent) {
           setState(() {
-            _statusColor = Colors.redAccent;
+            _statusColor = AppColors.of(context).needsReviewStatus;
             _feedbackTitle = event.message;
             _showFeedback = true;
           });
@@ -195,25 +311,57 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       );
       await _qrcService.startRecording();
     } else if (useWhisper) {
-      await _customRecorder.openRecorder();
+      try {
+        if (!_customRecorder.isStopped) {
+          await _customRecorder.stopRecorder();
+          await _customRecorder.closeRecorder();
+        }
+        await _customRecorder.openRecorder();
+      } catch (e) {
+        Logger.warning('Whisper recorder open failed: $e', feature: 'VoiceVerification');
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_voice_init_failed'.tr;
+          _showFeedback = true;
+          _isListening = false;
+        });
+        return;
+      }
       final dir = await getTemporaryDirectory();
       _customFilePath =
           '${dir.path}/whisper_${widget.surah.id}_${widget.aya.verseNumber}_${DateTime.now().millisecondsSinceEpoch}.wav';
-      await _customRecorder.startRecorder(
-        toFile: _customFilePath,
-        codec: Codec.pcm16WAV,
-        numChannels: 1,
-        sampleRate: 16000,
-      );
+      try {
+        await _customRecorder.startRecorder(
+          toFile: _customFilePath,
+          codec: Codec.pcm16WAV,
+          numChannels: 1,
+          sampleRate: 16000,
+        );
+      } catch (e) {
+        Logger.warning('Whisper recorder start failed: $e', feature: 'VoiceVerification');
+        if (!mounted) return;
+        setState(() {
+          _statusColor = AppColors.of(context).needsReviewStatus;
+          _feedbackTitle = 'msg_voice_init_failed'.tr;
+          _showFeedback = true;
+          _isListening = false;
+        });
+        return;
+      }
     } else {
       if (useCustom) {
         if (customEndpoint.isEmpty) {
           setState(() {
-            _statusColor = Colors.orangeAccent;
+            _statusColor = AppColors.of(context).inProgressStatus;
             _feedbackTitle = 'msg_custom_asr_empty'.tr;
             _showFeedback = true;
           });
           return;
+        }
+        if (!_customRecorder.isStopped) {
+          await _customRecorder.stopRecorder();
+          await _customRecorder.closeRecorder();
         }
         await _customRecorder.openRecorder();
         final dir = await getTemporaryDirectory();
@@ -227,6 +375,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         );
       }
 
+      unawaited(
+        sl<AnalyticsService>().logRecitationStarted(surahId: widget.surah.id),
+      );
       await _voiceService.listen(
         onResult: (text) {
           if (!mounted) return;
@@ -244,23 +395,39 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _customFilePath != null) {
             try {
               await _customRecorder.stopRecorder();
-            } catch (_) {}
-            final remoteText = await _customAsrService.transcribe(
-              endpoint: customEndpoint,
-              filePath: _customFilePath!,
-            );
+            } catch (e) {
+              Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
+            }
+            final remoteText = await _customAsrService
+                .transcribe(
+                  endpoint: customEndpoint,
+                  filePath: _customFilePath!,
+                )
+                .timeout(
+                  const Duration(seconds: 35),
+                  onTimeout: () {
+                    Logger.warning(
+                      'Custom ASR transcription timed out',
+                      feature: 'VoiceVerification',
+                    );
+                    return null;
+                  },
+                );
+            if (!mounted) return;
             if (remoteText != null && remoteText.isNotEmpty) {
               effectiveText = remoteText;
             }
           }
 
-          _analyzeRecitation(effectiveText);
+          if (!mounted) return;
+          unawaited(_analyzeRecitation(effectiveText));
         },
       );
     }
   }
 
   void _handleQrcCheck(QrcCheckTilawa data) {
+    if (!mounted) return;
     final expectedTokens = _expectedText
         .split(RegExp(r'\s+'))
         .where((t) => t.isNotEmpty)
@@ -302,12 +469,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       if (_qrcWordIndex >= expectedCount &&
           expectedCount > 0 &&
           _qrcMistakes.isEmpty) {
-        _statusColor = Colors.green;
+        _statusColor = AppColors.of(context).memorizedStatus;
         _feedbackTitle = 'lbl_congrats'.tr;
         _isCorrect = true;
         _isListening = false;
       } else if (_qrcWordIndex >= expectedCount && _qrcMistakes.isNotEmpty) {
-        _statusColor = Colors.redAccent;
+        _statusColor = AppColors.of(context).needsReviewStatus;
         _feedbackTitle = 'msg_incorrect_recitation'.tr;
         _isWrong = true;
         _isListening = false;
@@ -315,15 +482,42 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     });
   }
 
-  void _analyzeRecitation(String effectiveText) {
-    final analysis = _voiceService.analyzeRecitation(
-      effectiveText,
-      _expectedText,
-      allowPartial: true,
+  Future<void> _analyzeRecitation(String effectiveText) async {
+    if (!mounted) return;
+    RecitationAnalysis? analysis;
+    try {
+      analysis = await _voiceService.analyzeRecitationAsync(
+        effectiveText,
+        _expectedText,
+        allowPartial: true,
+      );
+    } catch (e, st) {
+      Logger.warning(
+        'Recitation analysis failed: $e',
+        feature: 'VoiceVerification',
+        stackTrace: st,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isListening = false;
+        _showFeedback = true;
+        _statusColor = AppColors.of(context).needsReviewStatus;
+        _feedbackTitle = 'msg_voice_analysis_error'.tr;
+        _scoreText = '';
+        _issueLines = [];
+      });
+      return;
+    }
+    unawaited(
+      sl<AnalyticsService>().logRecitationVerified(
+        surahId: widget.surah.id,
+        accuracy: (analysis.score * 100).roundToDouble(),
+      ),
     );
+    if (!mounted) return;
     setState(() {
       _spokenText = effectiveText;
-      final scorePercent = (analysis.score * 100).round();
+      final scorePercent = (analysis!.score * 100).round();
       _scoreText = '${'lbl_recitation_score'.tr}: $scorePercent%';
       _issueLines = [];
       if (analysis.missingCount > 0) {
@@ -360,17 +554,17 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _showFeedback = true;
 
       if (analysis.isTooShort) {
-        _statusColor = Colors.orangeAccent;
+        _statusColor = AppColors.of(context).inProgressStatus;
         _feedbackTitle = 'msg_recitation_too_short'.tr;
         return;
       }
 
       if (analysis.passed) {
-        _statusColor = Colors.green;
+        _statusColor = AppColors.of(context).memorizedStatus;
         _feedbackTitle = 'lbl_congrats'.tr;
         _isCorrect = true;
       } else {
-        _statusColor = Colors.redAccent;
+        _statusColor = AppColors.of(context).needsReviewStatus;
         _feedbackTitle = 'msg_incorrect_recitation'.tr;
         _isWrong = true;
       }
@@ -397,7 +591,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       } else if (useWhisper) {
         try {
           await _customRecorder.stopRecorder();
-        } catch (_) {}
+        } catch (e) {
+          Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
+        }
         if (_customFilePath != null) {
           if (mounted) {
             setState(() {
@@ -405,7 +601,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _spokenText = 'msg_transcribing'.tr;
             });
           }
-          final transcribed = await _whisperService.transcribe(
+          final result = await _whisperService.transcribe(
             audioPath: _customFilePath!,
             language: 'ar',
             model: _whisperModel,
@@ -415,8 +611,21 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               _whisperTranscribing = false;
             });
           }
-          if (transcribed != null && transcribed.isNotEmpty) {
-            _analyzeRecitation(transcribed);
+          if (mounted && result.isSuccess) {
+            unawaited(_analyzeRecitation(result.text!));
+          } else if (mounted && !result.isSuccess) {
+            final msg = switch (result.error) {
+              WhisperError.noAudio => 'msg_whisper_no_audio',
+              WhisperError.modelError => 'msg_whisper_error',
+              WhisperError.permission => 'msg_mic_permission',
+              _ => 'msg_whisper_error',
+            };
+            setState(() {
+              _statusColor = AppColors.of(context).needsReviewStatus;
+              _feedbackTitle = msg.tr;
+              _showFeedback = true;
+              _isListening = false;
+            });
           }
         }
       } else {
@@ -424,7 +633,9 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
         if (useCustom) {
           try {
             await _customRecorder.stopRecorder();
-          } catch (_) {}
+          } catch (e) {
+            Logger.warning('Recorder stop failed: $e', feature: 'VoiceVerification');
+          }
         }
         await _voiceService.stop();
       }
@@ -432,7 +643,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
       _isListening = false;
       if (mounted) {
         setState(() {
-          _statusColor = Colors.grey;
+          _statusColor = AppColors.of(context).notStartedStatus;
         });
       }
     }
@@ -445,9 +656,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     final bool useWhisper = provider == 'local_whisper';
 
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       title: Semantics(header: true, child: Text(_dialogTitle)),
-      content: SingleChildScrollView(
-        child: Column(
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Semantics(
@@ -467,12 +681,24 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _isListening
-                        ? Colors.redAccent.withValues(alpha: 0.1)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .error
+                            .withValues(alpha: 0.1)
                         : _isCorrect
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1)
                         : _isWrong
-                        ? Colors.orangeAccent.withValues(alpha: 0.1)
-                        : Colors.blueAccent.withValues(alpha: 0.1),
+                        ? Theme.of(context)
+                            .colorScheme
+                            .errorContainer
+                            .withValues(alpha: 0.1)
+                        : Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                   ),
                   padding: const EdgeInsets.all(20),
                   child: Icon(
@@ -485,12 +711,12 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                         : Icons.mic_none,
                     size: 48,
                     color: _isListening
-                        ? Colors.redAccent
+                        ? Theme.of(context).colorScheme.error
                         : _isCorrect
-                        ? Colors.green
+                        ? Theme.of(context).colorScheme.primary
                         : _isWrong
-                        ? Colors.orangeAccent
-                        : Colors.blueAccent,
+                        ? Theme.of(context).colorScheme.errorContainer
+                        : Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -515,7 +741,13 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             if (!_showFeedback && !_isCorrect && !_isWrong)
               Text(
                 _isListening ? 'msg_tap_to_stop'.tr : 'lbl_tap_to_speak'.tr,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
               ),
             if (useQrc) ...[
               const SizedBox(height: 12),
@@ -541,9 +773,11 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                         final word = entry.value;
                         final isCorrect = _qrcWordIndex >= idx;
                         final isMistake = _qrcMistakeIndices.contains(idx);
-                        Color color = Colors.black87;
-                        if (isCorrect) color = Colors.green;
-                        if (isMistake) color = Colors.redAccent;
+                        final colorScheme = Theme.of(context).colorScheme;
+                        Color color = colorScheme.onSurface
+                            .withValues(alpha: 0.87);
+                        if (isCorrect) color = colorScheme.primary;
+                        if (isMistake) color = colorScheme.error;
                         return Text(
                           word,
                           style: TextStyle(
@@ -564,7 +798,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 for (final line in _qrcMistakeLines)
                   Text(
                     line,
-                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                    style: TextStyle(fontSize: 12, color: AppColors.of(context).needsReviewStatus),
                   ),
               ],
             ],
@@ -585,7 +819,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
               const SizedBox(height: 6),
               Text(
                 _scoreText,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
               ),
               if (_issueLines.isNotEmpty) ...[
                 const SizedBox(height: 6),
@@ -596,7 +830,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   _hintLabel,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
                 Text(
                   _hintWord,
@@ -611,7 +845,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   _repeatLabel,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
                 Text(
                   _repeatWord,
@@ -627,7 +861,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
                 const SizedBox(height: 6),
                 Text(
                   'msg_coach_tip_slow'.tr,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
                 ),
               ],
             ],
@@ -635,7 +869,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             const Divider(),
             Text(
               'lbl_original'.tr,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
             ),
             const SizedBox(height: 8),
             Text(
@@ -649,6 +883,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
             ),
           ],
         ),
+      ),
       ),
       actions: [
         TextButton(

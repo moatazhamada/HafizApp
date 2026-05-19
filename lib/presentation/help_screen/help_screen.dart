@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -22,7 +21,7 @@ class HelpScreen extends StatelessWidget {
             icon: Icons.bookmark_add,
             title: 'help_bookmark_title'.tr,
             description: 'help_bookmark_desc'.tr,
-            color: Colors.teal,
+            color: AppColors.of(context).statBookmark,
           ),
           const SizedBox(height: 20),
           _buildHelpItem(
@@ -30,7 +29,7 @@ class HelpScreen extends StatelessWidget {
             icon: Icons.visibility_off,
             title: 'help_hifz_title'.tr,
             description: 'help_hifz_desc'.tr,
-            color: Colors.amber[800]!,
+            color: AppColors.of(context).warning,
           ),
           const SizedBox(height: 20),
           _buildHelpItem(
@@ -38,7 +37,7 @@ class HelpScreen extends StatelessWidget {
             icon: Icons.error_outline,
             title: 'help_practice_title'.tr,
             description: 'help_practice_desc'.tr,
-            color: Colors.redAccent,
+            color: AppColors.of(context).needsReviewStatus,
           ),
         ],
       ),
@@ -81,7 +80,7 @@ class HelpScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -92,7 +91,7 @@ class HelpScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               height: 1.5,
-              color: isDark ? Colors.grey[300] : Colors.grey[800],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/utils/number_converter.dart';
+import 'package:hafiz_app/core/quran_index/quran_verse_utils.dart';
+import 'package:hafiz_app/localization/app_localization.dart';
 
 class SurahListItem extends StatelessWidget {
   final int surahId;
@@ -18,81 +21,139 @@ class SurahListItem extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final appColors = AppColors.of(context);
+    
+    final ayahCount = getSurahVerseCount(surahId);
+    final revelationType = getRevelationType(surahId);
+    
+    final revelationText = revelationType == 'Meccan' ? 'lbl_meccan'.tr : 'lbl_medinan'.tr;
+    final ayahsText = 'lbl_ayahs'.tr;
+    final ayahLocalizedCount = ayahCount.toLocalizedNumber(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? colorScheme.surfaceContainer : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        spreadRadius: 1,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                // Number Badge
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    surahId.toLocalizedNumber(context),
-                    // Also localize Surah ID here!
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // English Name (Hide if Arabic)
-                if (Localizations.localeOf(context).languageCode != 'ar') ...[
-                  Expanded(
-                    child: Text(
-                      nameEnglish,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.left,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                ] else
-                  const Spacer(), // Push Arabic to right if English is hidden
-                // Arabic Name
-                Hero(
-                  tag: 'surah-title-$surahId',
-                  child: Text(
-                    nameArabic,
-                    textDirection: TextDirection.rtl,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontFamily: 'NotoNaskhArabic',
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ],
+    return Semantics(
+      button: true,
+      label: '$nameEnglish, $nameArabic',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? colorScheme.surfaceContainer : colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? colorScheme.outline.withValues(alpha: 0.2) : appColors.mushafPageBorder,
+              width: 1,
             ),
           ),
-        ],
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: Localizations.localeOf(context).languageCode != 'ar'
+                ? [
+                    // Number Badge (Left)
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isDark ? appColors.primaryDark : appColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        surahId.toLocalizedNumber(context),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Middle Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nameEnglish,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: appColors.textPrimary,
+                            ),
+                            textAlign: TextAlign.start,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$ayahLocalizedCount $ayahsText • $revelationText',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: appColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Arabic Name (Right)
+                    Text(
+                      nameArabic,
+                      textDirection: TextDirection.rtl,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontFamily: 'NotoNaskhArabic',
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                    ),
+                  ]
+                : [
+                    // Text (Right)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nameArabic,
+                            textDirection: TextDirection.rtl,
+                            textAlign: TextAlign.start,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontFamily: 'NotoNaskhArabic',
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$ayahLocalizedCount $ayahsText • $revelationText',
+                            textDirection: TextDirection.rtl,
+                            textAlign: TextAlign.start,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: appColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Number Badge (Left)
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isDark ? appColors.primaryDark : appColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        surahId.toLocalizedNumber(context),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+          ),
+        ),
       ),
     );
   }

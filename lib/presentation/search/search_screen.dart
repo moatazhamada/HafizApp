@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
 import '../../core/app_export.dart';
+import '../../core/analytics/analytics_service.dart';
+import '../../core/utils/input_formatters.dart';
 import '../../injection_container.dart';
 import 'bloc/search_bloc.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
+import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -18,14 +22,37 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late final SearchBloc _searchBloc;
+  bool _initializedFromRoute = false;
 
   @override
   void initState() {
     super.initState();
     _searchBloc = sl<SearchBloc>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
+      if (!mounted) return;
+      // Defer focus request to avoid _ModalScopeStatus race during route transition
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initializedFromRoute) {
+      _initializedFromRoute = true;
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        final initialQuery = args['query'] as String?;
+        if (initialQuery != null && initialQuery.isNotEmpty) {
+          _searchController.text = initialQuery;
+          _searchBloc.add(SearchQueryChanged(initialQuery));
+        }
+      }
+    }
   }
 
   @override
@@ -52,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
             button: true,
             label: 'lbl_back'.tr,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(rtlBackArrow(context), color: Theme.of(context).colorScheme.onPrimary),
               onPressed: () => NavigatorService.goBack(),
               tooltip: 'lbl_back'.tr,
             ),
@@ -63,19 +90,23 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              cursorColor: Colors.white,
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 16),
+              cursorColor: Theme.of(context).colorScheme.onPrimary,
               autofocus: true,
+              inputFormatters: [
+                AppInputFormatters.maxLength(100),
+                AppInputFormatters.noLeadingSpaces,
+              ],
               decoration: InputDecoration(
                 hintText: 'lbl_search_surah'.tr,
-                hintStyle: const TextStyle(color: Colors.white70),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)),
                 border: InputBorder.none,
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _searchController,
                   builder: (context, value, child) {
                     if (value.text.isNotEmpty) {
                       return IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white70),
+                        icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.7)),
                         onPressed: () {
                           _searchController.clear();
                           _searchBloc.add(const SearchQueryChanged(''));
@@ -105,7 +136,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (state.isSemantic)
                     SliverToBoxAdapter(
                       child: Container(
-                        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        margin: const EdgeInsetsDirectional.only(
+                          start: 16,
+                          end: 16,
+                          top: 8,
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -151,7 +186,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : theme.primaryColor,
+                              color: isDark ? Theme.of(context).colorScheme.onSurface : theme.primaryColor,
                             ),
                           ),
                         ),
@@ -165,6 +200,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           label: '${surah.nameEnglish}, ${surah.nameArabic}',
                           child: InkWell(
                             onTap: () {
+                              unawaited(
+                                sl<AnalyticsService>().logSearchResultTapped(
+                                  query: _searchController.text,
+                                  resultType: 'surah',
+                                  resultIndex: index,
+                                ),
+                              );
                               NavigatorService.pushNamed(
                                 AppRoutes.surahPage,
                                 arguments: surah,
@@ -185,11 +227,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (state.verseResults.isNotEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          16.0,
-                          16.0,
-                          16.0,
-                          8.0,
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 16,
+                          end: 16,
+                          top: 16,
+                          bottom: 8,
                         ),
                         child: Semantics(
                           header: true,
@@ -198,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : theme.primaryColor,
+                              color: isDark ? Theme.of(context).colorScheme.onSurface : theme.primaryColor,
                             ),
                           ),
                         ),
@@ -209,19 +251,30 @@ class _SearchScreenState extends State<SearchScreen> {
                         final verse = state.verseResults[index];
                         final surah = QuranIndex.quranSurahs.firstWhere(
                           (s) => s.id == verse.chapterNumber,
-                          orElse: () => QuranIndex.quranSurahs[0],
+                            orElse: () {
+                              Logger.warning('Invalid surahId: ${verse.chapterNumber}', feature: 'Search');
+                              return Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
+                            },
                         );
+
+                        final subtitleText = verse.translationText != null &&
+                                verse.translationText!.isNotEmpty
+                            ? verse.translationText!
+                            : '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}';
 
                         return Semantics(
                           button: true,
                           label:
                               '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish}, ${'lbl_ayah'.tr} ${verse.verseNumber}',
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
+                          child: InkWell(
                             onTap: () {
+                              unawaited(
+                                sl<AnalyticsService>().logSearchResultTapped(
+                                  query: _searchController.text,
+                                  resultType: 'verse',
+                                  resultIndex: index,
+                                ),
+                              );
                               NavigatorService.pushNamed(
                                 AppRoutes.surahPage,
                                 arguments: {
@@ -230,45 +283,75 @@ class _SearchScreenState extends State<SearchScreen> {
                                 },
                               );
                             },
-                            title: _buildHighlightedText(
-                              context,
-                              verse.arabicText,
-                              _searchController.text,
-                            ),
-                            subtitle:
-                                verse.translationText != null &&
-                                    verse.translationText!.isNotEmpty
-                                ? Text(
-                                    verse.translationText!,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                textDirection: TextDirection.rtl,
+                                children: [
+                                  // Verse number badge (right side in RTL)
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: theme.primaryColor.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      shape: BoxShape.circle,
                                     ),
-                                  )
-                                : Text(
-                                    '${Localizations.localeOf(context).languageCode == 'ar' ? surah.nameArabic : surah.nameEnglish} • ${'lbl_ayah'.tr} ${verse.verseNumber.toLocalizedNumber(context)}',
-                                    style: TextStyle(
-                                      color: isDark ? Colors.grey[400] : null,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${verse.verseNumber}',
+                                      style: TextStyle(
+                                        color: theme.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: theme.primaryColor.withValues(
-                                  alpha: 0.1,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '${verse.verseNumber}',
-                                style: TextStyle(
-                                  color: theme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                  const SizedBox(width: 12),
+                                  // Text content (left side in RTL)
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildHighlightedText(
+                                          context,
+                                          verse.arabicText,
+                                          _searchController.text,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          subtitleText,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textDirection:
+                                              verse.translationText != null &&
+                                                      verse.translationText!
+                                                          .isNotEmpty
+                                                  ? TextDirection.ltr
+                                                  : TextDirection.rtl,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDark
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.38)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -287,8 +370,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             '$totalResults ${'msg_results_count'.tr}',
                             style: TextStyle(
                               color: isDark
-                                  ? Colors.grey[500]
-                                  : Colors.grey[600],
+                                  ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
+                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               fontSize: 13,
                             ),
                           ),
@@ -307,14 +390,14 @@ class _SearchScreenState extends State<SearchScreen> {
                       Icon(
                         Icons.search_off_rounded,
                         size: 64,
-                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'msg_no_results'.tr,
                         style: TextStyle(
                           fontSize: 16,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -334,15 +417,15 @@ class _SearchScreenState extends State<SearchScreen> {
                           Icons.error_outline_rounded,
                           size: 64,
                           color: isDark
-                              ? Colors.redAccent[200]
-                              : Colors.red[300],
+                              ? AppColors.of(context).needsReviewStatus.withValues(alpha: 0.7)
+                              : AppColors.of(context).needsReviewStatus.withValues(alpha: 0.6),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           '${'lbl_error'.tr}: ${state.message}',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark ? Colors.redAccent : Colors.red,
+                            color: AppColors.of(context).needsReviewStatus,
                           ),
                         ),
                       ],
@@ -359,14 +442,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(
                     Icons.search_rounded,
                     size: 64,
-                    color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'msg_search_hint'.tr,
                     style: TextStyle(
                       fontSize: 16,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -378,12 +461,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  String _removeTashkeel(String text) {
-    final tashkeel = RegExp(
-      r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
-    );
-    return text.replaceAll(tashkeel, '');
-  }
+  static final RegExp _tashkeelPattern = RegExp(
+    r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
+  );
+
+  String _removeTashkeel(String text) => text.replaceAll(_tashkeelPattern, '');
 
   Widget _buildHighlightedText(
     BuildContext context,
@@ -436,10 +518,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark
-        ? Colors.white
+        ? Theme.of(context).colorScheme.onSurface
         : Theme.of(context).textTheme.bodyLarge?.color;
     final subtleColor = isDark
-        ? Colors.grey[400]
+        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)
         : Theme.of(context).textTheme.bodyMedium?.color;
 
     return RichText(
@@ -449,7 +531,7 @@ class _SearchScreenState extends State<SearchScreen> {
       text: TextSpan(
         style: TextStyle(
           fontFamily: 'NotoNaskhArabic',
-          fontSize: 18,
+          fontSize: PrefUtils().getQuranFontSize(),
           color: textColor,
         ),
         children: [
@@ -465,7 +547,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ? AppColors.of(context).bismillahColor
                   : Theme.of(context).primaryColor,
               backgroundColor: isDark
-                  ? Colors.amberAccent
+                  ? AppColors.of(context).warning.withValues(alpha: 0.3)
                   : Theme.of(context).primaryColor.withValues(alpha: 0.1),
             ),
           ),
@@ -478,11 +560,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  bool _isTashkeel(String char) {
-    return RegExp(
-      r'[\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]',
-    ).hasMatch(char);
-  }
+  bool _isTashkeel(String char) => _tashkeelPattern.hasMatch(char);
 
   Widget _plainText(BuildContext context, String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -493,8 +571,8 @@ class _SearchScreenState extends State<SearchScreen> {
       textDirection: TextDirection.rtl,
       style: TextStyle(
         fontFamily: 'NotoNaskhArabic',
-        fontSize: 18,
-        color: isDark ? Colors.white : null,
+        fontSize: PrefUtils().getQuranFontSize(),
+        color: isDark ? Theme.of(context).colorScheme.onSurface : null,
       ),
     );
   }

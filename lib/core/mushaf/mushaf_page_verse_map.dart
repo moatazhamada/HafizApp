@@ -11,7 +11,7 @@ class MushafPageVerseMap {
     int page, {
     int totalPages = 604,
   }) {
-    if (page < 1 || page > totalPages) return [];
+    if (page < 1 || totalPages <= 0 || page > totalPages) return [];
 
     // For non-Madani types, map the page to a Madani-equivalent page
     if (totalPages != MushafPageIndex.totalPages) {
@@ -139,11 +139,14 @@ class MushafPageVerseMap {
           : (pageOffset * verseCount / effectivePages).floor() + 1;
       final rawEnd = ((pageOffset + 1) * verseCount / effectivePages).ceil();
 
+      final startVerse = rawStart.clamp(1, verseCount);
+      final endVerse = rawEnd.clamp(1, verseCount);
+
       ranges.add(
         MushafPageRange(
           surahId: surahId,
-          startVerse: rawStart.clamp(1, verseCount),
-          endVerse: rawEnd.clamp(1, verseCount),
+          startVerse: startVerse,
+          endVerse: startVerse > endVerse ? startVerse : endVerse,
         ),
       );
     }

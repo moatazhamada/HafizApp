@@ -17,8 +17,8 @@ final Map<String, String> arEg = {
       'نص القرآن الكريم مدمج محلياً من مصادر موثوقة (Tanzil) لضمان الدقة والعمل دون إنترنت. يُرجى الإبلاغ عن أي ملاحظات فوراً.',
   'about_language_title': 'اللغة',
   'about_sources_title': 'المصادر',
-  'about_source_quran_api': 'واجهة Quran.com v4',
-  'about_source_quran_api_desc': 'بيانات السور والترجمات والتلاوات الصوتية',
+  'about_source_quran_api': 'واجهة محتوى مؤسسة القرآن الكريم',
+  'about_source_quran_api_desc': 'الآيات والترجمات والتفسير والتلاوات الصوتية عبر Quran.Foundation',
   'about_source_tanzil': 'مجمع تنزيل (نص عثماني موثق)',
   'about_source_tanzil_desc': 'نص القرآن المحفوظ محلياً للقراءة بدون إنترنت',
   'about_source_qf_content': 'واجهة محتوى مؤسسة القرآن الكريم',
@@ -37,6 +37,7 @@ final Map<String, String> arEg = {
   'about_feedback_send': 'إرسال',
   'about_feedback_sent': 'شكراً لملاحظتك!',
   'lbl_cancel': 'إلغاء',
+  'lbl_confirm': 'تأكيد',
   'lbl_copied': 'تم النسخ للحافظة',
   'lbl_practice_list': 'قائمة تثبيت الحفظ',
   'msg_no_practice_items': 'لا توجد آيات لتثبيت الحفظ',
@@ -51,7 +52,7 @@ final Map<String, String> arEg = {
   'msg_marked_error': 'تم تحديد الآية لتثبيت الحفظ',
   'msg_error_removed': 'تمت الإزالة من قائمة التثبيت',
   'lbl_settings': 'الإعدادات',
-  'lbl_recitation_coach': 'مدرب التلاوة',
+  'lbl_recitation_coach': 'التحقق من الحفظ',
   'lbl_recitation_provider': 'محرك التلاوة',
   'lbl_provider_local': 'على الجهاز (عادي)',
   'lbl_provider_whisper': 'على الجهاز (Whisper)',
@@ -116,6 +117,7 @@ final Map<String, String> arEg = {
   'lbl_remove_surah_bookmark': 'إزالة علامة السورة',
   'lbl_add_surah_bookmark': 'إضافة علامة السورة',
   'lbl_delete': 'حذف',
+  'lbl_edit': 'تعديل',
   'msg_swipe_delete': 'اسحب للحذف',
   // Surah
   // About
@@ -132,7 +134,7 @@ final Map<String, String> arEg = {
   'msg_recitation_substitute': 'استبدالات',
   'msg_coach_tip_slow': 'نصيحة: اقرأ بهدوء وبنَفَس ثابت.',
   'msg_repeat_word': 'أعد هذه الكلمة:',
-  'msg_tajweed_notes': 'ملاحظات التجويد',
+  'msg_tajweed_notes': 'ملاحظات التحقق',
   'msg_qrc_missing_key': 'مفتاح QRC غير مضبوط',
   'lbl_listen_sheikh': 'استمع للشيخ',
   'lbl_play': 'تشغيل',
@@ -154,6 +156,8 @@ final Map<String, String> arEg = {
   'msg_mic_permission': 'يرجى السماح باستخدام الميكروفون',
   'msg_mic_permission_desc':
       'يحتاج حافظ إلى إذن الميكروفون للتحقق من تلاوتك. يمكنك تغيير هذا في أي وقت من إعدادات جهازك.',
+  'msg_voice_init_failed': 'تعذر بدء التعرف على الصوت. يرجى المحاولة مرة أخرى.',
+  'msg_voice_analysis_error': 'تعذر تحليل التلاوة. يرجى المحاولة مرة أخرى.',
   'msg_tap_to_resume': 'اضغط للمتابعة',
   'lbl_incorrect': 'تحتاج لتحسين',
   // Accessibility
@@ -184,6 +188,7 @@ final Map<String, String> arEg = {
   'lbl_last_synced': 'آخر مزامنة',
   'lbl_appearance': 'المظهر',
   'lbl_reading': 'القراءة',
+  'lbl_notification_settings': 'الإشعارات',
   'lbl_about': 'حول',
   'msg_qf_logged_in': 'تم تسجيل الدخول عبر Quran.com',
   'msg_qf_not_logged_in': 'غير مسجل الدخول',
@@ -192,8 +197,26 @@ final Map<String, String> arEg = {
   'lbl_user': 'المستخدم',
   'lbl_not_signed_in': 'غير مسجل الدخول',
   'lbl_tap_to_sign_in': 'اضغط لتسجيل الدخول',
+  'lbl_checking_account': 'جاري التحقق من الحساب...',
+  'lbl_auth_error': 'خطأ في المصادقة',
+  'msg_login_to_sync_desc': 'سجّل الدخول لمزامنة المفضلة والإعدادات عبر أجهزتك.',
   'lbl_bookmarks_sync': 'مزامنة المفضلة مع Quran.com',
   'msg_last_synced': 'آخر مزامنة: {time}',
+  'pref_sync_title': 'مزامنة التفضيلات',
+  'pref_sync_body': 'هل تودّ مزامنة إعدادات التطبيق مع Quran.Foundation؟ يمكنك فعل ذلك لاحقاً من صفحة المزامنة.',
+  'pref_sync_use_local': 'استخدام المحلية',
+  'pref_sync_use_qf': 'استخدام QF',
+  'pref_sync_push_started': 'جاري رفع إعداداتك المحلية إلى Quran.Foundation...',
+  'pref_sync_pull_started': 'جاري تحميل الإعدادات من Quran.Foundation...',
+  'pref_sync_section_title': 'التفضيلات',
+  'pref_sync_ready': 'زامن إعدادات التطبيق مع Quran.Foundation.',
+  'pref_sync_login_required': 'سجّل الدخول لمزامنة التفضيلات.',
+  'pref_sync_upload': 'رفع',
+  'pref_sync_download': 'تحميل',
+  'pref_sync_two_way': 'مزامنة ثنائية',
+  'pref_sync_pushed_count': 'تم رفع {count} إعدادات',
+  'pref_sync_pulled_count': 'تم تحميل {count} إعدادات',
+  'pref_sync_two_way_result': 'تمت المزامنة: {pulled} محمّل، {pushed} مرفوع',
   'msg_login_to_sync': 'سجّل الدخول عبر Quran.com أعلاه لتفعيل المزامنة',
   'msg_recitation_progress': 'تقدم التلاوة',
   'msg_local_data_note':
@@ -202,6 +225,8 @@ final Map<String, String> arEg = {
   'msg_login_cancelled': 'تم إلغاء تسجيل الدخول أو فشل.',
   'msg_login_not_configured':
       'تسجيل الدخول غير مُهيأ. أضف معرف العميل الخاص بـ Quran.com للمتابعة.',
+  'msg_backend_auth_failed':
+      'فشلت المصادقة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
   'msg_sync_failed': 'فشلت المزامنة مع Quran.com',
   'msg_re_login_required':
       'يرجى تسجيل الدخول مرة أخرى لمنح الأذونات المطلوبة من الخادم.',
@@ -240,6 +265,15 @@ final Map<String, String> arEg = {
   'msg_verses_remaining': 'باقي {count} آية',
   'lbl_day_streak': 'يوم متتالي',
   'lbl_keep_going': 'استمر!',
+  'lbl_log_type_selector': 'نوع التسجيل: صفحات أو آيات',
+  'lbl_log_reading': 'تسجيل القراءة',
+  'lbl_log_manual_reading': 'تسجيل قراءة يدوية',
+  'lbl_pages': 'صفحات',
+  'lbl_number_of_pages': 'عدد الصفحات',
+  'lbl_number_of_verses': 'عدد الآيات',
+  'msg_log_manual_reading_desc': 'أدخل عدد الصفحات أو الآيات التي قرأتها',
+  'msg_enter_amount': 'أدخل الكمية',
+  'lbl_save_reading_log': 'حفظ سجل القراءة',
   'lbl_last_7_days': 'آخر ٧ أيام',
   'lbl_mon': 'إث',
   'lbl_tue': 'ثل',
@@ -260,6 +294,19 @@ final Map<String, String> arEg = {
   'musali_teaser_slide4_sub': 'فكر مجدداً.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Validation errors
+  'val_required': 'هذا الحقل مطلوب',
+  'val_max_length': 'لا يمكن أن يتجاوز {max} حرف',
+  'val_min_length': 'يجب أن يكون على الأقل {min} أحرف',
+  'val_invalid_number': 'يرجى إدخال رقم صحيح',
+  'val_min_value': 'يجب أن يكون على الأقل {min}',
+  'val_max_value': 'يجب ألا يتجاوز {max}',
+  'val_quran_page_range': 'يجب أن يكون رقم الصفحة بين 1 و {max}',
+  'val_quran_surah_range': 'يجب أن يكون رقم السورة بين 1 و 114',
+  'val_quran_juz_range': 'يجب أن يكون رقم الجزء بين 1 و 30',
+  'val_quran_verse_range': 'يجب أن يكون رقم الآية بين 1 و {max}',
+  'val_search_max_length': 'نص البحث طويل جداً',
+
   // Failure Messages
   'msg_server_error': 'حدث خطأ في الخادم',
   'msg_cache_error': 'خطأ في البيانات المحلية',
@@ -272,19 +319,33 @@ final Map<String, String> arEg = {
 
   // Sharing
   'lbl_share_verse': 'مشاركة الآية',
-  'lbl_share_text': 'مشاركة كنص',
+  'lbl_share_text': 'مشاركة النص',
+  'lbl_share_as_image': 'مشاركة كصورة',
   'msg_share_text_desc': 'شارك الآية مع الإسناد',
   'lbl_copy_text': 'نسخ النص',
   'msg_copy_text_desc': 'نسخ نص الآية فقط',
   'msg_text_copied': 'تم نسخ النص',
   'msg_via_app': 'عبر حافظ',
 
+  'lbl_read_this_ayah': 'اقرأ هذه الآية',
+  'lbl_start_from_here': 'ابدأ من هنا',
+
   // Audio Player
   'lbl_sleep_timer': 'مؤقت النوم',
   'lbl_cancel_timer': 'إلغاء المؤقت',
   'lbl_minutes': 'دقيقة',
+  'msg_sleep_timer_remaining': 'مؤقت النوم: {minutes}:{seconds}',
+  'lbl_loop_surah': 'تكرار السورة',
+  'lbl_loop_off': 'إيقاف التكرار',
   'lbl_loop_verses': 'تكرار',
   'msg_audio_load_error': 'فشل تحميل الصوت',
+  'lbl_select_verse': 'اختر الآية',
+  'lbl_previous_verse': 'الآية السابقة',
+  'lbl_next_verse': 'الآية التالية',
+  'msg_resume_audio': 'استئناف الاستماع',
+  'msg_resume_from_verse': 'الاستمرار من الآية {verse}',
+  'lbl_speed_x': '{speed}x',
+  'msg_verse_progress': '{label} {current} / {total}',
 
   // Mushaf Screen
   'lbl_mushaf': 'المصحف',
@@ -299,9 +360,12 @@ final Map<String, String> arEg = {
 
   // Mushaf Settings
   'lbl_mushaf_type': 'نوع المصحف',
-  'lbl_clear_mushaf_cache': 'مسح ذاكرة صور المصحف',
+  'lbl_storage': 'التخزين',
+  'lbl_clear_mushaf_cache': 'مسح صور المصحف',
   'msg_clear_mushaf_cache_desc':
-      'إزالة صور الصفحات المحفوظة لتفريغ المساحة أو إصلاح العرض',
+      'حرر مساحة بحذف صور صفحات المصحف المخزنة',
+  'msg_clear_mushaf_cache_confirm': 'سيؤدي هذا إلى إزالة جميع صور المصحف المخزنة. سيتم إعادة تنزيلها عند عرضها مرة أخرى.',
+  'msg_mushaf_cache_cleared': 'تم مسح ذاكرة المصحف بنجاح',
   'msg_cache_cleared': 'تم مسح ذاكرة الصور',
 
   // Statistics
@@ -316,6 +380,8 @@ final Map<String, String> arEg = {
   // Auto-scroll
   'lbl_start_autoscroll': 'بدء التمرير التلقائي',
   'lbl_stop_autoscroll': 'إيقاف التمرير التلقائي',
+  'lbl_start_listening': 'وضع الاستماع',
+  'lbl_stop_listening': 'إيقاف الاستماع',
 
   // Settings Enhancements
   'lbl_quran_font': 'حجم خط القرآن',
@@ -353,6 +419,20 @@ final Map<String, String> arEg = {
       'تكامل واجهة برمجة تطبيقات محتوى مؤسسة القرآن الكريم للتفسير وبيانات الآيات.',
   'changelog_3_1_0_6':
       'مزامنة العلامات المرجعية مع مؤسسة القرآن — مزامنة إشاراتك المرجعية مع Quran.com.',
+  'changelog_3_3_0_1': 'واجهة الشاشة الرئيسية \u2014 احصل على آيات قرآنية يومية مباشرة على شاشتك الرئيسية.',
+  'changelog_3_3_0_2': 'تذكيرات القراءة وإشعارات الإنجازات للمحافظة على استمراريتك.',
+  'changelog_3_3_0_3': 'تحديث مشغل الصوت \u2014 الاستئناف من آية التوقف، اختيار الآية، وأزرار التالي/السابق.',
+  'changelog_3_3_0_4': 'إعادة تصميم شاشة البداية مع اختيار السمة وتصميم متناسق.',
+  'changelog_3_3_0_5': 'مزامنة تفضيلات مؤسسة القرآن \u2014 مزامنة ثنائية الاتجاه للإشارات المرجعية والإعدادات.',
+  'changelog_3_3_0_6': 'تحرير وحذف الأهداف \u2014 تعديل أو إزالة أهداف القراءة مباشرة من شاشة الأهداف.',
+  'changelog_3_3_0_7': 'ملف المستخدم من مؤسسة القرآن \u2014 عرض الاسم والبريد في التطبيق.',
+  'changelog_3_3_0_8': 'تحليلات موسعة \u2014 17 حدثاً جديداً يغطي جلسات القراءة والإشارات المرجعية والأهداف وغيرها.',
+  'changelog_3_3_0_9': 'إحصائيات القراءة مع خريطة النشاط \u2014 تصور عادات قراءة القرآن الأسبوعية.',
+  'changelog_3_2_0_1': 'أسطح الصفحة الرئيسية التكيفية \u2014 تخطيطات القارئ والطالب والباحث التي تتكيف مع استخدامك.',
+  'changelog_3_2_0_2': 'تتبع السلوك مع اقتراحات أسطح ذكية بناءً على عادات قراءتك.',
+  'changelog_3_2_0_3': 'خريطة نشاط القراءة \u2014 تصور تفاعلك الأسبوعي مع القرآن بنظرة واحدة.',
+  'changelog_3_2_0_4': 'تأملات مجتمع القرآن \u2014 تصفح وشارك تأملات الآيات.',
+  'changelog_3_2_0_5': 'جميع واجهات المحتوى موجهة الآن عبر Quran.Foundation لتوحيد سلامة البيانات.',
   'changelog_3_1_0_7': 'آلية التحديث الإجباري لإصلاحات دقة النص الحرجة.',
   'changelog_3_0_0_1': 'إعادة تصميم كاملة للتطبيق باستخدام Material 3.',
   'changelog_3_0_0_2': 'مزامنة سحابية عبر Firebase.',
@@ -379,6 +459,10 @@ final Map<String, String> arEg = {
   'goals_progress_label': '{done} من {total}',
   'goals_completed': 'مكتمل',
   'goals_in_progress': 'قيد التنفيذ',
+  'goals_edit_title': 'تعديل الهدف',
+  'goals_duration_label': 'المدة (بالأيام)',
+  'goals_delete_title': 'حذف الهدف',
+  'goals_delete_body': 'هل أنت متأكد من حذف هذا الهدف؟ لا يمكن التراجع عن هذا الإجراء.',
   'lbl_minutes_ago': 'منذ {count} دقيقة',
   'lbl_hours_ago': 'منذ {count} ساعة',
 
@@ -413,6 +497,17 @@ final Map<String, String> arEg = {
   'lbl_hide_translation': 'إخفاء الترجمة',
   'lbl_tafsir_ibn_kathir': 'تفسير ابن كثير',
   'lbl_study': 'دراسة',
+  'lbl_overview': 'نظرة عامة',
+  'lbl_word_by_word': 'كلمة بكلمة',
+  'lbl_select_tafsir_source': 'اختر مصدر التفسير',
+  'lbl_select_translation_source': 'اختر مصدر الترجمة',
+  'lbl_tab_overview': 'نظرة عامة',
+  'lbl_tab_tafsir': 'تفسير',
+  'lbl_tab_translation': 'ترجمة',
+  'lbl_tab_word_by_word': 'كلمة بكلمة',
+  'lbl_tab_reflections': 'تأملات',
+  'lbl_select_tafsir': 'اختر التفسير',
+  'lbl_select_translation': 'اختر الترجمة',
 
   // Recitation feedback
   'lbl_keep_practicing': 'واصل التدريب',
@@ -465,10 +560,197 @@ final Map<String, String> arEg = {
   'lbl_reflections': 'تأملات',
   'lbl_write_reflection': 'اكتب تأملك...',
   'lbl_no_reflections': 'لا توجد تأملات بعد',
+  'lbl_post_reflection': 'نشر',
   'lbl_submit_reflection': 'حفظ التأمل',
   'lbl_reflection_saved': 'تم حفظ التأمل',
 
   // Daily Verse Notification
   'lbl_daily_verse_notification': 'إشعار الآية اليومية',
   'msg_daily_verse_desc': 'استلم آية قرآنية يومية لبدء يومك بتأمل',
+
+  // Onboarding — Theme
+  'lbl_choose_theme': 'اختر المظهر',
+  'msg_theme_desc': 'اختر المظهر الذي تفضله للتطبيق',
+  'lbl_light_mode': 'الوضع الفاتح',
+  'msg_light_mode_desc': 'واجهة نظيفة ومشرقة',
+  'lbl_dark_mode': 'الوضع الداكن',
+  'msg_dark_mode_desc': 'سهل على العين في الإضاءة المنخفضة',
+  'lbl_system_mode': 'إعدادات الجهاز',
+  'msg_system_mode_desc': 'يتبع إعدادات جهازك',
+
+  // Onboarding — Language & Archetype
+  'lbl_choose_language': 'اختر لغتك',
+  'msg_language_desc': 'اختر اللغة التي تفضل استخدام التطبيق بها',
+  'lbl_how_use_app': 'كيف ستستخدم التطبيق؟',
+  'msg_archetype_desc': 'سنخصص تجربتك بناءً على اختيارك. يمكنك تغيير هذا لاحقاً في أي وقت.',
+  'lbl_archetype_reader': 'القراءة والتدبر',
+  'msg_archetype_reader_desc': 'تجربة بسيطة ونظيفة تركز على قراءة القرآن بارتياح',
+  'lbl_archetype_student': 'الحفظ والتعلم',
+  'msg_archetype_student_desc': 'تتبع تقدمك، تدرب على الآيات، وحقق أهدافك في الحفظ',
+  'lbl_archetype_seeker': 'البحث والاستكشاف',
+  'msg_archetype_seeker_desc': 'ابحث عن الآيات، استكشف المعاني، وغص أعمق في القرآن',
+  'lbl_archetype_devotee': 'الممارسة اليومية',
+  'msg_archetype_devotee_desc': 'اتبع ختمة، حافظ على سلسلتك، وداوم على القراءة اليومية',
+  'lbl_surface_reader': 'وضع القارئ',
+  'lbl_surface_student': 'وضع الطالب',
+  'lbl_surface_seeker': 'وضع الباحث',
+  'lbl_home_layout': 'تخطيط الصفحة الرئيسية',
+  'msg_home_layout_desc': 'اختر نمط شاشتك الرئيسية المفضل',
+  'lbl_review': 'مراجعة',
+  'lbl_search_quran': 'البحث في القرآن',
+  'msg_search_desc': 'ابحث عن آيات أو مواضيع أو سور',
+  'lbl_verse_of_day': 'آية اليوم',
+  'msg_verse_of_day_desc': 'آية للتأمل',
+  'lbl_new_verse': 'آية جديدة',
+  'msg_verse_of_day_error': 'تعذر تحميل الآية الآن. اضغط للمحاولة مرة أخرى.',
+  'lbl_todays_juz': 'جزء اليوم',
+  'lbl_recent': 'الأخيرة',
+  'lbl_clear': 'مسح',
+  'msg_surface_suggestion_title': 'لاحظنا كيف تستخدم التطبيق',
+  'msg_surface_suggestion_student': 'يبدو أنك تتبع حفظك كثيراً. هل تريد التبديل إلى وضع الطالب؟',
+  'msg_surface_suggestion_seeker': 'تبحث وتستكشف كثيراً. جرب وضع الباحث؟',
+  'lbl_keep_current': 'ابقَ الحالي',
+  'lbl_try_it': 'جربه',
+
+  // SRS / Spaced Repetition
+  'lbl_interval': 'الفترة',
+  'lbl_days': 'يوم',
+  'lbl_review_urgency_upcoming': 'قادم',
+  'lbl_review_urgency_tomorrow': 'غداً',
+  'lbl_review_urgency_today': 'اليوم',
+  'lbl_review_urgency_yesterday': 'أمس',
+  'lbl_review_urgency_overdue_days': 'متأخر {days} يوم',
+  'lbl_next_review': 'المراجعة التالية',
+
+  // Tajweed Roadmap
+  'lbl_tajweed_roadmap': 'خريطة التجويد',
+  'lbl_tajweed_accuracy': 'دقة التجويد',
+  'lbl_weak_areas': 'نقاط الضعف',
+  'lbl_practice_verses': 'آيات للتدريب',
+  'lbl_no_tajweed_data': 'أكمل جلسة QRC لرؤية تحليل التجويد',
+  'lbl_tajweed_rule': 'القاعدة',
+  'lbl_error_count': 'الأخطاء',
+  'lbl_suggested_practice': 'التدريب المقترح',
+
+  // Adaptive QRC
+  'lbl_adaptive_qrc': 'صعوبة تلقائية',
+  'msg_adaptive_qrc_desc': 'تعديل مستوى الصعوبة تلقائياً بناءً على أدائك',
+  'lbl_current_hafz_level': 'مستوى الحفظ',
+  'lbl_current_tajweed_level': 'مستوى التجويد',
+
+  // Listening Mode
+  'lbl_listening_mode': 'وضع الاستماع',
+  'msg_listening_mode_desc': 'تابع القراءة أثناء استماع القارئ',
+
+  // Deep Link
+  'msg_opening_verse': 'فتح الآية',
+
+  // Activity Heatmap
+  'lbl_activity_heatmap': 'نشاط القراءة',
+  'lbl_less': 'أقل',
+  'lbl_more': 'أكثر',
+  'lbl_no_reading': 'لا يوجد قراءة',
+  'lbl_verses_read': 'آية مقروءة',
+
+  // Quran Reflect
+  'lbl_quran_reflect': 'تأملات القرآن',
+  'lbl_share_to_quran_reflect': 'فتح في QuranReflect',
+  'msg_quran_reflect_desc': 'تأملات ودروس المجتمع',
+
+  // Reading Insights
+  'lbl_reading_insights': 'إحصائيات القراءة',
+  'lbl_this_week': 'هذا الأسبوع',
+
+  // Quran Reflect Feed
+  'lbl_quran_reflect_feed': 'تأملات القرآن',
+  'msg_feed_load_error': 'فشل تحميل التأملات',
+  'msg_no_reflections': 'لا توجد تأملات بعد',
+  'msg_be_first_reflection': 'كن أول من يشارك تأملاً!',
+
+  // Widget Promo
+  'lbl_home_widget': 'الواجهة الرئيسية',
+  'msg_home_widget_desc': 'احصل على آيات يومية على شاشتك الرئيسية',
+  'lbl_got_it': 'حسناً',
+  'lbl_add_widget': 'إضافة الواجهة',
+  'msg_widget_added': 'اضغط مطولاً على الشاشة الرئيسية واختر واجهة حافظ',
+
+  // Reading Reminder
+  'lbl_reading_reminder': 'تذكير القراءة',
+  'msg_reading_reminder_desc': 'تنبيه خفيف للمحافظة على عادة القرآن اليومية',
+  'msg_reading_reminder_benefit': 'اجعل القراءة عادة يومية مع التذكيرات المنتظمة',
+  'lbl_daily_verse_time': 'وقت الآية اليومية',
+  'lbl_reading_reminder_time': 'وقت تذكير القراءة',
+  'lbl_friday_kahf': 'سورة الكهف - يوم الجمعة',
+  'msg_friday_kahf_desc': 'تذكير أسبوعي بقراءة سورة الكهف صباح الجمعة',
+  'lbl_friday_kahf_time': 'وقت تذكير الكهف',
+  'msg_friday_kahf_benefit': 'اقرأ سورة الكهف كل جمعة قبل الصلاة',
+  'msg_notification_permission_denied':
+      'إذن الإشعارات مطلوب لجدولة التذكيرات. يرجى تمكينه من الإعدادات.',
+
+  // Wake Lock
+  'lbl_keep_screen_on': 'إبقاء الشاشة مضاءة',
+  'msg_keep_screen_on_desc': 'منع إطفاء الشاشة أثناء القراءة أو الاستماع',
+
+  // Surfaces
+  'lbl_surface_devotee': 'وضع المداوم',
+
+  // Sajdah
+  'lbl_sajdah': 'سجدة التلاوة — يجب السجود',
+
+  // Semantics / Accessibility Labels
+  'lbl_semantics_verse_of': 'آية {verse} من {surah}',
+  'lbl_semantics_mushaf_page': 'صفحة المصحف {page}، {surah}',
+  'lbl_semantics_memorization_progress': 'تقدم الحفظ، {percent} بالمئة',
+  'lbl_semantics_page_indicator': 'صفحة {current} من {total}',
+  'lbl_semantics_status': 'الحالة: {status}',
+  'lbl_semantics_discovery_card': '{title}، {subtitle}',
+  'lbl_semantics_due_for_review': 'مستحقة للمراجعة: {surah}',
+  'lbl_semantics_profile_card': 'الملف الشخصي، {status}',
+
+  // Notifications Onboarding
+  'lbl_notifications': 'ابقَ على تواصل',
+  'msg_notifications_desc': 'اسمح بالإشعارات لتلقي تذكيرات خفيفة تساعدك على المحافظة على عادة القرآن اليومية.',
+  'lbl_enable_notifications': 'تفعيل الإشعارات',
+  'lbl_skip_for_now': 'تخطي الآن',
+  'lbl_setting_up': 'جاري الإعداد...',
+  'lbl_daily_verse': 'آية اليوم',
+  'msg_daily_verse_benefit': 'استلم آية للتأمل فيها كل يوم',
+  'lbl_streak_milestone': 'إنجازات السلسلة',
+  'msg_streak_milestone_benefit': 'احتفل بإنجازات سلسلة قراءتك اليومية',
+
+  // Devotee Surface
+  'lbl_todays_reading': 'قراءة اليوم',
+  'msg_todays_reading_desc': 'واصل رحلتك اليومية مع القرآن',
+  'lbl_continue_reading': 'مواصلة القراءة',
+  'lbl_streak': 'السلسلة',
+  'msg_streak_desc': 'حافظ على عادتك اليومية',
+  'lbl_khatmah': 'الختمة',
+  'msg_khatmah_desc': 'تتبع تقدمك في ختم القرآن',
+  'lbl_meccan': 'مكية',
+  'lbl_medinan': 'مدنية',
+  'lbl_ayahs': 'آيات',
+  'msg_daily_goal_achieved': 'تم تحقيق الهدف اليومي! ما شاء الله!',
+  'msg_streak_milestone': 'سلسلة لمدة {days} يوم! رائع!',
+
+  // Audio / Playback
+  'msg_audio_playback_error': 'تعذر تشغيل الصوت. تحقق من اتصالك.',
+
+  // Memorization Empty State
+  'lbl_memorization_empty_title': 'ابدأ رحلة حفظك',
+  'lbl_memorization_empty_subtitle':
+      'افتح أي سورة وتحقق من تلاوتك لتبدأ التتبع',
+  'lbl_start_tracking': 'ابدأ التتبع',
+  'lbl_select_surahs_to_track': 'اختر السور للتتبع',
+  'msg_surah_marked_memorized': 'تمت إضافة السورة للحفظ',
+
+  // دعاء ختم القرآن
+  'lbl_dua_khatm': 'دعاء ختم القرآن',
+  'lbl_khatmah_completed': 'ختمة مكتملة!',
+  'msg_khatmah_completed':
+      'تهانينا! لقد أكملت ختمة كاملة للقرآن الكريم.',
+  'lbl_read_dua': 'اقرأ الدعاء',
+  'msg_khatmah_count': 'عدد الختمات: {count}',
+  'msg_dua_khatm_source':
+      'دعاء مستحب عند ختم القرآن الكريم.',
+
 };

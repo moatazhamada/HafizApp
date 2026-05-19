@@ -79,7 +79,7 @@ void main() {
       'emits [RecitationErrorLoading, RecitationErrorError] when loading fails',
       build: () {
         when(() => mockRepository.getRecitationErrors())
-            .thenAnswer((_) async => Left(CacheFailure('Cache error')));
+            .thenAnswer((_) async => const Left(CacheFailure('Cache error')));
         return recitationErrorBloc;
       },
       act: (bloc) => bloc.add(const LoadRecitationErrorsEvent()),
@@ -117,7 +117,7 @@ void main() {
       'emits [RecitationErrorError] when adding fails',
       build: () {
         when(() => mockRepository.addRecitationError(any()))
-            .thenAnswer((_) async => Left(CacheFailure('Add failed')));
+            .thenAnswer((_) async => const Left(CacheFailure('Add failed')));
         return recitationErrorBloc;
       },
       act: (bloc) => bloc.add(AddRecitationErrorEvent(testError)),
@@ -154,7 +154,7 @@ void main() {
       'emits [RecitationErrorError] when removing fails',
       build: () {
         when(() => mockRepository.removeRecitationError(any(), any()))
-            .thenAnswer((_) async => Left(CacheFailure('Remove failed')));
+            .thenAnswer((_) async => const Left(CacheFailure('Remove failed')));
         return recitationErrorBloc;
       },
       act: (bloc) => bloc.add(const RemoveRecitationErrorEvent(1, 1)),

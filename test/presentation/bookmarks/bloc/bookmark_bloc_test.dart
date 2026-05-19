@@ -78,7 +78,7 @@ void main() {
       'emits [BookmarkLoading, BookmarkError] when loading fails',
       build: () {
         when(() => mockRepository.getBookmarks())
-            .thenAnswer((_) async => Left(CacheFailure('Cache error')));
+            .thenAnswer((_) async => const Left(CacheFailure('Cache error')));
         return bookmarkBloc;
       },
       act: (bloc) => bloc.add(const LoadBookmarksEvent()),
@@ -116,7 +116,7 @@ void main() {
       'emits [BookmarkError] when adding fails',
       build: () {
         when(() => mockRepository.addBookmark(any()))
-            .thenAnswer((_) async => Left(CacheFailure('Add failed')));
+            .thenAnswer((_) async => const Left(CacheFailure('Add failed')));
         return bookmarkBloc;
       },
       act: (bloc) => bloc.add(AddBookmarkEvent(testBookmark)),
@@ -153,7 +153,7 @@ void main() {
       'emits [BookmarkError] when removing fails',
       build: () {
         when(() => mockRepository.removeBookmark(any(), any()))
-            .thenAnswer((_) async => Left(CacheFailure('Remove failed')));
+            .thenAnswer((_) async => const Left(CacheFailure('Remove failed')));
         return bookmarkBloc;
       },
       act: (bloc) => bloc.add(const RemoveBookmarkEvent(1, 1)),

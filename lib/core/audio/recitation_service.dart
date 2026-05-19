@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
@@ -12,6 +12,7 @@ import 'recitation_models.dart';
 class RecitationService {
   final Dio _dio;
   static final Map<String, ChapterAudioFile> _audioCache = {};
+  static const int _maxAudioCacheSize = 100;
 
   RecitationService([Dio? dio]) : _dio = dio ?? _buildDio();
 
@@ -49,7 +50,7 @@ class RecitationService {
             .toList();
       }
     } catch (e) {
-      debugPrint('Failed to fetch reciters: $e');
+      Logger.warning('Failed to fetch reciters: $e', feature: 'Recitation');
     }
     return _fallbackReciters();
   }
@@ -64,6 +65,9 @@ class RecitationService {
     if (cached != null) return cached;
     final cachedHive = _readCachedAudio(cacheKey);
     if (cachedHive != null) {
+      if (_audioCache.length >= _maxAudioCacheSize) {
+        _audioCache.remove(_audioCache.keys.first);
+      }
       _audioCache[cacheKey] = cachedHive;
       return cachedHive;
     }
@@ -77,13 +81,16 @@ class RecitationService {
         final audioFile = data['audio_file'] ?? data['chapter_recitation'];
         if (audioFile is Map<String, dynamic>) {
           final parsed = ChapterAudioFile.fromJson(audioFile);
+          if (_audioCache.length >= _maxAudioCacheSize) {
+            _audioCache.remove(_audioCache.keys.first);
+          }
           _audioCache[cacheKey] = parsed;
           _writeCachedAudio(cacheKey, parsed);
           return parsed;
         }
       }
     } catch (e) {
-      debugPrint('Failed to fetch chapter audio: $e');
+      Logger.warning('Failed to fetch chapter audio: $e', feature: 'Recitation');
     }
     return null;
   }
@@ -98,7 +105,9 @@ class RecitationService {
         if (decoded is Map<String, dynamic>) {
           return ChapterAudioFile.fromJson(decoded);
         }
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Audio cache read failed: $e', feature: 'Audio');
+      }
     }
     return null;
   }

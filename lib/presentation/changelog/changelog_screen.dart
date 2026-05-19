@@ -12,8 +12,36 @@ class ChangelogScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: const [
           _VersionCard(
-            version: '3.1.0',
+            version: '3.3.0',
             isLatest: true,
+            itemKeys: [
+              'changelog_3_3_0_1',
+              'changelog_3_3_0_2',
+              'changelog_3_3_0_3',
+              'changelog_3_3_0_4',
+              'changelog_3_3_0_5',
+              'changelog_3_3_0_6',
+              'changelog_3_3_0_7',
+              'changelog_3_3_0_8',
+              'changelog_3_3_0_9',
+            ],
+          ),
+          SizedBox(height: 16),
+          _VersionCard(
+            version: '3.2.0',
+            isLatest: false,
+            itemKeys: [
+              'changelog_3_2_0_1',
+              'changelog_3_2_0_2',
+              'changelog_3_2_0_3',
+              'changelog_3_2_0_4',
+              'changelog_3_2_0_5',
+            ],
+          ),
+          SizedBox(height: 16),
+          _VersionCard(
+            version: '3.1.0',
+            isLatest: false,
             itemKeys: [
               'changelog_3_1_0_1',
               'changelog_3_1_0_2',
@@ -119,7 +147,7 @@ class _VersionCard extends StatelessWidget {
                         size: isLatest ? 12 : 6,
                         color: isLatest
                             ? theme.colorScheme.primary
-                            : Colors.grey,
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
                     ),
                     Expanded(
@@ -151,13 +179,13 @@ class _SpecialThanksCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.star, color: Colors.amber.shade700, size: 20),
+                Icon(Icons.star, color: AppColors.of(context).warning, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'lbl_special_thanks'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber.shade900,
+                    color: AppColors.of(context).warning,
                   ),
                 ),
               ],

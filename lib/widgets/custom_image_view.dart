@@ -1,8 +1,8 @@
 // ignore_for_file: must_be_immutable
 
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:hafiz_app/core/utils/platform_file.dart'
+    if (dart.library.html) 'package:hafiz_app/core/utils/platform_file_web.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -102,12 +102,13 @@ class CustomImageView extends StatelessWidget {
             ),
           );
         case ImageType.file:
-          return Image.file(
-            File(imagePath!),
+          return buildPlatformFileImage(
+            imagePath!,
             height: height,
             width: width,
-            fit: fit ?? BoxFit.cover,
+            fit: fit,
             color: color,
+            placeHolder: placeHolder,
           );
         case ImageType.network:
           return CachedNetworkImage(
@@ -120,8 +121,8 @@ class CustomImageView extends StatelessWidget {
               height: 30,
               width: 30,
               child: LinearProgressIndicator(
-                color: Colors.grey.shade200,
-                backgroundColor: Colors.grey.shade100,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
               ),
             ),
             errorWidget: (context, url, error) => Image.asset(

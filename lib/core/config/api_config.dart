@@ -1,11 +1,16 @@
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class ApiConfig {
-  // Whether to prefer Quran.Foundation content endpoints. Keep false to use existing Quran.com v4.
+  // Whether to prefer Quran.Foundation content endpoints.
   static const bool useQfContent = bool.fromEnvironment(
     'QF_USE_CONTENT',
-    defaultValue: false,
+    defaultValue: true,
   );
+
+  /// Returns the active content API base URL based on [useQfContent].
+  static String get contentBase =>
+      useQfContent ? qfContentBase : quranComBase;
 
   // Detect whether this is a production build from the flavor name.
   // Flutter passes --dart-define=flavor=<name> automatically when --flavor is used.
@@ -39,7 +44,7 @@ class ApiConfig {
   // Content API base (if using Quran.Foundation content APIs)
   static const String qfContentBase = String.fromEnvironment(
     'QF_CONTENT_BASE',
-    defaultValue: 'https://api.quran.foundation',
+    defaultValue: 'https://apis.quran.foundation',
   );
 
   // Quran.com public API base (v4)
@@ -69,7 +74,8 @@ class ApiConfig {
   static bool get _isArabic {
     try {
       return LocaleController.notifier.value.languageCode == 'ar';
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Failed to detect Arabic locale: $e', feature: 'ApiConfig');
       return false;
     }
   }
@@ -81,4 +87,10 @@ class ApiConfig {
   /// Translation resource ID (English only — skipped when locale is Arabic).
   /// 85 = The Clear Quran by Dr. Mustafa Khattab.
   static const int translationId = 85;
+
+  /// Quran.Foundation Search API base URL.
+  static const String qfSearchBase = String.fromEnvironment(
+    'QF_SEARCH_BASE',
+    defaultValue: 'https://apis.quran.foundation',
+  );
 }

@@ -1,0 +1,2 @@
+#include "ephemeral/Flutter-Generated.xcconfig"
+PRODUCT_BUNDLE_IDENTIFIER=com.hafiz.app.hafizapp

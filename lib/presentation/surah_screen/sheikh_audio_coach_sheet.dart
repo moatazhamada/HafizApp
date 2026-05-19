@@ -34,6 +34,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   bool _isLoading = true;
   bool _isPlaying = false;
   bool _isBuffering = false;
+  String? _errorMessage;
   StreamSubscription<Duration>? _posSub;
   StreamSubscription<PlayerState>? _playerSub;
 
@@ -49,31 +50,43 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
   }
 
   Future<void> _load() async {
-    final audio = await _recitationService.fetchChapterAudio(
-      reciterId: widget.reciterId,
-      chapterNumber: widget.chapterNumber,
-      segments: true,
-    );
-    if (!mounted) return;
-    setState(() {
-      _audioFile = audio;
-      _verseTiming = _findVerseTiming(audio);
-      _isLoading = false;
-    });
+    try {
+      final audio = await _recitationService.fetchChapterAudio(
+        reciterId: widget.reciterId,
+        chapterNumber: widget.chapterNumber,
+        segments: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _audioFile = audio;
+        _verseTiming = _findVerseTiming(audio);
+        _isLoading = false;
+      });
+    } catch (e, stackTrace) {
+      Logger.error(
+        'Failed to load chapter audio: $e',
+        feature: 'SheikhAudioCoach',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'msg_audio_load_error'.tr;
+      });
+    }
   }
 
   VerseTiming? _findVerseTiming(ChapterAudioFile? audio) {
     if (audio == null) return null;
     final key = '${widget.chapterNumber}:${widget.verseNumber}';
-    return audio.timings.firstWhere(
-      (t) => t.verseKey == key,
-      orElse: () => const VerseTiming(
-        verseKey: '',
-        timestampFrom: 0,
-        timestampTo: 0,
-        segments: [],
-      ),
-    );
+    try {
+      return audio.timings.firstWhere(
+        (t) => t.verseKey == key && t.timestampTo > 0,
+      );
+    } on StateError catch (_) {
+      return null;
+    }
   }
 
   Future<void> _play() async {
@@ -105,7 +118,13 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
 
   Future<void> _stop() async {
     await _player.pause();
-    setState(() => _isPlaying = false);
+    await _posSub?.cancel();
+    _posSub = null;
+    await _playerSub?.cancel();
+    _playerSub = null;
+    if (mounted) {
+      setState(() => _isPlaying = false);
+    }
   }
 
   Future<void> _repeatWord() async {
@@ -114,11 +133,14 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
     if (timing == null || audio == null || audio.audioUrl.isEmpty) return;
     if (timing.segments.isEmpty) {
       await _player.seek(Duration(milliseconds: timing.timestampFrom));
-      return;
+    } else {
+      final idx = (_currentWordIndex - 1).clamp(0, timing.segments.length - 1);
+      final seg = timing.segments[idx];
+      await _player.seek(Duration(milliseconds: seg.startMs));
     }
-    final idx = (_currentWordIndex - 1).clamp(0, timing.segments.length - 1);
-    final seg = timing.segments[idx];
-    await _player.seek(Duration(milliseconds: seg.startMs));
+    if (!_isPlaying) {
+      await _play();
+    }
   }
 
   void _updateWordIndex(int currentMs, VerseTiming timing) {
@@ -147,7 +169,17 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
       padding: const EdgeInsets.all(16),
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : _errorMessage != null
+              ? Center(
+                  child: Text(
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                )
+              : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -172,7 +204,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                         style: TextStyle(
                           fontSize: 18,
                           fontFamily: 'NotoNaskhArabic',
-                          color: highlight ? Colors.green : Colors.black87,
+                          color: highlight ? AppColors.of(context).memorizedStatus : Theme.of(context).colorScheme.onSurface,
                           fontWeight: highlight
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -183,6 +215,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  textDirection: TextDirection.rtl,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(

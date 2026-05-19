@@ -24,7 +24,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to load recitation errors'));
+      return const Left(CacheFailure('Failed to load recitation errors'));
     } catch (e, stackTrace) {
       Logger.error(
         'Unexpected error loading recitation errors: $e',
@@ -32,7 +32,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to load recitation errors'));
+      return const Left(CacheFailure('Failed to load recitation errors'));
     }
   }
 
@@ -50,7 +50,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to save recitation error'));
+      return const Left(CacheFailure('Failed to save recitation error'));
     } catch (e, stackTrace) {
       Logger.error(
         'Unexpected error saving recitation error: $e',
@@ -58,7 +58,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to save recitation error'));
+      return const Left(CacheFailure('Failed to save recitation error'));
     }
   }
 
@@ -77,7 +77,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to remove recitation error'));
+      return const Left(CacheFailure('Failed to remove recitation error'));
     } catch (e, stackTrace) {
       Logger.error(
         'Unexpected error removing recitation error: $e',
@@ -85,7 +85,7 @@ class RecitationErrorRepositoryImpl implements RecitationErrorRepository {
         error: e,
         stackTrace: stackTrace,
       );
-      return Left(CacheFailure('Failed to remove recitation error'));
+      return const Left(CacheFailure('Failed to remove recitation error'));
     }
   }
 }

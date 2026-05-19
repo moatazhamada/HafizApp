@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/utils/logger.dart';
 import '../../model/recitation_error_model.dart';
 
 abstract class RecitationErrorLocalDataSource {
@@ -26,8 +27,9 @@ class RecitationErrorLocalDataSourceImpl
           errors.add(
             RecitationErrorModel.fromJson(Map<String, dynamic>.from(e)),
           );
-        } catch (_) {
+        } catch (e) {
           // Skip malformed entries instead of failing the entire read.
+          Logger.warning('Skipping malformed recitation error entry: $e', feature: 'RecitationErrorLocal');
           continue;
         }
       }

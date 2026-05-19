@@ -3,13 +3,16 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class ConnectivityState extends Equatable {
   final bool isOnline;
   final ConnectivityResult connectionType;
 
   const ConnectivityState({
-    this.isOnline = false,
+    // Default to true (optimistic) so the offline banner does not flash
+    // on every cold start while the reachability check is in flight.
+    this.isOnline = true,
     this.connectionType = ConnectivityResult.none,
   });
 
@@ -63,7 +66,11 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
           final online = await _checkReachability();
           if (!isClosed) {
             emit(
-              state.copyWith(isOnline: online, connectionType: results.first),
+              state.copyWith(
+                isOnline: online,
+                connectionType:
+                    results.firstOrNull ?? ConnectivityResult.none,
+              ),
             );
           }
         }
@@ -78,7 +85,8 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
         options: Options(sendTimeout: _timeout, receiveTimeout: _timeout),
       );
       return response.statusCode == 204;
-    } catch (_) {
+    } catch (e) {
+      Logger.warning('Reachability check failed: $e', feature: 'Connectivity');
       return false;
     }
   }

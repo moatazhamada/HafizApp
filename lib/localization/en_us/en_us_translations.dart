@@ -17,9 +17,9 @@ final Map<String, String> enUs = {
       'The Quranic text is sourced from verified repositories to ensure accuracy and offline availability. Please report any discrepancies immediately.',
   'about_language_title': 'Language',
   'about_sources_title': 'Data Sources',
-  'about_source_quran_api': 'Quran.com API v4',
+  'about_source_quran_api': 'Quran Foundation Content API',
   'about_source_quran_api_desc':
-      'Surah metadata, translations, and audio recitations',
+      'Verses, translations, tafsirs, and audio recitations via Quran.Foundation',
   'about_source_tanzil': 'Tanzil (Verified Uthmani Text)',
   'about_source_tanzil_desc': 'Local Quran text for offline reading',
   'about_source_qf_content': 'Quran Foundation Content API',
@@ -38,6 +38,7 @@ final Map<String, String> enUs = {
   'about_feedback_send': 'Submit',
   'about_feedback_sent': 'Thank you for your feedback!',
   'lbl_cancel': 'Cancel',
+  'lbl_confirm': 'Confirm',
   'lbl_copied': 'Copied to clipboard',
   'lbl_practice_list': 'Practice List',
   'msg_no_practice_items': 'No verses marked for practice',
@@ -52,7 +53,7 @@ final Map<String, String> enUs = {
   'msg_marked_error': 'Verse marked for practice',
   'msg_error_removed': 'Removed from practice list',
   'lbl_settings': 'Settings',
-  'lbl_recitation_coach': 'Recitation Coach',
+  'lbl_recitation_coach': 'Memorization Verifier',
   'lbl_recitation_provider': 'Recitation Engine',
   'lbl_provider_local': 'On-device (Standard)',
   'lbl_provider_whisper': 'On-device (Whisper)',
@@ -117,6 +118,7 @@ final Map<String, String> enUs = {
   'lbl_remove_surah_bookmark': 'Remove Surah Bookmark',
   'lbl_add_surah_bookmark': 'Add Surah Bookmark',
   'lbl_delete': 'Delete',
+  'lbl_edit': 'Edit',
   'msg_swipe_delete': 'Swipe to delete',
   // Surah
   // About
@@ -131,9 +133,9 @@ final Map<String, String> enUs = {
   'msg_recitation_missing': 'Missing',
   'msg_recitation_extra': 'Extra',
   'msg_recitation_substitute': 'Substituted',
-  'msg_coach_tip_slow': 'Coach tip: slow down and keep steady pace.',
+  'msg_coach_tip_slow': 'Tip: slow down and keep a steady pace.',
   'msg_repeat_word': 'Repeat this word:',
-  'msg_tajweed_notes': 'Tajweed notes',
+  'msg_tajweed_notes': 'Verification notes',
   'msg_qrc_missing_key': 'QRC key not set',
   'lbl_listen_sheikh': 'Listen to Sheikh',
   'lbl_play': 'Play',
@@ -156,6 +158,8 @@ final Map<String, String> enUs = {
   'msg_mic_permission': 'Microphone Access',
   'msg_mic_permission_desc':
       'Hafiz needs microphone access to verify your recitation. You can change this anytime in your device settings.',
+  'msg_voice_init_failed': 'Voice recognition could not be started. Please try again.',
+  'msg_voice_analysis_error': 'Could not analyze recitation. Please try again.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility
@@ -186,6 +190,7 @@ final Map<String, String> enUs = {
   'lbl_last_synced': 'Last synced',
   'lbl_appearance': 'Appearance',
   'lbl_reading': 'Reading',
+  'lbl_notification_settings': 'Notifications',
   'lbl_about': 'About',
   'msg_qf_logged_in': 'Logged in to Quran.com',
   'msg_qf_not_logged_in': 'Not logged in',
@@ -194,8 +199,26 @@ final Map<String, String> enUs = {
   'lbl_user': 'User',
   'lbl_not_signed_in': 'Not signed in',
   'lbl_tap_to_sign_in': 'Tap to sign in',
+  'lbl_checking_account': 'Checking account...',
+  'lbl_auth_error': 'Authentication Error',
+  'msg_login_to_sync_desc': 'Sign in to sync your bookmarks and preferences across devices.',
   'lbl_bookmarks_sync': 'Sync bookmarks with Quran.com',
   'msg_last_synced': 'Last synced: {time}',
+  'pref_sync_title': 'Sync Preferences',
+  'pref_sync_body': 'Would you like to sync your app preferences with Quran.Foundation? You can also do this later from Cloud Sync.',
+  'pref_sync_use_local': 'Use Local',
+  'pref_sync_use_qf': 'Use QF',
+  'pref_sync_push_started': 'Uploading local preferences to Quran.Foundation...',
+  'pref_sync_pull_started': 'Downloading preferences from Quran.Foundation...',
+  'pref_sync_section_title': 'Preferences',
+  'pref_sync_ready': 'Sync your app settings with Quran.Foundation.',
+  'pref_sync_login_required': 'Sign in to sync preferences.',
+  'pref_sync_upload': 'Upload',
+  'pref_sync_download': 'Download',
+  'pref_sync_two_way': 'Two-Way Sync',
+  'pref_sync_pushed_count': 'Uploaded {count} preferences',
+  'pref_sync_pulled_count': 'Downloaded {count} preferences',
+  'pref_sync_two_way_result': 'Synced: {pulled} pulled, {pushed} pushed',
   'msg_login_to_sync': 'Login to Quran.com above to enable sync',
   'msg_recitation_progress': 'Recitation progress',
   'msg_local_data_note':
@@ -204,6 +227,8 @@ final Map<String, String> enUs = {
   'msg_login_cancelled': 'Login was cancelled or failed.',
   'msg_login_not_configured':
       'Login is not configured. Add your Quran.com client ID to continue.',
+  'msg_backend_auth_failed':
+      'Authentication failed. Please check your connection and try again.',
   'msg_sync_failed': 'Failed to sync with Quran.com',
   'msg_re_login_required':
       'Please sign in again to grant updated permissions required by the server.',
@@ -244,6 +269,15 @@ final Map<String, String> enUs = {
   'msg_verses_remaining': '{count} verses remaining',
   'lbl_day_streak': 'day streak',
   'lbl_keep_going': 'Keep going!',
+  'lbl_log_type_selector': 'Log type: Pages or Verses',
+  'lbl_log_reading': 'Log Reading',
+  'lbl_log_manual_reading': 'Log Manual Reading',
+  'lbl_pages': 'Pages',
+  'lbl_number_of_pages': 'Number of pages',
+  'lbl_number_of_verses': 'Number of verses',
+  'msg_log_manual_reading_desc': 'Enter the number of pages or verses you read',
+  'msg_enter_amount': 'Enter amount',
+  'lbl_save_reading_log': 'Save reading log',
   'lbl_last_7_days': 'Last 7 Days',
   'lbl_mon': 'Mon',
   'lbl_tue': 'Tue',
@@ -264,6 +298,19 @@ final Map<String, String> enUs = {
   'musali_teaser_slide4_sub': 'Think again.',
   'musali_teaser_slide4_sub_ar': 'فكر مجدداً.',
 
+  // Validation errors
+  'val_required': 'This field is required',
+  'val_max_length': 'Cannot exceed {max} characters',
+  'val_min_length': 'Must be at least {min} characters',
+  'val_invalid_number': 'Please enter a valid number',
+  'val_min_value': 'Must be at least {min}',
+  'val_max_value': 'Must not exceed {max}',
+  'val_quran_page_range': 'Page must be between 1 and {max}',
+  'val_quran_surah_range': 'Surah must be between 1 and 114',
+  'val_quran_juz_range': 'Juz must be between 1 and 30',
+  'val_quran_verse_range': 'Ayah must be between 1 and {max}',
+  'val_search_max_length': 'Search query is too long',
+
   // Failure Messages
   'msg_server_error': 'Server error occurred',
   'msg_cache_error': 'Local data error',
@@ -276,19 +323,33 @@ final Map<String, String> enUs = {
 
   // Sharing
   'lbl_share_verse': 'Share Verse',
-  'lbl_share_text': 'Share as Text',
+  'lbl_share_text': 'Share Text',
+  'lbl_share_as_image': 'Share as Image',
   'msg_share_text_desc': 'Share verse with attribution',
   'lbl_copy_text': 'Copy Text',
   'msg_copy_text_desc': 'Copy verse text only',
   'msg_text_copied': 'Text copied to clipboard',
   'msg_via_app': 'via Hafiz',
 
+  'lbl_read_this_ayah': 'Read This Ayah',
+  'lbl_start_from_here': 'Start From Here',
+
   // Audio Player
   'lbl_sleep_timer': 'Sleep Timer',
   'lbl_cancel_timer': 'Cancel Timer',
   'lbl_minutes': 'minutes',
+  'msg_sleep_timer_remaining': 'Sleep timer: {minutes}:{seconds}',
+  'lbl_loop_surah': 'Loop Surah',
+  'lbl_loop_off': 'Loop Off',
   'lbl_loop_verses': 'Loop',
   'msg_audio_load_error': 'Failed to load audio',
+  'lbl_select_verse': 'Select Ayah',
+  'lbl_previous_verse': 'Previous Ayah',
+  'lbl_next_verse': 'Next Ayah',
+  'msg_resume_audio': 'Resume Listening',
+  'msg_resume_from_verse': 'Continue from Ayah {verse}',
+  'lbl_speed_x': '{speed}x',
+  'msg_verse_progress': '{label} {current} / {total}',
 
   // Mushaf Screen
   'lbl_mushaf': 'Mushaf',
@@ -303,9 +364,12 @@ final Map<String, String> enUs = {
 
   // Mushaf Settings
   'lbl_mushaf_type': 'Mushaf Type',
-  'lbl_clear_mushaf_cache': 'Clear Mushaf Image Cache',
+  'lbl_storage': 'Storage',
+  'lbl_clear_mushaf_cache': 'Clear Mushaf Images',
   'msg_clear_mushaf_cache_desc':
-      'Remove cached page images to free space or fix display issues',
+      'Free up space by deleting cached Mushaf page images',
+  'msg_clear_mushaf_cache_confirm': 'This will remove all cached Mushaf images. They will be re-downloaded when you view them again.',
+  'msg_mushaf_cache_cleared': 'Mushaf cache cleared successfully',
   'msg_cache_cleared': 'Image cache cleared',
 
   // Statistics
@@ -320,6 +384,8 @@ final Map<String, String> enUs = {
   // Auto-scroll
   'lbl_start_autoscroll': 'Start Auto-scroll',
   'lbl_stop_autoscroll': 'Stop Auto-scroll',
+  'lbl_start_listening': 'Listening Mode',
+  'lbl_stop_listening': 'Stop Listening',
 
   // Settings Enhancements
   'lbl_quran_font': 'Quran Font Size',
@@ -359,6 +425,34 @@ final Map<String, String> enUs = {
       'Quran Foundation Content API integration for tafsir and verse data.',
   'changelog_3_1_0_6':
       'Quran Foundation Bookmarks sync — sync your bookmarks with Quran.com.',
+  'changelog_3_3_0_1':
+      'Home screen widget \u2014 get daily Quran verses right on your launcher.',
+  'changelog_3_3_0_2':
+      'Reading reminders and streak milestone notifications to keep you on track.',
+  'changelog_3_3_0_3':
+      'Audio player overhaul \u2014 resume from last verse, verse picker, and prev/next controls.',
+  'changelog_3_3_0_4':
+      'Redesigned onboarding with theme selection and consistent gradient scaffolds.',
+  'changelog_3_3_0_5':
+      'Quran.Foundation preference sync \u2014 bidirectional sync of bookmarks and settings.',
+  'changelog_3_3_0_6':
+      'Goal editing and deletion \u2014 update or remove reading goals directly from Goals screen.',
+  'changelog_3_3_0_7':
+      'User profile from Quran.Foundation \u2014 display name and email across the app.',
+  'changelog_3_3_0_8':
+      'Expanded analytics \u2014 17 new events covering reading sessions, bookmarks, goals, and more.',
+  'changelog_3_3_0_9':
+      'Reading insights with activity heatmap \u2014 visualize your weekly Quran reading habits.',
+  'changelog_3_2_0_1':
+      'Adaptive home surfaces \u2014 Reader, Student, and Seeker layouts that adapt to your usage.',
+  'changelog_3_2_0_2':
+      'Behavior tracking with smart surface suggestions based on your reading habits.',
+  'changelog_3_2_0_3':
+      'Reading activity heatmap \u2014 visualize your weekly Quran engagement at a glance.',
+  'changelog_3_2_0_4':
+      'Quran Reflect community feed \u2014 browse and share reflections on verses.',
+  'changelog_3_2_0_5':
+      'All content APIs now routed through Quran.Foundation for unified data integrity.',
   'changelog_3_1_0_7':
       'Force update mechanism for critical text accuracy fixes.',
   'changelog_3_0_0_1': 'Complete app redesign with Material 3.',
@@ -387,6 +481,10 @@ final Map<String, String> enUs = {
   'goals_progress_label': '{done} of {total}',
   'goals_completed': 'Completed',
   'goals_in_progress': 'In progress',
+  'goals_edit_title': 'Edit Goal',
+  'goals_duration_label': 'Duration (days)',
+  'goals_delete_title': 'Delete Goal',
+  'goals_delete_body': 'Are you sure you want to delete this goal? This cannot be undone.',
   'lbl_minutes_ago': '{count}m ago',
   'lbl_hours_ago': '{count}h ago',
 
@@ -421,6 +519,17 @@ final Map<String, String> enUs = {
   'lbl_hide_translation': 'Hide Translation',
   'lbl_tafsir_ibn_kathir': 'Tafsir (Ibn Kathir)',
   'lbl_study': 'Study',
+  'lbl_overview': 'Overview',
+  'lbl_word_by_word': 'Word by Word',
+  'lbl_select_tafsir_source': 'Select Tafsir Source',
+  'lbl_select_translation_source': 'Select Translation Source',
+  'lbl_tab_overview': 'Overview',
+  'lbl_tab_tafsir': 'Tafsir',
+  'lbl_tab_translation': 'Translation',
+  'lbl_tab_word_by_word': 'Word by Word',
+  'lbl_tab_reflections': 'Reflections',
+  'lbl_select_tafsir': 'Select Tafsir',
+  'lbl_select_translation': 'Select Translation',
 
   // Recitation feedback
   'lbl_keep_practicing': 'Keep Practicing',
@@ -474,6 +583,7 @@ final Map<String, String> enUs = {
   'lbl_reflections': 'Reflections',
   'lbl_write_reflection': 'Write your reflection...',
   'lbl_no_reflections': 'No reflections yet',
+  'lbl_post_reflection': 'Post',
   'lbl_submit_reflection': 'Save Reflection',
   'lbl_reflection_saved': 'Reflection saved',
 
@@ -481,4 +591,191 @@ final Map<String, String> enUs = {
   'lbl_daily_verse_notification': 'Daily Verse Notification',
   'msg_daily_verse_desc':
       'Receive a daily Quran verse to start your day with reflection',
+
+  // Onboarding — Theme
+  'lbl_choose_theme': 'Choose Your Theme',
+  'msg_theme_desc': 'Select the appearance you prefer for the app',
+  'lbl_light_mode': 'Light Mode',
+  'msg_light_mode_desc': 'Clean and bright interface',
+  'lbl_dark_mode': 'Dark Mode',
+  'msg_dark_mode_desc': 'Easy on the eyes in low light',
+  'lbl_system_mode': 'System Default',
+  'msg_system_mode_desc': 'Follows your device settings',
+
+  // Onboarding — Language & Archetype
+  'lbl_choose_language': 'Choose Your Language',
+  'msg_language_desc': 'Select the language you prefer to use the app in',
+  'lbl_how_use_app': 'How will you use the app?',
+  'msg_archetype_desc': 'We will personalize your experience based on your choice. You can always change this later.',
+  'lbl_archetype_reader': 'Read & Reflect',
+  'msg_archetype_reader_desc': 'A clean, simple experience focused on reading the Quran comfortably',
+  'lbl_archetype_student': 'Memorize & Learn',
+  'msg_archetype_student_desc': 'Track your progress, practice verses, and achieve your memorization goals',
+  'lbl_archetype_seeker': 'Search & Explore',
+  'msg_archetype_seeker_desc': 'Look up verses, explore meanings, and dive deeper into the Quran',
+  'lbl_archetype_devotee': 'Daily Practice',
+  'msg_archetype_devotee_desc': 'Follow a Khatmah, keep your streak, and maintain a daily reading habit',
+  'lbl_surface_reader': 'Reader View',
+  'lbl_surface_student': 'Student View',
+  'lbl_surface_seeker': 'Seeker View',
+  'lbl_home_layout': 'Home Layout',
+  'msg_home_layout_desc': 'Choose your preferred home screen style',
+  'lbl_review': 'Review',
+  'lbl_search_quran': 'Search the Quran',
+  'msg_search_desc': 'Find verses, topics, or Surahs',
+  'lbl_verse_of_day': 'Verse of the Day',
+  'msg_verse_of_day_desc': 'A verse to reflect on',
+  'lbl_new_verse': 'New Verse',
+  'msg_verse_of_day_error': 'Could not load a verse right now. Tap to try again.',
+  'lbl_todays_juz': "Today's Juz",
+  'lbl_recent': 'Recent',
+  'lbl_clear': 'Clear',
+  'msg_surface_suggestion_title': 'We noticed how you use the app',
+  'msg_surface_suggestion_student': 'You seem to be tracking your memorization a lot. Switch to Student view?',
+  'msg_surface_suggestion_seeker': 'You search and explore often. Try the Seeker view?',
+  'lbl_keep_current': 'Keep Current',
+  'lbl_try_it': 'Try It',
+
+  // SRS / Spaced Repetition
+  'lbl_interval': 'Interval',
+  'lbl_days': 'd',
+  'lbl_review_urgency_upcoming': 'upcoming',
+  'lbl_review_urgency_tomorrow': 'tomorrow',
+  'lbl_review_urgency_today': 'today',
+  'lbl_review_urgency_yesterday': 'yesterday',
+  'lbl_review_urgency_overdue_days': '{days}d overdue',
+  'lbl_next_review': 'Next review',
+
+  // Tajweed Roadmap
+  'lbl_tajweed_roadmap': 'Tajweed Roadmap',
+  'lbl_tajweed_accuracy': 'Tajweed Accuracy',
+  'lbl_weak_areas': 'Weak Areas',
+  'lbl_practice_verses': 'Practice Verses',
+  'lbl_no_tajweed_data': 'Complete a QRC session to see your tajweed analysis',
+  'lbl_tajweed_rule': 'Rule',
+  'lbl_error_count': 'Errors',
+  'lbl_suggested_practice': 'Suggested Practice',
+
+  // Adaptive QRC
+  'lbl_adaptive_qrc': 'Adaptive Difficulty',
+  'msg_adaptive_qrc_desc':
+      'Automatically adjust recitation difficulty based on your performance',
+  'lbl_current_hafz_level': 'Hafz Level',
+  'lbl_current_tajweed_level': 'Tajweed Level',
+
+  // Listening Mode
+  'lbl_listening_mode': 'Listening Mode',
+  'msg_listening_mode_desc': 'Follow along as the reciter reads',
+
+  // Deep Link
+  'msg_opening_verse': 'Opening verse',
+
+  // Activity Heatmap
+  'lbl_activity_heatmap': 'Reading Activity',
+  'lbl_less': 'Less',
+  'lbl_more': 'More',
+  'lbl_no_reading': 'No reading',
+  'lbl_verses_read': 'verses read',
+
+  // Quran Reflect
+  'lbl_quran_reflect': 'Quran Reflect',
+  'lbl_share_to_quran_reflect': 'Open in QuranReflect',
+  'msg_quran_reflect_desc': 'Community reflections & lessons',
+
+  // Reading Insights
+  'lbl_reading_insights': 'Reading Insights',
+  'lbl_this_week': 'This Week',
+
+  // Quran Reflect Feed
+  'lbl_quran_reflect_feed': 'Quran Reflect',
+  'msg_feed_load_error': 'Failed to load feed',
+  'msg_no_reflections': 'No reflections yet',
+  'msg_be_first_reflection': 'Be the first to share a reflection!',
+
+  // Widget Promo
+  'lbl_home_widget': 'Home Widget',
+  'msg_home_widget_desc': 'Get daily verses on your home screen',
+  'lbl_got_it': 'Got it',
+  'lbl_add_widget': 'Add Widget',
+  'msg_widget_added': 'Long-press your home screen and select Hafiz widget',
+
+  // Reading Reminder
+  'lbl_reading_reminder': 'Reading Reminder',
+  'msg_reading_reminder_desc': 'Gentle nudge to keep your daily Quran habit',
+  'msg_reading_reminder_benefit': 'Build a consistent reading habit with daily reminders',
+  'lbl_daily_verse_time': 'Daily Verse Time',
+  'lbl_reading_reminder_time': 'Reading Reminder Time',
+  'lbl_friday_kahf': 'Friday Surah Al-Kahf',
+  'msg_friday_kahf_desc': 'Weekly reminder to read Surah Al-Kahf on Friday morning',
+  'lbl_friday_kahf_time': 'Friday Kahf Time',
+  'msg_friday_kahf_benefit': 'Read Surah Al-Kahf every Friday before prayer',
+  'msg_notification_permission_denied':
+      'Notification permission is required to schedule reminders. Please enable it in settings.',
+
+  // Wake Lock
+  'lbl_keep_screen_on': 'Keep Screen On',
+  'msg_keep_screen_on_desc': 'Prevent screen from turning off while reading or listening',
+
+  // Surfaces
+  'lbl_surface_devotee': 'Devotee View',
+
+  // Sajdah
+  'lbl_sajdah': 'Sajdah tilawa — prostration required',
+
+  // Semantics / Accessibility Labels
+  'lbl_semantics_verse_of': 'Verse {verse} of {surah}',
+  'lbl_semantics_mushaf_page': 'Mushaf page {page}, {surah}',
+  'lbl_semantics_memorization_progress': 'Memorization progress, {percent} percent',
+  'lbl_semantics_page_indicator': 'Page {current} of {total}',
+  'lbl_semantics_status': 'Status: {status}',
+  'lbl_semantics_discovery_card': '{title}, {subtitle}',
+  'lbl_semantics_due_for_review': 'Due for review: {surah}',
+  'lbl_semantics_profile_card': 'Profile, {status}',
+
+  // Notifications Onboarding
+  'lbl_notifications': 'Stay Connected',
+  'msg_notifications_desc': 'Allow notifications to receive gentle reminders that help you maintain your daily Quran habit.',
+  'lbl_enable_notifications': 'Enable Notifications',
+  'lbl_skip_for_now': 'Skip for Now',
+  'lbl_setting_up': 'Setting up...',
+  'lbl_daily_verse': 'Daily Verse',
+  'msg_daily_verse_benefit': 'Receive a verse to reflect on every day',
+  'lbl_streak_milestone': 'Streak Milestones',
+  'msg_streak_milestone_benefit': 'Celebrate your reading streak achievements',
+
+  // Devotee Surface
+  'lbl_todays_reading': "Today's Reading",
+  'msg_todays_reading_desc': 'Continue your daily Quran journey',
+  'lbl_continue_reading': 'Continue Reading',
+  'lbl_streak': 'Streak',
+  'msg_streak_desc': 'Keep your daily habit alive',
+  'lbl_khatmah': 'Khatmah',
+  'msg_khatmah_desc': 'Track your Quran completion progress',
+  'lbl_meccan': 'Meccan',
+  'lbl_medinan': 'Medinan',
+  'lbl_ayahs': 'Ayahs',
+  'msg_daily_goal_achieved': 'Daily Goal Achieved! Mashallah!',
+  'msg_streak_milestone': '{days} Day Streak! Incredible!',
+
+  // Audio / Playback
+  'msg_audio_playback_error': 'Could not play audio. Check your connection.',
+
+  // Memorization Empty State
+  'lbl_memorization_empty_title': 'Start your memorization journey',
+  'lbl_memorization_empty_subtitle':
+      'Open any surah and verify your recitation to begin tracking',
+  'lbl_start_tracking': 'Start Tracking',
+  'lbl_select_surahs_to_track': 'Select surahs to track',
+  'msg_surah_marked_memorized': 'Surah marked as memorized',
+
+  // Dua Khatm
+  'lbl_dua_khatm': 'Dua for Completing the Quran',
+  'lbl_khatmah_completed': 'Khatmah Completed!',
+  'msg_khatmah_completed':
+      'Congratulations! You have completed a full reading of the Quran (Khatmah).',
+  'lbl_read_dua': 'Read Dua',
+  'msg_khatmah_count': '{count} Khatmah completed',
+  'msg_dua_khatm_source':
+      'A supplication traditionally recited upon completing the Quran.',
+
 };

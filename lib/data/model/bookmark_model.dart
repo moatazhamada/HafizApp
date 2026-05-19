@@ -9,24 +9,35 @@ class BookmarkModel extends Bookmark {
   });
 
   factory BookmarkModel.fromJson(Map<String, dynamic> json) {
-    final verseNum = (json['verseNumber'] ??
-            json['verseId'] ??
-            json['verse']) as int;
+    final dynamic rawVerse = json['verseNumber'] ?? json['verseId'] ?? json['verse'];
+    final verseNum = rawVerse is int
+        ? rawVerse
+        : (int.tryParse(rawVerse.toString()) ?? 1);
+
+    final dynamic rawSurahId = json['surahId'];
+    final surahId = rawSurahId is int
+        ? rawSurahId
+        : (int.tryParse(rawSurahId.toString()) ?? 1);
+
+    final dynamic rawCreatedAt = json['createdAt'];
+    final createdAt = rawCreatedAt is String
+        ? (DateTime.tryParse(rawCreatedAt) ?? DateTime.now())
+        : DateTime.now();
 
     return BookmarkModel(
-      surahId: json['surahId'] as int,
-      surahName: json['surahName'] as String,
+      surahId: surahId,
+      surahName: json['surahName']?.toString() ?? '',
       verseNumber: verseNum,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: createdAt,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'surahId': surahId,
       'surahName': surahName,
       'verseNumber': verseNumber,
-      // Keep for backward compatibility if older builds expect it:
       'verseId': verseNumber,
       'createdAt': createdAt.toIso8601String(),
     };

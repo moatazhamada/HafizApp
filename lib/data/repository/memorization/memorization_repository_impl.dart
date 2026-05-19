@@ -1,7 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
+import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/memorization/memorization_local_data_source.dart';
 import 'package:hafiz_app/data/datasource/qf_goals/qf_goals_remote_data_source.dart';
 import 'package:hafiz_app/data/model/memorization_progress_model.dart';
@@ -12,6 +15,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 class MemorizationRepositoryImpl implements MemorizationRepository {
   final MemorizationLocalDataSource localDataSource;
   final QfGoalsRemoteDataSource goalsRemoteDataSource;
+  bool _goalsSyncedThisSession = false;
 
   MemorizationRepositoryImpl({
     required this.localDataSource,
@@ -67,7 +71,6 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
   Future<Either<Failure, void>> recordReview(int surahId, double score) async {
     try {
       final existing = await localDataSource.getProgress(surahId);
-      final now = DateTime.now();
       final surahName = QuranIndex.quranSurahs
           .firstWhere(
             (s) => s.id == surahId,
@@ -75,61 +78,20 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
           )
           .nameEnglish;
 
-      int easeFactor;
-      int interval;
-      int repetition;
-      MemorizationStatus status;
+      final result = SrsAlgorithm.computeNext(existing: existing, score: score);
 
-      if (existing != null) {
-        easeFactor = existing.easeFactor;
-        interval = existing.interval;
-        repetition = existing.repetition;
-
-        if (score >= 80) {
-          if (repetition == 0) {
-            interval = 1;
-          } else if (repetition == 1) {
-            interval = 6;
-          } else {
-            interval = (interval * easeFactor / 2500).round();
-          }
-          repetition++;
-          easeFactor = _adjustEaseFactor(easeFactor, score);
-          status = repetition >= 5
-              ? MemorizationStatus.memorized
-              : MemorizationStatus.inProgress;
-        } else if (score >= 50) {
-          repetition = 0;
-          interval = 0;
-          status = MemorizationStatus.inProgress;
-        } else {
-          repetition = 0;
-          interval = 0;
-          easeFactor = _adjustEaseFactor(easeFactor, score);
-          status = MemorizationStatus.needsReview;
-        }
-      } else {
-        easeFactor = 2500;
-        repetition = 0;
-        interval = 0;
-        status = score >= 50
-            ? MemorizationStatus.inProgress
-            : MemorizationStatus.needsReview;
-      }
-
-      final nextReview = now.add(Duration(days: interval));
       final updated = MemorizationProgressModel(
         surahId: surahId,
         surahName: surahName,
-        status: status,
-        easeFactor: easeFactor,
-        interval: interval,
-        repetition: repetition,
-        nextReviewDate: nextReview,
-        lastReviewDate: now,
+        status: result.status,
+        easeFactor: result.easeFactor,
+        interval: result.interval,
+        repetition: result.repetition,
+        nextReviewDate: result.nextReviewDate,
+        lastReviewDate: DateTime.now(),
         bestScore: existing != null && existing.bestScore > score
             ? existing.bestScore
-            : score,
+            : score.clamp(0.0, 100.0),
       );
 
       await localDataSource.saveProgress(updated);
@@ -139,15 +101,21 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
     }
   }
 
-  int _adjustEaseFactor(int currentEf, double score) {
-    final quality = (score / 20).round().clamp(0, 5);
-    final newEf = currentEf + (quality - 3) * 100;
-    return newEf.clamp(1300, 5000);
+  int _resolveMushafId() {
+    if (!PrefUtils.isInitialized) return MushafType.madani.qfMushafId;
+    try {
+      return MushafType.fromString(PrefUtils().getMushafType()).qfMushafId;
+    } catch (_) {
+      return MushafType.madani.qfMushafId;
+    }
   }
 
   @override
   Future<Either<Failure, void>> syncMemorizationGoalToQf() async {
     try {
+      if (_goalsSyncedThisSession) return const Right(null);
+      _goalsSyncedThisSession = true;
+
       final progress = await localDataSource.getAllProgress();
       final inProgressItems = progress.where(
         (p) =>
@@ -155,16 +123,24 @@ class MemorizationRepositoryImpl implements MemorizationRepository {
             p.status == MemorizationStatus.needsReview,
       );
 
-      // Create a QURAN_RANGE goal for each surah in progress
       for (final item in inProgressItems) {
         try {
-          final verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          int verseCount;
+          try {
+            verseCount = MushafPageIndex.getVerseCount(item.surahId);
+          } catch (e) {
+            Logger.warning(
+              'Failed to get verse count for surah ${item.surahId}: $e',
+              feature: 'Memorization',
+            );
+            continue;
+          }
 
           await goalsRemoteDataSource.createGoal(
             type: 'QURAN_RANGE',
             amount: '${item.surahId}:1-${item.surahId}:$verseCount',
             category: 'QURAN',
-            mushafId: 4, // UthmaniHafs
+            mushafId: _resolveMushafId(),
           );
         } catch (e) {
           Logger.warning(

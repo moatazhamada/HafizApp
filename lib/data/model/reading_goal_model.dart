@@ -15,6 +15,7 @@ class DailyReadingLogModel extends DailyReadingLog {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'date': _dateKey,
       'versesRead': versesRead,
       'juzRead': juzRead,
@@ -49,6 +50,7 @@ class ReadingGoalModel extends ReadingGoal {
 
   Map<String, dynamic> toJson() {
     return {
+      'dataVersion': 1,
       'dailyVerseTarget': dailyVerseTarget,
       'startDate': startDate.toIso8601String(),
       'isActive': isActive,
@@ -57,8 +59,10 @@ class ReadingGoalModel extends ReadingGoal {
 
   factory ReadingGoalModel.fromJson(Map<dynamic, dynamic> json) {
     return ReadingGoalModel(
-      dailyVerseTarget: (json['dailyVerseTarget'] as num).toInt(),
-      startDate: DateTime.parse(json['startDate'] as String),
+      dailyVerseTarget: (json['dailyVerseTarget'] as num?)?.toInt() ?? 0,
+      startDate: json['startDate'] != null
+          ? DateTime.tryParse(json['startDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       isActive: json['isActive'] as bool? ?? true,
     );
   }

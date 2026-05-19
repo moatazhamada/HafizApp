@@ -1,5 +1,7 @@
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter/foundation.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:hafiz_app/core/quran/arabic_normalizer.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 class VoiceVerificationService {
   final SpeechToText _speechToText = SpeechToText();
@@ -13,12 +15,12 @@ class VoiceVerificationService {
     // Just simple check, actual init with UI prompt happens on listen usually or explicit init
     try {
       _isAvailable = await _speechToText.initialize(
-        onError: (error) => debugPrint('STT Error: $error'),
-        onStatus: (status) => debugPrint('STT Status: $status'),
+        onError: (error) => Logger.warning('STT Error: $error', feature: 'VoiceVerification'),
+        onStatus: (status) => Logger.info('STT Status: $status', feature: 'VoiceVerification'),
       );
       return _isAvailable;
     } catch (e) {
-      debugPrint('STT Init Failed: $e');
+      Logger.warning('STT Init Failed: $e', feature: 'VoiceVerification');
       return false;
     }
   }
@@ -46,7 +48,7 @@ class VoiceVerificationService {
     String localeId = 'ar_SA', // Default to Arabic
   }) async {
     if (!_isAvailable) {
-      debugPrint('STT not available');
+      Logger.warning('STT not available', feature: 'VoiceVerification');
       return;
     }
 
@@ -69,7 +71,15 @@ class VoiceVerificationService {
     await _speechToText.stop();
   }
 
+  Future<void> dispose() async {
+    await _speechToText.cancel();
+    await _speechToText.stop();
+  }
+
   /// Analyze spoken vs expected text and return a structured assessment.
+  ///
+  /// Runs on the main isolate for small texts. For longer texts or when
+  /// called from the UI thread, prefer [analyzeRecitationAsync].
   RecitationAnalysis analyzeRecitation(
     String spokenText,
     String expectedText, {
@@ -79,10 +89,10 @@ class VoiceVerificationService {
   }) {
     // Tokenize, merge single letters (like Alif Lam Mim), then normalize
     final tokensSpoken = _mergeSingleLetterTokens(_tokenize(spokenText))
-        .map(_normalizeArabic)
+        .map((t) => ArabicNormalizer.forRecitation(t))
         .toList();
     final tokensExpected = _mergeSingleLetterTokens(_tokenize(expectedText))
-        .map(_normalizeArabic)
+        .map((t) => ArabicNormalizer.forRecitation(t))
         .toList();
 
     final isTooShort = tokensSpoken.length < minWords;
@@ -106,26 +116,37 @@ class VoiceVerificationService {
     );
   }
 
-  // Basic normalization for comparison
-  String _normalizeArabic(String input) {
-    // Remove Tashkeel (Diacritics)
-    // Range: 064B - 0652 (Fathatan, Dammatan, Kasratan, Fatha, Damma, Kasra, Shadda, Sukun)
-    // Also 0670 (Superscript Alef)
-    // Also remove Tatweel (0640)
-    String text = input;
-    text = text.replaceAll(RegExp(r'[\u064B-\u0652\u0670\u0640]'), '');
-
-    // Normalize Alefs
-    text = text.replaceAll(RegExp(r'[أإآ]'), 'ا');
-
-    // Normalize Ya/Alef Maqsura
-    text = text.replaceAll('ى', 'ي');
-
-    // Normalize Ta Marbuta
-    text = text.replaceAll('ة', 'ه');
-
-    return text.trim();
+  /// Async variant of [analyzeRecitation] that offloads the edit-distance
+  /// computation to a background isolate to avoid jank.
+  Future<RecitationAnalysis> analyzeRecitationAsync(
+    String spokenText,
+    String expectedText, {
+    bool allowPartial = true,
+    double passThreshold = defaultPassThreshold,
+    int minWords = defaultMinWords,
+  }) async {
+    return compute(_analyzeRecitationWorker, <String, dynamic>{
+      'spokenText': spokenText,
+      'expectedText': expectedText,
+      'allowPartial': allowPartial,
+      'passThreshold': passThreshold,
+      'minWords': minWords,
+    });
   }
+
+  static RecitationAnalysis _analyzeRecitationWorker(Map<String, dynamic> params) {
+    return VoiceVerificationService().analyzeRecitation(
+      params['spokenText'] as String,
+      params['expectedText'] as String,
+      allowPartial: params['allowPartial'] as bool,
+      passThreshold: params['passThreshold'] as double,
+      minWords: params['minWords'] as int,
+    );
+  }
+
+  // Normalization is delegated to ArabicNormalizer.forRecitation()
+  // for consistent handling across the codebase (hamza variants, madd
+  // diacritics, silent terminal alif, etc.).
 
   List<String> _tokenize(String input) {
     // Split on whitespace and common Arabic punctuation/stop signs

@@ -1,255 +1,176 @@
-import 'package:flutter/material.dart';
-import 'package:hafiz_app/core/network/connectivity_cubit.dart';
-import 'package:hafiz_app/core/theme/app_colors.dart';
-import 'package:hafiz_app/widgets/custom_elevated_button.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
-import 'bloc/onboarding_bloc.dart';
-import 'models/onboarding_model.dart';
+import '../../core/utils/rtl_utils.dart';
+import '../../injection_container.dart';
+import '../../main.dart';
+import 'archetype_selection_page.dart';
+import 'language_selection_page.dart';
+import 'notification_permission_page.dart';
+import 'onboarding_welcome_page.dart';
+import 'theme_selection_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    return BlocProvider<OnboardingBloc>(
-      create: (context) => OnboardingBloc(
-        OnboardingState(onboardingModel: const OnboardingModel()),
-      ),
-      child: const OnboardingScreen(),
-    );
+    return const OnboardingScreen();
   }
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  late final int _initialPage;
+  late final PageController _pageController;
+  int _currentPage = 0;
+  String? _themeMode;
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
+    _initialPage = PrefUtils().getOnboardingStep().clamp(0, 4);
+    _currentPage = _initialPage;
+    _pageController = PageController(initialPage: _initialPage);
   }
 
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
+  bool get _isLightBackground {
+    if (_themeMode == 'light') return true;
+    if (_themeMode == 'dark') return false;
+    return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+        Brightness.light;
+  }
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    );
+  void _nextPage() {
+    if (_currentPage < 4) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      setState(() => _currentPage++);
+      unawaited(PrefUtils().setOnboardingStep(_currentPage));
+      unawaited(
+        sl<AnalyticsService>().logOnboardingStepViewed(
+          step: _currentPage + 1,
+          totalSteps: 5,
+        ),
+      );
+    } else {
+      unawaited(sl<AnalyticsService>().logOnboardingCompleted());
+      NavigatorService.pushNamedAndRemoveUntil(
+        AppRoutes.mushafTypeOnboarding,
+      );
+    }
+  }
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      setState(() => _currentPage--);
+    }
+  }
 
-    _animationController.forward();
+  void _onThemeModeChanged(String mode) {
+    setState(() => _themeMode = mode);
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    mediaQueryData = MediaQuery.of(context);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return BlocBuilder<OnboardingBloc, OnboardingState>(
-      builder: (context, state) {
-        return SafeArea(
-          child: Scaffold(
-            body: Container(
-              width: double.maxFinite,
-              height: double.maxFinite,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.8),
-                    colorScheme.primary,
-                    AppColors.of(context).primaryDark,
-                  ],
+    return PopScope(
+      canPop: _currentPage == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _currentPage > 0) {
+          _previousPage();
+        }
+      },
+      child: Theme(
+        data: _isLightBackground ? lightTheme : darkTheme,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+              children: [
+                LanguageSelectionPage(
+                  onContinue: _nextPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                ThemeSelectionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                  onThemeModeChanged: _onThemeModeChanged,
+                ),
+                OnboardingWelcomePage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                ArchetypeSelectionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+                NotificationPermissionPage(
+                  onContinue: _nextPage,
+                  onBack: _previousPage,
+                  themeMode: _themeMode,
+                  isLightBackground: _isLightBackground,
+                ),
+              ],
+            ),
+            // Back button on pages 1+
+            if (_currentPage > 0)
+              PositionedDirectional(
+                top: 16,
+                start: 16,
+                child: SafeArea(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _previousPage,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _isLightBackground
+                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          rtlBackArrow(context),
+                          color: _isLightBackground
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurface,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Internet Status Indicator
-                  BlocBuilder<ConnectivityCubit, ConnectivityState>(
-                    builder: (context, connState) {
-                      if (connState.isOnline) return const SizedBox.shrink();
-                      return Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          color: Colors.redAccent.withValues(alpha: 0.9),
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'msg_no_internet_connection'.tr,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Decorative Background Element
-                  Positioned(
-                    left: -20,
-                    top: -20,
-                    child: Opacity(
-                      opacity: 0.1,
-                      child: CustomImageView(
-                        imagePath: ImageConstant.imgGroupCircles,
-                        height: 150.adaptSize,
-                        width: 150.adaptSize,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  // Main Content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Spacer(flex: 2),
-
-                            // Hero Image Card
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
-                                child: Container(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  child: CustomImageView(
-                                    imagePath: ImageConstant.imgQuranOnboarding,
-                                    height: 350.adaptSize,
-                                    width: 300.adaptSize,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const Spacer(),
-
-                            // Title
-                            Text(
-                              'app_name'.tr,
-                              style: theme.textTheme.displayMedium?.copyWith(
-                                color: AppColors.of(context).primaryLight,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 16.adaptSize),
-
-                            // Subtitle
-                            Text(
-                              'lbl_learn_quran'.tr,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontFamily: 'Poppins',
-                                height: 1.5,
-                              ),
-                            ),
-
-                            const Spacer(flex: 2),
-
-                            // Action Button
-                            SizedBox(
-                              width: double.maxFinite,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32.0,
-                                ),
-                                child: CustomElevatedButton(
-                                  key: const ValueKey('get_started_key'),
-                                  onPressed: () {
-                                    NavigatorService.pushNamedAndRemoveUntil(
-                                      AppRoutes.mushafTypeOnboarding,
-                                    );
-                                  },
-                                  text: 'lbl_get_started'.tr,
-                                  buttonStyle: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.of(
-                                      context,
-                                    ).badgeGradient[0],
-                                    foregroundColor: AppColors.of(
-                                      context,
-                                    ).bismillahColor,
-                                    elevation: 5,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30.0),
-                                    ),
-                                  ),
-                                  buttonTextStyle: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                    color: AppColors.of(context).bismillahColor,
-                                  ),
-                                  rightIcon: Padding(
-                                    padding: const EdgeInsets.only(left: 12.0),
-                                    child: Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 20,
-                                      color: AppColors.of(
-                                        context,
-                                      ).bismillahColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

@@ -15,6 +15,7 @@ class LogReading implements UseCase<void, ParamsLogReading> {
     return await khatmahRepository.logReading(
       verses: params.verses,
       surahs: params.surahs,
+      durationSeconds: params.durationSeconds,
     );
   }
 }
@@ -22,9 +23,10 @@ class LogReading implements UseCase<void, ParamsLogReading> {
 class ParamsLogReading extends Equatable {
   final int verses;
   final int surahs;
+  final int durationSeconds;
 
-  const ParamsLogReading({required this.verses, this.surahs = 0});
+  const ParamsLogReading({required this.verses, this.surahs = 0, this.durationSeconds = 0});
 
   @override
-  List<Object> get props => [verses, surahs];
+  List<Object> get props => [verses, surahs, durationSeconds];
 }

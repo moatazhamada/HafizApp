@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/utils/input_formatters.dart';
+import '../../core/utils/input_validators.dart';
 import '../../injection_container.dart' as di;
 import 'bloc/goals_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
@@ -26,35 +27,61 @@ class _GoalsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('goals_title'.tr)),
-      body: BlocBuilder<QfAuthBloc, QfAuthState>(
-        builder: (context, authState) {
-          final isAuth = authState is QfAuthAuthenticated;
-
-          if (!isAuth) {
-            return _AuthPrompt(theme: theme);
-          }
-
-          return BlocBuilder<GoalsBloc, GoalsState>(
-            builder: (context, state) {
-              if (state is GoalsLoading) {
-                return const Center(child: CircularProgressIndicator());
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<GoalsBloc, GoalsState>(
+            listener: (context, state) {
+              if (state is GoalsActionError) {
+                SnackBarHelper.show(
+                  context,
+                  message: state.message,
+                  type: SnackBarType.error,
+                );
               }
-
-              if (state is GoalsError) {
-                return _ErrorView(theme: theme, message: state.message);
-              }
-
-              if (state is GoalsLoaded) {
-                if (state.items.isEmpty) {
-                  return _EmptyPlanView(theme: theme);
-                }
-                return _PlanList(items: state.items, theme: theme);
-              }
-
-              return const SizedBox.shrink();
             },
-          );
-        },
+          ),
+          BlocListener<QfAuthBloc, QfAuthState>(
+            listener: (context, authState) {
+              if (authState is QfAuthAuthenticated) {
+                context.read<GoalsBloc>().add(LoadTodaysPlan());
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<QfAuthBloc, QfAuthState>(
+          builder: (context, authState) {
+            final isAuth = authState is QfAuthAuthenticated;
+
+            if (!isAuth) {
+              return _AuthPrompt(theme: theme);
+            }
+
+            return BlocBuilder<GoalsBloc, GoalsState>(
+              builder: (context, state) {
+                if (state is GoalsLoading || state is GoalsActionLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is GoalsError) {
+                  return _ErrorView(theme: theme, message: state.message);
+                }
+
+                if (state is GoalsActionError) {
+                  return _ErrorView(theme: theme, message: state.message);
+                }
+
+                if (state is GoalsLoaded) {
+                  if (state.items.isEmpty) {
+                    return _EmptyPlanView(theme: theme);
+                  }
+                  return _PlanList(items: state.items, theme: theme);
+                }
+
+                return const SizedBox.shrink();
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -100,8 +127,8 @@ class _AuthPrompt extends StatelessWidget {
               icon: const Icon(Icons.login),
               label: Text('msg_qf_login'.tr),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.teal,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ],
@@ -285,7 +312,7 @@ class _SummaryHeader extends StatelessWidget {
                     Text(
                       '$completed ${'goals_completed'.tr.toLowerCase()}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.green.shade700,
+                        color: AppColors.of(context).success,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -335,7 +362,7 @@ class _PlanItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: isComplete
-              ? Colors.green.withValues(alpha: 0.3)
+              ? AppColors.of(context).memorizedStatus.withValues(alpha: 0.3)
               : colors.mushafPageBorder.withValues(alpha: 0.2),
         ),
       ),
@@ -351,7 +378,7 @@ class _PlanItemCard extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isComplete
-                        ? Colors.green.withValues(alpha: 0.1)
+                        ? AppColors.of(context).memorizedStatus.withValues(alpha: 0.1)
                         : colors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -359,7 +386,7 @@ class _PlanItemCard extends StatelessWidget {
                     isComplete
                         ? Icons.check_circle_rounded
                         : Icons.task_alt_rounded,
-                    color: isComplete ? Colors.green : colors.primary,
+                    color: isComplete ? AppColors.of(context).memorizedStatus : colors.primary,
                     size: 20,
                   ),
                 ),
@@ -385,12 +412,40 @@ class _PlanItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: colors.textSecondary),
+                  onSelected: (value) => _onMenuSelected(value, context),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'update',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit_outlined, size: 18),
+                          const SizedBox(width: 8),
+                          Text('lbl_edit'.tr),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 18, color: theme.colorScheme.error),
+                          const SizedBox(width: 8),
+                          Text('lbl_delete'.tr,
+                              style: TextStyle(color: theme.colorScheme.error)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 if (progressText != null)
                   Text(
                     progressText,
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: isComplete ? Colors.green : colors.primary,
+                      color: isComplete ? AppColors.of(context).memorizedStatus : colors.primary,
                     ),
                   ),
               ],
@@ -402,9 +457,9 @@ class _PlanItemCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progressFrac,
                   minHeight: 6,
-                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isComplete ? Colors.green : colors.primary,
+                    isComplete ? AppColors.of(context).memorizedStatus : colors.primary,
                   ),
                 ),
               ),
@@ -412,13 +467,112 @@ class _PlanItemCard extends StatelessWidget {
               Text(
                 isComplete ? 'goals_completed'.tr : 'goals_in_progress'.tr,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: isComplete ? Colors.green : colors.textSecondary,
+                  color: isComplete ? AppColors.of(context).memorizedStatus : colors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _onMenuSelected(String value, BuildContext context) {
+    if (value == 'update') {
+      _showUpdateDialog(context);
+    } else if (value == 'delete') {
+      _showDeleteConfirm(context);
+    }
+  }
+
+  void _showUpdateDialog(BuildContext context) {
+    final durationCtrl = TextEditingController(
+      text: item.duration?.toString() ?? '',
+    );
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('goals_edit_title'.tr),
+          content: TextField(
+            controller: durationCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              AppInputFormatters.digitsOnly,
+              AppInputFormatters.maxLength(4),
+            ],
+            decoration: InputDecoration(
+              labelText: 'goals_duration_label'.tr,
+              border: const OutlineInputBorder(),
+              errorText: errorText,
+            ),
+            onChanged: (_) {
+              if (errorText != null) setState(() => errorText = null);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('lbl_cancel'.tr),
+            ),
+            FilledButton(
+              onPressed: () {
+                final validationError = InputValidators.numericRange(
+                  min: 1,
+                  max: 3650,
+                )(durationCtrl.text);
+
+                if (validationError != null) {
+                  setState(() => errorText = validationError);
+                  return;
+                }
+
+                Navigator.pop(ctx);
+                final newDuration = int.parse(durationCtrl.text.trim());
+                context.read<GoalsBloc>().add(UpdateGoalEvent(
+                  id: item.id,
+                  type: item.type,
+                  amount: item.amount,
+                  category: item.category,
+                  duration: newDuration,
+                ));
+              },
+              child: Text('lbl_save'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('goals_delete_title'.tr),
+        content: Text('goals_delete_body'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('lbl_cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<GoalsBloc>().add(DeleteGoalEvent(
+                id: item.id,
+                category: item.category,
+              ));
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            child: Text('lbl_delete'.tr),
+          ),
+        ],
       ),
     );
   }

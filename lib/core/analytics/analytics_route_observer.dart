@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'analytics_service.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hafiz_app/injection_container.dart';
 
 class AnalyticsRouteObserver extends RouteObserver<PageRoute<dynamic>> {
@@ -15,7 +16,9 @@ class AnalyticsRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         final analytics = sl<AnalyticsService>();
         analytics.logScreenView(name: name, className: route.settings.name);
         analytics.startScreenTimer(name);
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Analytics screen start failed: $e', feature: 'Analytics');
+      }
     }
   }
 
@@ -24,7 +27,9 @@ class AnalyticsRouteObserver extends RouteObserver<PageRoute<dynamic>> {
       try {
         final analytics = sl<AnalyticsService>();
         analytics.endScreenTimer(_name(route));
-      } catch (_) {}
+      } catch (e) {
+        Logger.warning('Analytics screen end failed: $e', feature: 'Analytics');
+      }
     }
   }
 

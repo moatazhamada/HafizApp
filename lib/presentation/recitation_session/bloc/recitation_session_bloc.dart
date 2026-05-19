@@ -32,8 +32,14 @@ class RecitationSessionBloc
   ) async {
     final result = await repository.addSession(event.session);
     result.fold(
-      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
-      (_) => add(LoadSessions()),
+      (failure) {
+        if (isClosed) return;
+        emit(const RecitationSessionError('msg_operation_failed'));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadSessions());
+      },
     );
   }
 
@@ -43,8 +49,14 @@ class RecitationSessionBloc
   ) async {
     final result = await repository.clearAll();
     result.fold(
-      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
-      (_) => add(LoadSessions()),
+      (failure) {
+        if (isClosed) return;
+        emit(const RecitationSessionError('msg_operation_failed'));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadSessions());
+      },
     );
   }
 }

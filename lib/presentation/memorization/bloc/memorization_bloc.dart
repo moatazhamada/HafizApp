@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/domain/repository/memorization_repository.dart';
 import 'memorization_event.dart';
@@ -17,40 +18,35 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadMemorizationProgress event,
     Emitter<MemorizationState> emit,
   ) async {
+    if (isClosed) return;
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
-    result.fold((failure) => emit(const MemorizationError('msg_operation_failed')), (
-      progress,
-    ) {
-      final now = DateTime.now();
-      final due = progress
-          .where(
-            (p) =>
-                p.status != MemorizationStatus.notStarted &&
-                !p.nextReviewDate.isAfter(now),
-          )
-          .toList();
-      final memorized = progress
-          .where((p) => p.status == MemorizationStatus.memorized)
-          .length;
-      final inProgress = progress
-          .where(
-            (p) =>
-                p.status == MemorizationStatus.inProgress ||
-                p.status == MemorizationStatus.needsReview,
-          )
-          .length;
-      final notStarted = 114 - progress.length;
-      emit(
-        MemorizationLoaded(
-          allProgress: progress,
-          dueReviews: due,
-          totalMemorized: memorized,
-          totalInProgress: inProgress,
-          totalNotStarted: notStarted < 0 ? 0 : notStarted,
-        ),
-      );
-    });
+    result.fold(
+      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (progress) {
+        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
+        final memorized = progress
+            .where((p) => p.status == MemorizationStatus.memorized)
+            .length;
+        final inProgress = progress
+            .where(
+              (p) =>
+                  p.status == MemorizationStatus.inProgress ||
+                  p.status == MemorizationStatus.needsReview,
+            )
+            .length;
+        final notStarted = 114 - progress.length;
+        emit(
+          MemorizationLoaded(
+            allProgress: progress,
+            dueReviews: due,
+            totalMemorized: memorized,
+            totalInProgress: inProgress,
+            totalNotStarted: notStarted < 0 ? 0 : notStarted,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _onRecordReview(
@@ -59,8 +55,14 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
   ) async {
     final result = await repository.recordReview(event.surahId, event.score);
     result.fold(
-      (failure) => emit(const MemorizationError('msg_operation_failed')),
-      (_) => add(LoadMemorizationProgress()),
+      (failure) {
+        if (isClosed) return;
+        emit(MemorizationError(failure.errorMessage));
+      },
+      (_) {
+        if (isClosed) return;
+        add(LoadMemorizationProgress());
+      },
     );
   }
 
@@ -68,6 +70,34 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     LoadDueReviews event,
     Emitter<MemorizationState> emit,
   ) async {
-    add(LoadMemorizationProgress());
+    if (isClosed) return;
+    emit(MemorizationLoading());
+    final result = await repository.getAllProgress();
+    result.fold(
+      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (progress) {
+        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
+        final memorized = progress
+            .where((p) => p.status == MemorizationStatus.memorized)
+            .length;
+        final inProgress = progress
+            .where(
+              (p) =>
+                  p.status == MemorizationStatus.inProgress ||
+                  p.status == MemorizationStatus.needsReview,
+            )
+            .length;
+        final notStarted = 114 - progress.length;
+        emit(
+          MemorizationLoaded(
+            allProgress: progress,
+            dueReviews: due,
+            totalMemorized: memorized,
+            totalInProgress: inProgress,
+            totalNotStarted: notStarted < 0 ? 0 : notStarted,
+          ),
+        );
+      },
+    );
   }
 }

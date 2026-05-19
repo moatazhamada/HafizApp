@@ -117,6 +117,14 @@ class QuranIndex {
     Surah(113, 'Al-Falaq', 'الفلق'),
     Surah(114, 'An-Nas', 'الناس'),
   ];
+
+  static Map<int, Surah> get surahMap {
+    final map = <int, Surah>{};
+    for (final s in quranSurahs) {
+      map[s.id] = s;
+    }
+    return map;
+  }
 }
 
 class Surah {

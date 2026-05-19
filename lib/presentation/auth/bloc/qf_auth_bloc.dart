@@ -1,9 +1,17 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hive/hive.dart';
+import 'package:hafiz_app/core/auth/qf_backend_proxy.dart';
+import 'package:hafiz_app/core/auth/qf_token_validator.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/pref_utils.dart';
 import 'package:hafiz_app/data/datasource/auth/qf_auth_remote_data_source.dart';
+import 'package:hafiz_app/domain/entities/qf_user_profile.dart';
+import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 
 part 'qf_auth_event.dart';
 part 'qf_auth_state.dart';
@@ -18,6 +26,7 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     on<QfAuthLoginRequested>(_onAuthLoginRequested);
     on<QfAuthLogoutRequested>(_onAuthLogoutRequested);
     on<QfAuthDeleteDataRequested>(_onAuthDeleteDataRequested);
+    on<QfAuthReLoginRequested>(_onAuthReLoginRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -29,12 +38,23 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       final isAuthenticated = await _authRemoteDataSource.isAuthenticated();
       if (isAuthenticated) {
         final userId = await _authRemoteDataSource.getUserId();
-        emit(QfAuthAuthenticated(userId: userId));
+        final profile = await _authRemoteDataSource.getUserProfile();
+        emit(QfAuthAuthenticated(userId: userId, profile: profile));
       } else {
         emit(QfAuthUnauthenticated());
       }
     } catch (e) {
-      emit(const QfAuthError(message: 'msg_connection_error'));
+      if (e.toString().contains('storage') ||
+          e.toString().contains('keystore') ||
+          e.toString().contains('keychain')) {
+        emit(const QfAuthError(message: 'msg_storage_error'));
+      } else if (e.toString().contains('network') ||
+          e.toString().contains('connection') ||
+          e.toString().contains('timeout')) {
+        emit(const QfAuthError(message: 'msg_connection_error'));
+      } else {
+        emit(const QfAuthError(message: 'msg_check_failed'));
+      }
     }
   }
 
@@ -52,10 +72,17 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       final success = await _authRemoteDataSource.login();
       if (success) {
         final userId = await _authRemoteDataSource.getUserId();
-        emit(QfAuthAuthenticated(userId: userId));
+        final profile = await _authRemoteDataSource.getUserProfile();
+        unawaited(sl<AnalyticsService>().logQfLogin(userId: userId));
+        emit(QfAuthAuthenticated(userId: userId, isNewLogin: true, profile: profile));
       } else {
         emit(const QfAuthError(message: 'msg_login_cancelled'));
       }
+    } on QfTokenValidationError catch (e) {
+      Logger.warning('Token validation: ${e.message}', feature: 'Auth');
+      emit(const QfAuthError(message: 'msg_token_invalid'));
+    } on QfBackendTokenExchangeException {
+      emit(const QfAuthError(message: 'msg_backend_auth_failed'));
     } on PlatformException catch (e) {
       final code = e.code;
       if (code.contains('cancelled') || code.contains('cancel')) {
@@ -87,7 +114,45 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
       emit(QfAuthUnauthenticated());
     } catch (e) {
       emit(const QfAuthError(message: 'msg_unexpected_error'));
+      return;
     }
+    // Best-effort cleanup after successful logout.
+    try {
+      await PrefUtils().setQfPrefSyncPrompted(false);
+    } catch (e) {
+      Logger.warning('QF pref sync reset failed: $e', feature: 'Auth');
+    }
+    try {
+      _clearHiveCaches();
+    } catch (e) {
+      Logger.warning('Hive cache clear failed: $e', feature: 'Auth');
+    }
+    try {
+      unawaited(sl<AnalyticsService>().logQfLogout());
+    } catch (e) {
+      Logger.warning('Analytics logout log failed: $e', feature: 'Auth');
+    }
+  }
+
+  void _clearHiveCaches() {
+    const cacheBoxes = ['quran_word_cache', 'qiraat_cache', 'audio_cache'];
+    for (final name in cacheBoxes) {
+      if (Hive.isBoxOpen(name)) {
+        try { Hive.box(name).clear(); } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> _onAuthReLoginRequested(
+    QfAuthReLoginRequested event,
+    Emitter<QfAuthState> emit,
+  ) async {
+    Logger.info('Re-login requested due to insufficient scope', feature: 'Auth');
+    try {
+      await _authRemoteDataSource.logout();
+    } catch (_) {}
+    emit(QfAuthUnauthenticated());
+    add(QfAuthLoginRequested());
   }
 
   Future<void> _onAuthDeleteDataRequested(
@@ -97,7 +162,6 @@ class QfAuthBloc extends Bloc<QfAuthEvent, QfAuthState> {
     emit(QfAuthLoading());
     try {
       await _authRemoteDataSource.revokeAndDeleteData();
-      // Clear sync timestamp
       await PrefUtils().setQfLastSyncAt(DateTime(2000));
       emit(QfAuthUnauthenticated());
     } catch (e) {
