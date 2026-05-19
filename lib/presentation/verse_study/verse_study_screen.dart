@@ -290,7 +290,10 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: rowChildren),
+            Row(
+              textDirection: TextDirection.rtl,
+              children: rowChildren,
+            ),
             const Divider(height: 24),
             child,
           ],
@@ -570,6 +573,7 @@ class _ReflectionCard extends StatelessWidget {
             SelectableText(text, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 8),
             Row(
+              textDirection: TextDirection.rtl,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(

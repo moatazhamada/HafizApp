@@ -726,6 +726,7 @@ class _MushafScreenState extends State<MushafScreen>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
+            textDirection: TextDirection.rtl,
             children: [
               Semantics(
                 button: true,
@@ -803,6 +804,7 @@ class _MushafScreenState extends State<MushafScreen>
                 ),
               const SizedBox(height: 4),
               Row(
+                textDirection: TextDirection.rtl,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(

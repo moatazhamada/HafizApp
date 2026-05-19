@@ -157,6 +157,7 @@ final Map<String, String> arEg = {
   'msg_mic_permission_desc':
       'يحتاج حافظ إلى إذن الميكروفون للتحقق من تلاوتك. يمكنك تغيير هذا في أي وقت من إعدادات جهازك.',
   'msg_voice_init_failed': 'تعذر بدء التعرف على الصوت. يرجى المحاولة مرة أخرى.',
+  'msg_voice_analysis_error': 'تعذر تحليل التلاوة. يرجى المحاولة مرة أخرى.',
   'msg_tap_to_resume': 'اضغط للمتابعة',
   'lbl_incorrect': 'تحتاج لتحسين',
   // Accessibility

@@ -11,7 +11,7 @@ class MushafPageVerseMap {
     int page, {
     int totalPages = 604,
   }) {
-    if (page < 1 || page > totalPages) return [];
+    if (page < 1 || totalPages <= 0 || page > totalPages) return [];
 
     // For non-Madani types, map the page to a Madani-equivalent page
     if (totalPages != MushafPageIndex.totalPages) {

@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hafiz_app/core/analytics/analytics_bloc_observer.dart';
 import 'package:hafiz_app/core/services/app_initializer.dart';
 import 'package:hafiz_app/core/services/app_lifecycle_manager.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
@@ -163,6 +166,26 @@ final ThemeData darkTheme = ThemeData(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize HydratedBloc storage before runApp() so that any
+  // HydratedBloc / HydratedCubit instantiation is guaranteed to find it.
+  try {
+    final storage = await HydratedStorage.build(
+      storageDirectory: kIsWeb
+          ? HydratedStorageDirectory.web
+          : HydratedStorageDirectory(
+              (await getTemporaryDirectory()).path,
+            ),
+    );
+    HydratedBloc.storage = storage;
+  } catch (e, st) {
+    Logger.warning(
+      'HydratedStorage init failed: $e',
+      feature: 'Init',
+      stackTrace: st,
+    );
+    // Continue without hydrated storage; BLoCs will start with default states.
+  }
 
   // Set up platform channel handler for Android boot receiver
   // so notifications are rescheduled after device reboot.
@@ -495,39 +518,41 @@ class _SplashScaffold extends StatelessWidget {
             ? darkTheme.colorScheme.surface
             : lightTheme.colorScheme.surface,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'بسم الله الرحمن الرحيم',
-                    textDirection: TextDirection.rtl,
-                    style: TextStyle(
-                      fontFamily: 'NotoNaskhArabic',
-                      fontSize: 22,
-                      color: Theme.of(context).colorScheme.onSurface,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'بسم الله الرحمن الرحيم',
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(
+                        fontFamily: 'NotoNaskhArabic',
+                        fontSize: 22,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  CircularProgressIndicator(
-                    color: isDark
-                        ? const Color(0xFF87D1A4)
-                        : const Color(0xFF006754),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
+                    const SizedBox(height: 16),
+                    CircularProgressIndicator(
+                      color: isDark
+                          ? const Color(0xFF87D1A4)
+                          : const Color(0xFF006754),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

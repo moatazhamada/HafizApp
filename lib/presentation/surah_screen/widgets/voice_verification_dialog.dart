@@ -484,11 +484,30 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
 
   Future<void> _analyzeRecitation(String effectiveText) async {
     if (!mounted) return;
-    final analysis = await _voiceService.analyzeRecitationAsync(
-      effectiveText,
-      _expectedText,
-      allowPartial: true,
-    );
+    RecitationAnalysis? analysis;
+    try {
+      analysis = await _voiceService.analyzeRecitationAsync(
+        effectiveText,
+        _expectedText,
+        allowPartial: true,
+      );
+    } catch (e, st) {
+      Logger.warning(
+        'Recitation analysis failed: $e',
+        feature: 'VoiceVerification',
+        stackTrace: st,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isListening = false;
+        _showFeedback = true;
+        _statusColor = AppColors.of(context).needsReviewStatus;
+        _feedbackTitle = 'msg_voice_analysis_error'.tr;
+        _scoreText = '';
+        _issueLines = [];
+      });
+      return;
+    }
     unawaited(
       sl<AnalyticsService>().logRecitationVerified(
         surahId: widget.surah.id,
@@ -498,7 +517,7 @@ class _VoiceVerificationDialogState extends State<VoiceVerificationDialog> {
     if (!mounted) return;
     setState(() {
       _spokenText = effectiveText;
-      final scorePercent = (analysis.score * 100).round();
+      final scorePercent = (analysis!.score * 100).round();
       _scoreText = '${'lbl_recitation_score'.tr}: $scorePercent%';
       _issueLines = [];
       if (analysis.missingCount > 0) {

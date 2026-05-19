@@ -57,6 +57,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
+              textDirection: TextDirection.rtl,
               children: [
                 _buildTab('page', 'lbl_page'.tr),
                 const SizedBox(width: 8),

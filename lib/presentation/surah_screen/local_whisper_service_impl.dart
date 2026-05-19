@@ -33,7 +33,7 @@ class LocalWhisperService {
     if (_isDisposed) return WhisperResult.failure(WhisperError.modelError);
     try {
       if (!_modelDownloaded) {
-        await _controller.downloadModel(model);
+        await _downloadModelWithRetry(model);
         _modelDownloaded = true;
       }
       final result = await _controller.transcribe(
@@ -54,6 +54,23 @@ class LocalWhisperService {
         return WhisperResult.failure(WhisperError.permission);
       }
       return WhisperResult.failure(WhisperError.modelError);
+    }
+  }
+
+  Future<void> _downloadModelWithRetry(WhisperModel model) async {
+    const maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await _controller.downloadModel(model);
+        return;
+      } catch (e) {
+        Logger.warning(
+          'Model download attempt $attempt failed: $e',
+          feature: 'Whisper',
+        );
+        if (attempt == maxRetries) rethrow;
+        await Future.delayed(Duration(seconds: attempt));
+      }
     }
   }
 

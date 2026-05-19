@@ -7,8 +7,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -66,18 +64,8 @@ class AppInitializer {
       Logger.warning('PackageInfo init failed: $e', feature: 'Init');
     }
 
-    try {
-      final storage = await HydratedStorage.build(
-        storageDirectory: kIsWeb
-            ? HydratedStorageDirectory.web
-            : HydratedStorageDirectory(
-                (await getTemporaryDirectory()).path,
-              ),
-      );
-      HydratedBloc.storage = storage;
-    } catch (e) {
-      Logger.warning('HydratedStorage init failed: $e', feature: 'Init');
-    }
+    // HydratedStorage is now initialized in main() before runApp()
+    // to guarantee it is available before any HydratedBloc is instantiated.
 
     try {
       await Hive.initFlutter();

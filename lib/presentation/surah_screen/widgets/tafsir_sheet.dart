@@ -54,6 +54,7 @@ void showTafsirSheet(
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
+                    textDirection: TextDirection.rtl,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(

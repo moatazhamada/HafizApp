@@ -159,6 +159,7 @@ final Map<String, String> enUs = {
   'msg_mic_permission_desc':
       'Hafiz needs microphone access to verify your recitation. You can change this anytime in your device settings.',
   'msg_voice_init_failed': 'Voice recognition could not be started. Please try again.',
+  'msg_voice_analysis_error': 'Could not analyze recitation. Please try again.',
   'msg_tap_to_resume': 'Tap to resume',
   'lbl_incorrect': 'Incorrect',
   // Accessibility

@@ -215,6 +215,7 @@ class _SheikhAudioCoachSheetState extends State<SheikhAudioCoachSheet> {
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  textDirection: TextDirection.rtl,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
