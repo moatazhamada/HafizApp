@@ -125,7 +125,6 @@ platform :android do
       skip_upload_metadata: false,
       skip_upload_images: false,
       skip_upload_screenshots: false,
-      changelog: "Changelog for version #{get_version_name}",
     )
 
     UI.success("🚀 Deployed to Internal Testing!")
