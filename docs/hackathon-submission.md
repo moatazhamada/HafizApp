@@ -1,5 +1,10 @@
 # Hafiz App — Quran Foundation Hackathon Submission
 
+> **Version:** 3.3.0+23  
+> **Live Demo:** https://moatazhamada.github.io/HafizApp/  
+> **Video Walkthrough:** https://youtu.be/A9g0FEGydnY  
+> **Download:** [APK](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.apk) | [AAB](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+23.aab)
+
 ## Project Overview
 
 **Hafiz** is a comprehensive Quran companion app designed to strengthen users' relationship with the Quran through adaptive, personalized experiences. It combines deep Quran.Foundation API integration with intelligent UX that adapts to each user's behavior and goals.
@@ -165,7 +170,8 @@ static const String productionAuthBaseUrl = 'https://oauth2.quran.foundation';
 
 ## GitHub Repository
 
-Branch: `feature/creativity-and-enhancements-to-the-app`
+**Primary Branch:** `feature/creativity-and-enhancements-to-the-app`  
+**Hackathon Demo Branch:** `hackathon-demo-page` (hosts the live demo site + signed builds)
 
 Key commits:
 1. `refactor: make screens responsive on large displays`
