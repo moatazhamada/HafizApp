@@ -40,7 +40,7 @@ class VerseMediaRemoteDataSourceImpl implements VerseMediaRemoteDataSource {
   Future<List<VerseMediaItem>> getVerseMedia(String verseKey) async {
     try {
       final response = await _dio.get(
-        '${ApiConfig.contentBase}/verses/media',
+        '${ApiConfig.contentApiBase}/verses/media',
         queryParameters: {'verse_key': verseKey},
       );
 

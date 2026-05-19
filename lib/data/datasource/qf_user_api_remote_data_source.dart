@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/network/qf_api_interceptor.dart';
+import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/pref_utils.dart';
 
 abstract class QfUserApiRemoteDataSource {
   Future<List<dynamic>> getCollections();
@@ -32,7 +34,10 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
 
       while (pageCount < _maxPages) {
         pageCount++;
-        final queryParams = <String, dynamic>{'first': _pageSize};
+        final queryParams = <String, dynamic>{
+          'first': _pageSize,
+          'mushafId': _resolveMushafId(),
+        };
         if (after != null) queryParams['after'] = after;
 
         final response = await _dio.get(
@@ -141,6 +146,15 @@ class QfUserApiRemoteDataSourceImpl implements QfUserApiRemoteDataSource {
     } catch (e) {
       Logger.error('Failed to remove QF bookmark: $e', feature: 'QfUserApi');
       rethrow;
+    }
+  }
+
+  int _resolveMushafId() {
+    if (!PrefUtils.isInitialized) return MushafType.madani.qfMushafId;
+    try {
+      return MushafType.fromString(PrefUtils().getMushafType()).qfMushafId;
+    } catch (_) {
+      return MushafType.madani.qfMushafId;
     }
   }
 }

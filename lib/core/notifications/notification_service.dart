@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
@@ -85,6 +86,15 @@ class NotificationService {
               AndroidFlutterLocalNotificationsPlugin
             >();
         if (androidPlugin == null) return true;
+
+        // requestNotificationsPermission() requires a foreground Activity.
+        // Calling it from a background context (e.g., boot receiver before
+        // the first frame) causes an NPE inside the plugin.
+        if (WidgetsBinding.instance.lifecycleState !=
+            AppLifecycleState.resumed) {
+          return false;
+        }
+
         final granted = await androidPlugin.requestNotificationsPermission();
         return granted ?? false;
       }
@@ -166,7 +176,7 @@ class NotificationService {
       body,
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
@@ -222,7 +232,7 @@ class NotificationService {
           : 'Keep your daily reading habit alive \u2014 open Hafiz',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
@@ -378,6 +388,31 @@ class NotificationService {
     return true;
   }
 
+  /// Returns the appropriate schedule mode for Android.
+  /// Falls back to [AndroidScheduleMode.inexactAllowWhileIdle] if exact alarms
+  /// are not permitted (Android 12+ requires SCHEDULE_EXACT_ALARM permission).
+  Future<AndroidScheduleMode> _resolveScheduleMode() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return AndroidScheduleMode.exactAllowWhileIdle;
+    }
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidPlugin == null) {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+    try {
+      final canScheduleExact = await androidPlugin.canScheduleExactNotifications();
+      if (canScheduleExact ?? false) {
+        return AndroidScheduleMode.exactAllowWhileIdle;
+      }
+    } catch (e) {
+      Logger.warning('Failed to check exact alarm permission: $e', feature: 'Notifications');
+    }
+    return AndroidScheduleMode.inexactAllowWhileIdle;
+  }
+
   static bool _shouldThrottle(int notificationId) {
     final last = _lastScheduleTime[notificationId];
     if (last == null) {
@@ -434,7 +469,7 @@ class NotificationService {
           : 'It\'s Friday \u2014 read Surah Al-Kahf before Friday prayer',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: 'surah:18',
     );

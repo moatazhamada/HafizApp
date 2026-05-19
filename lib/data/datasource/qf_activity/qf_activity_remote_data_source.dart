@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/timezone_helper.dart';
 
 /// Remote data source for QF Streaks & Activity Days APIs.
 ///
@@ -49,7 +50,7 @@ class QfActivityRemoteDataSourceImpl implements QfActivityRemoteDataSource {
       final response = await _dio.get(
         '$_baseUrl/streaks/current-streak-days',
         queryParameters: {'type': type},
-        options: Options(headers: {'x-timezone': DateTime.now().timeZoneName}),
+        options: await buildTzOptions(),
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return (response.data['data']?['days'] as num?)?.toInt() ?? 0;
@@ -108,7 +109,7 @@ class QfActivityRemoteDataSourceImpl implements QfActivityRemoteDataSource {
       await _dio.post(
         '$_baseUrl/activity-days',
         data: body,
-        options: Options(headers: {'x-timezone': DateTime.now().timeZoneName}),
+        options: await buildTzOptions(),
       );
       Logger.info('Posted activity day to QF', feature: 'QfActivity');
     } catch (e) {

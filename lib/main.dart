@@ -192,14 +192,19 @@ Future<void> main() async {
   const MethodChannel('com.hafiz.app.hafiz_app/notifications')
       .setMethodCallHandler((call) async {
     if (call.method == 'rescheduleNotifications') {
-      try {
-        final notificationService = NotificationService();
-        await notificationService.scheduleDailyVerse();
-        await notificationService.scheduleReadingReminder();
-        await notificationService.scheduleFridayKahf();
-      } catch (e) {
-        Logger.warning('Boot reschedule failed: $e', feature: 'Notifications');
-      }
+      // Defer to after the first frame so the Activity is attached.
+      // requestNotificationsPermission() needs a valid Activity context;
+      // without it the plugin NPEs.
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final notificationService = NotificationService();
+          await notificationService.scheduleDailyVerse();
+          await notificationService.scheduleReadingReminder();
+          await notificationService.scheduleFridayKahf();
+        } catch (e) {
+          Logger.warning('Boot reschedule failed: $e', feature: 'Notifications');
+        }
+      });
     }
     return null;
   });
@@ -324,7 +329,8 @@ class BootstrapApp extends StatefulWidget {
   State<BootstrapApp> createState() => _BootstrapAppState();
 }
 
-class _BootstrapAppState extends State<BootstrapApp> {
+class _BootstrapAppState extends State<BootstrapApp>
+    with WidgetsBindingObserver {
   bool _ready = false;
   bool _forceUpdate = false;
   bool _initFailed = false;
@@ -333,12 +339,38 @@ class _BootstrapAppState extends State<BootstrapApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _init();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Force a rebuild when the app comes back to foreground.
+      // This unblocks any transition that may have stalled while
+      // the app was backgrounded during initialization.
+      setState(() {});
+    }
   }
 
   Future<void> _init() async {
     final initializer = AppInitializer();
-    final success = await initializer.init();
+    final success = await initializer.init().timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        Logger.error(
+          'App initialization timed out after 15 seconds',
+          feature: 'Bootstrap',
+        );
+        return false;
+      },
+    );
 
     if (!mounted) return;
 
@@ -371,9 +403,22 @@ class _BootstrapAppState extends State<BootstrapApp> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final isDark = brightness == Brightness.dark;
+    final errorColor = isDark
+        ? darkTheme.colorScheme.error
+        : lightTheme.colorScheme.error;
+    final onSurfaceColor = isDark
+        ? darkTheme.colorScheme.onSurface
+        : lightTheme.colorScheme.onSurface;
+
     if (_initFailed) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
         home: Scaffold(
           body: Center(
             child: Padding(
@@ -383,7 +428,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: Theme.of(context).colorScheme.error,
+                    color: errorColor,
                     size: 48,
                   ),
                   const SizedBox(height: 16),
@@ -396,10 +441,7 @@ class _BootstrapAppState extends State<BootstrapApp> {
                     _initError,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.5),
+                      color: onSurfaceColor.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -420,13 +462,15 @@ class _BootstrapAppState extends State<BootstrapApp> {
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
-      child: _ready ? const _ReadyApp() : const _SplashScaffold(),
+      child: _ready
+          ? const _ReadyApp(key: ValueKey('ready'))
+          : const _SplashScaffold(key: ValueKey('splash')),
     );
   }
 }
 
 class _ReadyApp extends StatefulWidget {
-  const _ReadyApp();
+  const _ReadyApp({super.key});
 
   @override
   State<_ReadyApp> createState() => _ReadyAppState();
@@ -500,13 +544,23 @@ class _ReadyAppState extends State<_ReadyApp> {
 }
 
 class _SplashScaffold extends StatelessWidget {
-  const _SplashScaffold();
+  const _SplashScaffold({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Use the current theme mode to determine splash background
     final brightness =
         WidgetsBinding.instance.platformDispatcher.platformBrightness;
     final isDark = brightness == Brightness.dark;
+    final surfaceColor = isDark
+        ? darkTheme.colorScheme.surface
+        : lightTheme.colorScheme.surface;
+    final onSurfaceColor = isDark
+        ? darkTheme.colorScheme.onSurface
+        : lightTheme.colorScheme.onSurface;
+    final onSurfaceVariantColor = isDark
+        ? darkTheme.colorScheme.onSurfaceVariant
+        : lightTheme.colorScheme.onSurfaceVariant;
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -514,9 +568,7 @@ class _SplashScaffold extends StatelessWidget {
       darkTheme: darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
-        backgroundColor: isDark
-            ? darkTheme.colorScheme.surface
-            : lightTheme.colorScheme.surface,
+        backgroundColor: surfaceColor,
         body: Center(
           child: SingleChildScrollView(
             child: Column(
@@ -531,7 +583,7 @@ class _SplashScaffold extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'NotoNaskhArabic',
                         fontSize: 22,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: onSurfaceColor,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -545,7 +597,7 @@ class _SplashScaffold extends StatelessWidget {
                       'Loading...',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: onSurfaceVariantColor,
                         fontSize: 14,
                       ),
                     ),

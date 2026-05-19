@@ -38,11 +38,27 @@ void main() {
   });
 
   group('LoadTodaysPlan', () {
+    void mockAllTypes(Right<Failure, Map<String, dynamic>?> result) {
+      for (final type in const ['QURAN_TIME', 'QURAN_PAGES', 'QURAN_RANGE']) {
+        when(() => mockUseCase(GetTodaysPlanParams(type: type)))
+            .thenAnswer((_) async => result);
+      }
+    }
+
+    void mockAllTypesLeft(Left<Failure, Map<String, dynamic>?> result) {
+      for (final type in const ['QURAN_TIME', 'QURAN_PAGES', 'QURAN_RANGE']) {
+        when(() => mockUseCase(GetTodaysPlanParams(type: type)))
+            .thenAnswer((_) async => result);
+      }
+    }
+
     blocTest<GoalsBloc, GoalsState>(
       'emits [Loading, Loaded] on success with parsed items',
       build: () {
-        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-                .thenAnswer((_) async => const Right({
+        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN_TIME')))
+            .thenAnswer((_) async => const Right(null));
+        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN_PAGES')))
+            .thenAnswer((_) async => const Right({
                   'plan': [
                     {
                       'id': '1',
@@ -55,6 +71,8 @@ void main() {
                     }
                   ]
                 }));
+        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN_RANGE')))
+            .thenAnswer((_) async => const Right(null));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),
@@ -70,8 +88,7 @@ void main() {
     blocTest<GoalsBloc, GoalsState>(
       'emits [Loading, Loaded] with empty items for null data',
       build: () {
-        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => const Right(null));
+        mockAllTypes(const Right(null));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),
@@ -85,8 +102,7 @@ void main() {
     blocTest<GoalsBloc, GoalsState>(
       'emits [Loading, Error] on InsufficientScopeFailure',
       build: () {
-        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => const Left(InsufficientScopeFailure()));
+        mockAllTypesLeft(const Left(InsufficientScopeFailure()));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),
@@ -100,8 +116,7 @@ void main() {
     blocTest<GoalsBloc, GoalsState>(
       'emits [Loading, Error] on generic failure',
       build: () {
-        when(() => mockUseCase(const GetTodaysPlanParams(type: 'QURAN')))
-            .thenAnswer((_) async => const Left(ServerFailure('fail')));
+        mockAllTypesLeft(const Left(ServerFailure('fail')));
         return bloc;
       },
       act: (bloc) => bloc.add(LoadTodaysPlan()),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/network/network_manager.dart';
 
+import '../../../core/config/api_config.dart';
 import '../../model/surah_response.dart';
 
 abstract class SurahRemoteDataSource {
@@ -22,7 +23,7 @@ class SurahRemoteDataSourceImpl implements SurahRemoteDataSource {
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         final r = await networkManager.get(
-          '/verses/by_chapter/$surahId',
+          '${ApiConfig.contentApiBase}/verses/by_chapter/$surahId',
           params: {
             'per_page': 300,
             'words': 'false',

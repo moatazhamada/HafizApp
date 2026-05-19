@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:hafiz_app/core/config/qf_api_config.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
+import 'package:hafiz_app/core/utils/timezone_helper.dart';
 
 abstract class QfPostRemoteDataSource {
   Future<Map<String, dynamic>?> createReflection({
@@ -37,9 +38,7 @@ class QfPostRemoteDataSourceImpl implements QfPostRemoteDataSource {
           'verseKey': verseKey,
           'type': 'REFLECTION',
         },
-        options: Options(
-          headers: {'x-timezone': DateTime.now().timeZoneName},
-        ),
+        options: await buildTzOptions(),
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
         Logger.info('Created reflection for $verseKey', feature: 'QfPost');
