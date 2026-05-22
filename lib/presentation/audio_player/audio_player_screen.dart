@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/app_export.dart';
+import 'widgets/audio_player_action_button.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
@@ -731,19 +732,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.speed,
           label: 'lbl_speed_x'.tr.replaceAll('{speed}', '$_speed'),
           isActive: _speed != 1.0,
           onPressed: _showSpeedDialog,
         ),
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.timer,
           label: 'lbl_sleep_timer'.tr,
           isActive: _handler.sleepTimerEnd != null,
           onPressed: _showSleepTimerDialog,
         ),
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.loop,
           label: loopLabel,
           isActive: _handler.isLooping,
@@ -757,36 +758,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           },
         ),
       ],
-    );
-  }
-}
-
-/// Compact action button used in the bottom actions bar.
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onPressed;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isActive ? theme.colorScheme.primary : null;
-
-    return TextButton.icon(
-      icon: Icon(icon, color: color),
-      label: Text(
-        label,
-        style: TextStyle(color: color),
-      ),
-      onPressed: onPressed,
     );
   }
 }

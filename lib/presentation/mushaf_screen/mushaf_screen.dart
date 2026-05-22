@@ -11,8 +11,6 @@ import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/utils/number_converter.dart';
-import 'package:hafiz_app/core/utils/rtl_utils.dart';
 import 'package:hafiz_app/core/services/reading_session_tracker.dart';
 import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
@@ -22,6 +20,10 @@ import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
+import 'widgets/mushaf_bottom_bar.dart';
+import 'widgets/mushaf_text_content.dart';
+import 'widgets/mushaf_top_bar.dart';
+import 'widgets/verse_text.dart';
 
 class MushafScreen extends StatefulWidget {
   final int? initialPage;
@@ -44,7 +46,7 @@ class _MushafScreenState extends State<MushafScreen>
   Timer? _overlayTimer;
   Timer? _persistDebounce;
   Timer? _prefetchDebounce;
-  final Map<int, List<_VerseText>> _localTextCache = {};
+  final Map<int, List<VerseText>> _localTextCache = {};
   final List<int> _cacheAccessOrder = [];
   static const int _maxCachePages = 20;
 
@@ -309,7 +311,7 @@ class _MushafScreenState extends State<MushafScreen>
 
   // ─── Offline Text Loading ───────────────────────────────────────
 
-  Future<List<_VerseText>> _loadLocalPageText(int pageNumber) async {
+  Future<List<VerseText>> _loadLocalPageText(int pageNumber) async {
     if (_localTextCache.containsKey(pageNumber)) {
       // Move to most-recently-used position
       _cacheAccessOrder.remove(pageNumber);
@@ -322,7 +324,7 @@ class _MushafScreenState extends State<MushafScreen>
       totalPages: _mushafType.totalPages,
     );
     final isWarsh = _mushafType == MushafType.warsh;
-    final List<_VerseText> entries = [];
+    final List<VerseText> entries = [];
 
     for (final range in ranges) {
       final surah = QuranIndex.quranSurahs[range.surahId - 1];
@@ -348,7 +350,7 @@ class _MushafScreenState extends State<MushafScreen>
           if (verseNum >= range.startVerse && verseNum <= range.endVerse) {
             final text = (v['text'] ?? v['text_uthmani'] ?? '') as String;
             entries.add(
-              _VerseText(
+              VerseText(
                 surahId: range.surahId,
                 verseNumber: verseNum,
                 text: text,
@@ -479,14 +481,28 @@ class _MushafScreenState extends State<MushafScreen>
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: RepaintBoundary(child: _buildTopBar(isDark, colors)),
+                  child: RepaintBoundary(
+                    child: MushafTopBar(
+                      colors: colors,
+                      onBackPressed: NavigatorService.goBack,
+                      onTypePressed: _showMushafTypeSwitcher,
+                      onJumpPressed: _showJumpDialog,
+                    ),
+                  ),
                 ),
               if (_showOverlay)
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: RepaintBoundary(child: _buildBottomBar(isDark, colors)),
+                  child: RepaintBoundary(
+                    child: MushafBottomBar(
+                      currentPage: _currentPage,
+                      mushafType: _mushafType,
+                      colors: colors,
+                      onJumpPressed: _showJumpDialog,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -512,7 +528,7 @@ class _MushafScreenState extends State<MushafScreen>
   }
 
   Widget _buildOfflineFallback(int pageNumber, bool isDark, AppColors colors) {
-    return FutureBuilder<List<_VerseText>>(
+    return FutureBuilder<List<VerseText>>(
       future: _loadLocalPageText(pageNumber),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -559,92 +575,9 @@ class _MushafScreenState extends State<MushafScreen>
         }
         return Padding(
           padding: const EdgeInsets.all(16),
-          child: _buildTextContent(isDark, colors, verses),
+          child: MushafTextContent(colors: colors, verses: verses),
         );
       },
-    );
-  }
-
-  Widget _buildTextContent(
-    bool isDark,
-    AppColors colors,
-    List<_VerseText> verses,
-  ) {
-    final fontSize = PrefUtils().getQuranFontSize();
-    final textColor = colors.mushafTextPrimary;
-    final verseNumColor = colors.textSecondary;
-
-    final List<InlineSpan> spans = [];
-    final arabicVerseNumStyle = TextStyle(
-      fontFamily: 'NotoNaskhArabic',
-      fontSize: fontSize - 4,
-      color: verseNumColor,
-      fontWeight: FontWeight.bold,
-    );
-
-    for (int i = 0; i < verses.length; i++) {
-      final v = verses[i];
-      if (v.text.isEmpty) continue;
-
-      if (v.verseNumber == 1) {
-        if (i > 0) spans.add(const TextSpan(text: '\n'));
-        spans.add(
-          TextSpan(
-            text: '${v.surahNameArabic}\n',
-            style: TextStyle(
-              fontFamily: 'NotoNaskhArabic',
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-              color: colors.mushafSurahHeaderColor,
-            ),
-          ),
-        );
-        if (v.showBismillah) {
-          spans.add(
-            TextSpan(
-              text:
-                  '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 '
-                  '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 '
-                  '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650\n',
-              style: TextStyle(
-                fontFamily: 'NotoNaskhArabic',
-                fontSize: PrefUtils().getQuranFontSize() - 8,
-                color: colors.textSecondary,
-              ),
-            ),
-          );
-        }
-      }
-
-      spans.add(
-        TextSpan(
-          text: '${v.text} ',
-          style: TextStyle(
-            fontFamily: 'NotoNaskhArabic',
-            fontSize: fontSize,
-            height: 2.0,
-            color: textColor,
-          ),
-        ),
-      );
-      spans.add(
-        TextSpan(
-          text: ' \u06DD${_toArabicNumeral(v.verseNumber)} ',
-          style: arabicVerseNumStyle,
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      child: InteractiveViewer(
-        minScale: 0.5,
-        maxScale: 4.0,
-        child: RichText(
-          textDirection: TextDirection.rtl,
-          textAlign: TextAlign.justify,
-          text: TextSpan(children: spans),
-        ),
-      ),
     );
   }
 
@@ -709,183 +642,9 @@ class _MushafScreenState extends State<MushafScreen>
     }
   }
 
-  Widget _buildTopBar(bool isDark, AppColors colors) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colors.mushafPageBg,
-            colors.mushafPageBg.withValues(alpha: 0.85),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            textDirection: TextDirection.rtl,
-            children: [
-              Semantics(
-                button: true,
-                label: 'lbl_back'.tr,
-                child: IconButton(
-                  icon: Icon(rtlBackArrow(context), color: colors.textPrimary),
-                  onPressed: () => NavigatorService.goBack(),
-                  tooltip: 'lbl_back'.tr,
-                ),
-              ),
-              const Spacer(),
-              Semantics(
-                button: true,
-                label: 'lbl_select_mushaf_type'.tr,
-                child: IconButton(
-                  icon: Icon(Icons.menu_book, color: colors.textPrimary),
-                  onPressed: _showMushafTypeSwitcher,
-                  tooltip: 'lbl_select_mushaf_type'.tr,
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: 'lbl_jump_to_page'.tr,
-                child: IconButton(
-                  icon: Icon(Icons.search, color: colors.textPrimary),
-                  onPressed: _showJumpDialog,
-                  tooltip: 'lbl_jump_to_page'.tr,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomBar(bool isDark, AppColors colors) {
-    final madaniPage = _toMadaniPage(_currentPage);
-    final pageData = MushafPageIndex.getPageData(madaniPage);
-    final surahId =
-        pageData?.surahId ?? MushafPageIndex.getSurahForPage(madaniPage);
-    final surah = surahId >= 1 && surahId <= 114
-        ? QuranIndex.quranSurahs[surahId - 1]
-        : null;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final juz = _mushafType.getJuzForPage(_currentPage);
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            colors.mushafPageBg,
-            colors.mushafPageBg.withValues(alpha: 0.85),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (surah != null)
-                Text(
-                  isArabic ? surah.nameArabic : surah.nameEnglish,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: colors.textSecondary,
-                  ),
-                ),
-              const SizedBox(height: 4),
-              Row(
-                textDirection: TextDirection.rtl,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${'lbl_juz'.tr} ${juz.toLocalizedNumber(context)}',
-                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
-                  ),
-                  const SizedBox(width: 8),
-                  Semantics(
-                    button: true,
-                    label: 'lbl_semantics_page_indicator'
-                        .tr
-                        .replaceAll('{current}', '$_currentPage')
-                        .replaceAll('{total}', '${_mushafType.totalPages}'),
-                    child: GestureDetector(
-                      onTap: _showJumpDialog,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.mushafPageBorder.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${_currentPage.toLocalizedNumber(context)} / ${_mushafType.totalPages.toLocalizedNumber(context)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _toArabicNumeral(int number) {
-    const d = [
-      '\u0660',
-      '\u0661',
-      '\u0662',
-      '\u0663',
-      '\u0664',
-      '\u0665',
-      '\u0666',
-      '\u0667',
-      '\u0668',
-      '\u0669',
-    ];
-    return number.toString().split('').map((c) {
-      final n = int.tryParse(c);
-      return n != null ? d[n] : c;
-    }).join();
-  }
 }
 
 Map<String, dynamic> _decodeMushafJson(String jsonStr) {
   return json.decode(jsonStr) as Map<String, dynamic>;
 }
 
-class _VerseText {
-  final int surahId;
-  final int verseNumber;
-  final String text;
-  final String surahNameArabic;
-  final bool showBismillah;
-
-  const _VerseText({
-    required this.surahId,
-    required this.verseNumber,
-    required this.text,
-    required this.surahNameArabic,
-    required this.showBismillah,
-  });
-}

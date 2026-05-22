@@ -10,6 +10,7 @@ import 'package:hafiz_app/core/services/voice_recording_controller.dart';
 import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
 import 'widgets/auto_scroll_speed_sheet.dart';
+import 'widgets/juz_progress_indicator.dart';
 import 'widgets/bismillah_widget.dart';
 import 'widgets/completion_dialog.dart';
 import 'widgets/surah_navigation_bar.dart';
@@ -25,7 +26,6 @@ import '../../core/utils/rtl_utils.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/qiraat/qiraat_service.dart';
 import '../../core/qrc/adaptive_qrc.dart';
-import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/services/reading_session_tracker.dart';
 import '../../domain/entities/reading_session.dart';
@@ -776,7 +776,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                     );
                                   },
                                 ),
-                                _JuzProgressIndicator(surah: surah),
+                                JuzProgressIndicator(surah: surah),
                                 SliverPadding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.0,
@@ -859,54 +859,4 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   }
 }
 
-class _JuzProgressIndicator extends StatelessWidget {
-  final Surah? surah;
 
-  const _JuzProgressIndicator({required this.surah});
-
-  @override
-  Widget build(BuildContext context) {
-    if (surah == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
-    final page = MushafPageIndex.getPageForSurah(surah!.id);
-    final juz = MushafPageIndex.getJuzForPage(page);
-    final colors = AppColors.of(context);
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                isAr ? 'الجزء $juz' : 'Juz $juz',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: colors.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: juz / 30.0,
-                  minHeight: 4,
-                  backgroundColor: colors.primary.withValues(alpha: 0.1),
-                  color: colors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
