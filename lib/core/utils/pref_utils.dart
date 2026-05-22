@@ -1,16 +1,49 @@
 //ignore: unused_import
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/widgets.dart';
-import 'package:hafiz_app/core/config/api_config.dart';
+
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'preferences/milestone_preferences.dart';
+import 'preferences/notification_preferences.dart';
+import 'preferences/onboarding_preferences.dart';
+import 'preferences/reading_preferences.dart';
+import 'preferences/sync_preferences.dart';
+import 'preferences/theme_preferences.dart';
+import 'preferences/translation_preferences.dart';
+import 'preferences/voice_preferences.dart';
+
+/// Central preferences facade.
+///
+/// All domain-specific preferences have been extracted into focused classes
+/// under [preferences/]. [PrefUtils] keeps the original API surface so
+/// existing call-sites continue to work without modification.
 class PrefUtils {
   static SharedPreferences? _sharedPreferences;
   static Completer<SharedPreferences>? _initCompleter;
   static String? _cachedAppVersion;
+
+  // Domain-specific preference instances (lazy, stateless)
+  static final ThemePreferences _theme = ThemePreferences();
+  static final ReadingPreferences _reading = ReadingPreferences();
+  static final TranslationPreferences _translation = TranslationPreferences();
+  static final VoicePreferences _voice = VoicePreferences();
+  static final SyncPreferences _sync = SyncPreferences();
+  static final NotificationPreferences _notification =
+      NotificationPreferences();
+  static final MilestonePreferences _milestone = MilestonePreferences();
+  static final OnboardingPreferences _onboarding = OnboardingPreferences();
+
+  /// Direct access to the underlying [SharedPreferences] instance.
+  static SharedPreferences get prefs {
+    if (_sharedPreferences != null) return _sharedPreferences!;
+    throw StateError(
+      'PrefUtils: SharedPreferences accessed before init() completed. '
+      'Ensure PrefUtils.init() is awaited before reading preferences.',
+    );
+  }
 
   PrefUtils() {
     init().catchError((_) {});
@@ -21,23 +54,9 @@ class PrefUtils {
 
   String? getCachedAppVersion() => _cachedAppVersion;
 
+  static String? get cachedAppVersion => _cachedAppVersion;
+
   static bool get isInitialized => _sharedPreferences != null;
-
-  String? getLastRunVersion() {
-    try {
-      return _requirePrefs().getString('lastRunVersion');
-    } catch (e) {
-      return null;
-    }
-  }
-
-  void setLastRunVersion(String version) {
-    try {
-      _requirePrefs().setString('lastRunVersion', version);
-    } catch (e) {
-      Logger.warning('Failed to set lastRunVersion: $e', feature: 'Preferences');
-    }
-  }
 
   /// Initialise SharedPreferences. Safe to call multiple times; concurrent
   /// callers will coalesce on the same Completer.
@@ -48,9 +67,9 @@ class PrefUtils {
     }
     _initCompleter = Completer<SharedPreferences>();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _sharedPreferences = prefs;
-      _initCompleter!.complete(prefs);
+      final p = await SharedPreferences.getInstance();
+      _sharedPreferences = p;
+      _initCompleter!.complete(p);
       Logger.info('SharedPreference Initialized', feature: 'Preferences');
     } catch (e) {
       _initCompleter = null;
@@ -58,11 +77,7 @@ class PrefUtils {
     }
   }
 
-  /// Ensures [_sharedPreferences] is available. If init() was never awaited,
-  /// this will block until it completes. Returns the prefs instance.
-  ///
-  /// For synchronous getters that run after init(), [_sharedPreferences] is
-  /// already set and this is effectively a no-op assertion.
+  /// Ensures [_sharedPreferences] is available.
   SharedPreferences _requirePrefs() {
     if (_sharedPreferences != null) return _sharedPreferences!;
     throw StateError(
@@ -71,12 +86,13 @@ class PrefUtils {
     );
   }
 
-  ///will clear all the data stored in preference
+  /// Will clear all the data stored in preference.
   Future<void> clearPreferencesData() async {
     await _requirePrefs().clear();
   }
 
-  // Generic accessors for dynamic keys
+  // ── Generic accessors for dynamic keys ──
+
   Future<void> setString(String key, String value) async {
     await _requirePrefs().setString(key, value);
   }
@@ -99,70 +115,11 @@ class PrefUtils {
     await _requirePrefs().remove(key);
   }
 
-  // Theme Mode: 'system', 'light', 'dark'
-  Future<void> setThemeMode(String mode) async {
-    await _requirePrefs().setString('themeMode', mode);
-  }
+  // ═══════════════════════════════════════════════════════════════
+  //  Facade methods – delegate to domain-specific preference classes
+  // ═══════════════════════════════════════════════════════════════
 
-  String getThemeMode() {
-    try {
-      return _requirePrefs().getString('themeMode') ?? 'system';
-    } catch (e) {
-      Logger.warning('Failed to get theme mode: $e', feature: 'Preferences');
-      return 'system';
-    }
-  }
-
-  // Deprecated: getIsDarkMode - compatibility shim
-  bool getIsDarkMode() {
-    final mode = getThemeMode();
-    if (mode == 'dark') return true;
-    if (mode == 'light') return false;
-    // System default fallback: Check platform brightness
-    if (mode == 'system') {
-      try {
-        final brightness =
-            WidgetsBinding.instance.platformDispatcher.platformBrightness;
-        return brightness == Brightness.dark;
-      } catch (e) {
-        Logger.warning(
-          'Failed to get platform brightness: $e',
-          feature: 'Preferences',
-        );
-        return false;
-      }
-    }
-    return false;
-  }
-
-  // Deprecated: setIsDarkMode - compatibility shim
-  Future<void> setIsDarkMode(bool value) {
-    return setThemeMode(value ? 'dark' : 'light');
-  }
-
-  // Convert Surah object to JSON string
-  String toJson(Surah surah) => json.encode(surah.toMap());
-
-  // Store Surah object in SharedPreferences
-  Future<void> saveLastReadSurah(Surah surah) async {
-    await _requirePrefs().setString('surah', toJson(surah));
-  }
-
-  // Retrieve Surah object from SharedPreferences
-  Surah? getLastReadSurah() {
-    try {
-      final String? jsonString = _requirePrefs().getString('surah');
-      return jsonString != null ? Surah.fromJson(jsonString) : null;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get last read surah: $e',
-        feature: 'Preferences',
-      );
-      return null;
-    }
-  }
-
-  // Locale persistence (ar/en/system)
+  // ── Locale ──
   Future<void> setLocaleCode(String code) async {
     await _requirePrefs().setString('localeCode', code);
   }
@@ -176,444 +133,154 @@ class PrefUtils {
     }
   }
 
-  // Per-surah scroll offset persistence (fallback when hydration isn't ready)
-  Future<void> setSurahOffset(int surahId, double offset) async {
-    await _requirePrefs().setDouble('offset_$surahId', offset);
-  }
+  // ── Theme ──
+  Future<void> setThemeMode(String mode) => _theme.setThemeMode(mode);
+  String getThemeMode() => _theme.getThemeMode();
+  bool getIsDarkMode() => _theme.getIsDarkMode();
+  Future<void> setIsDarkMode(bool value) => _theme.setIsDarkMode(value);
 
-  double? getSurahOffset(int surahId) {
-    try {
-      return _requirePrefs().getDouble('offset_$surahId');
-    } catch (e) {
-      Logger.warning(
-        'Failed to get surah offset for surah $surahId: $e',
-        feature: 'Preferences',
-      );
-      return null;
-    }
-  }
+  // ── Onboarding / Version ──
+  String? getLastRunVersion() => _onboarding.getLastRunVersion();
+  void setLastRunVersion(String version) => _onboarding.setLastRunVersion(version);
+  bool getOnboardingCompleted() => _onboarding.getOnboardingCompleted();
+  Future<void> setOnboardingCompleted(bool value) =>
+      _onboarding.setOnboardingCompleted(value);
+  bool getHifzMigrationCompleted() => _onboarding.getHifzMigrationCompleted();
+  Future<void> setHifzMigrationCompleted(bool value) =>
+      _onboarding.setHifzMigrationCompleted(value);
+  int getOnboardingStep() => _onboarding.getOnboardingStep();
+  Future<void> setOnboardingStep(int step) => _onboarding.setOnboardingStep(step);
+  bool isFirstEverOpen() => _onboarding.isFirstEverOpen();
 
-  Future<void> setSurahVerseIndex(int surahId, int index) async {
-    await _requirePrefs().setInt('verse_index_$surahId', index);
-  }
-
-  int? getSurahVerseIndex(int surahId) {
-    try {
-      return _requirePrefs().getInt('verse_index_$surahId');
-    } catch (e) {
-      Logger.warning(
-        'Failed to get verse index for surah $surahId: $e',
-        feature: 'Preferences',
-      );
-      return null;
-    }
-  }
-
-  // Verse View Mode (false = Continuous/Mushaf, true = Single Line)
-  Future<void> setVerseViewMode(bool isSingleLine) async {
-    await _requirePrefs().setBool('isSingleLine', isSingleLine);
-  }
-
-  bool getVerseViewMode() {
-    try {
-      return _requirePrefs().getBool('isSingleLine') ??
-          false; // Default Continuous
-    } catch (e) {
-      Logger.warning(
-        'Failed to get verse view mode: $e',
-        feature: 'Preferences',
-      );
-      return false;
-    }
-  }
-
-  // Translation settings
-  bool getShowTranslation() {
-    try {
-      return _requirePrefs().getBool('show_translation') ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> setShowTranslation(bool value) async {
-    try {
-      await _requirePrefs().setBool('show_translation', value);
-    } catch (e) {
-      Logger.warning(
-        'Failed to set translation pref: $e',
-        feature: 'Preferences',
-      );
-    }
-  }
-
-  // Recitation settings
-  Future<void> setRecitationProvider(String provider) async {
-    await _requirePrefs().setString('recitation_provider', provider);
-  }
-
-  String getRecitationProvider() {
-    try {
-      return _requirePrefs().getString('recitation_provider') ??
-          'local_whisper';
-    } catch (e) {
-      Logger.warning(
-        'Failed to get recitation provider: $e',
-        feature: 'Preferences',
-      );
-      return 'local_whisper';
-    }
-  }
-
-  Future<void> setQiraatEdition(String edition) async {
-    await _requirePrefs().setString('qiraat_edition', edition);
-  }
-
-  String getQiraatEdition() {
-    try {
-      return _requirePrefs().getString('qiraat_edition') ?? 'quran-uthmani';
-    } catch (e) {
-      Logger.warning(
-        'Failed to get qiraat edition: $e',
-        feature: 'Preferences',
-      );
-      return 'quran-uthmani';
-    }
-  }
-
-  Future<void> setReciterId(int id) async {
-    await _requirePrefs().setInt('reciter_id', id);
-  }
-
-  int getReciterId() {
-    try {
-      return _requirePrefs().getInt('reciter_id') ?? 7;
-    } catch (e) {
-      Logger.warning('Failed to get reciter id: $e', feature: 'Preferences');
-      return 7;
-    }
-  }
-
-  Future<void> setCustomAsrEndpoint(String url) async {
-    await _requirePrefs().setString('custom_asr_endpoint', url);
-  }
-
-  String getCustomAsrEndpoint() {
-    try {
-      return _requirePrefs().getString('custom_asr_endpoint') ?? '';
-    } catch (e) {
-      Logger.warning(
-        'Failed to get custom ASR endpoint: $e',
-        feature: 'Preferences',
-      );
-      return '';
-    }
-  }
-
-  Future<void> setWhisperModel(String model) async {
-    await _requirePrefs().setString('whisper_model', model);
-  }
-
-  String getWhisperModel() {
-    try {
-      return _requirePrefs().getString('whisper_model') ?? 'base';
-    } catch (e) {
-      Logger.warning('Failed to get whisper model: $e', feature: 'Preferences');
-      return 'base';
-    }
-  }
-
-  Future<void> setQrcHafzLevel(int level) async {
-    await _requirePrefs().setInt('qrc_hafz_level', level);
-  }
-
-  int getQrcHafzLevel() {
-    try {
-      return _requirePrefs().getInt('qrc_hafz_level') ?? 1;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get qrc hafz level: $e',
-        feature: 'Preferences',
-      );
-      return 1;
-    }
-  }
-
-  Future<void> setQrcTajweedLevel(int level) async {
-    await _requirePrefs().setInt('qrc_tajweed_level', level);
-  }
-
-  int getQrcTajweedLevel() {
-    try {
-      return _requirePrefs().getInt('qrc_tajweed_level') ?? 3;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get qrc tajweed level: $e',
-        feature: 'Preferences',
-      );
-      return 3;
-    }
-  }
-
-  bool isAdaptiveQrc() {
-    try {
-      return _requirePrefs().getBool('adaptive_qrc') ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> setAdaptiveQrc(bool enabled) async {
-    await _requirePrefs().setBool('adaptive_qrc', enabled);
-  }
-
-  DateTime? getQfLastSyncAt() {
-    try {
-      final s = _requirePrefs().getString('qf_last_sync_at');
-      return s != null ? DateTime.tryParse(s) : null;
-    } catch (e) {
-      Logger.warning('Failed to read qf_last_sync_at: $e', feature: 'Prefs');
-      return null;
-    }
-  }
-
-  Future<void> setQfLastSyncAt(DateTime dt) async {
-    await _requirePrefs().setString('qf_last_sync_at', dt.toIso8601String());
-  }
-
-  String? getBookmarkCollectionId() {
-    try { return _requirePrefs().getString('qf_bookmark_collection_id'); } catch (_) { return null; }
-  }
-
-  Future<void> setBookmarkCollectionId(String id) async {
-    await _requirePrefs().setString('qf_bookmark_collection_id', id);
-  }
-
-  String? getMushafType() {
-    try {
-      return _requirePrefs().getString('mushafType');
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> setMushafType(String type) async {
-    await _requirePrefs().setString('mushafType', type);
-  }
-
-  int getMushafLastPage() => _requirePrefs().getInt('mushafLastPage') ?? 1;
-
-  Future<void> setMushafLastPage(int page) async =>
-      _requirePrefs().setInt('mushafLastPage', page);
-
+  // ── Reading ──
+  Future<void> setSurahOffset(int surahId, double offset) =>
+      _reading.setSurahOffset(surahId, offset);
+  double? getSurahOffset(int surahId) => _reading.getSurahOffset(surahId);
+  Future<void> setSurahVerseIndex(int surahId, int index) =>
+      _reading.setSurahVerseIndex(surahId, index);
+  int? getSurahVerseIndex(int surahId) => _reading.getSurahVerseIndex(surahId);
+  Future<void> setVerseViewMode(bool isSingleLine) =>
+      _reading.setVerseViewMode(isSingleLine);
+  bool getVerseViewMode() => _reading.getVerseViewMode();
+  double getQuranFontSize() => _reading.getQuranFontSize();
+  Future<void> setQuranFontSize(double size) => _reading.setQuranFontSize(size);
+  String getOrientationMode() => _reading.getOrientationMode();
+  Future<void> setOrientationMode(String mode) =>
+      _reading.setOrientationMode(mode);
+  String getDefaultQuranView() => _reading.getDefaultQuranView();
+  Future<void> setDefaultQuranView(String view) =>
+      _reading.setDefaultQuranView(view);
+  String getReadingNavMode() => _reading.getReadingNavMode();
+  Future<void> setReadingNavMode(String mode) =>
+      _reading.setReadingNavMode(mode);
+  String? getMushafType() => _reading.getMushafType();
+  Future<void> setMushafType(String type) => _reading.setMushafType(type);
+  int getMushafLastPage() => _reading.getMushafLastPage();
+  Future<void> setMushafLastPage(int page) => _reading.setMushafLastPage(page);
   int getMushafLastPageForType(String type) =>
-      _requirePrefs().getInt('mushafLastPage_$type') ?? 1;
+      _reading.getMushafLastPageForType(type);
+  Future<void> setMushafLastPageForType(String type, int page) =>
+      _reading.setMushafLastPageForType(type, page);
+  bool isKeepScreenOn() => _reading.isKeepScreenOn();
+  Future<void> setKeepScreenOn(bool value) => _reading.setKeepScreenOn(value);
+  Future<void> saveLastReadSurah(Surah surah) =>
+      _reading.saveLastReadSurah(surah);
+  Surah? getLastReadSurah() => _reading.getLastReadSurah();
 
-  Future<void> setMushafLastPageForType(String type, int page) async =>
-      _requirePrefs().setInt('mushafLastPage_$type', page);
+  // ── Translation ──
+  bool getShowTranslation() => _translation.getShowTranslation();
+  Future<void> setShowTranslation(bool value) =>
+      _translation.setShowTranslation(value);
+  String getPreferredTafsirId() => _translation.getPreferredTafsirId();
+  Future<void> setPreferredTafsirId(String id) =>
+      _translation.setPreferredTafsirId(id);
+  String getPreferredTranslationId() => _translation.getPreferredTranslationId();
+  Future<void> setPreferredTranslationId(String id) =>
+      _translation.setPreferredTranslationId(id);
 
-  /// Returns true if onboarding has been completed for the current app version.
-  bool getOnboardingCompleted() {
-    try {
-      final completedVersion = _requirePrefs().getString(
-        'onboardingCompletedVersion',
-      );
-      if (completedVersion == null) return false;
-      final currentVersion = _cachedAppVersion;
-      if (currentVersion == null) return completedVersion.isNotEmpty;
-      return completedVersion == currentVersion;
-    } catch (e) {
-      return false;
-    }
-  }
+  // ── Voice / Recitation ──
+  Future<void> setRecitationProvider(String provider) =>
+      _voice.setRecitationProvider(provider);
+  String getRecitationProvider() => _voice.getRecitationProvider();
+  Future<void> setQiraatEdition(String edition) =>
+      _voice.setQiraatEdition(edition);
+  String getQiraatEdition() => _voice.getQiraatEdition();
+  Future<void> setReciterId(int id) => _voice.setReciterId(id);
+  int getReciterId() => _voice.getReciterId();
+  Future<void> setCustomAsrEndpoint(String url) =>
+      _voice.setCustomAsrEndpoint(url);
+  String getCustomAsrEndpoint() => _voice.getCustomAsrEndpoint();
+  Future<void> setWhisperModel(String model) => _voice.setWhisperModel(model);
+  String getWhisperModel() => _voice.getWhisperModel();
+  Future<void> setQrcHafzLevel(int level) => _voice.setQrcHafzLevel(level);
+  int getQrcHafzLevel() => _voice.getQrcHafzLevel();
+  Future<void> setQrcTajweedLevel(int level) =>
+      _voice.setQrcTajweedLevel(level);
+  int getQrcTajweedLevel() => _voice.getQrcTajweedLevel();
+  bool isAdaptiveQrc() => _voice.isAdaptiveQrc();
+  Future<void> setAdaptiveQrc(bool enabled) => _voice.setAdaptiveQrc(enabled);
 
-  /// Marks onboarding as completed for the current app version.
-  Future<void> setOnboardingCompleted(bool value) async {
-    if (value) {
-      final version = _cachedAppVersion ?? '';
-      await _requirePrefs().setString('onboardingCompletedVersion', version);
-      await _requirePrefs().setBool('app_first_open', false);
-    } else {
-      await _requirePrefs().remove('onboardingCompletedVersion');
-    }
-  }
+  // ── Sync ──
+  DateTime? getQfLastSyncAt() => _sync.getQfLastSyncAt();
+  Future<void> setQfLastSyncAt(DateTime dt) => _sync.setQfLastSyncAt(dt);
+  String? getBookmarkCollectionId() => _sync.getBookmarkCollectionId();
+  Future<void> setBookmarkCollectionId(String id) =>
+      _sync.setBookmarkCollectionId(id);
+  bool getQfPrefSyncPrompted() => _sync.getQfPrefSyncPrompted();
+  Future<void> setQfPrefSyncPrompted(bool value) =>
+      _sync.setQfPrefSyncPrompted(value);
+  String? getQfPrefSyncDirection() => _sync.getQfPrefSyncDirection();
+  Future<void> setQfPrefSyncDirection(String? direction) =>
+      _sync.setQfPrefSyncDirection(direction);
+  Future<void> recordDeletedBookmark(int surahId, int verseNumber) =>
+      _sync.recordDeletedBookmark(surahId, verseNumber);
+  bool isRecentlyDeletedBookmark(
+    int surahId,
+    int verseNumber, {
+    Duration within = const Duration(hours: 24),
+  }) =>
+      _sync.isRecentlyDeletedBookmark(surahId, verseNumber, within: within);
+  Future<void> clearRecentlyDeletedBookmarks() =>
+      _sync.clearRecentlyDeletedBookmarks();
 
-  bool getHifzMigrationCompleted() {
-    try {
-      return _requirePrefs().getBool('hifz_migration_completed') ?? false;
-    } catch (_) {
-      return false;
-    }
-  }
+  // ── Notification ──
+  bool isDailyVerseEnabled() => _notification.isDailyVerseEnabled();
+  Future<void> setDailyVerseEnabled(bool enabled) =>
+      _notification.setDailyVerseEnabled(enabled);
+  String getDailyVerseTime() => _notification.getDailyVerseTime();
+  Future<void> setDailyVerseTime(String time) =>
+      _notification.setDailyVerseTime(time);
+  bool isFridayKahfEnabled() => _notification.isFridayKahfEnabled();
+  Future<void> setFridayKahfEnabled(bool enabled) =>
+      _notification.setFridayKahfEnabled(enabled);
+  String getFridayKahfTime() => _notification.getFridayKahfTime();
+  Future<void> setFridayKahfTime(String time) =>
+      _notification.setFridayKahfTime(time);
+  bool isReadingReminderEnabled() => _notification.isReadingReminderEnabled();
+  Future<void> setReadingReminderEnabled(bool value) =>
+      _notification.setReadingReminderEnabled(value);
+  String getReadingReminderTime() => _notification.getReadingReminderTime();
+  Future<void> setReadingReminderTime(String time) =>
+      _notification.setReadingReminderTime(time);
 
-  Future<void> setHifzMigrationCompleted(bool value) async {
-    await _requirePrefs().setBool('hifz_migration_completed', value);
-  }
+  // ── Milestones ──
+  String? getLastCelebratedDate() => _milestone.getLastCelebratedDate();
+  Future<void> setLastCelebratedDate(String date) =>
+      _milestone.setLastCelebratedDate(date);
+  int? getLastStreakCelebrated() => _milestone.getLastStreakCelebrated();
+  Future<void> setLastStreakCelebrated(int milestone) =>
+      _milestone.setLastStreakCelebrated(milestone);
+  int getTotalVersesRead() => _milestone.getTotalVersesRead();
+  Future<void> setTotalVersesRead(int value) =>
+      _milestone.setTotalVersesRead(value);
+  int getKhatmahCompletionsCount() => _milestone.getKhatmahCompletionsCount();
+  Future<void> setKhatmahCompletionsCount(int value) =>
+      _milestone.setKhatmahCompletionsCount(value);
+  bool shouldShowDuaKhatm() => _milestone.shouldShowDuaKhatm();
+  Future<void> setShouldShowDuaKhatm(bool value) =>
+      _milestone.setShouldShowDuaKhatm(value);
 
-  int getOnboardingStep() {
-    try {
-      return _requirePrefs().getInt('onboarding_step') ?? 0;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  Future<void> setOnboardingStep(int step) async {
-    await _requirePrefs().setInt('onboarding_step', step);
-  }
-
-  /// Returns true if this is the first time the app has ever been opened.
-  bool isFirstEverOpen() {
-    try {
-      return _requirePrefs().getBool('app_first_open') ?? true;
-    } catch (e) {
-      return true;
-    }
-  }
-
-  // Quran Font Size
-  double getQuranFontSize() {
-    try {
-      final raw = _requirePrefs().getDouble('quranFontSize') ?? 24.0;
-      return raw.clamp(16.0, 40.0);
-    } catch (e) {
-      return 24.0;
-    }
-  }
-
-  Future<void> setQuranFontSize(double size) async {
-    await _requirePrefs().setDouble('quranFontSize', size);
-  }
-
-  // Orientation Mode: 'system', 'portrait', 'landscape'
-  String getOrientationMode() {
-    try {
-      return _requirePrefs().getString('orientationMode') ?? 'system';
-    } catch (e) {
-      return 'system';
-    }
-  }
-
-  Future<void> setOrientationMode(String mode) async {
-    await _requirePrefs().setString('orientationMode', mode);
-  }
-
-  // Default Quran View: 'surah', 'mushaf'
-  String getDefaultQuranView() {
-    try {
-      return _requirePrefs().getString('defaultQuranView') ?? 'surah';
-    } catch (e) {
-      return 'surah';
-    }
-  }
-
-  Future<void> setDefaultQuranView(String view) async {
-    await _requirePrefs().setString('defaultQuranView', view);
-  }
-
-  // Reading Navigation Mode: 'scroll', 'page'
-  String getReadingNavMode() {
-    try {
-      return _requirePrefs().getString('readingNavMode') ?? 'scroll';
-    } catch (e) {
-      return 'scroll';
-    }
-  }
-
-  Future<void> setReadingNavMode(String mode) async {
-    await _requirePrefs().setString('readingNavMode', mode);
-  }
-
-  String getPreferredTafsirId() {
-    try {
-      return _requirePrefs().getString('preferred_tafsir_id') ??
-          ApiConfig.tafsirId;
-    } catch (e) {
-      return ApiConfig.tafsirId;
-    }
-  }
-
-  Future<void> setPreferredTafsirId(String id) async {
-    await _requirePrefs().setString('preferred_tafsir_id', id);
-  }
-
-  String getPreferredTranslationId() {
-    try {
-      return _requirePrefs().getString('preferred_translation_id') ??
-          ApiConfig.translationId.toString();
-    } catch (e) {
-      return ApiConfig.translationId.toString();
-    }
-  }
-
-  Future<void> setPreferredTranslationId(String id) async {
-    await _requirePrefs().setString('preferred_translation_id', id);
-  }
-
-  bool isDailyVerseEnabled() {
-    try {
-      return _requirePrefs().getBool('dailyVerseEnabled') ?? true;
-    } catch (e) {
-      return true;
-    }
-  }
-
-  Future<void> setDailyVerseEnabled(bool enabled) async {
-    await _requirePrefs().setBool('dailyVerseEnabled', enabled);
-  }
-
-  String getDailyVerseTime() {
-    try {
-      return _requirePrefs().getString('dailyVerseTime') ?? '08:00';
-    } catch (e) {
-      return '08:00';
-    }
-  }
-
-  Future<void> setDailyVerseTime(String time) async {
-    await _requirePrefs().setString('dailyVerseTime', time);
-  }
-
-  // ── Friday Surah Al-Kahf Reminder ──
-
-  bool isFridayKahfEnabled() {
-    try {
-      return _requirePrefs().getBool('fridayKahfEnabled') ?? true;
-    } catch (e) {
-      return true;
-    }
-  }
-
-  Future<void> setFridayKahfEnabled(bool enabled) async {
-    await _requirePrefs().setBool('fridayKahfEnabled', enabled);
-  }
-
-  String getFridayKahfTime() {
-    try {
-      return _requirePrefs().getString('fridayKahfTime') ?? '06:00';
-    } catch (e) {
-      return '06:00';
-    }
-  }
-
-  Future<void> setFridayKahfTime(String time) async {
-    await _requirePrefs().setString('fridayKahfTime', time);
-  }
-
-  String getReadingReminderTime() {
-    try {
-      return _requirePrefs().getString('readingReminderTime') ?? '20:00';
-    } catch (e) {
-      return '20:00';
-    }
-  }
-
-  Future<void> setReadingReminderTime(String time) async {
-    await _requirePrefs().setString('readingReminderTime', time);
-  }
-
-  // ── User Archetype & Surface ──
-
+  // ── User Archetype & Surface (kept in facade) ──
   String? getUserArchetype() {
     try {
       return _requirePrefs().getString('userArchetype');
@@ -638,7 +305,7 @@ class PrefUtils {
     await _requirePrefs().setString('surfaceType', surface);
   }
 
-  // Recent Search History
+  // ── Recent Search History (kept in facade) ──
   static const String _recentSearchesKey = 'recent_searches';
   static const int _maxRecentSearches = 10;
 
@@ -668,9 +335,7 @@ class PrefUtils {
     await _requirePrefs().remove(_recentSearchesKey);
   }
 
-  // ── Audio Playback Position ──
-
-  /// Returns the last played verse index (0-based) for a given surah, or null.
+  // ── Audio Playback Position (kept in facade) ──
   int? getLastAudioVerse(int surahId) {
     try {
       return _requirePrefs().getInt('last_audio_verse_$surahId');
@@ -684,233 +349,22 @@ class PrefUtils {
     await _requirePrefs().setInt('last_audio_verse_$surahId', verseIndex);
   }
 
-  // ── QF Preference Sync Tracking ──
-
-  static const String _qfPrefSyncPromptedKey = 'qf_pref_sync_prompted';
-  static const String _qfPrefSyncDirectionKey = 'qf_pref_sync_direction';
-
-  /// Whether the user has already been prompted to sync preferences on login.
-  bool getQfPrefSyncPrompted() {
-    try {
-      return _requirePrefs().getBool(_qfPrefSyncPromptedKey) ?? false;
-    } catch (e) {
-      Logger.warning('Failed to read QF pref sync prompted: $e', feature: 'Prefs');
-      return false;
-    }
-  }
-
-  Future<void> setQfPrefSyncPrompted(bool value) async {
-    await _requirePrefs().setBool(_qfPrefSyncPromptedKey, value);
-  }
-
-  /// The last chosen sync direction: 'pull' (QF → local), 'push' (local → QF), or null.
-  String? getQfPrefSyncDirection() {
-    try {
-      return _requirePrefs().getString(_qfPrefSyncDirectionKey);
-    } catch (e) {
-      Logger.warning('Failed to read QF pref sync direction: $e', feature: 'Prefs');
-      return null;
-    }
-  }
-
-  Future<void> setQfPrefSyncDirection(String? direction) async {
-    if (direction == null) {
-      await _requirePrefs().remove(_qfPrefSyncDirectionKey);
-    } else {
-      await _requirePrefs().setString(_qfPrefSyncDirectionKey, direction);
-    }
-  }
-
-  // ── Widget Promo ──
-
+  // ── Widget Promo (kept in facade) ──
   static const String _widgetPromoDismissedKey = 'widget_promo_dismissed';
 
   bool hasDismissedWidgetPromo() {
     try {
       return _requirePrefs().getBool(_widgetPromoDismissedKey) ?? false;
     } catch (e) {
-      Logger.warning('Failed to read widget promo dismissed: $e', feature: 'Prefs');
+      Logger.warning(
+        'Failed to read widget promo dismissed: $e',
+        feature: 'Prefs',
+      );
       return false;
     }
   }
 
   Future<void> dismissWidgetPromo() async {
     await _requirePrefs().setBool(_widgetPromoDismissedKey, true);
-  }
-
-  // ── Notification Preferences ──
-
-  static const String _readingReminderEnabledKey = 'reading_reminder_enabled';
-
-  bool isReadingReminderEnabled() {
-    try {
-      return _requirePrefs().getBool(_readingReminderEnabledKey) ?? true;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get reading reminder enabled: $e',
-        feature: 'Preferences',
-      );
-      return true;
-    }
-  }
-
-  Future<void> setReadingReminderEnabled(bool value) async {
-    await _requirePrefs().setBool(_readingReminderEnabledKey, value);
-  }
-
-  static const String _keepScreenOnKey = 'keep_screen_on';
-
-  bool isKeepScreenOn() {
-    try {
-      return _requirePrefs().getBool(_keepScreenOnKey) ?? true;
-    } catch (e) {
-      Logger.warning(
-        'Failed to get keep screen on: $e',
-        feature: 'Preferences',
-      );
-      return true;
-    }
-  }
-
-  Future<void> setKeepScreenOn(bool value) async {
-    await _requirePrefs().setBool(_keepScreenOnKey, value);
-  }
-
-  // ── Goal Celebration ──
-
-  static const String _lastCelebratedDateKey = 'last_celebrated_date';
-
-  String? getLastCelebratedDate() {
-    try {
-      return _requirePrefs().getString(_lastCelebratedDateKey);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> setLastCelebratedDate(String date) async {
-    await _requirePrefs().setString(_lastCelebratedDateKey, date);
-  }
-
-  static const String _lastStreakCelebratedKey = 'last_streak_celebrated';
-
-  int? getLastStreakCelebrated() {
-    try {
-      return _requirePrefs().getInt(_lastStreakCelebratedKey);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> setLastStreakCelebrated(int milestone) async {
-    await _requirePrefs().setInt(_lastStreakCelebratedKey, milestone);
-  }
-
-  // ── Khatmah Completion Tracking ──
-
-  static const String _totalVersesReadKey = 'total_verses_read';
-  static const String _khatmahCompletionsKey = 'khatmah_completions';
-  static const String _showDuaKhatmKey = 'show_dua_khatm';
-
-  int getTotalVersesRead() {
-    try {
-      return _requirePrefs().getInt(_totalVersesReadKey) ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  Future<void> setTotalVersesRead(int value) async {
-    await _requirePrefs().setInt(_totalVersesReadKey, value);
-  }
-
-  int getKhatmahCompletionsCount() {
-    try {
-      return _requirePrefs().getInt(_khatmahCompletionsKey) ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  Future<void> setKhatmahCompletionsCount(int value) async {
-    await _requirePrefs().setInt(_khatmahCompletionsKey, value);
-  }
-
-  bool shouldShowDuaKhatm() {
-    try {
-      return _requirePrefs().getBool(_showDuaKhatmKey) ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<void> setShouldShowDuaKhatm(bool value) async {
-    await _requirePrefs().setBool(_showDuaKhatmKey, value);
-  }
-
-  // ── Recently Deleted Bookmarks (prevents sync pull-back) ──
-
-  static const String _recentlyDeletedBookmarksKey =
-      'recently_deleted_bookmarks';
-
-  /// Record a bookmark as recently deleted so cloud sync doesn't pull it back.
-  Future<void> recordDeletedBookmark(int surahId, int verseNumber) async {
-    try {
-      final key = '$surahId:$verseNumber';
-      final jsonStr = _requirePrefs().getString(_recentlyDeletedBookmarksKey);
-      final Map<String, dynamic> map =
-          jsonStr != null ? json.decode(jsonStr) : {};
-      map[key] = DateTime.now().toIso8601String();
-      // Keep only the last 50 deletions to prevent unbounded growth.
-      if (map.length > 50) {
-        final sorted = map.entries.toList()
-          ..sort((a, b) => DateTime.parse(a.value)
-              .compareTo(DateTime.parse(b.value)));
-        final toRemove = sorted.take(map.length - 50).map((e) => e.key);
-        for (final k in toRemove) {
-          map.remove(k);
-        }
-      }
-      await _requirePrefs().setString(
-        _recentlyDeletedBookmarksKey,
-        json.encode(map),
-      );
-    } catch (e) {
-      Logger.warning('Failed to record deleted bookmark: $e', feature: 'Prefs');
-    }
-  }
-
-  /// Returns true if this bookmark was deleted locally within the last
-  /// [within] duration (default 24 hours).
-  bool isRecentlyDeletedBookmark(
-    int surahId,
-    int verseNumber, {
-    Duration within = const Duration(hours: 24),
-  }) {
-    try {
-      final key = '$surahId:$verseNumber';
-      final jsonStr = _requirePrefs().getString(_recentlyDeletedBookmarksKey);
-      if (jsonStr == null) return false;
-      final map = json.decode(jsonStr) as Map<String, dynamic>;
-      final deletedAtStr = map[key];
-      if (deletedAtStr == null) return false;
-      final deletedAt = DateTime.tryParse(deletedAtStr.toString());
-      if (deletedAt == null) return false;
-      return DateTime.now().difference(deletedAt) < within;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Clear the recently-deleted tracking (e.g. after a successful sync).
-  Future<void> clearRecentlyDeletedBookmarks() async {
-    try {
-      await _requirePrefs().remove(_recentlyDeletedBookmarksKey);
-    } catch (e) {
-      Logger.warning(
-        'Failed to clear recently deleted bookmarks: $e',
-        feature: 'Prefs',
-      );
-    }
   }
 }

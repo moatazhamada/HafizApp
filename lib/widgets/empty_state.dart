@@ -7,14 +7,18 @@ import 'package:flutter/material.dart';
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String message;
+  final String? subtitle;
   final String? actionLabel;
+  final IconData actionIcon;
   final VoidCallback? onAction;
 
   const EmptyState({
     super.key,
     this.icon = Icons.folder_open_outlined,
     required this.message,
+    this.subtitle,
     this.actionLabel,
+    this.actionIcon = Icons.refresh,
     this.onAction,
   });
 
@@ -43,13 +47,24 @@ class EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontWeight: subtitle != null ? FontWeight.bold : null,
                 ),
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  subtitle!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: 16),
                 FilledButton.tonalIcon(
                   onPressed: onAction,
-                  icon: const Icon(Icons.refresh),
+                  icon: Icon(actionIcon),
                   label: Text(actionLabel!),
                 ),
               ],

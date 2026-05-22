@@ -384,6 +384,10 @@ class _VerseListView extends StatelessWidget {
               textDirection: TextDirection.rtl,
               textAlign: TextAlign.justify,
               text: textSpan,
+              textHeightBehavior: const TextHeightBehavior(
+                applyHeightToFirstAscent: true,
+                applyHeightToLastDescent: true,
+              ),
             ),
           ),
         );

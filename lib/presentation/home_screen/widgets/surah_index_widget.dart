@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/juz_index.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/quran_index/mushaf_types.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../../../widgets/surah_list_item.dart';
 import 'staggered_list_item.dart';
@@ -144,9 +145,11 @@ class SurahIndexWidget extends StatelessWidget {
     // Notify home bloc about last read update if needed
     final defaultView = PrefUtils().getDefaultQuranView();
     if (defaultView == 'mushaf') {
+      final type = MushafType.fromString(PrefUtils().getMushafType());
+      final page = type.getSurahStartPage(surah.id);
       NavigatorService.pushNamed(
         AppRoutes.mushafScreen,
-        arguments: {},
+        arguments: {'initialPage': page},
       );
     } else {
       NavigatorService.pushNamed(

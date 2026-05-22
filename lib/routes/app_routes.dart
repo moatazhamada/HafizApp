@@ -72,9 +72,10 @@ class AppRoutes {
     musaliTeaserScreen: MusaliTeaserScreen.builder,
     cloudSyncPage: (context) => const CloudSyncScreen(),
     audioPlayerScreen: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-          {};
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      final args = rawArgs is Map
+          ? Map<String, dynamic>.from(rawArgs)
+          : <String, dynamic>{};
       return AudioPlayerScreen(
         surahId: args['surahId'] as int? ?? 1,
         surahName: args['surahName'] as String? ?? '',
@@ -82,24 +83,32 @@ class AppRoutes {
       );
     },
     mushafScreen: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-          {};
-      return MushafScreen(initialPage: args['initialPage'] as int?);
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      int? initialPage;
+      if (rawArgs is Map) {
+        initialPage = Map<String, dynamic>.from(rawArgs)['initialPage'] as int?;
+      } else if (rawArgs is int) {
+        initialPage = rawArgs;
+      }
+      return MushafScreen(initialPage: initialPage);
     },
     mushafTypeOnboarding: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-          {};
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      bool fromSettings = false;
+      if (rawArgs is Map) {
+        fromSettings =
+            Map<String, dynamic>.from(rawArgs)['fromSettings'] as bool? ?? false;
+      }
       return MushafTypeOnboarding(
-        fromSettings: args['fromSettings'] as bool? ?? false,
+        fromSettings: fromSettings,
       );
     },
     statisticsScreen: (context) => StatisticsScreen.builder(context),
     verseStudyScreen: (context) {
-      final args =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-          {};
+      final rawArgs = ModalRoute.of(context)?.settings.arguments;
+      final args = rawArgs is Map
+          ? Map<String, dynamic>.from(rawArgs)
+          : <String, dynamic>{};
       return VerseStudyScreen(verseKey: args['verseKey'] as String? ?? '1:1');
     },
     changelogScreen: (context) => const ChangelogScreen(),

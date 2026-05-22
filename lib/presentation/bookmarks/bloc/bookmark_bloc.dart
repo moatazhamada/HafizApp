@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/either_extensions.dart';
 import '../../../../data/model/bookmark_model.dart';
 import '../../../../domain/repository/bookmark_repository.dart';
 
@@ -25,7 +25,7 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     emit(BookmarkLoading());
     final result = await repository.getBookmarks();
     result.fold(
-      (failure) => emit(BookmarkError(_mapFailureToMessage(failure))),
+      (failure) => emit(BookmarkError(failure.localizedMessage)),
       (bookmarks) => emit(
         BookmarkLoaded(bookmarks, feedbackMessage: event.feedbackMessage),
       ),
@@ -43,9 +43,9 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
         // Preserve any previously loaded bookmarks on error
         final current = state;
         if (current is BookmarkLoaded) {
-          emit(BookmarkLoaded(current.bookmarks, feedbackMessage: _mapFailureToMessage(failure)));
+          emit(BookmarkLoaded(current.bookmarks, feedbackMessage: failure.localizedMessage));
         } else {
-          emit(BookmarkError(_mapFailureToMessage(failure)));
+          emit(BookmarkError(failure.localizedMessage));
         }
       },
       (_) {
@@ -69,9 +69,9 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
         // Preserve any previously loaded bookmarks on error
         final current = state;
         if (current is BookmarkLoaded) {
-          emit(BookmarkLoaded(current.bookmarks, feedbackMessage: _mapFailureToMessage(failure)));
+          emit(BookmarkLoaded(current.bookmarks, feedbackMessage: failure.localizedMessage));
         } else {
-          emit(BookmarkError(_mapFailureToMessage(failure)));
+          emit(BookmarkError(failure.localizedMessage));
         }
       },
       (_) {
@@ -81,14 +81,4 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     );
   }
 
-  String _mapFailureToMessage(Failure failure) {
-    if (failure is ServerFailure) {
-      return 'msg_server_error';
-    } else if (failure is CacheFailure) {
-      return 'msg_cache_error';
-    } else if (failure is ConnectionFailure) {
-      return 'msg_connection_error';
-    }
-    return 'msg_unexpected_error';
-  }
 }

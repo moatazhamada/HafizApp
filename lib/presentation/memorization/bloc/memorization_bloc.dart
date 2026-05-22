@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/core/srs/srs_algorithm.dart';
 import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/domain/repository/memorization_repository.dart';
+import 'package:hafiz_app/core/utils/either_extensions.dart';
 import 'memorization_event.dart';
 import 'memorization_state.dart';
 
@@ -22,7 +23,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
-      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (failure) => emit(MemorizationError(failure.localizedMessage)),
       (progress) {
         final due = progress.where(SrsAlgorithm.isDueForReview).toList();
         final memorized = progress
@@ -57,7 +58,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     result.fold(
       (failure) {
         if (isClosed) return;
-        emit(MemorizationError(failure.errorMessage));
+        emit(MemorizationError(failure.localizedMessage));
       },
       (_) {
         if (isClosed) return;
@@ -74,7 +75,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     emit(MemorizationLoading());
     final result = await repository.getAllProgress();
     result.fold(
-      (failure) => emit(MemorizationError(failure.errorMessage)),
+      (failure) => emit(MemorizationError(failure.localizedMessage)),
       (progress) {
         final due = progress.where(SrsAlgorithm.isDueForReview).toList();
         final memorized = progress

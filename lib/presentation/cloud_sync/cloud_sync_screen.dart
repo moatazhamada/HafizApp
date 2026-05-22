@@ -5,6 +5,8 @@ import '../../core/services/preference_sync_service.dart';
 import '../../injection_container.dart';
 import 'bloc/cloud_sync_bloc.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
+import 'widgets/auth_loading_card.dart';
+import 'widgets/local_data_note.dart';
 
 class CloudSyncScreen extends StatelessWidget {
   const CloudSyncScreen({super.key});
@@ -63,7 +65,7 @@ class _CloudSyncView extends StatelessWidget {
             SizedBox(height: 24),
             _PreferenceSyncSection(),
             SizedBox(height: 24),
-            _LocalDataNote(),
+            LocalDataNote(),
           ],
         ),
       ),
@@ -132,7 +134,7 @@ class _AuthCard extends StatelessWidget {
     return BlocBuilder<QfAuthBloc, QfAuthState>(
       builder: (context, state) {
         if (state is QfAuthLoading || state is QfAuthInitial) {
-          return const _AuthLoadingCard();
+          return const AuthLoadingCard();
         }
         if (state is QfAuthAuthenticated) {
           return _AuthAuthenticatedCard(state: state);
@@ -142,41 +144,6 @@ class _AuthCard extends StatelessWidget {
         }
         return const _AuthUnauthenticatedCard();
       },
-    );
-  }
-}
-
-class _AuthLoadingCard extends StatelessWidget {
-  const _AuthLoadingCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                'lbl_checking_account'.tr,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -690,17 +657,3 @@ class _PreferenceSyncSection extends StatelessWidget {
   }
 }
 
-class _LocalDataNote extends StatelessWidget {
-  const _LocalDataNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(Icons.info_outline, color: AppColors.of(context).notStartedStatus),
-        title: Text('msg_recitation_progress'.tr),
-        subtitle: Text('msg_local_data_note'.tr),
-      ),
-    );
-  }
-}

@@ -10,6 +10,11 @@ import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/presentation/hifz/bloc/hifz_bloc.dart';
 import 'package:hafiz_app/presentation/hifz/bloc/hifz_event.dart';
 import 'package:hafiz_app/presentation/hifz/bloc/hifz_state.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
+import 'package:hafiz_app/core/utils/bottom_sheet_utils.dart';
+import 'package:hafiz_app/presentation/hifz/widgets/hifz_empty_state.dart';
+import 'package:hafiz_app/presentation/hifz/widgets/hifz_error_view.dart';
+import 'package:hafiz_app/presentation/hifz/widgets/hifz_list_view.dart';
 
 class HifzScreen extends StatelessWidget {
   const HifzScreen({super.key});
@@ -37,6 +42,7 @@ class HifzScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         onPressed: () => _showAddEntrySheet(context),
         child: const Icon(Icons.add),
       ),
@@ -49,16 +55,23 @@ class HifzScreen extends StatelessWidget {
         child: BlocBuilder<HifzBloc, HifzState>(
           builder: (context, state) {
             if (state is HifzLoading || state is HifzActionLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const LoadingIndicator();
             }
             if (state is HifzError) {
-              return _ErrorView(message: state.message);
+              return HifzErrorView(message: state.message);
             }
             if (state is HifzLoaded) {
               if (state.entries.isEmpty) {
-                return const _EmptyState();
+                return HifzEmptyState(onAddPressed: () => _showAddEntrySheet(context));
               }
-              return _HifzList(state: state);
+              return HifzListView(
+                state: state,
+                entryBuilder: (entry, isDue, compact) => _HifzEntryCard(
+                  entry: entry,
+                  isDue: isDue,
+                  compact: compact,
+                ),
+              );
             }
             return const SizedBox.shrink();
           },
@@ -68,56 +81,53 @@ class HifzScreen extends StatelessWidget {
   }
 
   static void _showHelpSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (context, sc) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.school, color: Theme.of(context).colorScheme.primary, size: 28),
-                  const SizedBox(width: 12),
-                  Text(
-                    'hifz_help_title'.tr,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+      useDraggable: true,
+      initialSize: 0.6,
+      minSize: 0.4,
+      maxSize: 0.8,
+      builder: (ctx, _) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.school, color: Theme.of(context).colorScheme.primary, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'hifz_help_title'.tr,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    'hifz_help_desc'.tr,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  'hifz_help_desc'.tr,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('lbl_got_it'.tr),
-                ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('lbl_got_it'.tr),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -125,18 +135,15 @@ class HifzScreen extends StatelessWidget {
 
   static void _showAddEntrySheet(BuildContext context) {
     final bloc = context.read<HifzBloc>();
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, sc) => BlocProvider.value(
-          value: bloc,
-          child: _AddEntrySheet(scrollController: sc),
-        ),
+      useDraggable: true,
+      initialSize: 0.7,
+      minSize: 0.5,
+      maxSize: 0.9,
+      builder: (context, scrollController) => BlocProvider.value(
+        value: bloc,
+        child: _AddEntrySheet(scrollController: scrollController!),
       ),
     );
   }
@@ -323,180 +330,6 @@ class _HifzScreenLoaderState extends State<_HifzScreenLoader> {
   }
 }
 
-class _HifzList extends StatelessWidget {
-  final HifzLoaded state;
-
-  const _HifzList({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<HifzBloc>().add(LoadHifzEntries());
-      },
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-        children: [
-          _SummaryCard(state: state),
-          const SizedBox(height: 20),
-          if (state.dueToday.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_due_today'.tr, count: state.dueToday.length),
-            const SizedBox(height: 8),
-            ...state.dueToday.map((e) => _HifzEntryCard(entry: e, isDue: true)),
-            const SizedBox(height: 20),
-          ],
-          if (state.newLessons.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_new_lessons'.tr, count: state.newLessons.length),
-            const SizedBox(height: 8),
-            ...state.newLessons.map((e) => _HifzEntryCard(entry: e)),
-            const SizedBox(height: 20),
-          ],
-          if (state.recent.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_recent_lessons'.tr, count: state.recent.length),
-            const SizedBox(height: 8),
-            ...state.recent.map((e) => _HifzEntryCard(entry: e)),
-            const SizedBox(height: 20),
-          ],
-          if (state.solid.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_solid'.tr, count: state.solid.length),
-            const SizedBox(height: 8),
-            ...state.solid.map((e) => _HifzEntryCard(entry: e, compact: true)),
-            const SizedBox(height: 20),
-          ],
-          if (state.mastered.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_mastered'.tr, count: state.mastered.length),
-            const SizedBox(height: 8),
-            ...state.mastered.map((e) => _HifzEntryCard(entry: e, compact: true)),
-            const SizedBox(height: 20),
-          ],
-          if (state.weak.isNotEmpty) ...[
-            _SectionHeader(title: 'lbl_weak'.tr, count: state.weak.length),
-            const SizedBox(height: 8),
-            ...state.weak.map((e) => _HifzEntryCard(entry: e)),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  final HifzLoaded state;
-
-  const _SummaryCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      color: AppColors.of(context).surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              '${'lbl_hifz_progress'.tr}: ${state.masteredCount}/${state.totalEntries}',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: state.totalEntries > 0 ? state.masteredCount / state.totalEntries : 0,
-                minHeight: 12,
-                backgroundColor: AppColors.of(context).notStartedStatus,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.of(context).primary),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatChip(label: 'lbl_new'.tr, value: state.newLessons.length, color: AppColors.of(context).inProgressStatus),
-                _StatChip(label: 'lbl_solid'.tr, value: state.solid.length, color: AppColors.of(context).memorizedStatus),
-                _StatChip(label: 'lbl_weak'.tr, value: state.weak.length, color: AppColors.of(context).needsReviewStatus),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final String label;
-  final int value;
-  final Color color;
-
-  const _StatChip({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$value',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus)),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final int count;
-
-  const _SectionHeader({required this.title, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _HifzEntryCard extends StatelessWidget {
   final HifzEntry entry;
   final bool isDue;
@@ -651,70 +484,6 @@ class _HifzEntryCard extends StatelessWidget {
             child: Text('lbl_delete'.tr),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.menu_book_outlined, size: 64, color: AppColors.of(context).notStartedStatus),
-            const SizedBox(height: 24),
-            Text(
-              'lbl_hifz_empty_title'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'lbl_hifz_empty_subtitle'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: AppColors.of(context).notStartedStatus),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.tonal(
-              onPressed: () => HifzScreen._showAddEntrySheet(context),
-              child: Text('lbl_add_hifz_entry'.tr),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-
-  const _ErrorView({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 16),
-            Text(message.tr, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: () => context.read<HifzBloc>().add(LoadHifzEntries()),
-              child: Text('lbl_retry'.tr),
-            ),
-          ],
-        ),
       ),
     );
   }

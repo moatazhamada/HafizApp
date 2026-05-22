@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/errors/failures.dart';
 import 'package:hafiz_app/core/usecase/usecase.dart';
 import 'package:hafiz_app/domain/usecase/cloud_sync/sync_with_qf.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/core/utils/either_extensions.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 part 'cloud_sync_event.dart';
@@ -33,7 +34,7 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
             Logger.warning('Failed to dispatch re-login: $e', feature: 'CloudSync');
           }
         }
-        emit(QfSyncError(_mapFailureToMessage(failure)));
+        emit(QfSyncError(failure.localizedMessage.tr));
       },
       (syncResult) {
         PrefUtils().setQfLastSyncAt(DateTime.now());
@@ -46,10 +47,4 @@ class CloudSyncBloc extends Bloc<CloudSyncEvent, CloudSyncState> {
     );
   }
 
-  String _mapFailureToMessage(Failure failure) {
-    if (failure is InsufficientScopeFailure) {
-      return failure.errorMessage.tr;
-    }
-    return 'msg_sync_failed'.tr;
-  }
 }

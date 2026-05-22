@@ -8,6 +8,7 @@ import 'package:hafiz_app/domain/repository/hifz_repository.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:hafiz_app/core/utils/either_extensions.dart';
 import 'hifz_event.dart';
 import 'hifz_state.dart';
 
@@ -26,7 +27,7 @@ class HifzBloc extends Bloc<HifzEvent, HifzState> {
     emit(HifzLoading());
     final result = await repository.getAllEntries();
     result.fold(
-      (failure) => emit(HifzError(failure.errorMessage)),
+      (failure) => emit(HifzError(failure.localizedMessage)),
       (entries) => emit(_groupEntries(entries)),
     );
   }
@@ -45,7 +46,7 @@ class HifzBloc extends Bloc<HifzEvent, HifzState> {
     );
     final result = await repository.saveEntry(entry);
     result.fold(
-      (failure) => emit(HifzActionError(failure.errorMessage)),
+      (failure) => emit(HifzActionError(failure.localizedMessage)),
       (_) {
         unawaited(sl<AnalyticsService>().logRawEvent(
           'hifz_entry_created',
@@ -64,7 +65,7 @@ class HifzBloc extends Bloc<HifzEvent, HifzState> {
       scoreLabel: event.scoreLabel,
     );
     result.fold(
-      (failure) => emit(HifzActionError(failure.errorMessage)),
+      (failure) => emit(HifzActionError(failure.localizedMessage)),
       (updated) {
         unawaited(sl<AnalyticsService>().logRawEvent(
           'hifz_review_logged',
@@ -79,7 +80,7 @@ class HifzBloc extends Bloc<HifzEvent, HifzState> {
     emit(HifzActionLoading());
     final result = await repository.deleteEntry(event.entryId);
     result.fold(
-      (failure) => emit(HifzActionError(failure.errorMessage)),
+      (failure) => emit(HifzActionError(failure.localizedMessage)),
       (_) => add(LoadHifzEntries()),
     );
   }

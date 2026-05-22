@@ -23,6 +23,10 @@ class _HifzModeOverlay extends StatelessWidget {
       text,
       textAlign: textAlign,
       textDirection: textDirection,
+      textHeightBehavior: const TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+      ),
       style: isBlurred
           ? baseStyle.copyWith(
               color: Colors.transparent,

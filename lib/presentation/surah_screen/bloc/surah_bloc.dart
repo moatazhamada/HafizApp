@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:hafiz_app/domain/usecase/getsurah/get_surah.dart';
 
-import '../../../core/errors/failures.dart';
+import '../../../core/utils/either_extensions.dart';
 import '../../../domain/entities/verse.dart';
 import '/core/app_export.dart';
 
@@ -25,17 +25,10 @@ class SurahBloc extends Bloc<SurahEvent, SurahState> {
       emit(LoadingSurahState());
       var response = await getSurah(ParamsGetSurah(surahId: event.surahId));
       emit(
-        response.fold((failure) {
-          if (failure is ServerFailure) {
-            return const FailureSurahState(errorMessage: 'msg_server_error');
-          } else if (failure is ConnectionFailure) {
-            return const FailureSurahState(
-              errorMessage: 'msg_connection_error',
-            );
-          } else {
-            return const FailureSurahState(errorMessage: 'msg_unexpected_error');
-          }
-        }, (data) => SuccessSurahState(chapters: data)),
+        response.fold(
+          (failure) => FailureSurahState(errorMessage: failure.localizedMessage),
+          (data) => SuccessSurahState(chapters: data),
+        ),
       );
     }
   }

@@ -229,7 +229,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   ThemeMode _getThemeMode() {
     final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
@@ -238,31 +238,37 @@ class MyApp extends StatelessWidget {
     return ThemeMode.system;
   }
 
-  final themeBloc = sl<ThemeBloc>();
-  final bookmarkBloc = sl<BookmarkBloc>();
-  final recitationErrorBloc = sl<RecitationErrorBloc>();
-  final cloudSyncBloc = sl<CloudSyncBloc>();
-  final khatmahBloc = sl<KhatmahBloc>();
-
   @override
   Widget build(BuildContext context) {
+    final themeBloc = sl<ThemeBloc>();
+    final bookmarkBloc = sl<BookmarkBloc>();
+    final recitationErrorBloc = sl<RecitationErrorBloc>();
+    final cloudSyncBloc = sl<CloudSyncBloc>();
+    final khatmahBloc = sl<KhatmahBloc>();
+    final qfAuthBloc = sl<QfAuthBloc>();
+
+    if (!bookmarkBloc.isClosed) {
+      bookmarkBloc.add(const LoadBookmarksEvent());
+    }
+    if (!recitationErrorBloc.isClosed) {
+      recitationErrorBloc.add(const LoadRecitationErrorsEvent());
+    }
+    if (!qfAuthBloc.isClosed) {
+      qfAuthBloc.add(QfAuthCheckRequested());
+    }
+    if (!khatmahBloc.isClosed) {
+      khatmahBloc.add(LoadKhatmahDashboard());
+    }
+
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: themeBloc),
-        BlocProvider.value(
-          value: bookmarkBloc..add(const LoadBookmarksEvent()),
-        ),
-        BlocProvider.value(
-          value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
-        ),
-        BlocProvider.value(
-          value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
-        ),
+        BlocProvider.value(value: bookmarkBloc),
+        BlocProvider.value(value: recitationErrorBloc),
+        BlocProvider.value(value: qfAuthBloc),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
         BlocProvider.value(value: cloudSyncBloc),
-        BlocProvider.value(
-          value: khatmahBloc..add(LoadKhatmahDashboard()),
-        ),
+        BlocProvider.value(value: khatmahBloc),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -540,7 +546,7 @@ class _ReadyAppState extends State<_ReadyApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MyApp();
+  Widget build(BuildContext context) => const MyApp();
 }
 
 class _SplashScaffold extends StatelessWidget {

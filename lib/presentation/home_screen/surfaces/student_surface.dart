@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/app_export.dart';
 import '../../../core/quran_index/quran_surah.dart';
+import '../../../core/quran_index/mushaf_types.dart';
 import '../../../core/tracking/behavior_tracker.dart';
 import '../../../injection_container.dart';
 import '../../bookmarks/bloc/bookmark_bloc.dart';
@@ -15,6 +16,7 @@ import '../../memorization/bloc/memorization_state.dart';
 import '../../recitation_error/bloc/recitation_error_bloc.dart';
 import '../widgets/staggered_list_item.dart';
 import '../widgets/activity_heatmap.dart';
+import '../../../widgets/error_state.dart';
 import '../widgets/reading_session_insights.dart';
 
 
@@ -30,7 +32,17 @@ class StudentSurface extends StatelessWidget {
       Logger.error('Failed to create MemorizationBloc: $e\n$s', feature: 'Memorization');
     }
     if (bloc == null) {
-      return const _StudentBody();
+      return Scaffold(
+        appBar: AppBar(title: Text('lbl_home'.tr)),
+        body: ErrorState(
+          message: 'msg_data_load_error'.tr,
+          onRetry: () {
+            // Trigger a rebuild to retry bloc creation
+            // ignore: invalid_use_of_protected_member
+            (context as Element).markNeedsBuild();
+          },
+        ),
+      );
     }
     return BlocProvider.value(
       value: bloc,
@@ -81,6 +93,12 @@ class _StudentBodyState extends State<_StudentBody> {
               // Khatmah Streak
               SliverToBoxAdapter(
                 child: BlocBuilder<KhatmahBloc, KhatmahState>(
+                  buildWhen: (previous, current) {
+                    if (previous is KhatmahDashboardLoaded && current is KhatmahDashboardLoaded) {
+                      return previous.streak != current.streak;
+                    }
+                    return previous != current;
+                  },
                   builder: (context, khatmahState) {
                     if (khatmahState is KhatmahDashboardLoaded &&
                         khatmahState.streak > 0) {
@@ -94,6 +112,12 @@ class _StudentBodyState extends State<_StudentBody> {
               // Activity Heatmap
               SliverToBoxAdapter(
                 child: BlocBuilder<KhatmahBloc, KhatmahState>(
+                  buildWhen: (previous, current) {
+                    if (previous is KhatmahDashboardLoaded && current is KhatmahDashboardLoaded) {
+                      return previous.recentLogs != current.recentLogs;
+                    }
+                    return previous != current;
+                  },
                   builder: (context, khatmahState) {
                     if (khatmahState is KhatmahDashboardLoaded &&
                         khatmahState.recentLogs.isNotEmpty) {
@@ -115,6 +139,12 @@ class _StudentBodyState extends State<_StudentBody> {
               // Reading Session Insights
               SliverToBoxAdapter(
                 child: BlocBuilder<KhatmahBloc, KhatmahState>(
+                  buildWhen: (previous, current) {
+                    if (previous is KhatmahDashboardLoaded && current is KhatmahDashboardLoaded) {
+                      return previous.recentLogs != current.recentLogs;
+                    }
+                    return previous != current;
+                  },
                   builder: (context, khatmahState) {
                     if (khatmahState is KhatmahDashboardLoaded &&
                         khatmahState.recentLogs.isNotEmpty) {
@@ -504,7 +534,12 @@ class _CompactSurahTile extends StatelessWidget {
             PrefUtils().saveLastReadSurah(surah);
             final defaultView = PrefUtils().getDefaultQuranView();
             if (defaultView == 'mushaf') {
-              NavigatorService.pushNamed(AppRoutes.mushafScreen);
+              final type = MushafType.fromString(PrefUtils().getMushafType());
+              final page = type.getSurahStartPage(surah.id);
+              NavigatorService.pushNamed(
+                AppRoutes.mushafScreen,
+                arguments: {'initialPage': page},
+              );
             } else {
               NavigatorService.pushNamed(AppRoutes.surahPage, arguments: surah);
             }

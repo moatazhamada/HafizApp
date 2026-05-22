@@ -8,6 +8,7 @@ import 'package:hafiz_app/data/datasource/verse_study/qf_verse_study_remote_data
 import 'package:hafiz_app/data/datasource/qf_post/qf_post_remote_data_source.dart';
 import 'bloc/verse_study_bloc.dart';
 import 'widgets/word_by_word_section.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 class VerseStudyScreen extends StatelessWidget {
   final String verseKey;
@@ -53,7 +54,7 @@ class _VerseStudyView extends StatelessWidget {
     return BlocBuilder<VerseStudyBloc, VerseStudyState>(
       builder: (context, state) {
         if (state is VerseStudyLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingIndicator();
         }
         if (state is VerseStudyError) {
           return Center(

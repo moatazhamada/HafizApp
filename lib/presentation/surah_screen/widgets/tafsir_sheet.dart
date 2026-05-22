@@ -8,6 +8,8 @@ import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
 import 'package:hafiz_app/domain/repository/tafsir_repository.dart';
 import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/core/utils/bottom_sheet_utils.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 void showTafsirSheet(
   BuildContext context, {
@@ -22,18 +24,13 @@ void showTafsirSheet(
     ),
   );
   unawaited(
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (sheetContext) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (context, scrollController) => FutureBuilder(
+      useDraggable: true,
+      initialSize: 0.5,
+      minSize: 0.3,
+      maxSize: 0.8,
+      builder: (sheetContext, scrollController) => FutureBuilder(
           future: sl<TafsirRepository>().getTafsir(surahId, verseNumber).then((result) {
             // Track as reading session (estimated 30s for tafsir)
             sl<KhatmahRepository>().reportReadingSession(
@@ -82,7 +79,7 @@ void showTafsirSheet(
                 const Divider(height: 1),
                 Expanded(
                   child: snapshot.connectionState == ConnectionState.waiting
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const LoadingIndicator()
                       : snapshot.hasError || snapshot.data?.isLeft() == true
                       ? Center(
                           child: Padding(
@@ -131,7 +128,6 @@ void showTafsirSheet(
             );
           },
         ),
-      ),
     ),
   );
 }

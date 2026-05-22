@@ -11,6 +11,7 @@ import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/utils/bottom_sheet_utils.dart';
 
 
 import '../../injection_container.dart';
@@ -90,30 +91,25 @@ class _HomeScreenState extends State<HomeScreen>
   void _showJuzSelector(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) {
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'lbl_juz_index'.tr,
-                  style: AppTextStyles.headingMedium,
-                ),
+      useDraggable: true,
+      initialSize: 0.6,
+      minSize: 0.4,
+      maxSize: 0.9,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'lbl_juz_index'.tr,
+                style: AppTextStyles.headingMedium,
               ),
-              Expanded(
-                child: GridView.builder(
-                  controller: scrollController,
+            ),
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
@@ -200,7 +196,6 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           );
         },
-      ),
     );
   }
 

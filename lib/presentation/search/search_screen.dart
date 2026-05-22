@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/error_state.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/utils/input_formatters.dart';
 import '../../injection_container.dart';
@@ -10,6 +12,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
+import '../../widgets/loading_indicator.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -126,7 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
         body: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
             if (state is SearchLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const LoadingIndicator();
             } else if (state is SearchLoaded) {
               final totalResults =
                   state.results.length + state.verseResults.length;
@@ -381,79 +384,21 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               );
             } else if (state is SearchEmpty) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.search_off_rounded,
-                        size: 64,
-                        color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'msg_no_results'.tr,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return EmptyState(
+                icon: Icons.search_off_rounded,
+                message: 'msg_no_results'.tr,
               );
             } else if (state is SearchError) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          size: 64,
-                          color: isDark
-                              ? AppColors.of(context).needsReviewStatus.withValues(alpha: 0.7)
-                              : AppColors.of(context).needsReviewStatus.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '${'lbl_error'.tr}: ${state.message}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.of(context).needsReviewStatus,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              return ErrorState(
+                icon: Icons.error_outline_rounded,
+                message: '${'lbl_error'.tr}: ${state.message}',
+                onRetry: () => _searchBloc.add(SearchQueryChanged(_searchController.text)),
               );
             }
             // Initial state
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    size: 64,
-                    color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'msg_search_hint'.tr,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyState(
+              icon: Icons.search_rounded,
+              message: 'msg_search_hint'.tr,
             );
           },
         ),

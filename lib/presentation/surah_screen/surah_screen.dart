@@ -17,6 +17,7 @@ import 'widgets/tafsir_sheet.dart';
 import 'widgets/verse_menu_sheet.dart';
 import 'widgets/verse_range.dart';
 import 'widgets/voice_verification_dialog.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
@@ -598,9 +599,19 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                 ),
               ],
               child: BlocBuilder<SurahBloc, SurahState>(
+                buildWhen: (previous, current) {
+                  if (previous.runtimeType != current.runtimeType) return true;
+                  if (previous is SuccessSurahState && current is SuccessSurahState) {
+                    return previous.chapters != current.chapters;
+                  }
+                  if (previous is FailureSurahState && current is FailureSurahState) {
+                    return previous.errorMessage != current.errorMessage;
+                  }
+                  return false;
+                },
                 builder: (context, state) {
                   if (state is LoadingSurahState) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const LoadingIndicator();
                   } else if (state is FailureSurahState) {
                     return Center(
                       child: Column(

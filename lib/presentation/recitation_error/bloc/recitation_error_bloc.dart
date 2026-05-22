@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/either_extensions.dart';
 import '../../../../data/model/recitation_error_model.dart';
 import '../../../../domain/repository/recitation_error_repository.dart';
 
@@ -25,7 +25,7 @@ class RecitationErrorBloc
     emit(RecitationErrorLoading());
     final result = await repository.getRecitationErrors();
     result.fold(
-      (failure) => emit(RecitationErrorError(_mapFailureToMessage(failure))),
+      (failure) => emit(RecitationErrorError(failure.localizedMessage)),
       (errors) => emit(
         RecitationErrorLoaded(errors, feedbackMessage: event.feedbackMessage),
       ),
@@ -40,7 +40,7 @@ class RecitationErrorBloc
     result.fold(
       (failure) {
         if (isClosed) return;
-        emit(RecitationErrorError(_mapFailureToMessage(failure)));
+        emit(RecitationErrorError(failure.localizedMessage));
       },
       (_) {
         if (isClosed) return;
@@ -60,7 +60,7 @@ class RecitationErrorBloc
     result.fold(
       (failure) {
         if (isClosed) return;
-        emit(RecitationErrorError(_mapFailureToMessage(failure)));
+        emit(RecitationErrorError(failure.localizedMessage));
       },
       (_) {
         if (isClosed) return;
@@ -69,10 +69,4 @@ class RecitationErrorBloc
     );
   }
 
-  String _mapFailureToMessage(Failure failure) {
-    if (failure is CacheFailure) {
-      return 'msg_cache_error';
-    }
-    return 'msg_unexpected_error';
-  }
 }

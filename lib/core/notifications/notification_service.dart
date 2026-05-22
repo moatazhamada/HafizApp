@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
@@ -170,12 +171,12 @@ class NotificationService {
     final minute = int.tryParse(parts[1]) ?? 0;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _verseNotificationId,
-      title,
-      body,
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+    await _safeZonedSchedule(
+      id: _verseNotificationId,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
@@ -224,14 +225,14 @@ class NotificationService {
     final minute = int.tryParse(parts[1]) ?? 0;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _reminderNotificationId,
-      isAr ? 'وقت القرآن' : 'Time for Quran',
-      isAr
+    await _safeZonedSchedule(
+      id: _reminderNotificationId,
+      title: isAr ? 'وقت القرآن' : 'Time for Quran',
+      body: isAr
           ? 'حافظ على ورد القرآن اليومي \u2014 افتح حافظ'
           : 'Keep your daily reading habit alive \u2014 open Hafiz',
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
@@ -391,6 +392,51 @@ class NotificationService {
   /// Returns the appropriate schedule mode for Android.
   /// Falls back to [AndroidScheduleMode.inexactAllowWhileIdle] if exact alarms
   /// are not permitted (Android 12+ requires SCHEDULE_EXACT_ALARM permission).
+  /// Schedules a notification, catching exact-alarm permission errors and
+  /// retrying with an inexact schedule mode.
+  Future<void> _safeZonedSchedule({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails details,
+    required AndroidScheduleMode androidScheduleMode,
+    DateTimeComponents? matchDateTimeComponents,
+    String? payload,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        details,
+        androidScheduleMode: androidScheduleMode,
+        matchDateTimeComponents: matchDateTimeComponents,
+        payload: payload,
+      );
+    } on PlatformException catch (e) {
+      if (e.message?.contains('exact_alarms_not_permitted') == true) {
+        Logger.warning(
+          'Exact alarm permission revoked, falling back to inexact: $e',
+          feature: 'Notifications',
+        );
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          scheduledDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: matchDateTimeComponents,
+          payload: payload,
+        );
+      } else {
+        rethrow;
+      }
+    }
+  }
+
   Future<AndroidScheduleMode> _resolveScheduleMode() async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return AndroidScheduleMode.exactAllowWhileIdle;
@@ -461,14 +507,14 @@ class NotificationService {
     final minute = int.tryParse(parts[1]) ?? 0;
     final scheduledDate = _nextInstanceOfFridayTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _kahfNotificationId,
-      isAr ? 'سورة الكهف' : 'Surah Al-Kahf',
-      isAr
+    await _safeZonedSchedule(
+      id: _kahfNotificationId,
+      title: isAr ? 'سورة الكهف' : 'Surah Al-Kahf',
+      body: isAr
           ? 'يوم الجمعة \u2014 اقرأ سورة الكهف قبل صلاة الجمعة'
           : 'It\'s Friday \u2014 read Surah Al-Kahf before Friday prayer',
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: 'surah:18',

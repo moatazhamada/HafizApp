@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hafiz_app/domain/repository/recitation_session_repository.dart';
+import 'package:hafiz_app/core/utils/either_extensions.dart';
 import 'recitation_session_event.dart';
 import 'recitation_session_state.dart';
 
@@ -21,7 +22,7 @@ class RecitationSessionBloc
     emit(RecitationSessionLoading());
     final result = await repository.getSessions();
     result.fold(
-      (failure) => emit(const RecitationSessionError('msg_operation_failed')),
+      (failure) => emit(RecitationSessionError(failure.localizedMessage)),
       (sessions) => emit(RecitationSessionLoaded(sessions)),
     );
   }
@@ -34,7 +35,7 @@ class RecitationSessionBloc
     result.fold(
       (failure) {
         if (isClosed) return;
-        emit(const RecitationSessionError('msg_operation_failed'));
+        emit(RecitationSessionError(failure.localizedMessage));
       },
       (_) {
         if (isClosed) return;
@@ -51,7 +52,7 @@ class RecitationSessionBloc
     result.fold(
       (failure) {
         if (isClosed) return;
-        emit(const RecitationSessionError('msg_operation_failed'));
+        emit(RecitationSessionError(failure.localizedMessage));
       },
       (_) {
         if (isClosed) return;
