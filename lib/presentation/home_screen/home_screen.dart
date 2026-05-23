@@ -362,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen>
             body: Row(
               children: [
                 AdaptiveNavigationRail(
-                  selectedIndex: -1,
+                  selectedIndex: null,
                   onDestinationSelected: (index) =>
                       _onNavDestinationSelected(context, index),
                 ),

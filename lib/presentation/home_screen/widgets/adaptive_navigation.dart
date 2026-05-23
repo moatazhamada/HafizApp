@@ -92,7 +92,7 @@ const List<_NavDestination> _bottomDestinations = [
 
 /// A widget that renders a [NavigationRail] for tablet layouts.
 class AdaptiveNavigationRail extends StatelessWidget {
-  final int selectedIndex;
+  final int? selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
   const AdaptiveNavigationRail({
@@ -106,7 +106,7 @@ class AdaptiveNavigationRail extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return NavigationRail(
-      selectedIndex: selectedIndex < _destinations.length ? selectedIndex : -1,
+      selectedIndex: selectedIndex != null && selectedIndex! < _destinations.length ? selectedIndex : null,
       onDestinationSelected: onDestinationSelected,
       backgroundColor: colorScheme.surface,
       labelType: NavigationRailLabelType.all,

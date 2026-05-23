@@ -205,7 +205,7 @@ class _MushafScreenState extends State<MushafScreen>
   // ─── Page Precaching ────────────────────────────────────────────
 
   void _precacheAdjacentPages(int currentPage) {
-    for (final offset in [1, 2, -1, -2]) {
+    for (final offset in [1, -1, 2, -2]) {
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
       final url = _mushafType.pageImageUrl(target);
@@ -216,7 +216,7 @@ class _MushafScreenState extends State<MushafScreen>
           cacheKey: MushafCacheManager.cacheKey(_mushafType.name, target),
         ),
         context,
-      );
+      ).catchError((_) {});
     }
   }
 
