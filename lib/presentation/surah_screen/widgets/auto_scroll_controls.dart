@@ -1,12 +1,13 @@
-part of '../surah_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/app_export.dart';
 
-class _AutoScrollControls extends StatelessWidget {
+class AutoScrollControls extends StatelessWidget {
   final bool isAutoScrolling;
   final double autoScrollSpeed;
   final VoidCallback onToggle;
   final VoidCallback onShowSpeedDialog;
 
-  const _AutoScrollControls({
+  const AutoScrollControls({
     required this.isAutoScrolling,
     required this.autoScrollSpeed,
     required this.onToggle,

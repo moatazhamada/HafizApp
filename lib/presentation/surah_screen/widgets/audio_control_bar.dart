@@ -1,10 +1,11 @@
-part of '../surah_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/app_export.dart';
 
-class _AudioControlBar extends StatelessWidget {
+class AudioControlBar extends StatelessWidget {
   final bool isListeningMode;
   final VoidCallback onToggle;
 
-  const _AudioControlBar({
+  const AudioControlBar({
     required this.isListeningMode,
     required this.onToggle,
   });

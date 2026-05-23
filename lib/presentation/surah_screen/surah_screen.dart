@@ -3,34 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import 'package:hafiz_app/core/services/voice_recording_controller.dart';
-import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
 
 import 'widgets/auto_scroll_speed_sheet.dart';
 import 'widgets/juz_progress_indicator.dart';
-import 'widgets/bismillah_widget.dart';
-import 'widgets/completion_dialog.dart';
 import 'widgets/surah_navigation_bar.dart';
-import 'widgets/tafsir_sheet.dart';
-import 'widgets/verse_menu_sheet.dart';
 import 'widgets/verse_range.dart';
-import 'widgets/voice_verification_dialog.dart';
 import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/app_export.dart';
-import '../../core/utils/rtl_utils.dart';
 import '../../core/audio/audio_player_handler.dart';
-import '../../core/qiraat/qiraat_service.dart';
-import '../../core/qrc/adaptive_qrc.dart';
 import '../../core/quran_index/quran_surah.dart';
 import '../../core/services/reading_session_tracker.dart';
-import '../../domain/entities/reading_session.dart';
 import '../../core/quran_index/quran_verse_utils.dart';
-import '../../core/quran_index/sajdah_index.dart';
 import '../../domain/entities/verse.dart';
 import '../../injection_container.dart';
 import 'bloc/surah_bloc.dart';
@@ -38,28 +25,16 @@ import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
 import 'package:hafiz_app/presentation/cloud_sync/bloc/cloud_sync_bloc.dart';
 import 'package:hafiz_app/data/model/bookmark_model.dart';
 import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
-import 'package:hafiz_app/data/model/recitation_error_model.dart';
-import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
-import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
-import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_state.dart';
-import 'package:hafiz_app/domain/entities/recitation_session.dart';
-import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
-import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
 import '../../domain/repository/khatmah_repository.dart';
-import '../../core/utils/number_converter.dart';
-import '../../core/utils/surah_name_formatter.dart';
 import 'package:hafiz_app/data/datasource/translation/qf_translation_remote_data_source.dart';
 import 'package:hafiz_app/core/i18n/locale_controller.dart';
 
-part 'widgets/_surah_app_bar.dart';
-part 'widgets/_verse_list_view.dart';
-part 'widgets/_hifz_mode_overlay.dart';
-part 'widgets/_audio_control_bar.dart';
-part 'widgets/_auto_scroll_controls.dart';
-part 'widgets/_completion_celebration.dart';
-part 'widgets/_voice_verification_panel.dart';
+import 'widgets/surah_app_bar.dart';
+import 'widgets/completion_celebration.dart';
+import 'widgets/voice_verification_panel.dart';
+import 'widgets/verse_list_view.dart';
 
 class SurahScreen extends StatefulWidget {
   const SurahScreen({super.key});
@@ -98,10 +73,10 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
   final GlobalKey _richTextKey = GlobalKey();
 
   // Voice Verification
-  final GlobalKey<_VoiceVerificationPanelState> _voicePanelKey =
-      GlobalKey<_VoiceVerificationPanelState>();
-  final GlobalKey<_CompletionCelebrationState> _completionKey =
-      GlobalKey<_CompletionCelebrationState>();
+  final GlobalKey<VoiceVerificationPanelState> _voicePanelKey =
+      GlobalKey<VoiceVerificationPanelState>();
+  final GlobalKey<CompletionCelebrationState> _completionKey =
+      GlobalKey<CompletionCelebrationState>();
 
   // Auto-scroll
   bool _isAutoScrolling = false;
@@ -676,7 +651,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                             return CustomScrollView(
                               controller: _scrollController,
                               slivers: [
-                                _SurahAppBar(
+                                SurahAppBar(
                                   isDark: isDark,
                                   surah: surah,
                                   isAutoScrolling: _isAutoScrolling,
@@ -782,7 +757,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                     horizontal: 16.0,
                                     vertical: 20.v,
                                   ),
-                                  sliver: _VerseListView(
+                                  sliver: VerseListView(
                                     chapters: chapters,
                                     bookmarkState: bookmarkState,
                                     errorState: errorState,
@@ -829,7 +804,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                   ),
                                 ),
                                 SliverToBoxAdapter(
-                                  child: _VoiceVerificationPanel(
+                                  child: VoiceVerificationPanel(
                                     key: _voicePanelKey,
                                     surah: surah,
                                     surahBloc: surahBloc,
@@ -837,7 +812,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
                                   ),
                                 ),
                                 SliverToBoxAdapter(
-                                  child: _CompletionCelebration(
+                                  child: CompletionCelebration(
                                     key: _completionKey,
                                     surah: surah,
                                   ),
@@ -856,6 +831,176 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  void _scrollToVerseWithRetry(
+    int verseNumber,
+    List<Verse> chapters, {
+    int attempt = 0,
+  }) {
+    if (attempt == 0) {
+      final route = ModalRoute.of(context);
+      if (route is TransitionRoute) {
+        final animation = route?.animation;
+        if (animation != null &&
+            animation.status != AnimationStatus.completed) {
+          void handler(AnimationStatus status) {
+            if (status == AnimationStatus.completed) {
+              animation.removeStatusListener(handler);
+              if (mounted) {
+                _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
+              }
+            }
+          }
+
+          animation.addStatusListener(handler);
+          return;
+        }
+      }
+    }
+
+    if (attempt > 20) return;
+
+    const int delay = 200;
+
+    Future.delayed(const Duration(milliseconds: delay), () {
+      if (!mounted) return;
+      bool success = _scrollToVerse(verseNumber, chapters);
+      if (!success) {
+        _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
+      } else {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) _clearHighlight();
+        });
+      }
+    });
+  }
+
+  bool _scrollToVerse(int verseNumber, List<Verse> chapters) {
+    if (PrefUtils().getVerseViewMode()) {
+      final key = _verseKeys[verseNumber];
+      if (key != null && key.currentContext != null) {
+        Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+        return true;
+      }
+      return false;
+    } else {
+      final anchorKey = _richTextVerseKeys[verseNumber];
+      if (anchorKey != null && anchorKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          anchorKey.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+        return true;
+      }
+
+      final RenderObject? renderObject = _richTextKey.currentContext
+          ?.findRenderObject();
+
+      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
+        final verseRange = _currentVerseRanges.firstWhere(
+          (r) => r.verse.verseNumber == verseNumber && !r.isBadge,
+          orElse: () => _currentVerseRanges.first,
+        );
+
+        try {
+          final boxes = renderObject.getBoxesForSelection(
+            TextSelection(
+              baseOffset: verseRange.start,
+              extentOffset: verseRange.start + 1,
+            ),
+          );
+
+          if (boxes.isNotEmpty && _scrollController.hasClients) {
+            final boxTop = boxes.first.top;
+            final globalOffset = renderObject.localToGlobal(Offset(0, boxTop));
+            final currentScroll = _scrollController.offset;
+            const double targetScreenY = 140.0;
+            final delta = globalOffset.dy - targetScreenY;
+            final targetScroll = (currentScroll + delta).clamp(
+              0.0,
+              _scrollController.position.maxScrollExtent,
+            );
+
+            _scrollController.animateTo(
+              targetScroll,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+            return true;
+          }
+        } catch (e) {
+          Logger.warning('Scroll error: $e', feature: 'SurahScreen');
+          return false;
+        }
+      }
+      return false;
+    }
+  }
+
+  int? _findVisibleVerseNumber() {
+    if (surah == null) return null;
+
+    int? visibleVerseNumber;
+
+    if (PrefUtils().getVerseViewMode()) {
+      for (var entry in _verseKeys.entries) {
+        final key = entry.value;
+        if (key.currentContext != null) {
+          final RenderBox? box =
+              key.currentContext!.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final position = box.localToGlobal(Offset.zero);
+            if (position.dy >= 0 &&
+                position.dy < MediaQuery.of(context).size.height / 2) {
+              visibleVerseNumber = entry.key;
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      final RenderObject? renderObject = _richTextKey.currentContext
+          ?.findRenderObject();
+      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
+        try {
+          if (_scrollController.hasClients) {
+            final Size size = renderObject.size;
+            final textGlobalPos = renderObject.localToGlobal(Offset.zero);
+            final viewportCenterY =
+                MediaQuery.of(context).size.height * 0.35;
+            final localY = (viewportCenterY - textGlobalPos.dy)
+                .clamp(0.0, size.height - 1);
+            final targetLcOffset = Offset(
+              size.width / 2,
+              localY,
+            );
+            final textPosition = renderObject.getPositionForOffset(
+              targetLcOffset,
+            );
+            final textOffset = textPosition.offset;
+
+            final range = _currentVerseRanges.firstWhere(
+              (r) => textOffset >= r.start && textOffset < r.end,
+              orElse: () => _currentVerseRanges.first,
+            );
+
+            visibleVerseNumber = range.verse.verseNumber;
+          }
+        } catch (e) {
+          Logger.warning('Finding visible verse failed: $e', feature: 'Surah');
+        }
+      }
+    }
+
+    return visibleVerseNumber;
   }
 }
 

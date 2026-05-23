@@ -1,15 +1,33 @@
-part of '../surah_screen.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/analytics/analytics_service.dart';
+import 'package:hafiz_app/core/qrc/adaptive_qrc.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/utils/surah_name_formatter.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
+import 'package:hafiz_app/domain/entities/recitation_session.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_bloc.dart';
+import 'package:hafiz_app/presentation/khatmah/bloc/khatmah_event.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
+import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
+import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_state.dart';
+import 'completion_dialog.dart';
 
-class _CompletionCelebration extends StatefulWidget {
+class CompletionCelebration extends StatefulWidget {
   final Surah? surah;
 
-  const _CompletionCelebration({super.key, required this.surah});
+  const CompletionCelebration({super.key, required this.surah});
 
   @override
-  _CompletionCelebrationState createState() => _CompletionCelebrationState();
+  CompletionCelebrationState createState() => CompletionCelebrationState();
 }
 
-class _CompletionCelebrationState extends State<_CompletionCelebration> {
+class CompletionCelebrationState extends State<CompletionCelebration> {
   void show({
     required double percentage,
     required int correctCount,

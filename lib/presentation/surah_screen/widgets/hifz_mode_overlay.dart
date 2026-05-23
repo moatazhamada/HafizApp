@@ -1,6 +1,6 @@
-part of '../surah_screen.dart';
+import 'package:flutter/material.dart';
 
-class _HifzModeOverlay extends StatelessWidget {
+class HifzModeOverlay extends StatelessWidget {
   final String text;
   final bool isBlurred;
   final Color textColor;
@@ -8,7 +8,7 @@ class _HifzModeOverlay extends StatelessWidget {
   final TextAlign textAlign;
   final TextDirection textDirection;
 
-  const _HifzModeOverlay({
+  const HifzModeOverlay({
     required this.text,
     required this.isBlurred,
     required this.textColor,

@@ -1,13 +1,27 @@
-part of '../surah_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/quran_index/sajdah_index.dart';
+import 'package:hafiz_app/core/utils/surah_name_formatter.dart';
+import 'package:hafiz_app/core/utils/number_converter.dart';
+import 'package:hafiz_app/domain/entities/verse.dart';
+import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'bismillah_widget.dart';
+import 'hifz_mode_overlay.dart';
+import 'tafsir_sheet.dart';
+import 'verse_menu_sheet.dart';
+import 'verse_range.dart';
 
-/// Mutable cache container so [_VerseListView] can remain const-constructible.
-class _VerseStateCache {
+/// Mutable cache container so [VerseListView] can remain const-constructible.
+class VerseStateCache {
   ({Set<int> bookmarkedVerses, Set<int> errorVerses})? value;
   int? bookmarkHash;
   int? errorHash;
 }
 
-class _VerseListView extends StatelessWidget {
+class VerseListView extends StatelessWidget {
   final List<Verse> chapters;
   final BookmarkState bookmarkState;
   final RecitationErrorState errorState;
@@ -28,7 +42,7 @@ class _VerseListView extends StatelessWidget {
   final void Function(int verseNumber) onPlayOnlyVerse;
   final void Function(int verseNumber) onStartFromVerse;
 
-  _VerseListView({
+  VerseListView({
     required this.chapters,
     required this.bookmarkState,
     required this.errorState,
@@ -78,7 +92,7 @@ class _VerseListView extends StatelessWidget {
   }
 
   // Cached verse states to avoid O(n) filtering on every rebuild.
-  final _VerseStateCache _verseStateCache = _VerseStateCache();
+  final VerseStateCache _verseStateCache = VerseStateCache();
 
   ({Set<int> bookmarkedVerses, Set<int> errorVerses}) _getVerseStates() {
     final surahId = surah?.id ?? -1;
@@ -528,7 +542,7 @@ class _VerseListView extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 textDirection: TextDirection.rtl,
                 children: [
-                  _HifzModeOverlay(
+                  HifzModeOverlay(
                     text: verseText,
                     isBlurred: isBlurred,
                     textColor: textColor,
@@ -614,182 +628,3 @@ class _VerseListView extends StatelessWidget {
   }
 }
 
-
-extension _SurahScreenStateScroll on _SurahScreenState {
-  void _scrollToVerseWithRetry(
-    int verseNumber,
-    List<Verse> chapters, {
-    int attempt = 0,
-  }) {
-    if (attempt == 0) {
-      final route = ModalRoute.of(context);
-      if (route is TransitionRoute) {
-        final animation = route?.animation;
-        if (animation != null &&
-            animation.status != AnimationStatus.completed) {
-          void handler(AnimationStatus status) {
-            if (status == AnimationStatus.completed) {
-              animation.removeStatusListener(handler);
-              // ignore: invalid_use_of_protected_member
-              if (mounted) {
-                _scrollToVerseWithRetry(verseNumber, chapters, attempt: 0);
-              }
-            }
-          }
-
-          animation.addStatusListener(handler);
-          return;
-        }
-      }
-    }
-
-    if (attempt > 20) return;
-
-    const int delay = 200;
-
-    Future.delayed(const Duration(milliseconds: delay), () {
-      // ignore: invalid_use_of_protected_member
-      if (!mounted) return;
-      bool success = _scrollToVerse(verseNumber, chapters);
-      if (!success) {
-        _scrollToVerseWithRetry(verseNumber, chapters, attempt: attempt + 1);
-      } else {
-        Future.delayed(const Duration(seconds: 3), () {
-          // ignore: invalid_use_of_protected_member
-          if (mounted) _clearHighlight();
-        });
-      }
-    });
-  }
-
-  bool _scrollToVerse(int verseNumber, List<Verse> chapters) {
-    if (PrefUtils().getVerseViewMode()) {
-      final key = _verseKeys[verseNumber];
-      if (key != null && key.currentContext != null) {
-        Scrollable.ensureVisible(
-          key.currentContext!,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          alignment: 0.15,
-        );
-        return true;
-      }
-      return false;
-    } else {
-      final anchorKey = _richTextVerseKeys[verseNumber];
-      if (anchorKey != null && anchorKey.currentContext != null) {
-        Scrollable.ensureVisible(
-          anchorKey.currentContext!,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          alignment: 0.15,
-        );
-        return true;
-      }
-
-      final RenderObject? renderObject = _richTextKey.currentContext
-          ?.findRenderObject();
-
-      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
-        final verseRange = _currentVerseRanges.firstWhere(
-          (r) => r.verse.verseNumber == verseNumber && !r.isBadge,
-          orElse: () => _currentVerseRanges.first,
-        );
-
-        try {
-          final boxes = renderObject.getBoxesForSelection(
-            TextSelection(
-              baseOffset: verseRange.start,
-              extentOffset: verseRange.start + 1,
-            ),
-          );
-
-          if (boxes.isNotEmpty && _scrollController.hasClients) {
-            final boxTop = boxes.first.top;
-            final globalOffset = renderObject.localToGlobal(Offset(0, boxTop));
-            final currentScroll = _scrollController.offset;
-            const double targetScreenY = 140.0;
-            final delta = globalOffset.dy - targetScreenY;
-            final targetScroll = (currentScroll + delta).clamp(
-              0.0,
-              _scrollController.position.maxScrollExtent,
-            );
-
-            _scrollController.animateTo(
-              targetScroll,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOut,
-            );
-            return true;
-          }
-        } catch (e) {
-          Logger.warning('Scroll error: $e', feature: 'SurahScreen');
-          return false;
-        }
-      }
-      return false;
-    }
-  }
-
-  int? _findVisibleVerseNumber() {
-    if (surah == null) return null;
-
-    int? visibleVerseNumber;
-
-    if (PrefUtils().getVerseViewMode()) {
-      for (var entry in _verseKeys.entries) {
-        final key = entry.value;
-        if (key.currentContext != null) {
-          final RenderBox? box =
-              key.currentContext!.findRenderObject() as RenderBox?;
-          if (box != null) {
-            final position = box.localToGlobal(Offset.zero);
-            if (position.dy >= 0 &&
-                position.dy < MediaQuery.of(context).size.height / 2) {
-              visibleVerseNumber = entry.key;
-              break;
-            }
-          }
-        }
-      }
-    } else {
-      final RenderObject? renderObject = _richTextKey.currentContext
-          ?.findRenderObject();
-      if (renderObject is RenderParagraph && _currentVerseRanges.isNotEmpty) {
-        try {
-          if (_scrollController.hasClients) {
-            final Size size = renderObject.size;
-            // Convert viewport-center to local text coordinates so scrolling
-            // is properly accounted for (previously always checked Offset(20,20)
-            // at the top of the text block regardless of scroll position).
-            final textGlobalPos = renderObject.localToGlobal(Offset.zero);
-            final viewportCenterY =
-                MediaQuery.of(context).size.height * 0.35;
-            final localY = (viewportCenterY - textGlobalPos.dy)
-                .clamp(0.0, size.height - 1);
-            final targetLcOffset = Offset(
-              size.width / 2,
-              localY,
-            );
-            final textPosition = renderObject.getPositionForOffset(
-              targetLcOffset,
-            );
-            final textOffset = textPosition.offset;
-
-            final range = _currentVerseRanges.firstWhere(
-              (r) => textOffset >= r.start && textOffset < r.end,
-              orElse: () => _currentVerseRanges.first,
-            );
-
-            visibleVerseNumber = range.verse.verseNumber;
-          }
-        } catch (e) {
-          Logger.warning('Finding visible verse failed: $e', feature: 'Surah');
-        }
-      }
-    }
-
-    return visibleVerseNumber;
-  }
-
-}

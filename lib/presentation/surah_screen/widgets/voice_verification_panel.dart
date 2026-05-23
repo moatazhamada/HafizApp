@@ -1,11 +1,28 @@
-part of '../surah_screen.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/qiraat/qiraat_service.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/services/voice_recording_controller.dart';
+import 'package:hafiz_app/domain/entities/verse.dart';
+import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bloc.dart';
+import 'package:hafiz_app/data/model/recitation_error_model.dart';
+import 'package:hafiz_app/presentation/surah_screen/bloc/surah_bloc.dart';
+import 'package:hafiz_app/presentation/surah_screen/voice_verification_service.dart';
+import 'package:hafiz_app/domain/entities/reading_session.dart';
+import 'package:hafiz_app/domain/repository/khatmah_repository.dart';
+import 'completion_celebration.dart';
+import 'voice_verification_dialog.dart';
 
-class _VoiceVerificationPanel extends StatefulWidget {
+class VoiceVerificationPanel extends StatefulWidget {
   final Surah? surah;
   final SurahBloc surahBloc;
-  final GlobalKey<_CompletionCelebrationState> completionKey;
+  final GlobalKey<CompletionCelebrationState> completionKey;
 
-  const _VoiceVerificationPanel({
+  const VoiceVerificationPanel({
     super.key,
     required this.surah,
     required this.surahBloc,
@@ -13,11 +30,11 @@ class _VoiceVerificationPanel extends StatefulWidget {
   });
 
   @override
-  _VoiceVerificationPanelState createState() =>
-      _VoiceVerificationPanelState();
+  VoiceVerificationPanelState createState() =>
+      VoiceVerificationPanelState();
 }
 
-class _VoiceVerificationPanelState extends State<_VoiceVerificationPanel> {
+class VoiceVerificationPanelState extends State<VoiceVerificationPanel> {
   final VoiceVerificationService _voiceService = VoiceVerificationService();
   final QiraatService _qiraatService = QiraatService();
   int _sessionCorrectCount = 0;

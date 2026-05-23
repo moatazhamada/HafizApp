@@ -1,6 +1,14 @@
-part of '../surah_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import 'package:hafiz_app/core/utils/rtl_utils.dart';
+import 'package:hafiz_app/core/utils/surah_name_formatter.dart';
+import 'package:hafiz_app/presentation/bookmarks/bloc/bookmark_bloc.dart';
+import 'audio_control_bar.dart';
+import 'auto_scroll_controls.dart';
 
-class _SurahAppBar extends StatelessWidget {
+class SurahAppBar extends StatelessWidget {
   final bool isDark;
   final Surah? surah;
   final bool isAutoScrolling;
@@ -18,7 +26,7 @@ class _SurahAppBar extends StatelessWidget {
   final VoidCallback onNavigateToHelp;
   final void Function(int? startVerse) onNavigateToAudioPlayer;
 
-  const _SurahAppBar({
+  const SurahAppBar({
     required this.isDark,
     required this.surah,
     required this.isAutoScrolling,
@@ -54,14 +62,14 @@ class _SurahAppBar extends StatelessWidget {
         ),
       ),
       actions: [
-        _AutoScrollControls(
+        AutoScrollControls(
           isAutoScrolling: isAutoScrolling,
           autoScrollSpeed: autoScrollSpeed,
           onToggle: onToggleAutoScroll,
           onShowSpeedDialog: onShowAutoScrollSpeedDialog,
         ),
         if (surah != null)
-          _AudioControlBar(
+          AudioControlBar(
             isListeningMode: isListeningMode,
             onToggle: onToggleListeningMode,
           ),
