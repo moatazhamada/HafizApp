@@ -83,6 +83,19 @@ enum MushafType {
       'https://files.quran.app/hafs/shemerly/width_1200/page',
   };
 
+  /// Selects the closest CDN width for the given [devicePixelRatio].
+  /// - ≤2.0  → 640  (low-end phones)
+  /// - ≤2.5  → 1024 (default / most phones)
+  /// - >2.5  → 1280 (tablets / high-DPI devices)
+  String _baseUrlForPixelRatio(double devicePixelRatio) {
+    final targetWidth = switch (devicePixelRatio) {
+      <= 2.0 => 640,
+      <= 2.5 => 1024,
+      _ => 1280,
+    };
+    return baseUrl.replaceFirst(RegExp(r'width_\d+'), 'width_$targetWidth');
+  }
+
   String get label => switch (this) {
     MushafType.madani => 'lbl_mushaf_madani',
     MushafType.naskh => 'lbl_mushaf_naskh',
@@ -105,9 +118,12 @@ enum MushafType {
     MushafType.warsh => 0xFF9C27B0, // purple
   };
 
-  String pageImageUrl(int pageNumber) {
+  String pageImageUrl(int pageNumber, {double? devicePixelRatio}) {
+    final base = devicePixelRatio != null
+        ? _baseUrlForPixelRatio(devicePixelRatio)
+        : baseUrl;
     final padded = pageNumber.toString().padLeft(3, '0');
-    return '$baseUrl$padded.png';
+    return '$base$padded.png';
   }
 
   /// Parses a stored preference string into a [MushafType].

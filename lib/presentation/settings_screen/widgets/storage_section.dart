@@ -10,11 +10,22 @@ class StorageSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsCard(
       children: [
-        ListTile(
-          leading: const Icon(Icons.delete_outline),
-          title: Text('lbl_clear_mushaf_cache'.tr),
-          subtitle: Text('msg_clear_mushaf_cache_desc'.tr),
-          onTap: () => _clearMushafCache(context),
+        FutureBuilder<double>(
+          future: MushafCacheManager.getCacheSizeMB(),
+          builder: (context, snapshot) {
+            final sizeMb = snapshot.data ?? 0.0;
+            final sizeText = sizeMb < 0.01
+                ? '0 MB'
+                : '${sizeMb.toStringAsFixed(1)} MB';
+            return ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: Text('lbl_clear_mushaf_cache'.tr),
+              subtitle: Text(
+                'msg_clear_mushaf_cache_desc'.trParams({'size': sizeText}),
+              ),
+              onTap: () => _clearMushafCache(context),
+            );
+          },
         ),
       ],
     );

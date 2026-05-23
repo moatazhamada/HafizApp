@@ -208,7 +208,10 @@ class _MushafScreenState extends State<MushafScreen>
     for (final offset in [1, -1, 2, -2]) {
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
-      final url = _mushafType.pageImageUrl(target);
+      final url = _mushafType.pageImageUrl(
+        target,
+        devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+      );
       precacheImage(
         CachedNetworkImageProvider(
           url,

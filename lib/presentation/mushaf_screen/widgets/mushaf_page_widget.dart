@@ -34,7 +34,7 @@ class MushafPageWidget extends StatefulWidget {
 class _MushafPageWidgetState extends State<MushafPageWidget> {
   final TransformationController _transformController =
       TransformationController();
-  bool _isZoomedIn = false;
+  final ValueNotifier<bool> _zoomNotifier = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -45,10 +45,9 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
   void _onTransformChanged() {
     final scale = _transformController.value.getMaxScaleOnAxis();
     final zoomed = scale > 1.05;
-    if (_isZoomedIn != zoomed) {
-      _isZoomedIn = zoomed;
+    if (_zoomNotifier.value != zoomed) {
+      _zoomNotifier.value = zoomed;
       widget.onZoomChanged?.call(zoomed);
-      setState(() {});
     }
   }
 
@@ -56,6 +55,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
   void dispose() {
     _transformController.removeListener(_onTransformChanged);
     _transformController.dispose();
+    _zoomNotifier.dispose();
     super.dispose();
   }
 
@@ -63,66 +63,20 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final url = widget.mushafType.pageImageUrl(widget.pageNumber);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final url = widget.mushafType.pageImageUrl(
+      widget.pageNumber,
+      devicePixelRatio: devicePixelRatio,
+    );
 
-    final imageWidget = isDark
-        ? ColorFiltered(
-            colorFilter: _invertFilter,
-            child: CachedNetworkImage(
-              cacheManager: MushafCacheManager.instance,
-              cacheKey: MushafCacheManager.cacheKey(
-                widget.mushafType.name,
-                widget.pageNumber,
-              ),
-              imageUrl: url,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colors.mushafTextPrimary.withValues(alpha: 0.4),
-                ),
-              ),
-              errorWidget: (context, url, error) =>
-                  widget.fallback ??
-                  Container(
-                    color: colors.mushafPageBg,
-                    child: Center(
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: colors.textSecondary,
-                        size: 32,
-                      ),
-                    ),
-                  ),
-            ),
-          )
-        : CachedNetworkImage(
-            cacheManager: MushafCacheManager.instance,
-            cacheKey: MushafCacheManager.cacheKey(
-              widget.mushafType.name,
-              widget.pageNumber,
-            ),
-            imageUrl: url,
-            fit: BoxFit.contain,
-            placeholder: (context, url) => Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colors.mushafPageBorder.withValues(alpha: 0.4),
-              ),
-            ),
-            errorWidget: (context, url, error) =>
-                widget.fallback ??
-                Container(
-                  color: colors.mushafPageBg,
-                  child: Center(
-                    child: Icon(
-                      Icons.image_not_supported_outlined,
-                      color: colors.textSecondary,
-                      size: 32,
-                    ),
-                  ),
-                ),
-          );
+    final imageWidget = _MushafImage(
+      url: url,
+      mushafType: widget.mushafType,
+      pageNumber: widget.pageNumber,
+      isDark: isDark,
+      colors: colors,
+      fallback: widget.fallback,
+    );
 
     final madaniPage = widget.mushafType.totalPages == MushafPageIndex.totalPages
         ? widget.pageNumber
@@ -148,13 +102,79 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
       image: true,
       child: Container(
         color: colors.mushafPageBg,
-        child: InteractiveViewer(
-          transformationController: _transformController,
-          panEnabled: _isZoomedIn,
-          minScale: 0.5,
-          maxScale: 4.0,
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _zoomNotifier,
+          builder: (context, isZoomed, child) => InteractiveViewer(
+            transformationController: _transformController,
+            panEnabled: isZoomed,
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: child!,
+          ),
           child: imageWidget,
         ),
+      ),
+    );
+  }
+}
+
+/// Isolated image widget that does not rebuild when zoom state changes.
+class _MushafImage extends StatelessWidget {
+  final String url;
+  final MushafType mushafType;
+  final int pageNumber;
+  final bool isDark;
+  final AppColors colors;
+  final Widget? fallback;
+
+  const _MushafImage({
+    required this.url,
+    required this.mushafType,
+    required this.pageNumber,
+    required this.isDark,
+    required this.colors,
+    this.fallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = CachedNetworkImage(
+      cacheManager: MushafCacheManager.instance,
+      cacheKey: MushafCacheManager.cacheKey(mushafType.name, pageNumber),
+      imageUrl: url,
+      fit: BoxFit.contain,
+      placeholder: (context, url) => Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: isDark
+              ? colors.mushafTextPrimary.withValues(alpha: 0.4)
+              : colors.mushafPageBorder.withValues(alpha: 0.4),
+        ),
+      ),
+      errorWidget: (context, url, error) =>
+          fallback ??
+          Container(
+            color: colors.mushafPageBg,
+            child: Center(
+              child: Icon(
+                Icons.image_not_supported_outlined,
+                color: colors.textSecondary,
+                size: 32,
+              ),
+            ),
+          ),
+    );
+
+    if (!isDark) return image;
+
+    // In dark mode, wrap the filtered result in a RepaintBoundary so the
+    // inversion is composited once and cached as a layer. This avoids
+    // re-applying the ColorFilter on every parent rebuild (e.g. overlay
+    // toggles, zoom state changes).
+    return RepaintBoundary(
+      child: ColorFiltered(
+        colorFilter: _invertFilter,
+        child: image,
       ),
     );
   }

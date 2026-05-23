@@ -55,4 +55,13 @@ class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalization> {
 
 extension LocalizationExtension on String {
   String get tr => AppLocalization.of()?.getString(this) ?? this;
+
+  /// Replaces placeholders of the form `{key}` with values from [params].
+  String trParams(Map<String, String> params) {
+    var result = tr;
+    for (final entry in params.entries) {
+      result = result.replaceAll('{${entry.key}}', entry.value);
+    }
+    return result;
+  }
 }
