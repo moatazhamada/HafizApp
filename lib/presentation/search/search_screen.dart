@@ -131,6 +131,16 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
+          buildWhen: (previous, current) {
+            // Skip rebuilds when the same loading state is re-emitted
+            // (e.g. debounced keystrokes).
+            if (previous.runtimeType != current.runtimeType) return true;
+            if (current is SearchLoaded && previous is SearchLoaded) {
+              return current.results.length != previous.results.length ||
+                  current.verseResults.length != previous.verseResults.length;
+            }
+            return true;
+          },
           builder: (context, state) {
             if (state is SearchLoading) {
               return const LoadingIndicator();

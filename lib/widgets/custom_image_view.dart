@@ -117,6 +117,10 @@ class CustomImageView extends StatelessWidget {
             fit: fit,
             imageUrl: imagePath!,
             color: color,
+            memCacheWidth: width?.toInt(),
+            memCacheHeight: height?.toInt(),
+            maxWidthDiskCache: width != null ? (width! * 2).toInt() : null,
+            maxHeightDiskCache: height != null ? (height! * 2).toInt() : null,
             placeholder: (context, url) => SizedBox(
               height: 30,
               width: 30,

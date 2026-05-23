@@ -53,6 +53,9 @@ class HifzScreen extends StatelessWidget {
           }
         },
         child: BlocBuilder<HifzBloc, HifzState>(
+          buildWhen: (previous, current) =>
+              current is! HifzActionLoading ||
+              previous.runtimeType != current.runtimeType,
           builder: (context, state) {
             if (state is HifzLoading || state is HifzActionLoading) {
               return const LoadingIndicator();

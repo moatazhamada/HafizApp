@@ -9,8 +9,7 @@ import 'package:hafiz_app/presentation/hifz/widgets/hifz_summary_card.dart';
 
 class HifzListView extends StatelessWidget {
   final HifzLoaded state;
-  final Widget Function(HifzEntry entry, bool isDue, bool compact)
-      entryBuilder;
+  final Widget Function(HifzEntry entry, bool isDue, bool compact) entryBuilder;
 
   const HifzListView({
     super.key,
@@ -20,70 +19,78 @@ class HifzListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Flatten sections into a single list for lazy building.
+    final items = <_HifzListItem>[];
+    items.add(const _HifzListItem.summary());
+
+    void addSection(String title, List<HifzEntry> entries, bool isDue) {
+      if (entries.isNotEmpty) {
+        items.add(_HifzListItem.header(title, entries.length));
+        for (final e in entries) {
+          items.add(_HifzListItem.entry(e, isDue));
+        }
+      }
+    }
+
+    addSection('lbl_due_today'.tr, state.dueToday, true);
+    addSection('lbl_new_lessons'.tr, state.newLessons, false);
+    addSection('lbl_recent_lessons'.tr, state.recent, false);
+    addSection('lbl_solid'.tr, state.solid, false);
+    addSection('lbl_mastered'.tr, state.mastered, false);
+    addSection('lbl_weak'.tr, state.weak, false);
+
     return RefreshIndicator(
       onRefresh: () async {
         context.read<HifzBloc>().add(LoadHifzEntries());
       },
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-        children: [
-          HifzSummaryCard(state: state),
-          const SizedBox(height: 20),
-          if (state.dueToday.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_due_today'.tr,
-              count: state.dueToday.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.dueToday.map((e) => entryBuilder(e, true, false)),
-            const SizedBox(height: 20),
-          ],
-          if (state.newLessons.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_new_lessons'.tr,
-              count: state.newLessons.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.newLessons.map((e) => entryBuilder(e, false, false)),
-            const SizedBox(height: 20),
-          ],
-          if (state.recent.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_recent_lessons'.tr,
-              count: state.recent.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.recent.map((e) => entryBuilder(e, false, false)),
-            const SizedBox(height: 20),
-          ],
-          if (state.solid.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_solid'.tr,
-              count: state.solid.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.solid.map((e) => entryBuilder(e, false, true)),
-            const SizedBox(height: 20),
-          ],
-          if (state.mastered.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_mastered'.tr,
-              count: state.mastered.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.mastered.map((e) => entryBuilder(e, false, true)),
-            const SizedBox(height: 20),
-          ],
-          if (state.weak.isNotEmpty) ...[
-            HifzSectionHeader(
-              title: 'lbl_weak'.tr,
-              count: state.weak.length,
-            ),
-            const SizedBox(height: 8),
-            ...state.weak.map((e) => entryBuilder(e, false, false)),
-          ],
-        ],
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return switch (item.type) {
+            _HifzItemType.summary => Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: HifzSummaryCard(state: state),
+              ),
+            _HifzItemType.header => Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: HifzSectionHeader(
+                  title: item.title!,
+                  count: item.count!,
+                ),
+              ),
+            _HifzItemType.entry => entryBuilder(item.entry!, item.isDue, false),
+          };
+        },
       ),
     );
   }
+}
+
+enum _HifzItemType { summary, header, entry }
+
+class _HifzListItem {
+  final _HifzItemType type;
+  final String? title;
+  final int? count;
+  final HifzEntry? entry;
+  final bool isDue;
+
+  const _HifzListItem.summary()
+      : type = _HifzItemType.summary,
+        title = null,
+        count = null,
+        entry = null,
+        isDue = false;
+
+  const _HifzListItem.header(this.title, this.count)
+      : type = _HifzItemType.header,
+        entry = null,
+        isDue = false;
+
+  const _HifzListItem.entry(this.entry, this.isDue)
+      : type = _HifzItemType.entry,
+        title = null,
+        count = null;
 }

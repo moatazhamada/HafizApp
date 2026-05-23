@@ -204,7 +204,7 @@ class AppColors {
     textPrimary: Color(0xFFE0E0E0),
     textSecondary: Color(0xFFBDBDBD),
     textHint: Color(0xFFAAAAAA),
-    mushafPageBg: Color(0xFF000000),
+    mushafPageBg: Color(0xFF121212),
     mushafPageBorder: Color(0xFF3D2E2E),
     mushafVerseHover: Color(0xFF2A4A42),
     mushafTextPrimary: Color(0xFFE8D5B7),

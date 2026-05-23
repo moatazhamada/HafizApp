@@ -44,7 +44,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   StreamSubscription<String>? _errorSub;
   StreamSubscription<bool>? _playingSub;
   Timer? _sleepTimerUpdater;
-  Timer? _uiRefreshTimer;
+  // Removed _uiRefreshTimer — stream subscriptions already handle state updates.
   String? _sleepTimerRemaining;
   int? _resumeFromVerse;
 
@@ -106,7 +106,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     });
 
     _startSleepTimerUpdater();
-    _startUiRefreshTimer();
 
     // Check if we have a saved position to resume from
     final saved = PrefUtils().getLastAudioVerse(widget.surahId);
@@ -134,7 +133,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     _errorSub?.cancel();
     _playingSub?.cancel();
     _sleepTimerUpdater?.cancel();
-    _uiRefreshTimer?.cancel();
+    // _uiRefreshTimer removed; stream subscriptions handle UI updates.
     // Intentionally do NOT stop audio here — users expect Quran recitation
     // to continue even after leaving the audio player screen.
     WakelockPlus.disable();
@@ -171,18 +170,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     );
   }
 
-  /// Periodically refreshes the UI so the play/pause button and progress
-  /// indicator stay in sync with the actual player state. This is a robust
-  /// fallback for any stream synchronization delays or platform quirks.
-  void _startUiRefreshTimer() {
-    _uiRefreshTimer?.cancel();
-    _uiRefreshTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (mounted) setState(() {});
-      },
-    );
-  }
+  // UI refresh timer removed — _playingSub and _verseSub stream
+  // subscriptions already propagate state changes without polling.
 
   void _updateSleepTimerDisplay() {
     if (!mounted) return;
@@ -385,6 +374,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
               Expanded(
                 child: ListView.builder(
                   controller: scrollController,
+                  itemExtent: 56,
                   itemCount: totalVerses,
                   itemBuilder: (context, index) {
                     final isCurrent = _currentVerse == index;

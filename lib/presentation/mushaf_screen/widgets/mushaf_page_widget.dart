@@ -143,6 +143,10 @@ class _MushafImage extends StatelessWidget {
       cacheKey: MushafCacheManager.cacheKey(mushafType.name, pageNumber),
       imageUrl: url,
       fit: BoxFit.contain,
+      memCacheWidth: 1280,
+      memCacheHeight: 1920,
+      maxWidthDiskCache: 1280,
+      maxHeightDiskCache: 1920,
       placeholder: (context, url) => Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,

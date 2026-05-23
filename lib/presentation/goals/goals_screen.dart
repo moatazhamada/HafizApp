@@ -211,24 +211,31 @@ class _PlanList extends StatelessWidget {
       onRefresh: () async {
         context.read<GoalsBloc>().add(LoadTodaysPlan());
       },
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: [
-          SummaryHeader(items: items, colors: colors, theme: theme),
-          const SizedBox(height: 12),
-          if (mushafLabelKey != null) ...[
-            MushafHint(mushafLabelKey: mushafLabelKey, theme: theme),
-            const SizedBox(height: 12),
-          ],
-          ...items.map(
-            (item) => _PlanItemCard(
-              item: item,
-              isDark: isDark,
-              colors: colors,
-              theme: theme,
-            ),
-          ),
-        ],
+        itemCount: items.length + (mushafLabelKey != null ? 2 : 1),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SummaryHeader(items: items, colors: colors, theme: theme),
+                const SizedBox(height: 12),
+                if (mushafLabelKey != null) ...[
+                  MushafHint(mushafLabelKey: mushafLabelKey, theme: theme),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            );
+          }
+          final item = items[index - 1];
+          return _PlanItemCard(
+            item: item,
+            isDark: isDark,
+            colors: colors,
+            theme: theme,
+          );
+        },
       ),
     );
   }

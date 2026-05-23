@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/theme/app_colors.dart';
 import 'package:hafiz_app/core/theme/app_spacing.dart';
@@ -273,34 +274,36 @@ class _RandomVerseCardState extends State<RandomVerseCard>
             padding: const EdgeInsetsDirectional.only(end: 8),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                item.url,
+              child: CachedNetworkImage(
+                imageUrl: item.url,
                 width: 160,
                 height: 120,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    width: 160,
-                    height: 120,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                memCacheWidth: 320,
+                memCacheHeight: 240,
+                placeholder: (context, url) => Container(
+                  width: 160,
+                  height: 120,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 160,
-                    height: 120,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
-                  );
-                },
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  width: 160,
+                  height: 120,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.broken_image,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
+                ),
               ),
             ),
           );

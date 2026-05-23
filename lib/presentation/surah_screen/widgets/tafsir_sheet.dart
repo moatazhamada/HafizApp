@@ -30,85 +30,138 @@ void showTafsirSheet(
       initialSize: 0.5,
       minSize: 0.3,
       maxSize: 0.8,
-      builder: (sheetContext, scrollController) => FutureBuilder(
-          future: sl<TafsirRepository>().getTafsir(surahId, verseNumber).then((result) {
-            // Track as reading session (estimated 30s for tafsir)
-            sl<KhatmahRepository>().reportReadingSession(
-              ReadingSession(
-                surahId: surahId,
-                startVerse: verseNumber,
-                endVerse: verseNumber,
-                durationSeconds: 30,
-                readAt: DateTime.now(),
-              ),
-            );
-            return result;
-          }),
-          builder: (context, snapshot) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    textDirection: TextDirection.rtl,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${'lbl_tafsir'.tr}: $surahName - '
-                          '${'lbl_ayah'.tr} ${verseNumber.toLocalizedNumber(context)}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
+      builder: (sheetContext, scrollController) => _TafsirContent(
+        surahId: surahId,
+        surahName: surahName,
+        verseNumber: verseNumber,
+        scrollController: scrollController!,
+      ),
+    ),
+  );
+}
+
+class _TafsirContent extends StatefulWidget {
+  final int surahId;
+  final String surahName;
+  final int verseNumber;
+  final ScrollController scrollController;
+
+  const _TafsirContent({
+    required this.surahId,
+    required this.surahName,
+    required this.verseNumber,
+    required this.scrollController,
+  });
+
+  @override
+  State<_TafsirContent> createState() => _TafsirContentState();
+}
+
+class _TafsirContentState extends State<_TafsirContent> {
+  late final Future<dynamic> _tafsirFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _tafsirFuture = sl<TafsirRepository>()
+        .getTafsir(widget.surahId, widget.verseNumber)
+        .then((result) {
+      sl<KhatmahRepository>().reportReadingSession(
+        ReadingSession(
+          surahId: widget.surahId,
+          startVerse: widget.verseNumber,
+          endVerse: widget.verseNumber,
+          durationSeconds: 30,
+          readAt: DateTime.now(),
+        ),
+      );
+      return result;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _tafsirFuture,
+      builder: (context, snapshot) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                textDirection: TextDirection.rtl,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${'lbl_tafsir'.tr}: ${widget.surahName} - '
+                      '${'lbl_ayah'.tr} ${widget.verseNumber.toLocalizedNumber(context)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                        tooltip: 'lbl_close'.tr,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: snapshot.connectionState == ConnectionState.waiting
-                      ? const LoadingIndicator()
-                      : snapshot.hasError || snapshot.data?.isLeft() == true
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: 'lbl_close'.tr,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: snapshot.connectionState == ConnectionState.waiting
+                  ? const Center(child: LoadingIndicator())
+                  : snapshot.hasError
                       ? Center(
                           child: Padding(
-                            padding: const EdgeInsets.all(32),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.error_outline,
                                   size: 48,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.38),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'msg_tafsir_error'.tr,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         )
                       : SingleChildScrollView(
-                          controller: scrollController,
+                          controller: widget.scrollController,
                           padding: const EdgeInsets.all(16),
                           child: snapshot.data!.fold(
                             (failure) => Text(
                               'msg_tafsir_error'.tr,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
                             ),
                             (tafsir) => Text(
                               stripHtmlTags(tafsir.text),
@@ -116,18 +169,15 @@ void showTafsirSheet(
                               style: TextStyle(
                                 fontSize: 16,
                                 height: 1.8,
-                                color: isDark
-                                    ? Theme.of(context).colorScheme.onSurface
-                                    : Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
                         ),
-                ),
-              ],
-            );
-          },
-        ),
-    ),
-  );
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

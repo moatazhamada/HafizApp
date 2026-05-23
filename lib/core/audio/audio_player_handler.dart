@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hafiz_app/core/utils/logger.dart';
 
 class AudioPlayerHandler {
-  static final AudioPlayerHandler _instance = AudioPlayerHandler._internal();
-  factory AudioPlayerHandler() => _instance;
+  static AudioPlayerHandler? _instance;
+  factory AudioPlayerHandler() => _instance ??= AudioPlayerHandler._internal();
 
   AudioPlayerHandler._internal() {
     _configureAudioSession();
@@ -308,5 +308,7 @@ class AudioPlayerHandler {
     await _player.dispose();
     await _currentVerseController.close();
     await _errorController.close();
+    // Reset the singleton so it can be recreated if needed.
+    _instance = null;
   }
 }

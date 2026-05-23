@@ -104,70 +104,100 @@ class MemorizationScreen extends StatelessWidget {
                   LoadMemorizationProgress(),
                 );
               },
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                children: [
-                  ProgressSummary(state: state, isDark: isDark),
-                  const SizedBox(height: 24),
+              child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: ProgressSummary(state: state, isDark: isDark),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 24),
+                  ),
                   if (state.dueReviews.isNotEmpty) ...[
-                    Text(
-                      'lbl_due_for_review'.tr,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          'lbl_due_for_review'.tr,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ...state.dueReviews.map(
-                      (p) => ReviewCard(
-                        progress: p,
-                        isDark: isDark,
-                        onLogReview: () => _showReviewDialog(
-                          context,
-                          surahId: p.surahId,
-                          surahName: p.surahName,
-                        ),
-                        onRead: () {
-                          final surah = QuranIndex.quranSurahs.firstWhere(
-                            (s) => s.id == p.surahId,
-                            orElse: () => Surah(p.surahId, '', ''),
-                          );
-                          NavigatorService.popAndPushNamed(
-                            AppRoutes.surahPage,
-                            arguments: {'surah': surah},
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList.builder(
+                        itemCount: state.dueReviews.length,
+                        itemBuilder: (context, index) {
+                          final p = state.dueReviews[index];
+                          return ReviewCard(
+                            progress: p,
+                            isDark: isDark,
+                            onLogReview: () => _showReviewDialog(
+                              context,
+                              surahId: p.surahId,
+                              surahName: p.surahName,
+                            ),
+                            onRead: () {
+                              final surah = QuranIndex.quranSurahs.firstWhere(
+                                (s) => s.id == p.surahId,
+                                orElse: () => Surah(p.surahId, '', ''),
+                              );
+                              NavigatorService.popAndPushNamed(
+                                AppRoutes.surahPage,
+                                arguments: {'surah': surah},
+                              );
+                            },
                           );
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
-                  Text(
-                    'lbl_all_surahs'.tr,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Text(
+                        'lbl_all_surahs'.tr,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  ...state.allProgress.map(
-                    (p) => SurahProgressCard(
-                      progress: p,
-                      isDark: isDark,
-                      onLogReview: () => _showReviewDialog(
-                        context,
-                        surahId: p.surahId,
-                        surahName: p.surahName,
-                      ),
-                      onRead: () {
-                        final surah = QuranIndex.quranSurahs.firstWhere(
-                          (s) => s.id == p.surahId,
-                          orElse: () => Surah(p.surahId, '', ''),
-                        );
-                        NavigatorService.popAndPushNamed(
-                          AppRoutes.surahPage,
-                          arguments: {'surah': surah},
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                    sliver: SliverList.builder(
+                      itemCount: state.allProgress.length,
+                      itemBuilder: (context, index) {
+                        final p = state.allProgress[index];
+                        return SurahProgressCard(
+                          progress: p,
+                          isDark: isDark,
+                          onLogReview: () => _showReviewDialog(
+                            context,
+                            surahId: p.surahId,
+                            surahName: p.surahName,
+                          ),
+                          onRead: () {
+                            final surah = QuranIndex.quranSurahs.firstWhere(
+                              (s) => s.id == p.surahId,
+                              orElse: () => Surah(p.surahId, '', ''),
+                            );
+                            NavigatorService.popAndPushNamed(
+                              AppRoutes.surahPage,
+                              arguments: {'surah': surah},
+                            );
+                          },
                         );
                       },
                     ),

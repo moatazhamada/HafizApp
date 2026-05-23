@@ -36,6 +36,8 @@ class BookmarksScreen extends StatelessWidget {
         ),
       ),
       body: BlocConsumer<BookmarkBloc, BookmarkState>(
+        buildWhen: (previous, current) =>
+            previous.runtimeType != current.runtimeType,
         listener: (context, state) {
           if (state is BookmarkLoaded && state.feedbackMessage != null) {
             SnackBarHelper.show(

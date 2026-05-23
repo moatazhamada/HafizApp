@@ -93,12 +93,6 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final state = context.read<MusaliTeaserBloc>().state;
-    final currentSlideIndex = state is TeaserSlideUpdated
-        ? state.slideIndex
-        : 0;
-    final isLastSlide = currentSlideIndex == musaliTeaserSlides().length - 1;
-
     return Scaffold(
       backgroundColor: _isArabic
           ? AppColors.of(context).primaryDark
@@ -123,24 +117,35 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
           child: Stack(
             children: [
               DecorativeBackgroundElement(isArabic: _isArabic),
-              MainContent(
-                currentSlideIndex: currentSlideIndex,
-                fadeAnimation: _fadeAnimation,
-                slideAnimation: _slideAnimation,
-                isArabic: _isArabic,
-                isLastSlide: isLastSlide,
-                onDismiss: () {
-                  _finishTeaser(context);
-                },
-                onNext: () {
-                  if (isLastSlide) {
-                    _finishTeaser(context);
-                  } else {
-                    context.read<MusaliTeaserBloc>().add(NextSlidePressed());
-                  }
-                },
-                onSkip: () {
-                  _finishTeaser(context);
+              BlocBuilder<MusaliTeaserBloc, MusaliTeaserState>(
+                builder: (context, state) {
+                  final currentSlideIndex = state is TeaserSlideUpdated
+                      ? state.slideIndex
+                      : 0;
+                  final isLastSlide = currentSlideIndex ==
+                      musaliTeaserSlides().length - 1;
+                  return MainContent(
+                    currentSlideIndex: currentSlideIndex,
+                    fadeAnimation: _fadeAnimation,
+                    slideAnimation: _slideAnimation,
+                    isArabic: _isArabic,
+                    isLastSlide: isLastSlide,
+                    onDismiss: () {
+                      _finishTeaser(context);
+                    },
+                    onNext: () {
+                      if (isLastSlide) {
+                        _finishTeaser(context);
+                      } else {
+                        context.read<MusaliTeaserBloc>().add(
+                          NextSlidePressed(),
+                        );
+                      }
+                    },
+                    onSkip: () {
+                      _finishTeaser(context);
+                    },
+                  );
                 },
               ),
             ],

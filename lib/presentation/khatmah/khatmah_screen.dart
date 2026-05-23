@@ -134,6 +134,8 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('lbl_khatmah_tracker'.tr)),
       body: BlocConsumer<KhatmahBloc, KhatmahState>(
+        buildWhen: (previous, current) =>
+            previous.runtimeType != current.runtimeType,
         listener: (context, state) {
           _checkGoalCelebration(state);
           _checkKhatmahCompletion(context);
