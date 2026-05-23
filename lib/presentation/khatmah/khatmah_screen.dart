@@ -23,7 +23,11 @@ class KhatmahScreen extends StatefulWidget {
   const KhatmahScreen({super.key});
 
   static Widget builder(BuildContext context) {
-    sl<KhatmahBloc>().add(LoadKhatmahDashboard());
+    try {
+      sl<KhatmahBloc>().add(LoadKhatmahDashboard());
+    } catch (e, s) {
+      Logger.error('Failed to load KhatmahDashboard: $e\n$s', feature: 'Khatmah');
+    }
     return const KhatmahScreen();
   }
 

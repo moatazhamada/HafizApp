@@ -208,7 +208,11 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
         final totalVerses = session.endVerse - session.startVerse + 1;
         
         // Update local dashboard
-        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses, durationSeconds: session.durationSeconds));
+        try {
+          sl<KhatmahBloc>().add(RecordReading(verses: totalVerses, durationSeconds: session.durationSeconds));
+        } catch (e, s) {
+          Logger.warning('Failed to record reading: $e\n$s', feature: 'SurahScreen');
+        }
         
         // Sync to QF
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));

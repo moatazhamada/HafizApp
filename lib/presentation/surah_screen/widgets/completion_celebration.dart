@@ -28,6 +28,16 @@ class CompletionCelebration extends StatefulWidget {
 }
 
 class CompletionCelebrationState extends State<CompletionCelebration> {
+  void _safeAdd(Bloc bloc, Object event) {
+    try {
+      if (!bloc.isClosed) {
+        bloc.add(event);
+      }
+    } catch (e, s) {
+      Logger.warning('Failed to add event to bloc: $e\n$s', feature: 'CompletionCelebration');
+    }
+  }
+
   void show({
     required double percentage,
     required int correctCount,
@@ -55,11 +65,12 @@ class CompletionCelebrationState extends State<CompletionCelebration> {
       score: percentage,
       createdAt: DateTime.now(),
     );
-    sl<RecitationSessionBloc>().add(SaveSession(session));
-    sl<MemorizationBloc>().add(
+    _safeAdd(sl<RecitationSessionBloc>(), SaveSession(session));
+    _safeAdd(
+      sl<MemorizationBloc>(),
       RecordReview(surahId: widget.surah!.id, score: percentage),
     );
-    sl<KhatmahBloc>().add(RecordReading(verses: totalCount));
+    _safeAdd(sl<KhatmahBloc>(), RecordReading(verses: totalCount));
 
     final readingSession = ReadingSession(
       surahId: widget.surah!.id,
@@ -79,22 +90,24 @@ class CompletionCelebrationState extends State<CompletionCelebration> {
     );
 
     if (PrefUtils().isAdaptiveQrc()) {
-      sl<RecitationSessionBloc>().add(LoadSessions());
-      sl<RecitationSessionBloc>()
-          .stream
-          .firstWhere((s) => s is RecitationSessionLoaded)
-          .timeout(const Duration(seconds: 5))
-          .then((state) {
-            if (state is RecitationSessionLoaded) {
-              AdaptiveQrc.evaluateAndAdjust(state.sessions);
-            }
-          })
-          .catchError((e) {
-            Logger.warning(
-              'Adaptive QRC evaluation failed: $e',
-              feature: 'QRC',
-            );
-          });
+      final bloc = sl<RecitationSessionBloc>();
+      if (!bloc.isClosed) {
+        bloc.add(LoadSessions());
+        bloc.stream
+            .firstWhere((s) => s is RecitationSessionLoaded)
+            .timeout(const Duration(seconds: 5))
+            .then((state) {
+              if (state is RecitationSessionLoaded) {
+                AdaptiveQrc.evaluateAndAdjust(state.sessions);
+              }
+            })
+            .catchError((e) {
+              Logger.warning(
+                'Adaptive QRC evaluation failed: $e',
+                feature: 'QRC',
+              );
+            });
+      }
     }
   }
 

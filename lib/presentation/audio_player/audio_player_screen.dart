@@ -217,7 +217,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       if (session.endVerse >= session.startVerse) {
         final totalVerses = session.endVerse - session.startVerse + 1;
 
-        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        try {
+          sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        } catch (e, s) {
+          Logger.warning('Failed to record reading: $e\n$s', feature: 'AudioPlayer');
+        }
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
 
         // Analytics

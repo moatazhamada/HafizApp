@@ -30,7 +30,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _searchBloc = sl<SearchBloc>();
+    try {
+      _searchBloc = sl<SearchBloc>();
+    } catch (e, s) {
+      Logger.error('Failed to create SearchBloc: $e\n$s', feature: 'Search');
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

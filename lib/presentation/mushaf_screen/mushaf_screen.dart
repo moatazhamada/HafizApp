@@ -620,7 +620,11 @@ class _MushafScreenState extends State<MushafScreen>
         final totalVerses = session.endVerse - session.startVerse + 1;
         
         // Update local dashboard
-        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        try {
+          sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        } catch (e, s) {
+          Logger.warning('Failed to record reading: $e\n$s', feature: 'Mushaf');
+        }
         
         // Sync to QF
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
