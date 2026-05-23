@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/utils/rtl_utils.dart';
@@ -27,6 +27,7 @@ class SurahAppBar extends StatelessWidget {
   final void Function(int? startVerse) onNavigateToAudioPlayer;
 
   const SurahAppBar({
+    super.key,
     required this.isDark,
     required this.surah,
     required this.isAutoScrolling,

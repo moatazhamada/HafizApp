@@ -8,6 +8,7 @@ class AutoScrollControls extends StatelessWidget {
   final VoidCallback onShowSpeedDialog;
 
   const AutoScrollControls({
+    super.key,
     required this.isAutoScrolling,
     required this.autoScrollSpeed,
     required this.onToggle,

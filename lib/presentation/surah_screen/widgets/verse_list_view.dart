@@ -43,6 +43,7 @@ class VerseListView extends StatelessWidget {
   final void Function(int verseNumber) onStartFromVerse;
 
   VerseListView({
+    super.key,
     required this.chapters,
     required this.bookmarkState,
     required this.errorState,

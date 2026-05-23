@@ -9,6 +9,7 @@ class HifzModeOverlay extends StatelessWidget {
   final TextDirection textDirection;
 
   const HifzModeOverlay({
+    super.key,
     required this.text,
     required this.isBlurred,
     required this.textColor,

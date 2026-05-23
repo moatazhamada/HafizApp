@@ -6,6 +6,7 @@ class AudioControlBar extends StatelessWidget {
   final VoidCallback onToggle;
 
   const AudioControlBar({
+    super.key,
     required this.isListeningMode,
     required this.onToggle,
   });
