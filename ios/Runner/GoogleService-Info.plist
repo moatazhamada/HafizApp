@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.hafiz.app.hafiz_app</string>
+	<string>com.houseofalgorithms.hafiz</string>
 	<key>PROJECT_ID</key>
 	<string>hafiz-app-3e264</string>
 	<key>STORAGE_BUCKET</key>

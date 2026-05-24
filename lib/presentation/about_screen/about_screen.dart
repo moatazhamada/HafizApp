@@ -425,7 +425,7 @@ class MusaliPromoCard extends StatelessWidget {
     if (platform == 'ios') {
       return 'https://apps.apple.com/app/musali';
     }
-    return 'https://play.google.com/store/apps/details?id=com.HouseofAlgorithms.musali';
+    return 'https://play.google.com/store/apps/details?id=com.houseofalgorithms.musalli';
   }
 
   Future<void> _openStore(BuildContext context) async {

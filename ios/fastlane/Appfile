@@ -2,7 +2,7 @@
 # Documentation: https://docs.fastlane.tools
 
 # The bundle identifier of your iOS app
-app_identifier("com.hafiz.app.hafiz_app")
+app_identifier("com.houseofalgorithms.hafiz")
 
 # Your Apple Developer Portal username
 # Set via environment variable or prompt
@@ -17,4 +17,4 @@ itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"] || "")
 team_id(ENV["FASTLANE_TEAM_ID"] || "")
 
 # For prelive/staging flavor, override app_identifier:
-# app_identifier("com.hafiz.app.hafiz_app.prelive")
+# app_identifier("com.houseofalgorithms.hafiz.prelive")
