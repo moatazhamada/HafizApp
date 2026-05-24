@@ -280,9 +280,13 @@ class AppInitializer {
         // Defer scheduling to after the first frame so the Android
         // activity is attached before requesting notification permissions.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(notificationService.scheduleDailyVerse());
-          unawaited(notificationService.scheduleReadingReminder());
-          unawaited(notificationService.scheduleFridayKahf());
+          // Serialize scheduling to avoid SQLITE_BUSY from concurrent
+          // sqflite access inside flutter_local_notifications.
+          unawaited(() async {
+            await notificationService.scheduleDailyVerse();
+            await notificationService.scheduleReadingReminder();
+            await notificationService.scheduleFridayKahf();
+          }());
         });
       }
     } catch (e) {

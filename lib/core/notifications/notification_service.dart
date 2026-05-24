@@ -166,9 +166,9 @@ class NotificationService {
     );
 
     final timeStr = pref.getDailyVerseTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 8;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 8);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
     await _safeZonedSchedule(
@@ -220,9 +220,9 @@ class NotificationService {
     final isAr = PrefUtils().getLocaleCode() == 'ar';
 
     final timeStr = pref.getReadingReminderTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 20;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 20);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
     await _safeZonedSchedule(
@@ -434,6 +434,18 @@ class NotificationService {
       } else {
         rethrow;
       }
+    } on RangeError catch (e, stack) {
+      // Defensive breadcrumb to help identify the source of RangeErrors
+      // that may come from flutter_local_notifications internals.
+      Logger.error(
+        'RangeError during zonedSchedule '
+        '(id=$id, matchDateTimeComponents=$matchDateTimeComponents, '
+        'scheduledDate=${scheduledDate.toIso8601String()}): $e',
+        feature: 'Notifications',
+        error: e,
+        stackTrace: stack,
+      );
+      rethrow;
     }
   }
 
@@ -502,9 +514,9 @@ class NotificationService {
 
     final isAr = PrefUtils().getLocaleCode() == 'ar';
     final timeStr = pref.getFridayKahfTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 6;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 6);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfFridayTime(hour, minute);
 
     await _safeZonedSchedule(
@@ -525,6 +537,23 @@ class NotificationService {
       feature: 'Notifications',
     );
     return true;
+  }
+
+  /// Safely parses a time string in "HH:mm" format.
+  /// Falls back to [defaultHour]:00 if malformed.
+  static ({int hour, int minute}) _parseTimeString(String timeStr, {required int defaultHour}) {
+    final parts = timeStr.split(':');
+    if (parts.length < 2) {
+      Logger.warning('Malformed time string: "$timeStr", using default $defaultHour:00', feature: 'Notifications');
+      return (hour: defaultHour, minute: 0);
+    }
+    final hour = int.tryParse(parts[0].trim());
+    final minute = int.tryParse(parts[1].trim());
+    if (hour == null || minute == null) {
+      Logger.warning('Invalid time values in "$timeStr", using default $defaultHour:00', feature: 'Notifications');
+      return (hour: defaultHour, minute: 0);
+    }
+    return (hour: hour.clamp(0, 23), minute: minute.clamp(0, 59));
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
