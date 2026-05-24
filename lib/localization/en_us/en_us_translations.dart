@@ -235,10 +235,10 @@ final Map<String, String> enUs = {
 
   // Musali Teaser
   'musali_app_name': 'Musali',
-  'musali_status': 'Coming Soon',
+  'musali_status': 'From the same developer',
   'musali_teaser_desc':
-      'What starts with something familiar ends up somewhere completely unexpected.',
-  'musali_watch_now': 'Watch Now',
+      'A gamified prayer tracker that helps you cultivate spiritual habits through a visual, growing garden.',
+  'musali_watch_now': 'Get Musali',
   'lbl_skip': 'Skip',
   'lbl_next': 'Next',
   'lbl_next_surah': 'Next Surah',

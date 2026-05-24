@@ -409,7 +409,7 @@ class _AboutScreenState extends State<AboutScreen> {
           Text('about_integrity_body'.tr),
           if (sl<RemoteConfigService>().showMusaliCard) ...[
             const SizedBox(height: 24),
-            const MusaliComingSoonCard(),
+            const MusaliPromoCard(),
           ],
         ],
       ),
@@ -417,8 +417,39 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 }
 
-class MusaliComingSoonCard extends StatelessWidget {
-  const MusaliComingSoonCard({super.key});
+class MusaliPromoCard extends StatelessWidget {
+  const MusaliPromoCard({super.key});
+
+  String get _storeUrl {
+    final platform = getPlatformLabel();
+    if (platform == 'ios') {
+      return 'https://apps.apple.com/app/musali';
+    }
+    return 'https://play.google.com/store/apps/details?id=com.HouseofAlgorithms.musali';
+  }
+
+  Future<void> _openStore(BuildContext context) async {
+    try {
+      bool ok = await launchUrlString(
+        _storeUrl,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!ok) {
+        ok = await launchUrlString(_storeUrl, mode: LaunchMode.platformDefault);
+      }
+      if (ok && context.mounted) {
+        await sl<AnalyticsService>().logLinkOpened(_storeUrl);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackBarHelper.show(
+          context,
+          message: '${"msg_could_not_open".tr}$_storeUrl',
+          type: SnackBarType.error,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -481,10 +512,8 @@ class MusaliComingSoonCard extends StatelessWidget {
           SizedBox(
             width: double.maxFinite,
             child: ElevatedButton.icon(
-              onPressed: () {
-                NavigatorService.pushNamed(AppRoutes.musaliTeaserScreen);
-              },
-              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: () => _openStore(context),
+              icon: const Icon(Icons.download_rounded),
               label: Text('musali_watch_now'.tr),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primaryContainer,
