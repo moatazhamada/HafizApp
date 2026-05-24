@@ -39,7 +39,14 @@ class RecitationSessionBloc
       },
       (_) {
         if (isClosed) return;
-        add(LoadSessions());
+        final current = state;
+        if (current is RecitationSessionLoaded) {
+          emit(RecitationSessionLoaded(
+            [event.session, ...current.sessions],
+          ));
+        } else {
+          add(LoadSessions());
+        }
       },
     );
   }
@@ -56,7 +63,7 @@ class RecitationSessionBloc
       },
       (_) {
         if (isClosed) return;
-        add(LoadSessions());
+        emit(const RecitationSessionLoaded([]));
       },
     );
   }

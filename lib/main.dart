@@ -228,47 +228,63 @@ Future<void> main() async {
   runApp(const BootstrapApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final ThemeBloc _themeBloc;
+  late final BookmarkBloc _bookmarkBloc;
+  late final RecitationErrorBloc _recitationErrorBloc;
+  late final CloudSyncBloc _cloudSyncBloc;
+  late final KhatmahBloc _khatmahBloc;
+  late final QfAuthBloc _qfAuthBloc;
+
   ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
+    final mode = PrefUtils().getThemeMode();
     if (mode == 'dark') return ThemeMode.dark;
     if (mode == 'light') return ThemeMode.light;
     return ThemeMode.system;
   }
 
   @override
+  void initState() {
+    super.initState();
+    _themeBloc = sl<ThemeBloc>();
+    _bookmarkBloc = sl<BookmarkBloc>();
+    _recitationErrorBloc = sl<RecitationErrorBloc>();
+    _cloudSyncBloc = sl<CloudSyncBloc>();
+    _khatmahBloc = sl<KhatmahBloc>();
+    _qfAuthBloc = sl<QfAuthBloc>();
+
+    if (!_bookmarkBloc.isClosed) {
+      _bookmarkBloc.add(const LoadBookmarksEvent());
+    }
+    if (!_recitationErrorBloc.isClosed) {
+      _recitationErrorBloc.add(const LoadRecitationErrorsEvent());
+    }
+    if (!_qfAuthBloc.isClosed) {
+      _qfAuthBloc.add(QfAuthCheckRequested());
+    }
+    if (!_khatmahBloc.isClosed) {
+      _khatmahBloc.add(LoadKhatmahDashboard());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final themeBloc = sl<ThemeBloc>();
-    final bookmarkBloc = sl<BookmarkBloc>();
-    final recitationErrorBloc = sl<RecitationErrorBloc>();
-    final cloudSyncBloc = sl<CloudSyncBloc>();
-    final khatmahBloc = sl<KhatmahBloc>();
-    final qfAuthBloc = sl<QfAuthBloc>();
-
-    if (!bookmarkBloc.isClosed) {
-      bookmarkBloc.add(const LoadBookmarksEvent());
-    }
-    if (!recitationErrorBloc.isClosed) {
-      recitationErrorBloc.add(const LoadRecitationErrorsEvent());
-    }
-    if (!qfAuthBloc.isClosed) {
-      qfAuthBloc.add(QfAuthCheckRequested());
-    }
-    if (!khatmahBloc.isClosed) {
-      khatmahBloc.add(LoadKhatmahDashboard());
-    }
-
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: themeBloc),
-        BlocProvider.value(value: bookmarkBloc),
-        BlocProvider.value(value: recitationErrorBloc),
-        BlocProvider.value(value: qfAuthBloc),
+        BlocProvider.value(value: _themeBloc),
+        BlocProvider.value(value: _bookmarkBloc),
+        BlocProvider.value(value: _recitationErrorBloc),
+        BlocProvider.value(value: _qfAuthBloc),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
-        BlocProvider.value(value: cloudSyncBloc),
-        BlocProvider.value(value: khatmahBloc),
+        BlocProvider.value(value: _cloudSyncBloc),
+        BlocProvider.value(value: _khatmahBloc),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {

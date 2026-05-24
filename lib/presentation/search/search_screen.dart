@@ -266,13 +266,10 @@ class _SearchScreenState extends State<SearchScreen> {
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final verse = state.verseResults[index];
-                        final surah = QuranIndex.quranSurahs.firstWhere(
-                          (s) => s.id == verse.chapterNumber,
-                            orElse: () {
-                              Logger.warning('Invalid surahId: ${verse.chapterNumber}', feature: 'Search');
-                              return Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
-                            },
-                        );
+                        final surahIdx = verse.chapterNumber - 1;
+                        final surah = surahIdx >= 0 && surahIdx < QuranIndex.quranSurahs.length
+                            ? QuranIndex.quranSurahs[surahIdx]
+                            : Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
 
                         final subtitleText = verse.translationText != null &&
                                 verse.translationText!.isNotEmpty

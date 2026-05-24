@@ -50,7 +50,15 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
       },
       (_) {
         if (isClosed) return;
-        add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added'));
+        final current = state;
+        if (current is BookmarkLoaded) {
+          emit(BookmarkLoaded(
+            [...current.bookmarks, event.bookmark],
+            feedbackMessage: 'msg_bookmark_added',
+          ));
+        } else {
+          add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_added'));
+        }
       },
     );
   }
@@ -66,7 +74,6 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
     result.fold(
       (failure) {
         if (isClosed) return;
-        // Preserve any previously loaded bookmarks on error
         final current = state;
         if (current is BookmarkLoaded) {
           emit(BookmarkLoaded(current.bookmarks, feedbackMessage: failure.localizedMessage));
@@ -76,7 +83,18 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
       },
       (_) {
         if (isClosed) return;
-        add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'));
+        final current = state;
+        if (current is BookmarkLoaded) {
+          emit(BookmarkLoaded(
+            current.bookmarks
+                .where((b) =>
+                    !(b.surahId == event.surahId && b.verseNumber == event.verseId))
+                .toList(),
+            feedbackMessage: 'msg_bookmark_removed',
+          ));
+        } else {
+          add(const LoadBookmarksEvent(feedbackMessage: 'msg_bookmark_removed'));
+        }
       },
     );
   }

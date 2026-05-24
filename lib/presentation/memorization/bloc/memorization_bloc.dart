@@ -15,6 +15,32 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     on<LoadDueReviews>(_onLoadDueReviews);
   }
 
+  MemorizationLoaded _computeLoadedState(List<MemorizationProgress> progress) {
+    final due = <MemorizationProgress>[];
+    int memorized = 0;
+    int inProgress = 0;
+    for (final p in progress) {
+      if (SrsAlgorithm.isDueForReview(p)) due.add(p);
+      switch (p.status) {
+        case MemorizationStatus.memorized:
+          memorized++;
+        case MemorizationStatus.inProgress:
+        case MemorizationStatus.needsReview:
+          inProgress++;
+        default:
+          break;
+      }
+    }
+    final notStarted = 114 - progress.length;
+    return MemorizationLoaded(
+      allProgress: progress,
+      dueReviews: due,
+      totalMemorized: memorized,
+      totalInProgress: inProgress,
+      totalNotStarted: notStarted < 0 ? 0 : notStarted,
+    );
+  }
+
   Future<void> _onLoadProgress(
     LoadMemorizationProgress event,
     Emitter<MemorizationState> emit,
@@ -24,29 +50,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     final result = await repository.getAllProgress();
     result.fold(
       (failure) => emit(MemorizationError(failure.localizedMessage)),
-      (progress) {
-        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
-        final memorized = progress
-            .where((p) => p.status == MemorizationStatus.memorized)
-            .length;
-        final inProgress = progress
-            .where(
-              (p) =>
-                  p.status == MemorizationStatus.inProgress ||
-                  p.status == MemorizationStatus.needsReview,
-            )
-            .length;
-        final notStarted = 114 - progress.length;
-        emit(
-          MemorizationLoaded(
-            allProgress: progress,
-            dueReviews: due,
-            totalMemorized: memorized,
-            totalInProgress: inProgress,
-            totalNotStarted: notStarted < 0 ? 0 : notStarted,
-          ),
-        );
-      },
+      (progress) => emit(_computeLoadedState(progress)),
     );
   }
 
@@ -76,29 +80,7 @@ class MemorizationBloc extends Bloc<MemorizationEvent, MemorizationState> {
     final result = await repository.getAllProgress();
     result.fold(
       (failure) => emit(MemorizationError(failure.localizedMessage)),
-      (progress) {
-        final due = progress.where(SrsAlgorithm.isDueForReview).toList();
-        final memorized = progress
-            .where((p) => p.status == MemorizationStatus.memorized)
-            .length;
-        final inProgress = progress
-            .where(
-              (p) =>
-                  p.status == MemorizationStatus.inProgress ||
-                  p.status == MemorizationStatus.needsReview,
-            )
-            .length;
-        final notStarted = 114 - progress.length;
-        emit(
-          MemorizationLoaded(
-            allProgress: progress,
-            dueReviews: due,
-            totalMemorized: memorized,
-            totalInProgress: inProgress,
-            totalNotStarted: notStarted < 0 ? 0 : notStarted,
-          ),
-        );
-      },
+      (progress) => emit(_computeLoadedState(progress)),
     );
   }
 }

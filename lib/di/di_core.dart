@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../core/analytics/analytics_route_observer.dart';
@@ -66,7 +67,7 @@ void registerCoreDependencies() {
     dio.options.connectTimeout = const Duration(seconds: 7);
     dio.options.receiveTimeout = const Duration(seconds: 10);
 
-    dio.interceptors.add(DebugLogInterceptor());
+    if (!kReleaseMode) dio.interceptors.add(DebugLogInterceptor());
 
     dio.interceptors.add(QfApiInterceptor(sl<QfAuthRemoteDataSource>(), dio));
     dio.interceptors.add(RetryInterceptor(dio));

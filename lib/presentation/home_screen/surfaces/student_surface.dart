@@ -72,6 +72,7 @@ class _StudentBodyState extends State<_StudentBody> {
               // Memorization Progress Card
               SliverToBoxAdapter(
                 child: BlocBuilder<MemorizationBloc, MemorizationState>(
+                  buildWhen: (p, c) => c is MemorizationLoaded || c is MemorizationError,
                   builder: (context, memState) {
                     if (memState is MemorizationLoaded) {
                       return MemorizationCard(state: memState);
@@ -197,66 +198,90 @@ class _StudentBodyState extends State<_StudentBody> {
   }
 
   Widget _buildStatsRow(BuildContext context) {
+    return const Row(
+      children: [
+        Expanded(child: _MemorizedStat()),
+        SizedBox(width: 8),
+        Expanded(child: _InProgressStat()),
+        SizedBox(width: 8),
+        Expanded(child: _BookmarksStat()),
+        SizedBox(width: 8),
+        Expanded(child: _PracticeStat()),
+      ],
+    );
+  }
+}
+
+class _MemorizedStat extends StatelessWidget {
+  const _MemorizedStat();
+
+  @override
+  Widget build(BuildContext context) {
     return BlocBuilder<MemorizationBloc, MemorizationState>(
-      builder: (context, memState) {
-        return BlocBuilder<BookmarkBloc, BookmarkState>(
-          builder: (context, bookmarkState) {
-            return BlocBuilder<RecitationErrorBloc, RecitationErrorState>(
-              builder: (context, errorState) {
-                int memorized = 0;
-                int inProgress = 0;
-                int bookmarks = 0;
-                int practice = 0;
+      buildWhen: (p, c) => c is MemorizationLoaded,
+      builder: (context, state) {
+        final value = state is MemorizationLoaded ? state.totalMemorized : 0;
+        return StatPill(
+          label: 'lbl_memorized'.tr,
+          value: value,
+          color: AppColors.of(context).memorizedStatus,
+        );
+      },
+    );
+  }
+}
 
-                if (memState is MemorizationLoaded) {
-                  memorized = memState.totalMemorized;
-                  inProgress = memState.totalInProgress;
-                }
-                if (bookmarkState is BookmarkLoaded) {
-                  bookmarks = bookmarkState.bookmarks.length;
-                }
-                if (errorState is RecitationErrorLoaded) {
-                  practice = errorState.errors.length;
-                }
+class _InProgressStat extends StatelessWidget {
+  const _InProgressStat();
 
-                return Row(
-                  children: [
-                    Expanded(
-                      child: StatPill(
-                        label: 'lbl_memorized'.tr,
-                        value: memorized,
-                        color: AppColors.of(context).memorizedStatus,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: StatPill(
-                        label: 'lbl_in_progress'.tr,
-                        value: inProgress,
-                        color: AppColors.of(context).inProgressStatus,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: StatPill(
-                        label: 'lbl_bookmarks'.tr,
-                        value: bookmarks,
-                        color: AppColors.of(context).statBookmark,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: StatPill(
-                        label: 'lbl_practice_list'.tr,
-                        value: practice,
-                        color: AppColors.of(context).statPractice,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MemorizationBloc, MemorizationState>(
+      buildWhen: (p, c) => c is MemorizationLoaded,
+      builder: (context, state) {
+        final value = state is MemorizationLoaded ? state.totalInProgress : 0;
+        return StatPill(
+          label: 'lbl_in_progress'.tr,
+          value: value,
+          color: AppColors.of(context).inProgressStatus,
+        );
+      },
+    );
+  }
+}
+
+class _BookmarksStat extends StatelessWidget {
+  const _BookmarksStat();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<BookmarkBloc, BookmarkState>(
+      buildWhen: (p, c) => c is BookmarkLoaded,
+      builder: (context, state) {
+        final value = state is BookmarkLoaded ? state.bookmarks.length : 0;
+        return StatPill(
+          label: 'lbl_bookmarks'.tr,
+          value: value,
+          color: AppColors.of(context).statBookmark,
+        );
+      },
+    );
+  }
+}
+
+class _PracticeStat extends StatelessWidget {
+  const _PracticeStat();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RecitationErrorBloc, RecitationErrorState>(
+      buildWhen: (p, c) => c is RecitationErrorLoaded,
+      builder: (context, state) {
+        final value = state is RecitationErrorLoaded ? state.errors.length : 0;
+        return StatPill(
+          label: 'lbl_practice_list'.tr,
+          value: value,
+          color: AppColors.of(context).statPractice,
         );
       },
     );
