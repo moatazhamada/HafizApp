@@ -126,15 +126,13 @@ class SurahIndexWidget extends StatelessWidget {
       button: true,
       label:
           '${surah.nameEnglish}, ${surah.nameArabic}, ${'lbl_surah'.tr} ${surah.id}',
-      child: InkWell(
+      child: SurahListItem(
+        surahId: surah.id,
+        nameEnglish: surah.nameEnglish,
+        nameArabic: surah.nameArabic,
         onTap: onSurahTap != null
             ? () => onSurahTap!()
             : () => _navigateToSurah(context, surah),
-        child: SurahListItem(
-          surahId: surah.id,
-          nameEnglish: surah.nameEnglish,
-          nameArabic: surah.nameArabic,
-        ),
       ),
     );
   }

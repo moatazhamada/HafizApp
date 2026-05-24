@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/surface_type.dart';
+import '../../../core/theme/app_motion.dart';
 
-/// Wraps surface widgets with a cross-fade animation when switching.
+/// Wraps surface widgets with a spring-physics cross-fade animation
+/// when switching surfaces on the home screen.
+///
+/// Upgrades from a simple fade to a spring-driven crossfade with a
+/// micro-slide for more expressive transitions.
 class AnimatedSurfaceSwitcher extends StatelessWidget {
   final SurfaceType surfaceType;
   final Widget child;
@@ -15,20 +20,23 @@ class AnimatedSurfaceSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 350),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
+      duration: AppMotion.mediumDuration,
+      switchInCurve: AppMotion.emphasizedDecelerate,
+      switchOutCurve: AppMotion.emphasizedAccelerate,
       transitionBuilder: (child, animation) {
+        final slideIn = Tween<Offset>(
+          begin: const Offset(0.04, 0),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: AppMotion.emphasizedDecelerate,
+          ),
+        );
         return FadeTransition(
           opacity: animation,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.05, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position: slideIn,
             child: child,
           ),
         );

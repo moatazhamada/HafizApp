@@ -11,6 +11,8 @@ import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/theme/app_text_styles.dart';
+import 'core/theme/app_shapes.dart';
+import 'core/theme/spring_page_transition.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
@@ -66,34 +68,46 @@ final ThemeData lightTheme = ThemeData(
   ),
   cardTheme: const CardThemeData(
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
+    shape: AppShapes.cardShape,
   ),
   bottomSheetTheme: const BottomSheetThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.bottomSheetShape,
   ),
   dialogTheme: const DialogThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    shape: AppShapes.dialogShape,
   ),
   inputDecorationTheme: const InputDecorationTheme(
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(14)),
     ),
     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  chipTheme: const ChipThemeData(
+    shape: AppShapes.chipShape,
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.android: SpringPageTransition(),
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.linux: SpringPageTransition(),
+      TargetPlatform.macOS: SpringPageTransition(),
+      TargetPlatform.windows: SpringPageTransition(),
     },
   ),
   appBarTheme: const AppBarTheme(centerTitle: true),
@@ -131,34 +145,46 @@ final ThemeData darkTheme = ThemeData(
   ),
   cardTheme: const CardThemeData(
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
+    shape: AppShapes.cardShape,
   ),
   bottomSheetTheme: const BottomSheetThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.bottomSheetShape,
   ),
   dialogTheme: const DialogThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    shape: AppShapes.dialogShape,
   ),
   inputDecorationTheme: const InputDecorationTheme(
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(14)),
     ),
     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  chipTheme: const ChipThemeData(
+    shape: AppShapes.chipShape,
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.android: SpringPageTransition(),
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.linux: SpringPageTransition(),
+      TargetPlatform.macOS: SpringPageTransition(),
+      TargetPlatform.windows: SpringPageTransition(),
     },
   ),
   appBarTheme: const AppBarTheme(centerTitle: true),

@@ -61,6 +61,16 @@ class AppColors {
   /// Kept for backward compatibility with surah_screen.
   Color get textColor => bismillahColor;
 
+  // M3E surface elevation tints — subtle primary-colored overlays
+  /// Subtle primary tint for slightly elevated surfaces.
+  Color get surfaceLevel1 => primary.withValues(alpha: 0.04);
+
+  /// More visible primary tint for medium elevation.
+  Color get surfaceLevel2 => primary.withValues(alpha: 0.08);
+
+  /// Strong primary tint for highly elevated surfaces.
+  Color get surfaceLevel3 => primary.withValues(alpha: 0.12);
+
   // Mushaf
   final Color mushafPageBg;
   final Color mushafPageBorder;

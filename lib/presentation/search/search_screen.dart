@@ -215,7 +215,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         return Semantics(
                           button: true,
                           label: '${surah.nameEnglish}, ${surah.nameArabic}',
-                          child: InkWell(
+                          child: SurahListItem(
+                            surahId: surah.id,
+                            nameEnglish: surah.nameEnglish,
+                            nameArabic: surah.nameArabic,
                             onTap: () {
                               unawaited(
                                 sl<AnalyticsService>().logSearchResultTapped(
@@ -229,11 +232,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                 arguments: surah,
                               );
                             },
-                            child: SurahListItem(
-                              surahId: surah.id,
-                              nameEnglish: surah.nameEnglish,
-                              nameArabic: surah.nameArabic,
-                            ),
                           ),
                         );
                       }, childCount: state.results.length),

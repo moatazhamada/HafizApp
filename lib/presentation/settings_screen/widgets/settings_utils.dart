@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/app_export.dart';
+import 'package:hafiz_app/core/theme/app_shapes.dart';
 
 /// A section label used in the settings screen.
 class SectionLabel extends StatelessWidget {
@@ -36,7 +37,7 @@ class SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: AppShapes.cardShapeSmall,
       child: Column(children: children),
     );
   }
