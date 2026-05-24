@@ -281,6 +281,8 @@ class _RandomVerseCardState extends State<RandomVerseCard>
                 fit: BoxFit.cover,
                 memCacheWidth: 320,
                 memCacheHeight: 240,
+                maxWidthDiskCache: 320,
+                maxHeightDiskCache: 240,
                 placeholder: (context, url) => Container(
                   width: 160,
                   height: 120,

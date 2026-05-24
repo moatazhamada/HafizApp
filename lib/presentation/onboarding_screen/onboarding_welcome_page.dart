@@ -97,14 +97,11 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage>
           Positioned(
             left: -20,
             top: -20,
-            child: Opacity(
-              opacity: 0.1,
-              child: CustomImageView(
-                imagePath: ImageConstant.imgGroupCircles,
-                height: 150.adaptSize,
-                width: 150.adaptSize,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            child: CustomImageView(
+              imagePath: ImageConstant.imgGroupCircles,
+              height: 150.adaptSize,
+              width: 150.adaptSize,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
             ),
           ),
 

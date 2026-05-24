@@ -11,6 +11,11 @@ class VoiceVerificationService {
   static const double defaultPassThreshold = 0.85;
   static const int defaultMinWords = 3;
 
+  static final _punctuationRegex =
+      RegExp(r'[،؛؟۔ۖ-ۭ]');
+  static final _whitespaceRegex = RegExp(r'\s+');
+  static final _arabicLetterRegex = RegExp(r'^[ء-ي]$');
+
   Future<bool> initialize() async {
     // Just simple check, actual init with UI prompt happens on listen usually or explicit init
     try {
@@ -150,11 +155,8 @@ class VoiceVerificationService {
 
   List<String> _tokenize(String input) {
     // Split on whitespace and common Arabic punctuation/stop signs
-    final cleaned = input.replaceAll(
-      RegExp(r'[\u060C\u061B\u061F\u06D4\u06D6-\u06ED]'),
-      ' ',
-    );
-    return cleaned.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final cleaned = input.replaceAll(_punctuationRegex, ' ');
+    return cleaned.split(_whitespaceRegex).where((t) => t.isNotEmpty).toList();
   }
 
   List<String> _mergeSingleLetterTokens(List<String> tokens) {
@@ -183,7 +185,7 @@ class VoiceVerificationService {
   }
 
   bool _isArabicLetter(String input) {
-    return RegExp(r'^[\u0621-\u064A]$').hasMatch(input);
+    return _arabicLetterRegex.hasMatch(input);
   }
 
   _AlignmentResult _align(List<String> expected, List<String> spoken) {

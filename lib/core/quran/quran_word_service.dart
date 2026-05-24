@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hafiz_app/core/utils/logger.dart';
 import 'package:hive/hive.dart';
 
 import '../config/api_config.dart';
@@ -12,9 +13,21 @@ import 'quran_word_models.dart';
 /// Provides per-word text, transliteration, and audio URLs.
 class QuranWordService {
   final Dio _dio;
+  static const int _maxCacheSize = 200;
   static final Map<String, VerseWordData> _memoryCache = {};
+  static final List<String> _cacheAccessOrder = [];
 
   QuranWordService([Dio? dio]) : _dio = dio ?? _buildDio();
+
+  static void _cacheEntry(String key, VerseWordData data) {
+    _cacheAccessOrder.remove(key);
+    _cacheAccessOrder.add(key);
+    _memoryCache[key] = data;
+    while (_memoryCache.length > _maxCacheSize) {
+      final evicted = _cacheAccessOrder.removeAt(0);
+      _memoryCache.remove(evicted);
+    }
+  }
 
   static Dio _buildDio() {
     final dio = Dio(
@@ -24,7 +37,7 @@ class QuranWordService {
         receiveTimeout: const Duration(seconds: 12),
       ),
     );
-    dio.interceptors.add(DebugLogInterceptor());
+    if (!kReleaseMode) dio.interceptors.add(DebugLogInterceptor());
     if (ApiConfig.clientId.isNotEmpty && ApiConfig.clientSecret.isNotEmpty) {
       dio.interceptors.add(QfAuthInterceptor(QfAuthService()));
     }
@@ -43,7 +56,7 @@ class QuranWordService {
     // Hive cache
     final hiveCached = _readCached(cacheKey);
     if (hiveCached != null) {
-      _memoryCache[cacheKey] = hiveCached;
+      _cacheEntry(cacheKey, hiveCached);
       return hiveCached;
     }
 
@@ -62,7 +75,7 @@ class QuranWordService {
         final verse = data['verse'];
         if (verse is Map<String, dynamic>) {
           final wordData = VerseWordData.fromJson(verse);
-          _memoryCache[cacheKey] = wordData;
+          _cacheEntry(cacheKey, wordData);
           _writeCached(cacheKey, wordData);
           return wordData;
         }
@@ -98,7 +111,7 @@ class QuranWordService {
               final wordData = VerseWordData.fromJson(v);
               results[wordData.verseKey] = wordData;
               final cacheKey = 'words_${wordData.verseKey}';
-              _memoryCache[cacheKey] = wordData;
+              _cacheEntry(cacheKey, wordData);
               _writeCached(cacheKey, wordData);
             }
           }

@@ -55,13 +55,10 @@ class ContinueReadingCard extends StatelessWidget {
                 right: -30,
                 bottom: -30,
                 child: ExcludeSemantics(
-                  child: Opacity(
-                    opacity: 0.1,
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 150,
-                      color: AppColors.of(context).onPrimary,
-                    ),
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 150,
+                    color: AppColors.of(context).onPrimary.withValues(alpha: 0.1),
                   ),
                 ),
               ),

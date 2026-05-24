@@ -173,13 +173,10 @@ class DecorativeBackgroundElement extends StatelessWidget {
       left: isArabic ? 0 : -30,
       right: isArabic ? -30 : 0,
       top: isArabic ? -30 : -20,
-      child: Opacity(
-        opacity: 0.08,
-        child: Icon(
-          isArabic ? Icons.mosque_rounded : Icons.grass_rounded,
-          size: 200,
-          color: Theme.of(context).colorScheme.onPrimary,
-        ),
+      child: Icon(
+        isArabic ? Icons.mosque_rounded : Icons.grass_rounded,
+        size: 200,
+        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08),
       ),
     );
   }
