@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_cache_manager.dart';
 import 'package:hafiz_app/core/mushaf/mushaf_page_verse_map.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_types.dart';
-import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/services/reading_session_tracker.dart';
 import 'package:hafiz_app/core/analytics/analytics_service.dart';
@@ -21,9 +17,7 @@ import 'package:hafiz_app/widgets/offline_indicator.dart';
 import 'widgets/mushaf_jump_dialog.dart';
 import 'widgets/mushaf_page_widget.dart';
 import 'widgets/mushaf_bottom_bar.dart';
-import 'widgets/mushaf_text_content.dart';
 import 'widgets/mushaf_top_bar.dart';
-import 'widgets/verse_text.dart';
 
 class MushafScreen extends StatefulWidget {
   final int? initialPage;
@@ -46,10 +40,6 @@ class _MushafScreenState extends State<MushafScreen>
   Timer? _overlayTimer;
   Timer? _persistDebounce;
   Timer? _prefetchDebounce;
-  final Map<int, List<VerseText>> _localTextCache = {};
-  final List<int> _cacheAccessOrder = [];
-  static const int _maxCachePages = 20;
-
   // PageStorage bucket key — used as a fallback if prefs are slow/unavailable.
   static const String _kPageStorageKey = 'mushaf_current_page';
 
@@ -168,8 +158,6 @@ class _MushafScreenState extends State<MushafScreen>
 
   @override
   void didHaveMemoryPressure() {
-    _localTextCache.clear();
-    _cacheAccessOrder.clear();
     imageCache.clear();
     imageCache.clearLiveImages();
   }
@@ -208,10 +196,7 @@ class _MushafScreenState extends State<MushafScreen>
     for (final offset in [1, -1, 2, -2]) {
       final target = currentPage + offset;
       if (target < 1 || target > _mushafType.totalPages) continue;
-      final url = _mushafType.pageImageUrl(
-        target,
-        devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-      );
+      final url = _mushafType.pageImageUrl(target);
       precacheImage(
         CachedNetworkImageProvider(
           url,
@@ -288,8 +273,6 @@ class _MushafScreenState extends State<MushafScreen>
     final surahId = MushafPageIndex.getSurahForPage(madaniPage);
     final targetPage = _surahToPageInType(surahId, newType);
 
-    _localTextCache.clear();
-    _cacheAccessOrder.clear();
     // Clear PageStorage so the old page number (e.g. 500 in 604-page mode)
     // doesn't carry over to the new mushaf type (e.g. 30-page mode).
     PageStorage.of(context).writeState(
@@ -310,76 +293,6 @@ class _MushafScreenState extends State<MushafScreen>
       oldController.dispose();
       _precacheAdjacentPages(_currentPage);
     });
-  }
-
-  // ─── Offline Text Loading ───────────────────────────────────────
-
-  Future<List<VerseText>> _loadLocalPageText(int pageNumber) async {
-    if (_localTextCache.containsKey(pageNumber)) {
-      // Move to most-recently-used position
-      _cacheAccessOrder.remove(pageNumber);
-      _cacheAccessOrder.add(pageNumber);
-      return _localTextCache[pageNumber]!;
-    }
-
-    final ranges = MushafPageVerseMap.getVersesForPage(
-      pageNumber,
-      totalPages: _mushafType.totalPages,
-    );
-    final isWarsh = _mushafType == MushafType.warsh;
-    final List<VerseText> entries = [];
-
-    for (final range in ranges) {
-      final surah = QuranIndex.quranSurahs[range.surahId - 1];
-      final showBismillah =
-          range.startVerse == 1 &&
-          (isWarsh
-              ? range.surahId == 1
-              : range.surahId != 1 && range.surahId != 9);
-
-      try {
-        final jsonStr = await rootBundle.loadString(
-          'assets/quran/uthmani/surah_${range.surahId}.json',
-        );
-        final data = await compute(_decodeMushafJson, jsonStr);
-        final versesRaw = data.containsKey('verses')
-            ? data['verses']
-            : data['chapter'];
-        final List<dynamic> verseList = versesRaw is List ? versesRaw : [];
-
-        for (final v in verseList) {
-          if (v is! Map<String, dynamic>) continue;
-          final verseNum = (v['verse'] ?? v['verse_number'] ?? 0) as int;
-          if (verseNum >= range.startVerse && verseNum <= range.endVerse) {
-            final text = (v['text'] ?? v['text_uthmani'] ?? '') as String;
-            entries.add(
-              VerseText(
-                surahId: range.surahId,
-                verseNumber: verseNum,
-                text: text,
-                surahNameArabic: surah.nameArabic,
-                showBismillah: showBismillah && verseNum == 1,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        Logger.warning('Mushaf verse text load failed: $e', feature: 'Mushaf');
-        // Do NOT add empty entries — let the fallback UI handle the failure
-        // gracefully instead of showing a partially-blank page.
-      }
-    }
-
-    _localTextCache[pageNumber] = entries;
-    _cacheAccessOrder.add(pageNumber);
-
-    // LRU eviction: keep only the most recently accessed pages
-    while (_cacheAccessOrder.length > _maxCachePages) {
-      final oldest = _cacheAccessOrder.removeAt(0);
-      _localTextCache.remove(oldest);
-    }
-
-    return entries;
   }
 
   // ─── Navigation ─────────────────────────────────────────────────
@@ -522,65 +435,10 @@ class _MushafScreenState extends State<MushafScreen>
         key: ValueKey('mushaf_page_$pageNumber'),
         pageNumber: pageNumber,
         mushafType: _mushafType,
-        fallback: _buildOfflineFallback(pageNumber, isDark, colors),
         onZoomChanged: (zoomed) {
           if (mounted) setState(() => _isZoomed = zoomed);
         },
       ),
-    );
-  }
-
-  Widget _buildOfflineFallback(int pageNumber, bool isDark, AppColors colors) {
-    return FutureBuilder<List<VerseText>>(
-      future: _loadLocalPageText(pageNumber),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: isDark
-                  ? colors.mushafTextPrimary.withValues(alpha: 0.4)
-                  : colors.mushafPageBorder.withValues(alpha: 0.4),
-            ),
-          );
-        }
-        final verses = snapshot.data ?? [];
-        if (verses.isEmpty ||
-            (verses.length == 1 && verses.first.text.isEmpty)) {
-          final madaniPage = _toMadaniPage(pageNumber);
-          final surahId = MushafPageIndex.getSurahForPage(madaniPage);
-          final surah = QuranIndex.quranSurahs[surahId - 1];
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  surah.nameArabic,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontFamily: 'NotoNaskhArabic',
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  '$pageNumber / ${_mushafType.totalPages}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: MushafTextContent(colors: colors, verses: verses),
-        );
-      },
     );
   }
 
@@ -649,9 +507,5 @@ class _MushafScreenState extends State<MushafScreen>
     }
   }
 
-}
-
-Map<String, dynamic> _decodeMushafJson(String jsonStr) {
-  return json.decode(jsonStr) as Map<String, dynamic>;
 }
 

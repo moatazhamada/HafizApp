@@ -16,14 +16,12 @@ const _invertFilter = ColorFilter.matrix([
 class MushafPageWidget extends StatefulWidget {
   final int pageNumber;
   final MushafType mushafType;
-  final Widget? fallback;
   final ValueChanged<bool>? onZoomChanged;
 
   const MushafPageWidget({
     super.key,
     required this.pageNumber,
     this.mushafType = MushafType.madani,
-    this.fallback,
     this.onZoomChanged,
   });
 
@@ -63,11 +61,7 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-    final url = widget.mushafType.pageImageUrl(
-      widget.pageNumber,
-      devicePixelRatio: devicePixelRatio,
-    );
+    final url = widget.mushafType.pageImageUrl(widget.pageNumber);
 
     final imageWidget = _MushafImage(
       url: url,
@@ -75,7 +69,6 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
       pageNumber: widget.pageNumber,
       isDark: isDark,
       colors: colors,
-      fallback: widget.fallback,
     );
 
     final madaniPage = widget.mushafType.totalPages == MushafPageIndex.totalPages
@@ -125,7 +118,6 @@ class _MushafImage extends StatelessWidget {
   final int pageNumber;
   final bool isDark;
   final AppColors colors;
-  final Widget? fallback;
 
   const _MushafImage({
     required this.url,
@@ -133,7 +125,6 @@ class _MushafImage extends StatelessWidget {
     required this.pageNumber,
     required this.isDark,
     required this.colors,
-    this.fallback,
   });
 
   @override
@@ -143,10 +134,6 @@ class _MushafImage extends StatelessWidget {
       cacheKey: MushafCacheManager.cacheKey(mushafType.name, pageNumber),
       imageUrl: url,
       fit: BoxFit.contain,
-      memCacheWidth: 1280,
-      memCacheHeight: 1920,
-      maxWidthDiskCache: 1280,
-      maxHeightDiskCache: 1920,
       placeholder: (context, url) => Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,
@@ -155,31 +142,23 @@ class _MushafImage extends StatelessWidget {
               : colors.mushafPageBorder.withValues(alpha: 0.4),
         ),
       ),
-      errorWidget: (context, url, error) =>
-          fallback ??
-          Container(
-            color: colors.mushafPageBg,
-            child: Center(
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                color: colors.textSecondary,
-                size: 32,
-              ),
-            ),
+      errorWidget: (context, url, error) => Container(
+        color: colors.mushafPageBg,
+        child: Center(
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            color: colors.textSecondary,
+            size: 48,
           ),
+        ),
+      ),
     );
 
     if (!isDark) return image;
 
-    // In dark mode, wrap the filtered result in a RepaintBoundary so the
-    // inversion is composited once and cached as a layer. This avoids
-    // re-applying the ColorFilter on every parent rebuild (e.g. overlay
-    // toggles, zoom state changes).
-    return RepaintBoundary(
-      child: ColorFiltered(
-        colorFilter: _invertFilter,
-        child: image,
-      ),
+    return ColorFiltered(
+      colorFilter: _invertFilter,
+      child: image,
     );
   }
 }

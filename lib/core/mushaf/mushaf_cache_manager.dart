@@ -20,7 +20,7 @@ class MushafCacheManager {
   /// Generate a cache key that includes the Mushaf type so different
   /// types don't collide.
   static String cacheKey(String mushafType, int pageNumber) {
-    return 'mushaf_${mushafType}_$pageNumber';
+    return 'mushaf_v2_${mushafType}_$pageNumber';
   }
 
   /// Clear all cached Mushaf images.
