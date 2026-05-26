@@ -366,6 +366,7 @@ class _MushafScreenState extends State<MushafScreen>
                     final page = _pageIndexToNumber(index);
                     _isZoomed = false;
                     _currentPage = page;
+                    setState(() {});
                     // Debounce persistence — avoid excessive SharedPreferences
                     // writes during rapid page flips.
                     _persistDebounce?.cancel();
