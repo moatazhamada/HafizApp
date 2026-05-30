@@ -105,43 +105,62 @@ class AdaptiveNavigationRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return NavigationRail(
-      selectedIndex: selectedIndex != null && selectedIndex! < _destinations.length ? selectedIndex : null,
-      onDestinationSelected: (index) {
-        // Skip the invisible spacer destination (index == _destinations.length)
-        // and remap indices after it so they align with the drawer's indices.
-        if (index == _destinations.length) return;
-        final remapped = index > _destinations.length ? index - 1 : index;
-        onDestinationSelected(remapped);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // NavigationRail uses Expanded internally, so it needs a bounded height.
+        // Estimate content height: leading padding + icon (~88 px) +
+        // each labelled destination (~72 px). When the window is shorter
+        // than the content we let SingleChildScrollView handle overflow.
+        final estimatedContentHeight =
+            88.0 + (_destinations.length + _bottomDestinations.length + 1) * 72.0;
+        final height = constraints.maxHeight > estimatedContentHeight
+            ? constraints.maxHeight
+            : estimatedContentHeight;
+
+        return SingleChildScrollView(
+          child: SizedBox(
+            height: height,
+            child: NavigationRail(
+              selectedIndex: selectedIndex != null && selectedIndex! < _destinations.length ? selectedIndex : null,
+              onDestinationSelected: (index) {
+                // Skip the invisible spacer destination (index == _destinations.length)
+                // and remap indices after it so they align with the drawer's indices.
+                if (index == _destinations.length) return;
+                final remapped = index > _destinations.length ? index - 1 : index;
+                onDestinationSelected(remapped);
+              },
+              backgroundColor: colorScheme.surface,
+              labelType: NavigationRailLabelType.all,
+              leading: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  color: colorScheme.primary,
+                  size: 28,
+                ),
+              ),
+              destinations: [
+                for (final dest in _destinations)
+                  NavigationRailDestination(
+                    icon: Icon(dest.icon),
+                    selectedIcon: Icon(dest.selectedIcon),
+                    label: Text(dest.labelKey.tr),
+                  ),
+                const NavigationRailDestination(
+                  icon: SizedBox.shrink(),
+                  label: SizedBox.shrink(),
+                ),
+                for (final dest in _bottomDestinations)
+                  NavigationRailDestination(
+                    icon: Icon(dest.icon),
+                    selectedIcon: Icon(dest.selectedIcon),
+                    label: Text(dest.labelKey.tr),
+                  ),
+              ],
+            ),
+          ),
+        );
       },
-      backgroundColor: colorScheme.surface,
-      labelType: NavigationRailLabelType.all,
-      leading: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Icon(
-          Icons.menu_book_rounded,
-          color: colorScheme.primary,
-          size: 28,
-        ),
-      ),
-      destinations: [
-        for (final dest in _destinations)
-          NavigationRailDestination(
-            icon: Icon(dest.icon),
-            selectedIcon: Icon(dest.selectedIcon),
-            label: Text(dest.labelKey.tr),
-          ),
-        const NavigationRailDestination(
-          icon: SizedBox.shrink(),
-          label: SizedBox.shrink(),
-        ),
-        for (final dest in _bottomDestinations)
-          NavigationRailDestination(
-            icon: Icon(dest.icon),
-            selectedIcon: Icon(dest.selectedIcon),
-            label: Text(dest.labelKey.tr),
-          ),
-      ],
     );
   }
 }

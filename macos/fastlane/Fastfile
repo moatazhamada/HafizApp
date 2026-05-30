@@ -1,0 +1,139 @@
+# Fastlane Fastfile for Hafiz App (macOS)
+# Documentation: https://docs.fastlane.tools
+
+PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
+
+DART_DEFINES_FILE = File.join(PROJECT_ROOT, ".dart_defines.production.json")
+DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
+
+def ensure_dart_defines
+  if File.exist?(DART_DEFINES_FILE)
+    UI.success("✅ Found dart defines at: #{DART_DEFINES_FILE}")
+    return
+  end
+
+  client_id = ENV['QF_CLIENT_ID']
+  client_secret = ENV['QF_CLIENT_SECRET']
+
+  if client_id && client_secret
+    require 'json'
+    defines = {
+      "flavor" => "production",
+      "QF_CLIENT_ID" => client_id,
+      "QF_CLIENT_SECRET" => client_secret,
+      "QF_PRODUCTION" => "true"
+    }
+    File.write(DART_DEFINES_FILE, JSON.pretty_generate(defines))
+    UI.success("✅ Generated dart defines from environment")
+  else
+    UI.error("❌ Dart defines not found!")
+    UI.user_error!("Missing QF credentials — cannot build")
+  end
+end
+
+def asc_api_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+    issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+    key_filepath: ENV.fetch("APP_STORE_CONNECT_API_KEY_FILEPATH"),
+    in_house: false,
+  )
+end
+
+platform :mac do
+  desc "Build macOS app"
+  lane :build do
+    ensure_dart_defines
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build macos --release #{DART_DEFINES_ARG}")
+    end
+  end
+
+  desc "Build and package macOS app for App Store"
+  lane :build_pkg do
+    ensure_dart_defines
+
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build macos --release #{DART_DEFINES_ARG}")
+    end
+
+    gym(
+      scheme: "Runner",
+      workspace: File.join(PROJECT_ROOT, "macos/Runner.xcworkspace"),
+      export_method: "app-store",
+      output_directory: File.join(PROJECT_ROOT, "build/macos"),
+      output_name: "hafiz_app_macos",
+    )
+  end
+
+  desc "Upload macOS app to TestFlight"
+  lane :deploy_testflight do
+    build_pkg
+
+    pkg = lane_context[SharedValues::PKG_OUTPUT_PATH]
+    UI.user_error!("No .pkg found after build") unless pkg && File.exist?(pkg)
+
+    upload_to_testflight(
+      api_key: asc_api_key,
+      pkg: pkg,
+      platform: "osx",
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+    )
+
+    UI.success("🚀 Uploaded to TestFlight (macOS)!")
+  end
+
+  desc "Upload macOS app to Mac App Store"
+  lane :deploy_app_store do
+    build_pkg
+
+    pkg = lane_context[SharedValues::PKG_OUTPUT_PATH]
+    UI.user_error!("No .pkg found after build") unless pkg && File.exist?(pkg)
+
+    upload_to_app_store(
+      api_key: asc_api_key,
+      pkg: pkg,
+      platform: "osx",
+      skip_metadata: false,
+      skip_screenshots: true,
+      skip_app_version_update: false,
+      submit_for_review: false,
+      force: true,
+    )
+
+    UI.success("🚀 Uploaded to Mac App Store!")
+    UI.important("Remember to submit for review in App Store Connect.")
+  end
+
+  desc "Increment version code in pubspec.yaml"
+  lane :bump_version do
+    pubspec_path = File.join(PROJECT_ROOT, "pubspec.yaml")
+    pubspec = File.read(pubspec_path)
+
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_parts = version_line.strip.split(":").last.strip.split("+")
+    version_name = version_parts.first
+    version_code = version_parts.last.to_i
+
+    new_version_code = version_code + 1
+    new_version_line = "version: #{version_name}+#{new_version_code}\n"
+
+    new_pubspec = pubspec.gsub(version_line, new_version_line)
+    File.write(pubspec_path, new_pubspec)
+
+    UI.success("Version bumped to #{version_name}+#{new_version_code}")
+  end
+
+  desc "Full CI/CD pipeline: bump version, build, deploy to TestFlight"
+  lane :ci_testflight do
+    bump_version
+    deploy_testflight
+  end
+
+  desc "Full CI/CD pipeline: bump version, build, deploy to App Store"
+  lane :ci_app_store do
+    bump_version
+    deploy_app_store
+  end
+end

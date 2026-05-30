@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
@@ -10,6 +12,9 @@ class DeepLinkHandler {
   StreamSubscription<Uri?>? _widgetClickSub;
 
   Future<void> initialize() async {
+    // Home widget deep links are not supported on macOS.
+    if (!kIsWeb && Platform.isMacOS) return;
+
     try {
       // Handle the case where the app was cold-started via a widget click.
       // The widgetClicked stream event would have fired before this listener

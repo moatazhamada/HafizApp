@@ -70,7 +70,11 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+        macOS: iosSettings,
+      ),
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
   }
@@ -114,7 +118,21 @@ class NotificationService {
         return result ?? false;
       }
 
-      // Other platforms (macOS, Linux, Windows) — assume granted
+      if (defaultTargetPlatform == TargetPlatform.macOS) {
+        final macOSPlugin = _plugin
+            .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin
+            >();
+        if (macOSPlugin == null) return true;
+        final result = await macOSPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return result ?? false;
+      }
+
+      // Other platforms (Linux, Windows) — assume granted
       return true;
     } catch (e) {
       Logger.warning(
