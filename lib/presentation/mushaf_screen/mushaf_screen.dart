@@ -37,6 +37,11 @@ class _MushafScreenState extends State<MushafScreen>
   late MushafType _mushafType;
   bool _showOverlay = true;
   bool _isZoomed = false;
+
+  /// True when the user has 2+ fingers on the screen (pinch/zoom gesture).
+  /// This disables PageView scrolling *before* the gesture arena resolves,
+  /// preventing the swipe-vs-zoom conflict.
+  bool _isInteracting = false;
   Timer? _overlayTimer;
   Timer? _persistDebounce;
   Timer? _prefetchDebounce;
@@ -285,6 +290,7 @@ class _MushafScreenState extends State<MushafScreen>
       _mushafType = newType;
       _currentPage = targetPage;
       _isZoomed = false;
+      _isInteracting = false;
       PrefUtils().setMushafType(newType.name);
     });
     _pageController = PageController(initialPage: _currentPage - 1);
@@ -343,6 +349,7 @@ class _MushafScreenState extends State<MushafScreen>
       backgroundColor: colors.mushafPageBg,
       body: OfflineIndicator(
         child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
           onTap: _toggleOverlay,
           child: Stack(
             children: [
@@ -358,13 +365,14 @@ class _MushafScreenState extends State<MushafScreen>
                   reverse: _kMushafPageReverse,
                   key: ValueKey(_mushafType),
                   controller: _pageController,
-                  physics: _isZoomed
+                  physics: (_isZoomed || _isInteracting)
                       ? const NeverScrollableScrollPhysics()
                       : const ClampingScrollPhysics(),
                   itemCount: _mushafType.totalPages,
                   onPageChanged: (index) {
                     final page = _pageIndexToNumber(index);
                     _isZoomed = false;
+                    _isInteracting = false;
                     _currentPage = page;
                     setState(() {});
                     // Debounce persistence — avoid excessive SharedPreferences
@@ -438,6 +446,9 @@ class _MushafScreenState extends State<MushafScreen>
         mushafType: _mushafType,
         onZoomChanged: (zoomed) {
           if (mounted) setState(() => _isZoomed = zoomed);
+        },
+        onInteractionStart: (interacting) {
+          if (mounted) setState(() => _isInteracting = interacting);
         },
       ),
     );

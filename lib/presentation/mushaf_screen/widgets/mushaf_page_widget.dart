@@ -18,26 +18,47 @@ class MushafPageWidget extends StatefulWidget {
   final MushafType mushafType;
   final ValueChanged<bool>? onZoomChanged;
 
+  /// Called when the user starts or ends any interaction (pan/scale).
+  /// This fires earlier than [onZoomChanged] and is used to disable
+  /// PageView scrolling before the gesture arena resolves.
+  final ValueChanged<bool>? onInteractionStart;
+
   const MushafPageWidget({
     super.key,
     required this.pageNumber,
     this.mushafType = MushafType.madani,
     this.onZoomChanged,
+    this.onInteractionStart,
   });
 
   @override
   State<MushafPageWidget> createState() => _MushafPageWidgetState();
 }
 
-class _MushafPageWidgetState extends State<MushafPageWidget> {
+class _MushafPageWidgetState extends State<MushafPageWidget>
+    with SingleTickerProviderStateMixin {
   final TransformationController _transformController =
       TransformationController();
   final ValueNotifier<bool> _zoomNotifier = ValueNotifier<bool>(false);
+
+  /// Number of active pointers currently on this page.
+  /// Used to detect multi-touch before the gesture arena resolves.
+  int _pointerCount = 0;
+
+  /// Whether we have already notified the parent that interaction started.
+  bool _notifiedInteraction = false;
+
+  late AnimationController _zoomAnimationController;
+  Animation<Matrix4>? _zoomAnimation;
 
   @override
   void initState() {
     super.initState();
     _transformController.addListener(_onTransformChanged);
+    _zoomAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
   }
 
   void _onTransformChanged() {
@@ -49,8 +70,73 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
     }
   }
 
+  // ─── Pointer counting for early PageView lock ────────────────────
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _pointerCount++;
+    if (_pointerCount >= 2 && !_notifiedInteraction) {
+      _notifiedInteraction = true;
+      widget.onInteractionStart?.call(true);
+    }
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    _pointerCount--;
+    if (_pointerCount < 2 && _notifiedInteraction) {
+      _notifiedInteraction = false;
+      widget.onInteractionStart?.call(false);
+    }
+  }
+
+  void _handlePointerCancel(PointerCancelEvent event) {
+    _pointerCount--;
+    if (_pointerCount < 2 && _notifiedInteraction) {
+      _notifiedInteraction = false;
+      widget.onInteractionStart?.call(false);
+    }
+  }
+
+  // ─── Double-tap to zoom ──────────────────────────────────────────
+
+  void _handleDoubleTap() {
+    final currentScale = _transformController.value.getMaxScaleOnAxis();
+    final targetScale = currentScale > 1.05 ? 1.0 : 2.5;
+
+    final viewport = context.size ?? MediaQuery.sizeOf(context);
+    final begin = _transformController.value;
+    // Build the zoom-to-center matrix directly to avoid deprecated API.
+    // Equivalent to: translate(cx, cy) * scale(s) * translate(-cx, -cy)
+    final cx = viewport.width / 2;
+    final cy = viewport.height / 2;
+    final end = Matrix4.identity()
+      ..setEntry(0, 0, targetScale)
+      ..setEntry(1, 1, targetScale)
+      ..setEntry(0, 3, cx * (1 - targetScale))
+      ..setEntry(1, 3, cy * (1 - targetScale));
+
+    _zoomAnimation?.removeListener(_onZoomAnimationTick);
+    _zoomAnimation = Matrix4Tween(begin: begin, end: end).animate(
+      CurvedAnimation(
+        parent: _zoomAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _zoomAnimation!.addListener(_onZoomAnimationTick);
+    _zoomAnimationController
+      ..reset()
+      ..forward();
+  }
+
+  void _onZoomAnimationTick() {
+    if (_zoomAnimation != null) {
+      _transformController.value = _zoomAnimation!.value;
+    }
+  }
+
   @override
   void dispose() {
+    _zoomAnimation?.removeListener(_onZoomAnimationTick);
+    _zoomAnimationController.dispose();
     _transformController.removeListener(_onTransformChanged);
     _transformController.dispose();
     _zoomNotifier.dispose();
@@ -95,16 +181,25 @@ class _MushafPageWidgetState extends State<MushafPageWidget> {
       image: true,
       child: Container(
         color: colors.mushafPageBg,
-        child: ValueListenableBuilder<bool>(
-          valueListenable: _zoomNotifier,
-          builder: (context, isZoomed, child) => InteractiveViewer(
-            transformationController: _transformController,
-            panEnabled: isZoomed,
-            minScale: 0.5,
-            maxScale: 4.0,
-            child: child!,
+        child: Listener(
+          onPointerDown: _handlePointerDown,
+          onPointerUp: _handlePointerUp,
+          onPointerCancel: _handlePointerCancel,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _zoomNotifier,
+            builder: (context, isZoomed, child) => GestureDetector(
+              onDoubleTap: _handleDoubleTap,
+              behavior: HitTestBehavior.translucent,
+              child: InteractiveViewer(
+                transformationController: _transformController,
+                panEnabled: isZoomed,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: child!,
+              ),
+            ),
+            child: imageWidget,
           ),
-          child: imageWidget,
         ),
       ),
     );
