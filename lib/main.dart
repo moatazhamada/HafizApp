@@ -104,7 +104,7 @@ final ThemeData lightTheme = ThemeData(
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: SpringPageTransition(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.iOS: SpringPageTransition(),
       TargetPlatform.linux: SpringPageTransition(),
       TargetPlatform.macOS: SpringPageTransition(),
       TargetPlatform.windows: SpringPageTransition(),
@@ -181,7 +181,7 @@ final ThemeData darkTheme = ThemeData(
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.android: SpringPageTransition(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.iOS: SpringPageTransition(),
       TargetPlatform.linux: SpringPageTransition(),
       TargetPlatform.macOS: SpringPageTransition(),
       TargetPlatform.windows: SpringPageTransition(),
