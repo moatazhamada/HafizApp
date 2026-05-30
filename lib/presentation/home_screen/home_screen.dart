@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen>
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    final appBar = CustomAppBar(
+    CustomAppBar buildAppBar({bool showMenu = true}) => CustomAppBar(
       title: Semantics(
         header: true,
         child: Text(
@@ -216,20 +216,22 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
-      leading: Builder(
-        builder: (scaffoldContext) => Semantics(
-          button: true,
-          label: 'lbl_open_nav_menu'.tr,
-          child: IconButton(
-            icon: Icon(
-              Icons.menu,
-              color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
-            ),
-            onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
-            tooltip: 'lbl_open_nav_menu'.tr,
-          ),
-        ),
-      ),
+      leading: showMenu
+          ? Builder(
+              builder: (scaffoldContext) => Semantics(
+                button: true,
+                label: 'lbl_open_nav_menu'.tr,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.menu,
+                    color: isDarkMode ? Theme.of(context).colorScheme.onSurface : theme.colorScheme.primary,
+                  ),
+                  onPressed: () => Scaffold.of(scaffoldContext).openDrawer(),
+                  tooltip: 'lbl_open_nav_menu'.tr,
+                ),
+              ),
+            )
+          : null,
       centerTitle: true,
       actions: [
         Semantics(
@@ -356,6 +358,7 @@ class _HomeScreenState extends State<HomeScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final isLarge = constraints.maxWidth > 900;
+        final appBar = buildAppBar(showMenu: !isLarge);
 
         if (isLarge) {
           return Scaffold(

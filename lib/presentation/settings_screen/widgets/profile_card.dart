@@ -75,7 +75,7 @@ class ProfileCard extends StatelessWidget {
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () => Navigator.pushNamed(context, AppRoutes.cloudSyncPage),
+              onTap: () => NavigatorService.pushNamed(AppRoutes.cloudSyncPage),
               child: Padding(
                 padding: const EdgeInsetsDirectional.all(16),
                 child: Row(

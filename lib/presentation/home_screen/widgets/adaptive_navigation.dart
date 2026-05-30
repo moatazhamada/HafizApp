@@ -107,7 +107,13 @@ class AdaptiveNavigationRail extends StatelessWidget {
 
     return NavigationRail(
       selectedIndex: selectedIndex != null && selectedIndex! < _destinations.length ? selectedIndex : null,
-      onDestinationSelected: onDestinationSelected,
+      onDestinationSelected: (index) {
+        // Skip the invisible spacer destination (index == _destinations.length)
+        // and remap indices after it so they align with the drawer's indices.
+        if (index == _destinations.length) return;
+        final remapped = index > _destinations.length ? index - 1 : index;
+        onDestinationSelected(remapped);
+      },
       backgroundColor: colorScheme.surface,
       labelType: NavigationRailLabelType.all,
       leading: Padding(

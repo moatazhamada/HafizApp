@@ -207,9 +207,13 @@ class _AboutScreenState extends State<AboutScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('about_title'.tr)),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLarge = constraints.maxWidth > 900;
+          final horizontalPadding = isLarge ? 32.0 : 16.0;
+          final body = ListView(
+            padding: EdgeInsets.all(horizontalPadding),
+            children: [
           Text(
             'app_name'.tr,
             style: theme.textTheme.titleLarge,
@@ -412,6 +416,17 @@ class _AboutScreenState extends State<AboutScreen> {
             const MusaliPromoCard(),
           ],
         ],
+      );
+          if (isLarge) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: body,
+              ),
+            );
+          }
+          return body;
+        },
       ),
     );
   }
