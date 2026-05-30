@@ -14,6 +14,11 @@
       "target": "terms",
       "public": "terms",
       "ignore": ["firebase.json", "**/.*"]
+    },
+    {
+      "target": "support",
+      "public": "support",
+      "ignore": ["firebase.json", "**/.*"]
     }
   ]
 }
