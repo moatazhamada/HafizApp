@@ -534,12 +534,11 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = AppColors.of(context);
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: colors.scaffoldBackground,
-        bottomNavigationBar: surah != null
-            ? SurahNavigationBar(surah: surah!, onNavigate: _navigateToSurah)
-            : null,
+    return Scaffold(
+      backgroundColor: colors.scaffoldBackground,
+      bottomNavigationBar: surah != null
+          ? SurahNavigationBar(surah: surah!, onNavigate: _navigateToSurah)
+          : null,
         body: PopScope(
           canPop: true,
           onPopInvokedWithResult: (didPop, result) {
@@ -833,8 +832,7 @@ class _SurahScreenState extends State<SurahScreen> with WidgetsBindingObserver {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   void _scrollToVerseWithRetry(

@@ -380,16 +380,14 @@ class _HomeScreenState extends State<HomeScreen>
           );
         }
 
-        return SafeArea(
-          child: Scaffold(
-            backgroundColor: theme.scaffoldBackgroundColor,
-            drawer: AdaptiveNavigationDrawer(
-              onDestinationSelected: (index) =>
-                  _onNavDestinationSelected(context, index),
-            ),
-            appBar: appBar,
-            body: bodyContent,
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          drawer: AdaptiveNavigationDrawer(
+            onDestinationSelected: (index) =>
+                _onNavDestinationSelected(context, index),
           ),
+          appBar: appBar,
+          body: bodyContent,
         );
       },
     );

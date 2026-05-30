@@ -9,7 +9,12 @@ DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
 DART_DEFINES_PRELIVE_FILE = File.join(PROJECT_ROOT, ".dart_defines.prelive.json")
 DART_DEFINES_PRELIVE_ARG = "--dart-define-from-file=#{DART_DEFINES_PRELIVE_FILE}"
 
-IPA_PATH = File.join(PROJECT_ROOT, "build/ios/ipa/Hafiz.ipa")
+# `flutter build ipa` names the file after the pubspec `name:` (hafiz_app.ipa),
+# so resolve the most recently built .ipa rather than hardcoding the name.
+IPA_DIR = File.join(PROJECT_ROOT, "build/ios/ipa")
+def ipa_path
+  Dir.glob(File.join(IPA_DIR, "*.ipa")).max_by { |f| File.mtime(f) }
+end
 
 default_platform(:ios)
 
@@ -62,7 +67,7 @@ platform :ios do
   lane :build do
     ensure_dart_defines
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build ios --release --no-codesign #{DART_DEFINES_ARG}")
+      sh("flutter build ios --release --no-codesign --flavor production #{DART_DEFINES_ARG}")
     end
   end
 
@@ -70,10 +75,22 @@ platform :ios do
   lane :build_ipa do
     ensure_dart_defines
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build ipa --release #{DART_DEFINES_ARG}")
+      sh("flutter build ipa --release --flavor production #{DART_DEFINES_ARG}")
     end
     UI.success("✅ IPA built successfully!")
-    UI.message("Output: #{IPA_PATH}")
+    UI.message("Output: #{ipa_path}")
+  end
+
+  # App Store Connect API key from environment (no passwords / 2FA).
+  # Set: APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_ISSUER_ID,
+  #      APP_STORE_CONNECT_API_KEY_FILEPATH (path to the downloaded .p8)
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+      key_filepath: ENV.fetch("APP_STORE_CONNECT_API_KEY_FILEPATH"),
+      in_house: false,
+    )
   end
 
   desc "Upload to TestFlight (Beta)"
@@ -81,7 +98,8 @@ platform :ios do
     build_ipa
 
     upload_to_testflight(
-      ipa: IPA_PATH,
+      api_key: asc_api_key,
+      ipa: ipa_path,
       skip_waiting_for_build_processing: true,
       notify_external_testers: false,
     )
@@ -94,7 +112,8 @@ platform :ios do
     build_ipa
 
     upload_to_app_store(
-      ipa: IPA_PATH,
+      api_key: asc_api_key,
+      ipa: ipa_path,
       skip_metadata: false,
       skip_screenshots: false,
       skip_app_version_update: false,
@@ -143,7 +162,7 @@ platform :ios do
   lane :build_prelive do
     UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build ios --release --no-codesign #{DART_DEFINES_PRELIVE_ARG}")
+      sh("flutter build ios --release --no-codesign --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
     end
     UI.success("✅ Prelive iOS build completed!")
   end
@@ -152,7 +171,7 @@ platform :ios do
   lane :build_prelive_ipa do
     UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build ipa --release #{DART_DEFINES_PRELIVE_ARG}")
+      sh("flutter build ipa --release --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
     end
     UI.success("✅ Prelive IPA built successfully!")
   end
