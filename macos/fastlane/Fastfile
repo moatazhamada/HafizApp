@@ -41,6 +41,36 @@ def asc_api_key
 end
 
 platform :mac do
+  CERTS_DIR = File.join(PROJECT_ROOT, "macos/fastlane/certs")
+  PROFILES_DIR = File.join(PROJECT_ROOT, "macos/fastlane/profiles")
+  MAC_APP_IDENTIFIER = "com.houseofalgorithms.hafiz"
+  MAC_TEAM_ID = "7MFPUHA7YR"
+
+  desc "Create macOS App Store signing assets (installer cert + profile) via ASC API key"
+  lane :setup_signing do
+    key = asc_api_key
+
+    # Mac App Store provisioning profile FIRST — it must reference an *application*
+    # signing cert (the existing "Apple Distribution"), so it has to run before the
+    # installer-cert step leaks its CERT_CERTIFICATE_ID into the lane context.
+    get_provisioning_profile(
+      platform: "macos",
+      app_identifier: MAC_APP_IDENTIFIER,
+      api_key: key,
+      output_path: PROFILES_DIR,
+    )
+
+    # Installer cert (signs the .pkg) — the only signing asset that was actually missing.
+    cert(
+      platform: "macos",
+      type: "mac_installer_distribution",
+      api_key: key,
+      output_path: CERTS_DIR,
+    )
+
+    UI.success("✅ macOS signing assets ready (certs/ + profiles/)")
+  end
+
   desc "Build macOS app"
   lane :build do
     ensure_dart_defines
@@ -63,6 +93,20 @@ platform :mac do
       export_method: "app-store",
       output_directory: File.join(PROJECT_ROOT, "build/macos"),
       output_name: "hafiz_app_macos",
+      # The macOS Runner target has no DEVELOPMENT_TEAM, which makes -exportArchive fail
+      # with "No Team Found in Archive". Inject it into the archive step.
+      xcargs: "DEVELOPMENT_TEAM=#{MAC_TEAM_ID}",
+      export_team_id: MAC_TEAM_ID,
+      export_options: {
+        method: "app-store",
+        teamID: MAC_TEAM_ID,
+        signingStyle: "manual",
+        provisioningProfiles: {
+          MAC_APP_IDENTIFIER => "com.houseofalgorithms.hafiz AppStore",
+        },
+        signingCertificate: "Apple Distribution",
+        installerSigningCertificate: "3rd Party Mac Developer Installer",
+      },
     )
   end
 
@@ -76,7 +120,7 @@ platform :mac do
     upload_to_testflight(
       api_key: asc_api_key,
       pkg: pkg,
-      platform: "osx",
+      app_platform: "osx",
       skip_waiting_for_build_processing: true,
       notify_external_testers: false,
     )

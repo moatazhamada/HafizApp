@@ -5,3 +5,7 @@
 # Xcode-related
 **/dgph
 **/xcuserdata/
+
+# fastlane signing assets (private key + provisioning profile)
+fastlane/certs/
+fastlane/profiles/
