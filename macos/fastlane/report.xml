@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="fastlane.lanes">
+    
+    
+    
+      
+      <testcase classname="fastlane.lanes" name="0: Switch to mac build_pkg lane" time="0.000179">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="1: flutter build macos --release --dart-define-from-file=/Users/mm/Main/Projects/Android/HafizApp/.dart_defines.production.json" time="28.901547">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="2: gym" time="111.069757">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="3: app_store_connect_api_key" time="0.003594">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="4: upload_to_testflight" time="254.97099">
+        
+      </testcase>
+    
+  </testsuite>
+</testsuites>

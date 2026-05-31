@@ -11,6 +11,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:audio_service/audio_service.dart';
+import '../../core/audio/quran_audio_handler.dart';
 import '../config/qf_api_config.dart';
 import '../../domain/repository/hifz_repository.dart';
 import '../notifications/notification_service.dart';
@@ -343,6 +345,22 @@ class AppInitializer {
         error: e,
         stackTrace: stackTrace,
       );
+    }
+
+    // 9. Audio Service – must run after first frame; can hang on macOS
+    // if initialized before runApp(), blocking the splash entirely.
+    try {
+      await AudioService.init(
+        builder: () => QuranAudioHandler(),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.hafiz.app.hafiz_app.audio',
+          androidNotificationChannelName: 'Quran Recitation',
+          androidNotificationOngoing: true,
+          androidStopForegroundOnPause: true,
+        ),
+      );
+    } catch (e) {
+      Logger.warning('AudioService init failed: $e', feature: 'Audio');
     }
   }
 
