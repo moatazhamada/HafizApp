@@ -393,16 +393,26 @@ class _BootstrapAppState extends State<BootstrapApp>
 
   Future<void> _init() async {
     final initializer = AppInitializer();
-    final success = await initializer.init().timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        Logger.error(
-          'App initialization timed out after 15 seconds',
-          feature: 'Bootstrap',
-        );
-        return false;
-      },
-    );
+    var success = false;
+    try {
+      success = await initializer.init().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          Logger.error(
+            'App initialization timed out after 15 seconds',
+            feature: 'Bootstrap',
+          );
+          return false;
+        },
+      );
+    } catch (e) {
+      Logger.error(
+        'App initialization failed: $e',
+        feature: 'Bootstrap',
+      );
+      success = false;
+      initializer.error = initializer.error ?? e.toString();
+    }
 
     if (!mounted) return;
 

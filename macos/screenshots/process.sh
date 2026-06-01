@@ -27,7 +27,7 @@ for f in "${files[@]}"; do
   w=$(sips -g pixelWidth  "$f" | awk '/pixelWidth/{print $2}')
   h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
   read nw nh < <(awk -v w="$w" -v h="$h" -v TW="$TW" -v TH="$TH" \
-    'BEGIN{s=TW/w; if(TH/h<s)s=TH/h; printf "%d %d", (w*s)+0.5, (h*s)+0.5}')
+    'BEGIN{s=TW/w; if(TH/h<s)s=TH/h; printf "%d %d\n", (w*s)+0.5, (h*s)+0.5}')
   out="$OUT/$(printf '%02d' "$i")_$(basename "${f%.*}").png"
   sips -s format png "$f" --out "$out" >/dev/null
   sips --resampleHeightWidth "$nh" "$nw" "$out" --out "$out" >/dev/null
