@@ -75,7 +75,7 @@ platform :mac do
   lane :build do
     ensure_dart_defines
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build macos --release #{DART_DEFINES_ARG}")
+      sh("flutter build macos --release --config-only #{DART_DEFINES_ARG}")
     end
   end
 
@@ -84,7 +84,7 @@ platform :mac do
     ensure_dart_defines
 
     Dir.chdir(PROJECT_ROOT) do
-      sh("flutter build macos --release #{DART_DEFINES_ARG}")
+      sh("flutter build macos --release --config-only #{DART_DEFINES_ARG}")
     end
 
     gym(
