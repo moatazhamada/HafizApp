@@ -15,7 +15,15 @@ class NavigatorService {
       await SchedulerBinding.instance.endOfFrame;
     }
 
-    return navigator.pushNamed(routeName, arguments: arguments);
+    try {
+      return await navigator.pushNamed(routeName, arguments: arguments);
+    } on FlutterError catch (e) {
+      // Silently drop navigation if the navigator is locked (e.g. mid-transition)
+      if (e.message.contains('debugLocked')) {
+        return null;
+      }
+      rethrow;
+    }
   }
 
   static void goBack() {

@@ -59,8 +59,7 @@ class SurfaceSuggestionBanner extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.close, size: 18),
                       onPressed: onDismiss,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      tooltip: 'lbl_dismiss'.tr,
                     ),
                   ],
                 ),

@@ -6,6 +6,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
+import '../../widgets/loading_indicator.dart';
 
 class RecitationErrorScreen extends StatelessWidget {
   const RecitationErrorScreen({super.key});
@@ -30,7 +31,7 @@ class RecitationErrorScreen extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is RecitationErrorLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingIndicator();
           } else if (state is RecitationErrorLoaded) {
             if (state.errors.isEmpty) {
               return Center(

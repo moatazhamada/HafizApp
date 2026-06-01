@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hafiz_app/data/datasource/random_verse/random_verse_remote_data_source.dart';
@@ -25,9 +26,12 @@ class HomeWidgetService {
   bool _isUpdating = false;
 
   Future<void> initialize() async {
+    // Home widget is not supported on macOS.
+    if (!kIsWeb && Platform.isMacOS) return;
+
     try {
-      // setAppGroupId is only needed on iOS/macOS.
-      if (Platform.isIOS || Platform.isMacOS) {
+      // setAppGroupId is only needed on iOS.
+      if (Platform.isIOS) {
         await HomeWidget.setAppGroupId('group.com.hafiz.app');
       }
 

@@ -23,20 +23,12 @@
                                     <constraint firstAttribute="height" constant="150" id="logo-height"/>
                                 </constraints>
                             </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hafiz" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="app-name-label">
-                                <rect key="frame" x="121.66666666666669" y="466" width="150" height="40"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="32"/>
-                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
-                        <color key="backgroundColor" red="0.0" green="0.40392156862745098" blue="0.32941176470588235" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.10980392156862745" green="0.23921568627450981" blue="0.17254901960784313" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
-                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-50" id="logo-center-y"/>
-                            <constraint firstItem="app-name-label" firstAttribute="top" secondItem="YRO-k0-Ey4" secondAttribute="bottom" constant="20" id="label-top"/>
-                            <constraint firstItem="app-name-label" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="label-center-x"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="logo-center-y"/>
                         </constraints>
                     </view>
                 </viewController>

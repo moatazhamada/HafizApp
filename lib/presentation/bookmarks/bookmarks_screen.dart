@@ -7,6 +7,8 @@ import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../core/utils/surah_name_formatter.dart';
 import '../../widgets/shimmer_loading.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/error_state.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -34,6 +36,8 @@ class BookmarksScreen extends StatelessWidget {
         ),
       ),
       body: BlocConsumer<BookmarkBloc, BookmarkState>(
+        buildWhen: (previous, current) =>
+            previous.runtimeType != current.runtimeType,
         listener: (context, state) {
           if (state is BookmarkLoaded && state.feedbackMessage != null) {
             SnackBarHelper.show(
@@ -53,31 +57,9 @@ class BookmarksScreen extends StatelessWidget {
             return const ShimmerLoadingList();
           } else if (state is BookmarkLoaded) {
             if (state.bookmarks.isEmpty) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ExcludeSemantics(
-                        child: Icon(
-                          Icons.bookmark_outline,
-                          size: 64,
-                          color: AppColors.of(context).notStartedStatus.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'msg_no_bookmarks'.tr,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return EmptyState(
+                icon: Icons.bookmark_outline,
+                message: 'msg_no_bookmarks'.tr,
               );
             }
             return RefreshIndicator(
@@ -240,16 +222,11 @@ class BookmarksScreen extends StatelessWidget {
             ),
             );
           } else if (state is BookmarkError) {
-            return Center(
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  '${'lbl_error'.tr}: ${state.message.tr}',
-                  style: TextStyle(
-                    color: AppColors.of(context).needsReviewStatus,
-                  ),
-                ),
-              ),
+            return ErrorState(
+              message: '${'lbl_error'.tr}: ${state.message.tr}',
+              onRetry: () {
+                context.read<BookmarkBloc>().add(const LoadBookmarksEvent());
+              },
             );
           }
           return const SizedBox();

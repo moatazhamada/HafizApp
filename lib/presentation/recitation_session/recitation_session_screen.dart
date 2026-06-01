@@ -5,6 +5,7 @@ import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_sessio
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_event.dart';
 import 'package:hafiz_app/presentation/recitation_session/bloc/recitation_session_state.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 class RecitationSessionScreen extends StatelessWidget {
   const RecitationSessionScreen({super.key});
@@ -19,13 +20,12 @@ class RecitationSessionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
       appBar: AppBar(title: Text('lbl_session_history'.tr)),
       body: BlocBuilder<RecitationSessionBloc, RecitationSessionState>(
         builder: (context, state) {
           if (state is RecitationSessionLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingIndicator();
           }
           if (state is RecitationSessionError) {
             return Center(
@@ -80,7 +80,6 @@ class RecitationSessionScreen extends StatelessWidget {
           }
           return const SizedBox.shrink();
         },
-      ),
       ),
     );
   }

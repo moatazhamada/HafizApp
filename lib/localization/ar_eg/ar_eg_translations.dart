@@ -232,10 +232,10 @@ final Map<String, String> arEg = {
       'يرجى تسجيل الدخول مرة أخرى لمنح الأذونات المطلوبة من الخادم.',
 
   // Musali Teaser
-  'musali_app_name': 'مُصَالي',
-  'musali_status': 'قريباً',
-  'musali_teaser_desc': 'ما يبدأ بشيء مألوف ينتهي في مكان تماماً غير متوقع.',
-  'musali_watch_now': 'شاهد الآن',
+  'musali_app_name': 'مُصَلي',
+  'musali_status': 'من نفس المطوّر',
+  'musali_teaser_desc': 'متتبع صلاة تفاعلي يساعدك على بناء عاداتك الروحية من خلال حديقة افتراضية تنمو مع كل صلاة.',
+  'musali_watch_now': 'حمّل مُصَلي',
   'lbl_skip': 'تخطي',
   'lbl_next': 'التالي',
   'lbl_next_surah': 'السورة التالية',
@@ -363,7 +363,7 @@ final Map<String, String> arEg = {
   'lbl_storage': 'التخزين',
   'lbl_clear_mushaf_cache': 'مسح صور المصحف',
   'msg_clear_mushaf_cache_desc':
-      'حرر مساحة بحذف صور صفحات المصحف المخزنة',
+      'حرر مساحة بحذف صور صفحات المصحف المخزنة ({size})',
   'msg_clear_mushaf_cache_confirm': 'سيؤدي هذا إلى إزالة جميع صور المصحف المخزنة. سيتم إعادة تنزيلها عند عرضها مرة أخرى.',
   'msg_mushaf_cache_cleared': 'تم مسح ذاكرة المصحف بنجاح',
   'msg_cache_cleared': 'تم مسح ذاكرة الصور',

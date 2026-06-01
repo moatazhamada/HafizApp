@@ -5,9 +5,23 @@
 **Maintain your daily connection with the Quran — read, memorize, perfect your recitation, and track your progress.**
 
 [![Google Play](https://img.shields.io/badge/Google_Play-Download-green?logo=google-play)](https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app)
-[![YouTube](https://img.shields.io/badge/YouTube-Demo_Video-red?logo=youtube)](https://youtu.be/A9g0FEGydnY)
+[![YouTube](https://img.shields.io/badge/YouTube-Demo_v3.3.0-red?logo=youtube)](https://youtu.be/gk_molLx7yE)
+[![YouTube](https://img.shields.io/badge/YouTube-Demo_v3.1.0-red?logo=youtube)](https://youtu.be/A9g0FEGydnY)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.38-02569B?logo=flutter)](https://flutter.dev)
+
+---
+
+## Get the App
+
+| Platform | Link | Version |
+|---|---|---|
+| **Google Play** | [Play Store](https://play.google.com/store/apps/details?id=com.hafiz.app.hafiz_app) | v3.3.0 (rolling out) |
+| **Internal Testing** | [Join on Play Console](https://play.google.com/apps/internaltest/4701498538025179659) | v3.3.0+26 |
+| **Firebase Distribution** | [Become a Tester](https://appdistribution.firebase.dev/i/666b22e0b5074ff4) | v3.3.0+26 |
+| **Direct APK** | [Download APK](https://github.com/moatazhamada/HafizApp/raw/hackathon-demo-page/appbundle/hafiz-3.3.0+26.apk) | v3.3.0+26 |
+
+> **Seeing an old version on the store?** Rollouts can be gradual by region. If you still see v3.1.0, use the Internal Testing, Firebase Distribution, or direct APK links above to get v3.3.0+26 immediately.
 
 ---
 
@@ -16,11 +30,12 @@
 ### 📖 Reading
 - **Mushaf View** — 604-page horizontal RTL PageView with 3 rendering modes (text, ayah images, QF glyph code_v2), jump-to-page, surah info overlay
 - **Surah-by-Surah** — Per-verse reading with inline translation toggle, auto-scroll (0.25x–3.0x), juz index grid
-- **Audio Player** — Verse-by-verse playback with speed control (0.5x–2x), sleep timer, loop
+- **Audio Player** — Verse-by-verse playback with speed control (0.5x–2x), sleep timer, loop, **background playback with system media controls**
 
 ### 🧠 Memorization
 - **Hifz Mode** — Hide/reveal verses for self-testing, tap to reveal individual verses
 - **Memorization Tracker** — Per-surah status (memorized/in-progress/not-started), spaced-repetition review scheduling
+- **Memorization Journal** — Track Hifz progress with spaced-repetition scheduling and due-for-review reminders
 - **Practice List** — Mark difficult verses, review them separately
 
 ### 🎙 Voice Verification
@@ -29,8 +44,10 @@
 - Supports on-device **Whisper** models (tiny/base/small), custom ASR endpoint, and sheikh audio coaching
 
 ### 📊 Progress Tracking
-- **Khatmah Tracker** — Daily reading goals with interactive presets (10/20/50/100/200 verses), today's progress ring
+- **Khatmah Tracker** — Daily reading goals with interactive presets (10/20/50/100/200 verses), today's progress ring, **Dua Khatm screen on completion**
 - **Streak Visualization** — Weekly heatmap + **cloud-reconciled streak** (local streak merged with Quran Foundation cloud streak)
+- **Activity Heatmap** — GitHub-style visualization of daily Quran reading activity synced with Quran.Foundation
+- **Reading Session Tracking** — Automatic tracking of reading duration and verses read, with weekly insights
 - **Memorization Dashboard** — Overall progress, due-for-review reminders, per-surah status cards
 - **Statistics** — Bookmark count, practice verse count, reading activity summary
 
@@ -38,15 +55,17 @@
 - **Bookmark Sync** — Bidirectional push/pull via QF Collections ("Hafiz Bookmarks")
 - **Activity Sync** — Daily reading activity reported to QF for streak computation
 - **Goals Sync** — Daily verse targets pushed to QF Goals API
-- **Verse Reflections** — Personal notes linked to specific verses via QF Post API
 - **OAuth2/OpenID Connect** — Secure authentication with PKCE, token refresh, "Delete My Data" support
 
 ### 🎨 UX
+- **Adaptive Home Surfaces** — Home screen adapts to Reader, Student, or Seeker archetypes based on behavior
+- **Onboarding Archetypes** — Choose your profile (Reader, Student, Seeker, Devotee) for a personalized experience
+- **Responsive / Tablet Support** — NavigationRail and optimized layouts on screens >900px
 - Shimmer loading skeletons on khatmah dashboard, bookmarks list, and surah screens
 - Haptic feedback on bookmark toggle, hifz mode reveal, voice verification results
 - Pull-to-refresh on khatmah dashboard and bookmarks
 - Error states with localized messages and retry buttons
-- Daily verse notification — start each day with a random Quran verse
+- **Smart Notifications** — Daily verse, reading reminders, and Surah Al-Kahf Friday notifications
 
 ### ⚙️ Settings
 - Language (English/Arabic/System) — all UI and Quran metadata localized

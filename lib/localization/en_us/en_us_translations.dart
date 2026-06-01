@@ -235,10 +235,10 @@ final Map<String, String> enUs = {
 
   // Musali Teaser
   'musali_app_name': 'Musali',
-  'musali_status': 'Coming Soon',
+  'musali_status': 'From the same developer',
   'musali_teaser_desc':
-      'What starts with something familiar ends up somewhere completely unexpected.',
-  'musali_watch_now': 'Watch Now',
+      'A gamified prayer tracker that helps you cultivate spiritual habits through a visual, growing garden.',
+  'musali_watch_now': 'Get Musali',
   'lbl_skip': 'Skip',
   'lbl_next': 'Next',
   'lbl_next_surah': 'Next Surah',
@@ -367,7 +367,7 @@ final Map<String, String> enUs = {
   'lbl_storage': 'Storage',
   'lbl_clear_mushaf_cache': 'Clear Mushaf Images',
   'msg_clear_mushaf_cache_desc':
-      'Free up space by deleting cached Mushaf page images',
+      'Free up space by deleting cached Mushaf page images ({size})',
   'msg_clear_mushaf_cache_confirm': 'This will remove all cached Mushaf images. They will be re-downloaded when you view them again.',
   'msg_mushaf_cache_cleared': 'Mushaf cache cleared successfully',
   'msg_cache_cleared': 'Image cache cleared',

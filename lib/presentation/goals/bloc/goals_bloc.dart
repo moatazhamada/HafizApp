@@ -8,6 +8,7 @@ import 'package:hafiz_app/domain/usecase/goals/get_todays_plan.dart';
 import 'package:hafiz_app/domain/usecase/goals/update_goal.dart';
 import 'package:hafiz_app/domain/usecase/goals/delete_goal.dart';
 import 'package:hafiz_app/injection_container.dart';
+import 'package:hafiz_app/core/utils/either_extensions.dart';
 import 'package:hafiz_app/presentation/auth/bloc/qf_auth_bloc.dart';
 
 part 'goals_event.dart';
@@ -117,7 +118,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         Logger.warning('Failed to update goal: ${failure.errorMessage}',
             feature: 'Goals');
         if (failure is InsufficientScopeFailure) _requestReLogin();
-        emit(GoalsActionError(failure.errorMessage));
+        emit(GoalsActionError(failure.localizedMessage));
       },
       (_) {
         Logger.info('Updated goal ${event.id}', feature: 'Goals');
@@ -142,7 +143,7 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         Logger.warning('Failed to delete goal: ${failure.errorMessage}',
             feature: 'Goals');
         if (failure is InsufficientScopeFailure) _requestReLogin();
-        emit(GoalsActionError(failure.errorMessage));
+        emit(GoalsActionError(failure.localizedMessage));
       },
       (_) {
         Logger.info('Deleted goal ${event.id}', feature: 'Goals');

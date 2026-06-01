@@ -1,0 +1,14 @@
+# Fastlane Appfile for Hafiz App (macOS)
+# Documentation: https://docs.fastlane.tools
+
+# The bundle identifier of your macOS app
+app_identifier("com.houseofalgorithms.hafiz")
+
+# Your Apple Developer Portal username
+apple_id(ENV["FASTLANE_APPLE_ID"] || "your-apple-id@example.com")
+
+# App Store Connect Team ID
+itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"] || "")
+
+# Developer Portal Team ID
+team_id(ENV["FASTLANE_TEAM_ID"] || "")

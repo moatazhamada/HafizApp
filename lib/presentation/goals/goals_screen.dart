@@ -3,8 +3,12 @@ import '../../core/app_export.dart';
 import '../../core/utils/input_formatters.dart';
 import '../../core/utils/input_validators.dart';
 import '../../injection_container.dart' as di;
-import 'bloc/goals_bloc.dart';
+import '../../widgets/loading_indicator.dart';
 import '../auth/bloc/qf_auth_bloc.dart';
+import 'bloc/goals_bloc.dart';
+import 'widgets/empty_plan_view.dart';
+import 'widgets/mushaf_hint.dart';
+import 'widgets/summary_header.dart';
 
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
@@ -59,7 +63,7 @@ class _GoalsView extends StatelessWidget {
             return BlocBuilder<GoalsBloc, GoalsState>(
               builder: (context, state) {
                 if (state is GoalsLoading || state is GoalsActionLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const LoadingIndicator();
                 }
 
                 if (state is GoalsError) {
@@ -72,7 +76,7 @@ class _GoalsView extends StatelessWidget {
 
                 if (state is GoalsLoaded) {
                   if (state.items.isEmpty) {
-                    return _EmptyPlanView(theme: theme);
+                    return EmptyPlanView(theme: theme);
                   }
                   return _PlanList(
                     items: state.items,
@@ -188,47 +192,6 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-class _EmptyPlanView extends StatelessWidget {
-  final ThemeData theme;
-  const _EmptyPlanView({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.event_note_rounded,
-              size: 64,
-              color: theme.colorScheme.primary.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'goals_no_plan'.tr,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'goals_no_plan_hint'.tr,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PlanList extends StatelessWidget {
   final List<PlanItem> items;
   final ThemeData theme;
@@ -248,135 +211,31 @@ class _PlanList extends StatelessWidget {
       onRefresh: () async {
         context.read<GoalsBloc>().add(LoadTodaysPlan());
       },
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: [
-          _SummaryHeader(items: items, colors: colors, theme: theme),
-          const SizedBox(height: 12),
-          if (mushafLabelKey != null) ...[
-            _MushafHint(mushafLabelKey: mushafLabelKey, theme: theme),
-            const SizedBox(height: 12),
-          ],
-          ...items.map(
-            (item) => _PlanItemCard(
-              item: item,
-              isDark: isDark,
-              colors: colors,
-              theme: theme,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryHeader extends StatelessWidget {
-  final List<PlanItem> items;
-  final AppColors colors;
-  final ThemeData theme;
-  const _SummaryHeader({
-    required this.items,
-    required this.colors,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final completed = items.where((i) {
-      final p = i.progress ?? 0;
-      final d = i.duration ?? 0;
-      return d > 0 && p >= d;
-    }).length;
-
-    return Card(
-      elevation: 0,
-      color: colors.primaryLight,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Icon(Icons.auto_stories_rounded, color: colors.primary, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'lbl_today_reading'.tr,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colors.primaryDark,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'goals_items_count'.tr.replaceAll(
-                      '{count}',
-                      '${items.length}',
-                    ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.primaryDark.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  if (completed > 0) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      '$completed ${'goals_completed'.tr.toLowerCase()}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.of(context).success,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+        itemCount: items.length + (mushafLabelKey != null ? 2 : 1),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SummaryHeader(items: items, colors: colors, theme: theme),
+                const SizedBox(height: 12),
+                if (mushafLabelKey != null) ...[
+                  MushafHint(mushafLabelKey: mushafLabelKey, theme: theme),
+                  const SizedBox(height: 12),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MushafHint extends StatelessWidget {
-  final String? mushafLabelKey;
-  final ThemeData theme;
-  const _MushafHint({this.mushafLabelKey, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colors.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.15),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 16,
-            color: colors.primary.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'goals_mushaf_hint'
-                  .tr
-                  .replaceAll('{mushaf}', mushafLabelKey?.tr ?? ''),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.primaryDark.withValues(alpha: 0.8),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+              ],
+            );
+          }
+          final item = items[index - 1];
+          return _PlanItemCard(
+            item: item,
+            isDark: isDark,
+            colors: colors,
+            theme: theme,
+          );
+        },
       ),
     );
   }

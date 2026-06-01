@@ -24,7 +24,7 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_21.toString()
         targetCompatibility = JavaVersion.VERSION_21.toString()
     }
-    
+
     val project = this
     fun configureNdk() {
         if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
@@ -39,6 +39,13 @@ subprojects {
     } else {
         project.afterEvaluate {
             configureNdk()
+        }
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.glance:glance-appwidget:1.1.1")
+            force("androidx.glance:glance:1.1.1")
         }
     }
 }

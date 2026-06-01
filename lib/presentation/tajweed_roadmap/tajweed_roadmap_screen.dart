@@ -3,6 +3,7 @@ import 'package:hafiz_app/core/app_export.dart';
 import 'package:hafiz_app/core/tajweed/tajweed_models.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'bloc/tajweed_roadmap_bloc.dart';
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 class TajweedRoadmapScreen extends StatelessWidget {
   const TajweedRoadmapScreen({super.key});
@@ -21,7 +22,7 @@ class TajweedRoadmapScreen extends StatelessWidget {
       body: BlocBuilder<TajweedRoadmapBloc, TajweedRoadmapState>(
         builder: (context, state) {
           if (state is TajweedRoadmapLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingIndicator();
           }
           if (state is TajweedRoadmapError) {
             return Center(

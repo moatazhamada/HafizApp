@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import 'package:hafiz_app/core/quran_index/mushaf_page_index.dart';
@@ -69,7 +70,11 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+        macOS: iosSettings,
+      ),
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
   }
@@ -113,7 +118,21 @@ class NotificationService {
         return result ?? false;
       }
 
-      // Other platforms (macOS, Linux, Windows) — assume granted
+      if (defaultTargetPlatform == TargetPlatform.macOS) {
+        final macOSPlugin = _plugin
+            .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin
+            >();
+        if (macOSPlugin == null) return true;
+        final result = await macOSPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return result ?? false;
+      }
+
+      // Other platforms (Linux, Windows) — assume granted
       return true;
     } catch (e) {
       Logger.warning(
@@ -165,17 +184,17 @@ class NotificationService {
     );
 
     final timeStr = pref.getDailyVerseTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 8;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 8);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _verseNotificationId,
-      title,
-      body,
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+    await _safeZonedSchedule(
+      id: _verseNotificationId,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
@@ -219,19 +238,19 @@ class NotificationService {
     final isAr = PrefUtils().getLocaleCode() == 'ar';
 
     final timeStr = pref.getReadingReminderTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 20;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 20);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _reminderNotificationId,
-      isAr ? 'وقت القرآن' : 'Time for Quran',
-      isAr
+    await _safeZonedSchedule(
+      id: _reminderNotificationId,
+      title: isAr ? 'وقت القرآن' : 'Time for Quran',
+      body: isAr
           ? 'حافظ على ورد القرآن اليومي \u2014 افتح حافظ'
           : 'Keep your daily reading habit alive \u2014 open Hafiz',
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.time,
     );
@@ -391,6 +410,63 @@ class NotificationService {
   /// Returns the appropriate schedule mode for Android.
   /// Falls back to [AndroidScheduleMode.inexactAllowWhileIdle] if exact alarms
   /// are not permitted (Android 12+ requires SCHEDULE_EXACT_ALARM permission).
+  /// Schedules a notification, catching exact-alarm permission errors and
+  /// retrying with an inexact schedule mode.
+  Future<void> _safeZonedSchedule({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails details,
+    required AndroidScheduleMode androidScheduleMode,
+    DateTimeComponents? matchDateTimeComponents,
+    String? payload,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        details,
+        androidScheduleMode: androidScheduleMode,
+        matchDateTimeComponents: matchDateTimeComponents,
+        payload: payload,
+      );
+    } on PlatformException catch (e) {
+      if (e.message?.contains('exact_alarms_not_permitted') == true) {
+        Logger.warning(
+          'Exact alarm permission revoked, falling back to inexact: $e',
+          feature: 'Notifications',
+        );
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          scheduledDate,
+          details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: matchDateTimeComponents,
+          payload: payload,
+        );
+      } else {
+        rethrow;
+      }
+    } on RangeError catch (e, stack) {
+      // Defensive breadcrumb to help identify the source of RangeErrors
+      // that may come from flutter_local_notifications internals.
+      Logger.error(
+        'RangeError during zonedSchedule '
+        '(id=$id, matchDateTimeComponents=$matchDateTimeComponents, '
+        'scheduledDate=${scheduledDate.toIso8601String()}): $e',
+        feature: 'Notifications',
+        error: e,
+        stackTrace: stack,
+      );
+      rethrow;
+    }
+  }
+
   Future<AndroidScheduleMode> _resolveScheduleMode() async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return AndroidScheduleMode.exactAllowWhileIdle;
@@ -456,19 +532,19 @@ class NotificationService {
 
     final isAr = PrefUtils().getLocaleCode() == 'ar';
     final timeStr = pref.getFridayKahfTime();
-    final parts = timeStr.split(':');
-    final hour = int.tryParse(parts[0]) ?? 6;
-    final minute = int.tryParse(parts[1]) ?? 0;
+    final parsedTime = _parseTimeString(timeStr, defaultHour: 6);
+    final hour = parsedTime.hour;
+    final minute = parsedTime.minute;
     final scheduledDate = _nextInstanceOfFridayTime(hour, minute);
 
-    await _plugin.zonedSchedule(
-      _kahfNotificationId,
-      isAr ? 'سورة الكهف' : 'Surah Al-Kahf',
-      isAr
+    await _safeZonedSchedule(
+      id: _kahfNotificationId,
+      title: isAr ? 'سورة الكهف' : 'Surah Al-Kahf',
+      body: isAr
           ? 'يوم الجمعة \u2014 اقرأ سورة الكهف قبل صلاة الجمعة'
           : 'It\'s Friday \u2014 read Surah Al-Kahf before Friday prayer',
-      scheduledDate,
-      const NotificationDetails(android: androidDetails),
+      scheduledDate: scheduledDate,
+      details: const NotificationDetails(android: androidDetails),
       androidScheduleMode: await _resolveScheduleMode(),
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: 'surah:18',
@@ -479,6 +555,23 @@ class NotificationService {
       feature: 'Notifications',
     );
     return true;
+  }
+
+  /// Safely parses a time string in "HH:mm" format.
+  /// Falls back to [defaultHour]:00 if malformed.
+  static ({int hour, int minute}) _parseTimeString(String timeStr, {required int defaultHour}) {
+    final parts = timeStr.split(':');
+    if (parts.length < 2) {
+      Logger.warning('Malformed time string: "$timeStr", using default $defaultHour:00', feature: 'Notifications');
+      return (hour: defaultHour, minute: 0);
+    }
+    final hour = int.tryParse(parts[0].trim());
+    final minute = int.tryParse(parts[1].trim());
+    if (hour == null || minute == null) {
+      Logger.warning('Invalid time values in "$timeStr", using default $defaultHour:00', feature: 'Notifications');
+      return (hour: defaultHour, minute: 0);
+    }
+    return (hour: hour.clamp(0, 23), minute: minute.clamp(0, 59));
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {

@@ -1,0 +1,178 @@
+# Fastlane Fastfile for Hafiz App (iOS)
+# Documentation: https://docs.fastlane.tools
+
+PROJECT_ROOT = ENV['PROJECT_ROOT'] || File.expand_path('../..', __dir__)
+
+DART_DEFINES_FILE = File.join(PROJECT_ROOT, ".dart_defines.production.json")
+DART_DEFINES_ARG = "--dart-define-from-file=#{DART_DEFINES_FILE}"
+
+DART_DEFINES_PRELIVE_FILE = File.join(PROJECT_ROOT, ".dart_defines.prelive.json")
+DART_DEFINES_PRELIVE_ARG = "--dart-define-from-file=#{DART_DEFINES_PRELIVE_FILE}"
+
+# `flutter build ipa` names the file after the pubspec `name:` (hafiz_app.ipa),
+# so resolve the most recently built .ipa rather than hardcoding the name.
+IPA_DIR = File.join(PROJECT_ROOT, "build/ios/ipa")
+def ipa_path
+  Dir.glob(File.join(IPA_DIR, "*.ipa")).max_by { |f| File.mtime(f) }
+end
+
+default_platform(:ios)
+
+platform :ios do
+  def get_version_name
+    pubspec = File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_line.split(":").last.strip.split("+").first
+  end
+
+  def get_version_code
+    pubspec = File.read(File.join(PROJECT_ROOT, "pubspec.yaml"))
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_line.split("+").last.strip
+  end
+
+  def ensure_dart_defines
+    if File.exist?(DART_DEFINES_FILE)
+      UI.success("✅ Found dart defines at: #{DART_DEFINES_FILE}")
+      return
+    end
+
+    client_id = ENV['QF_CLIENT_ID']
+    client_secret = ENV['QF_CLIENT_SECRET']
+
+    if client_id && client_secret
+      require 'json'
+      defines = {
+        "flavor" => "production",
+        "QF_CLIENT_ID" => client_id,
+        "QF_CLIENT_SECRET" => client_secret,
+        "QF_PRODUCTION" => "true"
+      }
+      File.write(DART_DEFINES_FILE, JSON.pretty_generate(defines))
+      UI.success("✅ Generated dart defines from environment")
+    else
+      UI.error("❌ Dart defines not found!")
+      UI.user_error!("Missing QF credentials — cannot build")
+    end
+  end
+
+  desc "Run Flutter tests"
+  lane :test do
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter test")
+    end
+  end
+
+  desc "Build iOS app (no signing)"
+  lane :build do
+    ensure_dart_defines
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build ios --release --no-codesign --flavor production #{DART_DEFINES_ARG}")
+    end
+  end
+
+  desc "Build iOS archive and IPA"
+  lane :build_ipa do
+    ensure_dart_defines
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build ipa --release --flavor production #{DART_DEFINES_ARG}")
+    end
+    UI.success("✅ IPA built successfully!")
+    UI.message("Output: #{ipa_path}")
+  end
+
+  # App Store Connect API key from environment (no passwords / 2FA).
+  # Set: APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_ISSUER_ID,
+  #      APP_STORE_CONNECT_API_KEY_FILEPATH (path to the downloaded .p8)
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+      key_filepath: ENV.fetch("APP_STORE_CONNECT_API_KEY_FILEPATH"),
+      in_house: false,
+    )
+  end
+
+  desc "Upload to TestFlight (Beta)"
+  lane :deploy_testflight do
+    build_ipa
+
+    upload_to_testflight(
+      api_key: asc_api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+    )
+
+    UI.success("🚀 Uploaded to TestFlight!")
+  end
+
+  desc "Upload to App Store (Production)"
+  lane :deploy_app_store do
+    build_ipa
+
+    upload_to_app_store(
+      api_key: asc_api_key,
+      ipa: ipa_path,
+      skip_metadata: false,
+      skip_screenshots: false,
+      skip_app_version_update: false,
+      submit_for_review: false,
+      force: true,
+    )
+
+    UI.success("🚀 Uploaded to App Store Connect!")
+    UI.important("Remember to submit for review in App Store Connect.")
+  end
+
+  desc "Increment version code in pubspec.yaml"
+  lane :bump_version do
+    pubspec_path = File.join(PROJECT_ROOT, "pubspec.yaml")
+    pubspec = File.read(pubspec_path)
+
+    version_line = pubspec.lines.find { |line| line.start_with?("version:") }
+    version_parts = version_line.strip.split(":").last.strip.split("+")
+    version_name = version_parts.first
+    version_code = version_parts.last.to_i
+
+    new_version_code = version_code + 1
+    new_version_line = "version: #{version_name}+#{new_version_code}\n"
+
+    new_pubspec = pubspec.gsub(version_line, new_version_line)
+    File.write(pubspec_path, new_pubspec)
+
+    UI.success("Version bumped to #{version_name}+#{new_version_code}")
+  end
+
+  desc "Full CI/CD pipeline: Test, Build, Deploy to TestFlight"
+  lane :ci_testflight do
+    bump_version
+    deploy_testflight
+  end
+
+  desc "Full CI/CD pipeline: Test, Build, Deploy to App Store"
+  lane :ci_app_store do
+    bump_version
+    deploy_app_store
+  end
+
+  # --- Prelive (staging) environment lanes ---
+
+  desc "Build iOS for prelive environment"
+  lane :build_prelive do
+    UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build ios --release --no-codesign --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
+    end
+    UI.success("✅ Prelive iOS build completed!")
+  end
+
+  desc "Build prelive IPA"
+  lane :build_prelive_ipa do
+    UI.user_error!("Prelive dart defines not found: #{DART_DEFINES_PRELIVE_FILE}") unless File.exist?(DART_DEFINES_PRELIVE_FILE)
+    Dir.chdir(PROJECT_ROOT) do
+      sh("flutter build ipa --release --flavor prelive #{DART_DEFINES_PRELIVE_ARG}")
+    end
+    UI.success("✅ Prelive IPA built successfully!")
+  end
+end

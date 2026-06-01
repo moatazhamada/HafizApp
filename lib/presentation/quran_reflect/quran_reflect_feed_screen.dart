@@ -4,6 +4,7 @@ import '../../core/app_export.dart';
 import '../../data/datasource/qf_post/qf_post_remote_data_source.dart';
 import '../../injection_container.dart';
 import '../home_screen/widgets/staggered_list_item.dart';
+import '../../widgets/loading_indicator.dart';
 
 class QuranReflectFeedScreen extends StatefulWidget {
   const QuranReflectFeedScreen({super.key});
@@ -65,7 +66,7 @@ class _QuranReflectFeedScreenState extends State<QuranReflectFeedScreen> {
 
   Widget _buildBody(ThemeData theme, ColorScheme colorScheme) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingIndicator();
     }
 
     if (_error != null) {

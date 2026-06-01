@@ -1,0 +1,20 @@
+# Fastlane Appfile for Hafiz App (iOS)
+# Documentation: https://docs.fastlane.tools
+
+# The bundle identifier of your iOS app
+app_identifier("com.houseofalgorithms.hafiz")
+
+# Your Apple Developer Portal username
+# Set via environment variable or prompt
+apple_id(ENV["FASTLANE_APPLE_ID"] || "your-apple-id@example.com")
+
+# App Store Connect Team ID (leave empty for personal teams)
+# Set via environment variable: FASTLANE_ITC_TEAM_ID
+itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"] || "")
+
+# Developer Portal Team ID
+# Set via environment variable: FASTLANE_TEAM_ID
+team_id(ENV["FASTLANE_TEAM_ID"] || "")
+
+# For prelive/staging flavor, override app_identifier:
+# app_identifier("com.houseofalgorithms.hafiz.prelive")

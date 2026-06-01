@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/error_state.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/utils/input_formatters.dart';
 import '../../injection_container.dart';
@@ -10,6 +12,7 @@ import 'package:hafiz_app/core/quran_index/quran_surah.dart';
 import '../../core/utils/number_converter.dart';
 import '../../core/utils/rtl_utils.dart';
 import '../../widgets/surah_list_item.dart';
+import '../../widgets/loading_indicator.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -27,7 +30,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _searchBloc = sl<SearchBloc>();
+    try {
+      _searchBloc = sl<SearchBloc>();
+    } catch (e, s) {
+      Logger.error('Failed to create SearchBloc: $e\n$s', feature: 'Search');
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -124,9 +131,19 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
+          buildWhen: (previous, current) {
+            // Skip rebuilds when the same loading state is re-emitted
+            // (e.g. debounced keystrokes).
+            if (previous.runtimeType != current.runtimeType) return true;
+            if (current is SearchLoaded && previous is SearchLoaded) {
+              return current.results.length != previous.results.length ||
+                  current.verseResults.length != previous.verseResults.length;
+            }
+            return true;
+          },
           builder: (context, state) {
             if (state is SearchLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const LoadingIndicator();
             } else if (state is SearchLoaded) {
               final totalResults =
                   state.results.length + state.verseResults.length;
@@ -198,7 +215,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         return Semantics(
                           button: true,
                           label: '${surah.nameEnglish}, ${surah.nameArabic}',
-                          child: InkWell(
+                          child: SurahListItem(
+                            surahId: surah.id,
+                            nameEnglish: surah.nameEnglish,
+                            nameArabic: surah.nameArabic,
                             onTap: () {
                               unawaited(
                                 sl<AnalyticsService>().logSearchResultTapped(
@@ -212,11 +232,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                 arguments: surah,
                               );
                             },
-                            child: SurahListItem(
-                              surahId: surah.id,
-                              nameEnglish: surah.nameEnglish,
-                              nameArabic: surah.nameArabic,
-                            ),
                           ),
                         );
                       }, childCount: state.results.length),
@@ -249,13 +264,10 @@ class _SearchScreenState extends State<SearchScreen> {
                     SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final verse = state.verseResults[index];
-                        final surah = QuranIndex.quranSurahs.firstWhere(
-                          (s) => s.id == verse.chapterNumber,
-                            orElse: () {
-                              Logger.warning('Invalid surahId: ${verse.chapterNumber}', feature: 'Search');
-                              return Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
-                            },
-                        );
+                        final surahIdx = verse.chapterNumber - 1;
+                        final surah = surahIdx >= 0 && surahIdx < QuranIndex.quranSurahs.length
+                            ? QuranIndex.quranSurahs[surahIdx]
+                            : Surah(verse.chapterNumber, 'Surah ${verse.chapterNumber}', 'سورة ${verse.chapterNumber}');
 
                         final subtitleText = verse.translationText != null &&
                                 verse.translationText!.isNotEmpty
@@ -381,79 +393,21 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               );
             } else if (state is SearchEmpty) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.search_off_rounded,
-                        size: 64,
-                        color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'msg_no_results'.tr,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return EmptyState(
+                icon: Icons.search_off_rounded,
+                message: 'msg_no_results'.tr,
               );
             } else if (state is SearchError) {
-              return Center(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          size: 64,
-                          color: isDark
-                              ? AppColors.of(context).needsReviewStatus.withValues(alpha: 0.7)
-                              : AppColors.of(context).needsReviewStatus.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '${'lbl_error'.tr}: ${state.message}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.of(context).needsReviewStatus,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              return ErrorState(
+                icon: Icons.error_outline_rounded,
+                message: '${'lbl_error'.tr}: ${state.message}',
+                onRetry: () => _searchBloc.add(SearchQueryChanged(_searchController.text)),
               );
             }
             // Initial state
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    size: 64,
-                    color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'msg_search_hint'.tr,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyState(
+              icon: Icons.search_rounded,
+              message: 'msg_search_hint'.tr,
             );
           },
         ),

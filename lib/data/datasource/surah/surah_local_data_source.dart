@@ -26,7 +26,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 
   /// LRU query-result cache (max 50 entries).
   /// Key: "basePath$normalizedQuery". Evicts oldest entry when full.
-  static final Map<String, List<Map<String, dynamic>>> _queryCache = {};
+  static final Map<String, List<VerseModel>> _queryCache = {};
   static const int _maxQueryCacheSize = 50;
 
   /// Clear both caches. Call on locale change or when data must be refreshed.
@@ -80,7 +80,7 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
 
       // 1. Fast path: return cached query result
       if (_queryCache.containsKey(queryCacheKey)) {
-        return _queryCache[queryCacheKey]!.map(VerseModel.fromJson).toList();
+        return _queryCache[queryCacheKey]!;
       }
 
       // 2. Ensure surah data is loaded and cached
@@ -108,13 +108,14 @@ class SurahLocalDataSourceImpl implements SurahLocalDataSource {
         'normalizedQuery': normalizedQuery,
       });
 
-      // 4. Cache query results with LRU eviction
-      _queryCache[queryCacheKey] = rawMatches;
+      // 4. Parse and cache query results with LRU eviction
+      final parsed = rawMatches.map(VerseModel.fromJson).toList();
+      _queryCache[queryCacheKey] = parsed;
       if (_queryCache.length > _maxQueryCacheSize) {
         _queryCache.remove(_queryCache.keys.first);
       }
 
-      return rawMatches.map(VerseModel.fromJson).toList();
+      return parsed;
     } catch (e) {
       Logger.warning('Search error: $e', feature: 'SurahData');
       return [];

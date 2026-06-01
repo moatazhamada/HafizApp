@@ -157,6 +157,7 @@ class _MushafJumpDialogState extends State<MushafJumpDialog> {
 
   Widget _buildSurahList() {
     return ListView.builder(
+      itemExtent: 56,
       itemCount: 114,
       itemBuilder: (context, index) {
         final surah = QuranIndex.quranSurahs[index];

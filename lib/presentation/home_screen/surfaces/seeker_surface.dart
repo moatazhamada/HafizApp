@@ -7,6 +7,7 @@ import '../../../injection_container.dart';
 import '../widgets/surah_index_widget.dart';
 import '../widgets/staggered_list_item.dart';
 import '../../../widgets/random_verse_card.dart';
+import '../../../core/utils/bottom_sheet_utils.dart';
 
 class SeekerSurface extends StatefulWidget {
   const SeekerSurface({super.key});
@@ -226,25 +227,19 @@ class _SeekerSurfaceState extends State<SeekerSurface> {
   }
 
   void _showVerseOfDay(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.85,
-        expand: false,
-        builder: (context, scrollController) {
-          return SingleChildScrollView(
-            controller: scrollController,
-            padding: const EdgeInsets.all(16),
-            child: const RandomVerseCard(),
-          );
-        },
-      ),
+      useDraggable: true,
+      initialSize: 0.6,
+      minSize: 0.4,
+      maxSize: 0.85,
+      builder: (context, scrollController) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(16),
+          child: const RandomVerseCard(),
+        );
+      },
     );
   }
 

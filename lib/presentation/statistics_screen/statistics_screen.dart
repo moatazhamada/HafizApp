@@ -9,6 +9,9 @@ import '../memorization/bloc/memorization_bloc.dart';
 import '../memorization/bloc/memorization_event.dart';
 import '../memorization/bloc/memorization_state.dart';
 import '../recitation_error/bloc/recitation_error_bloc.dart';
+import '../../widgets/loading_indicator.dart';
+import 'widgets/progress_chart.dart';
+import 'widgets/streak_card.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
@@ -105,7 +108,7 @@ class _StatisticsScreenLoaderState extends State<_StatisticsScreenLoader> {
     final bloc = _bloc;
     if (bloc == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: LoadingIndicator(),
       );
     }
 
@@ -127,27 +130,10 @@ class _StatsBody extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('stats_title'.tr)),
-      body: MultiBlocBuilder(
-        blocs: [
-          context.read<BookmarkBloc>(),
-          context.read<RecitationErrorBloc>(),
-          context.read<MemorizationBloc>(),
-          context.read<KhatmahBloc>(),
-        ],
-        builders: (context) {
-          final bookmarkState = context.read<BookmarkBloc>().state;
-          final errorState = context.read<RecitationErrorBloc>().state;
-          final memState = context.read<MemorizationBloc>().state;
-          final khatmahState = context.read<KhatmahBloc>().state;
-
-          final isLoading =
-              memState is MemorizationInitial ||
-              memState is MemorizationLoading ||
-              khatmahState is KhatmahInitial ||
-              khatmahState is KhatmahLoading;
-
-          if (isLoading) {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocBuilder<MemorizationBloc, MemorizationState>(
+        builder: (context, memState) {
+          if (memState is MemorizationInitial || memState is MemorizationLoading) {
+            return const LoadingIndicator();
           }
 
           if (memState is MemorizationError) {
@@ -166,9 +152,7 @@ class _StatsBody extends StatelessWidget {
                     Text(
                       memState.message.tr,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
-                        ),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -185,42 +169,6 @@ class _StatsBody extends StatelessWidget {
             );
           }
 
-          int bookmarkCount = 0;
-          int practiceCount = 0;
-          int memorizedCount = 0;
-          int inProgressCount = 0;
-          int notStartedCount = 0;
-
-          if (bookmarkState is BookmarkLoaded) {
-            bookmarkCount = bookmarkState.bookmarks.length;
-          }
-
-          if (errorState is RecitationErrorLoaded) {
-            practiceCount = errorState.errors.length;
-          }
-
-          if (memState is MemorizationLoaded) {
-            memorizedCount = memState.totalMemorized;
-            inProgressCount = memState.totalInProgress;
-            notStartedCount = memState.totalNotStarted;
-          }
-
-          int streak = 0;
-          int cloudStreak = 0;
-          int localStreak = 0;
-
-          if (khatmahState is KhatmahDashboardLoaded) {
-            streak = khatmahState.streak;
-            cloudStreak = khatmahState.cloudStreak;
-            localStreak = khatmahState.localStreak;
-          }
-
-          final allZero =
-              bookmarkCount == 0 &&
-              practiceCount == 0 &&
-              memorizedCount == 0 &&
-              streak == 0;
-
           return RefreshIndicator(
             onRefresh: () async {
               context.read<MemorizationBloc>().add(LoadMemorizationProgress());
@@ -234,104 +182,266 @@ class _StatsBody extends StatelessWidget {
                 Widget content = ListView(
                   padding: EdgeInsets.all(horizontalPadding),
                   children: [
-                _StreakCard(
-                  streak: streak,
-                  cloudStreak: cloudStreak,
-                  localStreak: localStreak,
-                  isDark: isDark,
-                  colors: colors,
-                ),
-                const SizedBox(height: 16),
-                _ProgressChart(
-                  memorized: memorizedCount,
-                  inProgress: inProgressCount,
-                  notStarted: notStartedCount,
-                  colors: colors,
-                ),
-                const SizedBox(height: 16),
-                _buildStatCard(
-                  context,
-                  theme,
-                  icon: Icons.bookmark_rounded,
-                  label: 'stats_bookmarks'.tr,
-                  value: bookmarkCount,
-                  color: colors.statBookmark,
-                ),
-                const SizedBox(height: 12),
-                _buildStatCard(
-                  context,
-                  theme,
-                  icon: Icons.playlist_add_check_rounded,
-                  label: 'stats_practice_verses'.tr,
-                  value: practiceCount,
-                  color: colors.statPractice,
-                ),
-                const SizedBox(height: 12),
-                _buildStatCard(
-                  context,
-                  theme,
-                  icon: Icons.menu_book_rounded,
-                  label: 'stats_surahs_completed'.tr,
-                  value: memorizedCount,
-                  color: colors.statCompleted,
-                ),
-                const SizedBox(height: 24),
-                if (allZero)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.trending_up,
-                            size: 64,
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'stats_no_activity'.tr,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.5,
-                              ),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                    _StreakCardWrapper(isDark: isDark, colors: colors),
+                    const SizedBox(height: 16),
+                    _ProgressChartWrapper(colors: colors),
+                    const SizedBox(height: 16),
+                    _BookmarkStatWrapper(theme: theme, color: colors.statBookmark),
+                    const SizedBox(height: 12),
+                    _PracticeStatWrapper(theme: theme, color: colors.statPractice),
+                    const SizedBox(height: 12),
+                    _CompletedStatWrapper(theme: theme, color: colors.statCompleted),
+                    const SizedBox(height: 24),
+                    _EmptyStateWrapper(isDark: isDark),
+                  ],
+                );
+
+                if (isLarge) {
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: content,
                     ),
-                  ),
-              ],
-            );
+                  );
+                }
 
-            if (isLarge) {
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: content,
-                ),
-              );
-            }
-
-            return content;
-          },
-        ),
-      );
+                return content;
+              },
+            ),
+          );
         },
       ),
     );
   }
+}
 
-  static Widget _buildStatCard(
-    BuildContext context,
-    ThemeData theme, {
-    required IconData icon,
-    required String label,
-    required int value,
-    required Color color,
-  }) {
+class _StreakCardWrapper extends StatelessWidget {
+  final bool isDark;
+  final AppColors colors;
+
+  const _StreakCardWrapper({required this.isDark, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<KhatmahBloc, KhatmahState>(
+      builder: (context, state) {
+        int streak = 0;
+        int cloudStreak = 0;
+        int localStreak = 0;
+        if (state is KhatmahDashboardLoaded) {
+          streak = state.streak;
+          cloudStreak = state.cloudStreak;
+          localStreak = state.localStreak;
+        }
+        return StreakCard(
+          streak: streak,
+          cloudStreak: cloudStreak,
+          localStreak: localStreak,
+          isDark: isDark,
+          colors: colors,
+        );
+      },
+    );
+  }
+}
+
+class _ProgressChartWrapper extends StatelessWidget {
+  final AppColors colors;
+
+  const _ProgressChartWrapper({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MemorizationBloc, MemorizationState>(
+      builder: (context, state) {
+        int memorized = 0;
+        int inProgress = 0;
+        int notStarted = 0;
+        if (state is MemorizationLoaded) {
+          memorized = state.totalMemorized;
+          inProgress = state.totalInProgress;
+          notStarted = state.totalNotStarted;
+        }
+        return ProgressChart(
+          memorized: memorized,
+          inProgress: inProgress,
+          notStarted: notStarted,
+          colors: colors,
+        );
+      },
+    );
+  }
+}
+
+class _BookmarkStatWrapper extends StatelessWidget {
+  final ThemeData theme;
+  final Color color;
+
+  const _BookmarkStatWrapper({required this.theme, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<BookmarkBloc, BookmarkState>(
+      builder: (context, state) {
+        final count = state is BookmarkLoaded ? state.bookmarks.length : 0;
+        return _StatCard(
+          theme: theme,
+          icon: Icons.bookmark_rounded,
+          label: 'stats_bookmarks'.tr,
+          value: count,
+          color: color,
+        );
+      },
+    );
+  }
+}
+
+class _PracticeStatWrapper extends StatelessWidget {
+  final ThemeData theme;
+  final Color color;
+
+  const _PracticeStatWrapper({required this.theme, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RecitationErrorBloc, RecitationErrorState>(
+      builder: (context, state) {
+        final count = state is RecitationErrorLoaded ? state.errors.length : 0;
+        return _StatCard(
+          theme: theme,
+          icon: Icons.playlist_add_check_rounded,
+          label: 'stats_practice_verses'.tr,
+          value: count,
+          color: color,
+        );
+      },
+    );
+  }
+}
+
+class _CompletedStatWrapper extends StatelessWidget {
+  final ThemeData theme;
+  final Color color;
+
+  const _CompletedStatWrapper({required this.theme, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MemorizationBloc, MemorizationState>(
+      builder: (context, state) {
+        final count = state is MemorizationLoaded ? state.totalMemorized : 0;
+        return _StatCard(
+          theme: theme,
+          icon: Icons.menu_book_rounded,
+          label: 'stats_surahs_completed'.tr,
+          value: count,
+          color: color,
+        );
+      },
+    );
+  }
+}
+
+class _EmptyStateWrapper extends StatelessWidget {
+  final bool isDark;
+
+  const _EmptyStateWrapper({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<KhatmahBloc, KhatmahState>(
+      buildWhen: (previous, current) =>
+          current is KhatmahDashboardLoaded || current is KhatmahInitial,
+      builder: (context, khatmahState) {
+        return BlocBuilder<MemorizationBloc, MemorizationState>(
+          buildWhen: (previous, current) => current is MemorizationLoaded,
+          builder: (context, memState) {
+            return BlocBuilder<BookmarkBloc, BookmarkState>(
+              buildWhen: (previous, current) => current is BookmarkLoaded,
+              builder: (context, bookmarkState) {
+                return BlocBuilder<RecitationErrorBloc, RecitationErrorState>(
+                  buildWhen: (previous, current) =>
+                      current is RecitationErrorLoaded,
+                  builder: (context, errorState) {
+                    final bookmarkCount = bookmarkState is BookmarkLoaded
+                        ? bookmarkState.bookmarks.length
+                        : 0;
+                    final practiceCount = errorState is RecitationErrorLoaded
+                        ? errorState.errors.length
+                        : 0;
+                    final memorizedCount = memState is MemorizationLoaded
+                        ? memState.totalMemorized
+                        : 0;
+                    final streak = khatmahState is KhatmahDashboardLoaded
+                        ? khatmahState.streak
+                        : 0;
+
+                    final allZero = bookmarkCount == 0 &&
+                        practiceCount == 0 &&
+                        memorizedCount == 0 &&
+                        streak == 0;
+
+                    if (!allZero) return const SizedBox.shrink();
+
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.trending_up,
+                              size: 64,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'stats_no_activity'.tr,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final ThemeData theme;
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+
+  const _StatCard({
+    required this.theme,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -377,317 +487,5 @@ class _StatsBody extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _StreakCard extends StatelessWidget {
-  final int streak;
-  final int cloudStreak;
-  final int localStreak;
-  final bool isDark;
-  final AppColors colors;
-
-  const _StreakCard({
-    required this.streak,
-    required this.cloudStreak,
-    required this.localStreak,
-    required this.isDark,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.inProgressStatus.withValues(alpha: 0.3)),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              colors.inProgressStatus.withValues(alpha: 0.08),
-              colors.inProgressStatus.withValues(alpha: 0.04),
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: colors.inProgressStatus.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                streak > 0
-                    ? Icons.local_fire_department_rounded
-                    : Icons.local_fire_department_outlined,
-                color: streak > 0 ? colors.inProgressStatus : colors.notStartedStatus,
-                size: 32,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'stats_streak'.tr,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$streak ${'lbl_day_streak'.tr}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: streak > 0 ? colors.inProgressStatus : colors.notStartedStatus,
-                    ),
-                  ),
-                  if (cloudStreak > 0)
-                    Text(
-                      'stats_cloud_streak'.tr.replaceAll(
-                        '{count}',
-                        '$cloudStreak',
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressChart extends StatelessWidget {
-  final int memorized;
-  final int inProgress;
-  final int notStarted;
-  final AppColors colors;
-
-  const _ProgressChart({
-    required this.memorized,
-    required this.inProgress,
-    required this.notStarted,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final total = 114;
-    if (total == 0) return const SizedBox.shrink();
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.mushafPageBorder.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.auto_graph_rounded, size: 22, color: colors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'lbl_quran_progress'.tr,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 24,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CustomPaint(
-                  size: const Size(double.infinity, 24),
-                  painter: _StackedBarPainter(
-                    memorized: memorized,
-                    inProgress: inProgress,
-                    notStarted: notStarted,
-                    total: total,
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-                    memorizedColor: colors.memorizedStatus,
-                    inProgressColor: colors.inProgressStatus,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _LegendDot(color: colors.memorizedStatus, label: 'lbl_memorized'.tr),
-                const SizedBox(width: 16),
-                _LegendDot(color: colors.inProgressStatus, label: 'lbl_in_progress'.tr),
-                const SizedBox(width: 16),
-                _LegendDot(color: colors.notStartedStatus, label: 'lbl_not_started'.tr),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  final String label;
-
-  const _LegendDot({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontSize: 11,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StackedBarPainter extends CustomPainter {
-  final int memorized;
-  final int inProgress;
-  final int notStarted;
-  final int total;
-  final Color backgroundColor;
-  final Color memorizedColor;
-  final Color inProgressColor;
-
-  _StackedBarPainter({
-    required this.memorized,
-    required this.inProgress,
-    required this.notStarted,
-    required this.total,
-    required this.backgroundColor,
-    required this.memorizedColor,
-    required this.inProgressColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = backgroundColor;
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(12),
-    );
-    canvas.drawRRect(rrect, bgPaint);
-
-    final memFrac = total > 0 ? memorized / total : 0.0;
-    final progFrac = total > 0 ? inProgress / total : 0.0;
-
-    if (memFrac > 0) {
-      final memPaint = Paint()..color = memorizedColor;
-      canvas.drawRRect(
-        RRect.fromLTRBAndCorners(
-          0,
-          0,
-          size.width * memFrac,
-          size.height,
-          topLeft: const Radius.circular(12),
-          bottomLeft: const Radius.circular(12),
-          topRight: progFrac == 0 && memFrac == 1
-              ? const Radius.circular(12)
-              : Radius.zero,
-          bottomRight: progFrac == 0 && memFrac == 1
-              ? const Radius.circular(12)
-              : Radius.zero,
-        ),
-        memPaint,
-      );
-    }
-
-    if (progFrac > 0) {
-      final progPaint = Paint()..color = inProgressColor;
-      canvas.drawRRect(
-        RRect.fromLTRBAndCorners(
-          size.width * memFrac,
-          0,
-          size.width * (memFrac + progFrac),
-          size.height,
-          topLeft: memFrac == 0 ? const Radius.circular(12) : Radius.zero,
-          bottomLeft: memFrac == 0 ? const Radius.circular(12) : Radius.zero,
-          topRight: (memFrac + progFrac) >= 0.999
-              ? const Radius.circular(12)
-              : Radius.zero,
-          bottomRight: (memFrac + progFrac) >= 0.999
-              ? const Radius.circular(12)
-              : Radius.zero,
-        ),
-        progPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _StackedBarPainter oldDelegate) {
-    return memorized != oldDelegate.memorized ||
-        inProgress != oldDelegate.inProgress ||
-        notStarted != oldDelegate.notStarted ||
-        backgroundColor != oldDelegate.backgroundColor ||
-        memorizedColor != oldDelegate.memorizedColor ||
-        inProgressColor != oldDelegate.inProgressColor;
-  }
-}
-
-typedef MultiBlocWidgetBuilder = Widget Function(BuildContext context);
-
-class MultiBlocBuilder extends StatelessWidget {
-  final List<StateStreamable> blocs;
-  final MultiBlocWidgetBuilder builders;
-
-  const MultiBlocBuilder({
-    super.key,
-    required this.blocs,
-    required this.builders,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Widget result = builders(context);
-    for (final bloc in blocs) {
-      result = BlocBuilder(
-        bloc: bloc,
-        builder: (context, _) => builders(context),
-      );
-    }
-    return result;
   }
 }

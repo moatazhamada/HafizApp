@@ -11,6 +11,8 @@ import 'core/app_export.dart';
 import 'core/network/connectivity_cubit.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/theme/app_text_styles.dart';
+import 'core/theme/app_shapes.dart';
+import 'core/theme/spring_page_transition.dart';
 import 'core/services/app_review_service.dart';
 import 'injection_container.dart';
 
@@ -27,12 +29,10 @@ import 'core/analytics/analytics_route_observer.dart';
 import 'core/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:audio_service/audio_service.dart';
 import 'presentation/force_update/force_update_screen.dart';
 import 'domain/repository/khatmah_repository.dart';
 import 'presentation/khatmah/bloc/khatmah_bloc.dart';
 import 'presentation/khatmah/bloc/khatmah_event.dart';
-import 'core/audio/quran_audio_handler.dart';
 
 final ThemeData lightTheme = ThemeData(
   useMaterial3: true,
@@ -66,34 +66,46 @@ final ThemeData lightTheme = ThemeData(
   ),
   cardTheme: const CardThemeData(
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
+    shape: AppShapes.cardShape,
   ),
   bottomSheetTheme: const BottomSheetThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.bottomSheetShape,
   ),
   dialogTheme: const DialogThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    shape: AppShapes.dialogShape,
   ),
   inputDecorationTheme: const InputDecorationTheme(
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(14)),
     ),
     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  chipTheme: const ChipThemeData(
+    shape: AppShapes.chipShape,
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.android: SpringPageTransition(),
+      TargetPlatform.iOS: SpringPageTransition(),
+      TargetPlatform.linux: SpringPageTransition(),
+      TargetPlatform.macOS: SpringPageTransition(),
+      TargetPlatform.windows: SpringPageTransition(),
     },
   ),
   appBarTheme: const AppBarTheme(centerTitle: true),
@@ -131,34 +143,46 @@ final ThemeData darkTheme = ThemeData(
   ),
   cardTheme: const CardThemeData(
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
+    shape: AppShapes.cardShape,
   ),
   bottomSheetTheme: const BottomSheetThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppShapes.bottomSheetShape,
   ),
   dialogTheme: const DialogThemeData(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    shape: AppShapes.dialogShape,
   ),
   inputDecorationTheme: const InputDecorationTheme(
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius: BorderRadius.all(Radius.circular(14)),
     ),
     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      shape: const StadiumBorder(),
+    ),
+  ),
+  chipTheme: const ChipThemeData(
+    shape: AppShapes.chipShape,
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
   ),
   dividerTheme: const DividerThemeData(space: 1),
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.android: SpringPageTransition(),
+      TargetPlatform.iOS: SpringPageTransition(),
+      TargetPlatform.linux: SpringPageTransition(),
+      TargetPlatform.macOS: SpringPageTransition(),
+      TargetPlatform.windows: SpringPageTransition(),
     },
   ),
   appBarTheme: const AppBarTheme(centerTitle: true),
@@ -211,58 +235,66 @@ Future<void> main() async {
 
   Bloc.observer = AnalyticsBlocObserver();
 
-  try {
-    await AudioService.init(
-      builder: () => QuranAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.hafiz.app.hafiz_app.audio',
-        androidNotificationChannelName: 'Quran Recitation',
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
-      ),
-    );
-  } catch (e) {
-    Logger.warning('AudioService init failed: $e', feature: 'Audio');
-  }
-
   runApp(const BootstrapApp());
 }
 
-class MyApp extends StatelessWidget {
-  MyApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final ThemeBloc _themeBloc;
+  late final BookmarkBloc _bookmarkBloc;
+  late final RecitationErrorBloc _recitationErrorBloc;
+  late final CloudSyncBloc _cloudSyncBloc;
+  late final KhatmahBloc _khatmahBloc;
+  late final QfAuthBloc _qfAuthBloc;
 
   ThemeMode _getThemeMode() {
-    final mode = PrefUtils().getThemeMode(); // 'system', 'light', 'dark'
+    final mode = PrefUtils().getThemeMode();
     if (mode == 'dark') return ThemeMode.dark;
     if (mode == 'light') return ThemeMode.light;
     return ThemeMode.system;
   }
 
-  final themeBloc = sl<ThemeBloc>();
-  final bookmarkBloc = sl<BookmarkBloc>();
-  final recitationErrorBloc = sl<RecitationErrorBloc>();
-  final cloudSyncBloc = sl<CloudSyncBloc>();
-  final khatmahBloc = sl<KhatmahBloc>();
+  @override
+  void initState() {
+    super.initState();
+    _themeBloc = sl<ThemeBloc>();
+    _bookmarkBloc = sl<BookmarkBloc>();
+    _recitationErrorBloc = sl<RecitationErrorBloc>();
+    _cloudSyncBloc = sl<CloudSyncBloc>();
+    _khatmahBloc = sl<KhatmahBloc>();
+    _qfAuthBloc = sl<QfAuthBloc>();
+
+    if (!_bookmarkBloc.isClosed) {
+      _bookmarkBloc.add(const LoadBookmarksEvent());
+    }
+    if (!_recitationErrorBloc.isClosed) {
+      _recitationErrorBloc.add(const LoadRecitationErrorsEvent());
+    }
+    if (!_qfAuthBloc.isClosed) {
+      _qfAuthBloc.add(QfAuthCheckRequested());
+    }
+    if (!_khatmahBloc.isClosed) {
+      _khatmahBloc.add(LoadKhatmahDashboard());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: themeBloc),
-        BlocProvider.value(
-          value: bookmarkBloc..add(const LoadBookmarksEvent()),
-        ),
-        BlocProvider.value(
-          value: recitationErrorBloc..add(const LoadRecitationErrorsEvent()),
-        ),
-        BlocProvider.value(
-          value: sl<QfAuthBloc>()..add(QfAuthCheckRequested()),
-        ),
+        BlocProvider.value(value: _themeBloc),
+        BlocProvider.value(value: _bookmarkBloc),
+        BlocProvider.value(value: _recitationErrorBloc),
+        BlocProvider.value(value: _qfAuthBloc),
         BlocProvider.value(value: sl<ConnectivityCubit>()),
-        BlocProvider.value(value: cloudSyncBloc),
-        BlocProvider.value(
-          value: khatmahBloc..add(LoadKhatmahDashboard()),
-        ),
+        BlocProvider.value(value: _cloudSyncBloc),
+        BlocProvider.value(value: _khatmahBloc),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
@@ -361,16 +393,26 @@ class _BootstrapAppState extends State<BootstrapApp>
 
   Future<void> _init() async {
     final initializer = AppInitializer();
-    final success = await initializer.init().timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        Logger.error(
-          'App initialization timed out after 15 seconds',
-          feature: 'Bootstrap',
-        );
-        return false;
-      },
-    );
+    var success = false;
+    try {
+      success = await initializer.init().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          Logger.error(
+            'App initialization timed out after 15 seconds',
+            feature: 'Bootstrap',
+          );
+          return false;
+        },
+      );
+    } catch (e) {
+      Logger.error(
+        'App initialization failed: $e',
+        feature: 'Bootstrap',
+      );
+      success = false;
+      initializer.error = initializer.error ?? e.toString();
+    }
 
     if (!mounted) return;
 
@@ -540,7 +582,7 @@ class _ReadyAppState extends State<_ReadyApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MyApp();
+  Widget build(BuildContext context) => const MyApp();
 }
 
 class _SplashScaffold extends StatelessWidget {

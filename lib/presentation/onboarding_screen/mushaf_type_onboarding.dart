@@ -44,121 +44,134 @@ class _MushafTypeOnboardingState extends State<MushafTypeOnboarding> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isSettings = widget.fromSettings;
 
-    return OnboardingScaffold(
-      maxContentWidth: 1000,
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final isLarge = maxWidth > 900;
-            final isMedium = maxWidth > 600;
+    Widget bodyContent = SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          final isLarge = maxWidth > 900;
+          final isMedium = maxWidth > 600;
 
-            final crossAxisCount = isLarge ? 4 : (isMedium ? 3 : 2);
-            final childAspectRatio = isLarge ? 1.0 : 0.85;
-            final horizontalPadding = isLarge
-                ? 32.0
-                : (isMedium ? 24.0 : 16.0);
-            final iconSize = isLarge ? 72.0 : 56.0;
-            final iconRadius = isLarge ? 16.0 : 12.0;
-            final iconIconSize = isLarge ? 36.0 : 28.0;
-            final spacing = isLarge ? 20.0 : 12.0;
+          final crossAxisCount = isLarge ? 4 : (isMedium ? 3 : 2);
+          final childAspectRatio = isLarge ? 1.0 : 0.85;
+          final horizontalPadding = isLarge
+              ? 32.0
+              : (isMedium ? 24.0 : 16.0);
+          final iconSize = isLarge ? 72.0 : 56.0;
+          final iconRadius = isLarge ? 16.0 : 12.0;
+          final iconIconSize = isLarge ? 36.0 : 28.0;
+          final spacing = isLarge ? 20.0 : 12.0;
 
-            Widget content = Column(
-              children: [
-                const SizedBox(height: 32),
-                Text(
-                  'lbl_select_mushaf_type'.tr,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
+          return Column(
+            children: [
+              const SizedBox(height: 32),
+              Text(
+                'lbl_select_mushaf_type'.tr,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: isLarge ? 64 : 32),
+                child: Text(
+                  'msg_mushaf_type_desc'.tr,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isLarge ? 64 : 32),
-                  child: Text(
-                    'msg_mushaf_type_desc'.tr,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                    textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: childAspectRatio,
+                    crossAxisSpacing: spacing,
+                    mainAxisSpacing: spacing,
                   ),
-                ),
-                const SizedBox(height: 32),
-                Expanded(
-                  child: GridView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: childAspectRatio,
-                      crossAxisSpacing: spacing,
-                      mainAxisSpacing: spacing,
-                    ),
-                    itemCount: MushafType.all.length,
-                    itemBuilder: (context, index) {
-                      final type = MushafType.all[index];
-                      final isSelected = _selected == type;
+                  itemCount: MushafType.all.length,
+                  itemBuilder: (context, index) {
+                    final type = MushafType.all[index];
+                    final isSelected = _selected == type;
 
-                      return OnboardingSelectionCard(
-                        isSelected: isSelected,
-                        onTap: () => _select(type),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: iconSize,
-                              height: iconSize,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(iconRadius),
-                              ),
-                              child: Icon(
-                                Icons.menu_book_rounded,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                size: iconIconSize,
-                              ),
+                    return OnboardingSelectionCard(
+                      isSelected: isSelected,
+                      onTap: () => _select(type),
+                      isLightBackground: isSettings
+                          ? theme.brightness == Brightness.light
+                          : false,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: iconSize,
+                            height: iconSize,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(iconRadius),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              type.label.tr,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 15,
-                              ),
-                              textAlign: TextAlign.center,
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              color: theme.colorScheme.onSurface,
+                              size: iconIconSize,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              type.descriptionKey.tr,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            type.label.tr,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                              fontSize: 15,
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            type.descriptionKey.tr,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: OnboardingPrimaryButton(
-                    text: 'lbl_next'.tr,
-                    onPressed: _continue,
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: OnboardingPrimaryButton(
+                  text: isSettings ? 'lbl_save'.tr : 'lbl_next'.tr,
+                  onPressed: _continue,
                 ),
-              ],
-            );
-
-            return content;
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
+
+    if (isSettings) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('lbl_mushaf_type'.tr),
+        ),
+        body: bodyContent,
+      );
+    } else {
+      return OnboardingScaffold(
+        maxContentWidth: 1000,
+        child: bodyContent,
+      );
+    }
   }
 }

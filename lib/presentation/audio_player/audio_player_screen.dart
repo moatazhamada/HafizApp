@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/app_export.dart';
+import 'widgets/audio_player_action_button.dart';
 import '../../core/audio/audio_player_handler.dart';
 import '../../core/quran_index/mushaf_page_index.dart';
 import '../../core/quran_index/quran_surah.dart';
@@ -43,7 +44,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
   StreamSubscription<String>? _errorSub;
   StreamSubscription<bool>? _playingSub;
   Timer? _sleepTimerUpdater;
-  Timer? _uiRefreshTimer;
+  // Removed _uiRefreshTimer — stream subscriptions already handle state updates.
   String? _sleepTimerRemaining;
   int? _resumeFromVerse;
 
@@ -105,7 +106,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     });
 
     _startSleepTimerUpdater();
-    _startUiRefreshTimer();
 
     // Check if we have a saved position to resume from
     final saved = PrefUtils().getLastAudioVerse(widget.surahId);
@@ -133,7 +133,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     _errorSub?.cancel();
     _playingSub?.cancel();
     _sleepTimerUpdater?.cancel();
-    _uiRefreshTimer?.cancel();
+    // _uiRefreshTimer removed; stream subscriptions handle UI updates.
     // Intentionally do NOT stop audio here — users expect Quran recitation
     // to continue even after leaving the audio player screen.
     WakelockPlus.disable();
@@ -170,18 +170,8 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     );
   }
 
-  /// Periodically refreshes the UI so the play/pause button and progress
-  /// indicator stay in sync with the actual player state. This is a robust
-  /// fallback for any stream synchronization delays or platform quirks.
-  void _startUiRefreshTimer() {
-    _uiRefreshTimer?.cancel();
-    _uiRefreshTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (mounted) setState(() {});
-      },
-    );
-  }
+  // UI refresh timer removed — _playingSub and _verseSub stream
+  // subscriptions already propagate state changes without polling.
 
   void _updateSleepTimerDisplay() {
     if (!mounted) return;
@@ -216,7 +206,11 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
       if (session.endVerse >= session.startVerse) {
         final totalVerses = session.endVerse - session.startVerse + 1;
 
-        sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        try {
+          sl<KhatmahBloc>().add(RecordReading(verses: totalVerses));
+        } catch (e, s) {
+          Logger.warning('Failed to record reading: $e\n$s', feature: 'AudioPlayer');
+        }
         unawaited(sl<KhatmahRepository>().reportReadingSession(session));
 
         // Analytics
@@ -380,6 +374,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
               Expanded(
                 child: ListView.builder(
                   controller: scrollController,
+                  itemExtent: 56,
                   itemCount: totalVerses,
                   itemBuilder: (context, index) {
                     final isCurrent = _currentVerse == index;
@@ -731,19 +726,19 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.speed,
           label: 'lbl_speed_x'.tr.replaceAll('{speed}', '$_speed'),
           isActive: _speed != 1.0,
           onPressed: _showSpeedDialog,
         ),
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.timer,
           label: 'lbl_sleep_timer'.tr,
           isActive: _handler.sleepTimerEnd != null,
           onPressed: _showSleepTimerDialog,
         ),
-        _ActionButton(
+        AudioPlayerActionButton(
           icon: Icons.loop,
           label: loopLabel,
           isActive: _handler.isLooping,
@@ -757,36 +752,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen>
           },
         ),
       ],
-    );
-  }
-}
-
-/// Compact action button used in the bottom actions bar.
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onPressed;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isActive ? theme.colorScheme.primary : null;
-
-    return TextButton.icon(
-      icon: Icon(icon, color: color),
-      label: Text(
-        label,
-        style: TextStyle(color: color),
-      ),
-      onPressed: onPressed,
     );
   }
 }

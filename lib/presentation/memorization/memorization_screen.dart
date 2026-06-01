@@ -3,13 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hafiz_app/core/analytics/analytics_service.dart';
 import 'package:hafiz_app/core/app_export.dart';
-import 'package:hafiz_app/core/srs/srs_algorithm.dart';
-import 'package:hafiz_app/domain/entities/memorization_progress.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_bloc.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_event.dart';
 import 'package:hafiz_app/presentation/memorization/bloc/memorization_state.dart';
 import 'package:hafiz_app/injection_container.dart';
 import 'package:hafiz_app/core/quran_index/quran_surah.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/error_state.dart';
+import '../../widgets/loading_indicator.dart';
+import 'package:hafiz_app/core/utils/bottom_sheet_utils.dart';
+import 'widgets/progress_summary.dart';
+import 'widgets/review_card.dart';
+import 'widgets/start_tracking_sheet.dart';
+import 'widgets/surah_progress_card.dart';
 
 class MemorizationScreen extends StatelessWidget {
   const MemorizationScreen({super.key});
@@ -23,7 +29,7 @@ class MemorizationScreen extends StatelessWidget {
     }
     if (bloc == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: LoadingIndicator(),
       );
     }
     return BlocProvider.value(
@@ -52,9 +58,15 @@ class MemorizationScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: BlocBuilder<MemorizationBloc, MemorizationState>(
+        buildWhen: (previous, current) =>
+            previous.runtimeType != current.runtimeType ||
+            (previous is MemorizationLoaded &&
+                current is MemorizationLoaded &&
+                previous.allProgress.isNotEmpty != current.allProgress.isNotEmpty),
         builder: (context, state) {
           if (state is MemorizationLoaded && state.allProgress.isNotEmpty) {
             return FloatingActionButton(
+              heroTag: null,
               onPressed: () => _showStartTrackingSheet(context),
               child: const Icon(Icons.add),
             );
@@ -65,28 +77,26 @@ class MemorizationScreen extends StatelessWidget {
       body: BlocBuilder<MemorizationBloc, MemorizationState>(
         builder: (context, state) {
           if (state is MemorizationLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingIndicator();
           }
           if (state is MemorizationError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(state.message.tr),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
-                    onPressed: () => context.read<MemorizationBloc>().add(
-                      LoadMemorizationProgress(),
-                    ),
-                    child: Text('lbl_retry'.tr),
-                  ),
-                ],
+            return ErrorState(
+              message: state.message.tr,
+              onRetry: () => context.read<MemorizationBloc>().add(
+                LoadMemorizationProgress(),
               ),
             );
           }
           if (state is MemorizationLoaded) {
             if (state.allProgress.isEmpty) {
-              return _EmptyState(isDark: isDark);
+              return EmptyState(
+                icon: Icons.school_outlined,
+                message: 'lbl_memorization_empty_title'.tr,
+                subtitle: 'lbl_memorization_empty_subtitle'.tr,
+                actionLabel: 'lbl_start_tracking'.tr,
+                actionIcon: Icons.play_arrow,
+                onAction: () => _showStartTrackingSheet(context),
+              );
             }
             return RefreshIndicator(
               onRefresh: () async {
@@ -94,37 +104,103 @@ class MemorizationScreen extends StatelessWidget {
                   LoadMemorizationProgress(),
                 );
               },
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                children: [
-                  _ProgressSummary(state: state, isDark: isDark),
-                  const SizedBox(height: 24),
-                  if (state.dueReviews.isNotEmpty) ...[
-                    Text(
-                      'lbl_due_for_review'.tr,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...state.dueReviews.map(
-                      (p) => _ReviewCard(progress: p, isDark: isDark),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  Text(
-                    'lbl_all_surahs'.tr,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+              child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: ProgressSummary(state: state, isDark: isDark),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  ...state.allProgress.map(
-                    (p) => _SurahProgressCard(progress: p, isDark: isDark),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 24),
+                  ),
+                  if (state.dueReviews.isNotEmpty) ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverToBoxAdapter(
+                        child: Text(
+                          'lbl_due_for_review'.tr,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList.builder(
+                        itemCount: state.dueReviews.length,
+                        itemBuilder: (context, index) {
+                          final p = state.dueReviews[index];
+                          return ReviewCard(
+                            progress: p,
+                            isDark: isDark,
+                            onLogReview: () => _showReviewDialog(
+                              context,
+                              surahId: p.surahId,
+                              surahName: p.surahName,
+                            ),
+                            onRead: () {
+                              final surah = QuranIndex.quranSurahs.firstWhere(
+                                (s) => s.id == p.surahId,
+                                orElse: () => Surah(p.surahId, '', ''),
+                              );
+                              NavigatorService.popAndPushNamed(
+                                AppRoutes.surahPage,
+                                arguments: {'surah': surah},
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Text(
+                        'lbl_all_surahs'.tr,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                    sliver: SliverList.builder(
+                      itemCount: state.allProgress.length,
+                      itemBuilder: (context, index) {
+                        final p = state.allProgress[index];
+                        return SurahProgressCard(
+                          progress: p,
+                          isDark: isDark,
+                          onLogReview: () => _showReviewDialog(
+                            context,
+                            surahId: p.surahId,
+                            surahName: p.surahName,
+                          ),
+                          onRead: () {
+                            final surah = QuranIndex.quranSurahs.firstWhere(
+                              (s) => s.id == p.surahId,
+                              orElse: () => Surah(p.surahId, '', ''),
+                            );
+                            NavigatorService.popAndPushNamed(
+                              AppRoutes.surahPage,
+                              arguments: {'surah': surah},
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -137,91 +213,85 @@ class MemorizationScreen extends StatelessWidget {
   }
 
   static void _showStartTrackingSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, scrollController) => _StartTrackingSheet(
-          scrollController: scrollController,
-          onSurahSelected: (surahId) {
-            Navigator.pop(sheetContext);
-            context.read<MemorizationBloc>().add(
-              RecordReview(surahId: surahId, score: 100),
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('msg_surah_marked_memorized'.tr),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
-        ),
+      useDraggable: true,
+      initialSize: 0.7,
+      minSize: 0.5,
+      maxSize: 0.9,
+      builder: (sheetContext, scrollController) => StartTrackingSheet(
+        scrollController: scrollController!,
+        onSurahSelected: (surahId) {
+          Navigator.pop(sheetContext);
+          context.read<MemorizationBloc>().add(
+            RecordReview(surahId: surahId, score: 100),
+          );
+          SnackBarHelper.show(
+            context,
+            message: 'msg_surah_marked_memorized'.tr,
+            type: SnackBarType.success,
+            duration: const Duration(seconds: 2),
+          );
+        },
       ),
     );
   }
 
   static void _showHelpSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (ctx, sc) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.school,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 28,
+      useDraggable: true,
+      initialSize: 0.6,
+      minSize: 0.4,
+      maxSize: 0.8,
+      builder: (ctx, _) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.school,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'memorization_help_title'.tr,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'memorization_help_title'.tr,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(
-                    'memorization_help_desc'.tr,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.8),
-                    ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  'memorization_help_desc'.tr,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('lbl_got_it'.tr),
-                ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('lbl_got_it'.tr),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -279,11 +349,11 @@ class MemorizationScreen extends StatelessWidget {
                     context.read<MemorizationBloc>().add(
                       RecordReview(surahId: surahId, score: s.score),
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('msg_review_logged'.tr),
-                        duration: const Duration(seconds: 2),
-                      ),
+                    SnackBarHelper.show(
+                      context,
+                      message: 'msg_review_logged'.tr,
+                      type: SnackBarType.success,
+                      duration: const Duration(seconds: 2),
                     );
                   },
                   child: Text(s.label),
@@ -300,457 +370,5 @@ class MemorizationScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _ProgressSummary extends StatelessWidget {
-  final MemorizationLoaded state;
-  final bool isDark;
-
-  const _ProgressSummary({required this.state, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      color: AppColors.of(context).surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              '${'lbl_quran_progress'.tr}: ${state.totalMemorized}/114',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Semantics(
-              label: 'lbl_semantics_memorization_progress'
-                  .tr
-                  .replaceAll('{percent}', '${((state.totalMemorized / 114) * 100).round()}'),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: state.totalMemorized / 114,
-                  minHeight: 12,
-                  backgroundColor: AppColors.of(context).notStartedStatus,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.of(context).primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatChip(
-                  label: 'lbl_memorized'.tr,
-                  value: state.totalMemorized,
-                  color: AppColors.of(context).memorizedStatus,
-                ),
-                _StatChip(
-                  label: 'lbl_in_progress'.tr,
-                  value: state.totalInProgress,
-                  color: AppColors.of(context).inProgressStatus,
-                ),
-                _StatChip(
-                  label: 'lbl_not_started'.tr,
-                  value: state.totalNotStarted,
-                  color: AppColors.of(context).notStartedStatus,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final String label;
-  final int value;
-  final Color color;
-
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Semantics(
-          label: 'lbl_semantics_status'.tr.replaceAll('{status}', label),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus)),
-      ],
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final MemorizationProgress progress;
-  final bool isDark;
-
-  const _ReviewCard({required this.progress, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final urgencyKey = SrsAlgorithm.urgencyLabel(progress);
-    final daysUntil = SrsAlgorithm.daysUntilReview(progress);
-    final urgency = urgencyKey == 'lbl_review_urgency_overdue_days'
-        ? urgencyKey.tr.replaceAll('{days}', '${-daysUntil}')
-        : urgencyKey.tr;
-    final isOverdue = daysUntil < 0;
-    final urgencyColor = isOverdue ? AppColors.of(context).needsReviewStatus : AppColors.of(context).inProgressStatus;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: urgencyColor.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: ListTile(
-        leading: Icon(
-          isOverdue ? Icons.alarm : Icons.notifications_active,
-          color: urgencyColor,
-        ),
-        title: Text(progress.surahName),
-        subtitle: Text(
-          '${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}% • '
-          '${'lbl_interval'.tr}: ${progress.interval}${'lbl_days'.tr}',
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Semantics(
-              label: 'lbl_semantics_status'.tr.replaceAll('{status}', urgency),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: urgencyColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  urgency,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: urgencyColor,
-                  ),
-                ),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_log_review'.tr,
-              child: IconButton(
-                icon: Icon(
-                  Icons.check_circle_outline,
-                  color: AppColors.of(context).memorizedStatus,
-                ),
-                tooltip: 'lbl_log_review'.tr,
-                onPressed: () => MemorizationScreen._showReviewDialog(
-                  context,
-                  surahId: progress.surahId,
-                  surahName: progress.surahName,
-                ),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'lbl_read_this_ayah'.tr,
-              child: IconButton(
-                icon: Icon(
-                  Icons.play_arrow,
-                  color: AppColors.of(context).primary,
-                ),
-                tooltip: 'lbl_read_this_ayah'.tr,
-                onPressed: () {
-                  final surah = QuranIndex.quranSurahs.firstWhere(
-                    (s) => s.id == progress.surahId,
-                    orElse: () => Surah(progress.surahId, '', ''),
-                  );
-                  NavigatorService.popAndPushNamed(
-                    AppRoutes.surahPage,
-                    arguments: {'surah': surah},
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final bool isDark;
-
-  const _EmptyState({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.school_outlined,
-              size: 64,
-              color: AppColors.of(context).notStartedStatus,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'lbl_memorization_empty_title'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'lbl_memorization_empty_subtitle'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.of(context).notStartedStatus,
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.tonal(
-              onPressed: () => MemorizationScreen._showStartTrackingSheet(context),
-              child: Text('lbl_start_tracking'.tr),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-}
-
-class _StartTrackingSheet extends StatelessWidget {
-  final ScrollController scrollController;
-  final ValueChanged<int> onSurahSelected;
-
-  const _StartTrackingSheet({
-    required this.scrollController,
-    required this.onSurahSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surahs = QuranIndex.quranSurahs;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            'lbl_select_surahs_to_track'.tr,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.builder(
-            controller: scrollController,
-            itemCount: surahs.length,
-            itemBuilder: (context, index) {
-              final surah = surahs[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  radius: 16,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  child: Text(
-                    '${surah.id}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                title: Text(
-                  surah.nameArabic,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                subtitle: Localizations.localeOf(context).languageCode != 'ar'
-                    ? Text(
-                        surah.nameEnglish,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.of(context).textSecondary,
-                        ),
-                      )
-                    : null,
-                onTap: () => onSurahSelected(surah.id),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SurahProgressCard extends StatelessWidget {
-  final MemorizationProgress progress;
-  final bool isDark;
-
-  const _SurahProgressCard({required this.progress, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = _statusColor(context, progress.status);
-    final statusLabel = _statusLabel(progress.status);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 1,
-      color: AppColors.of(context).surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: ListTile(
-        leading: Semantics(
-          label: 'lbl_semantics_status'.tr.replaceAll('{status}', statusLabel),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: statusColor.withValues(alpha: 0.15),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${progress.surahId}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: statusColor,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          progress.surahName,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        subtitle: Text(
-          '$statusLabel • ${'lbl_best_score'.tr}: ${progress.bestScore.toStringAsFixed(0)}%',
-          style: TextStyle(fontSize: 12, color: AppColors.of(context).notStartedStatus),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: AppColors.of(context).textSecondary),
-          onSelected: (value) {
-            if (value == 'log_review') {
-              MemorizationScreen._showReviewDialog(
-                context,
-                surahId: progress.surahId,
-                surahName: progress.surahName,
-              );
-            } else if (value == 'read') {
-              final surah = QuranIndex.quranSurahs.firstWhere(
-                (s) => s.id == progress.surahId,
-                orElse: () => Surah(progress.surahId, '', ''),
-              );
-              NavigatorService.popAndPushNamed(
-                AppRoutes.surahPage,
-                arguments: {'surah': surah},
-              );
-            }
-          },
-          itemBuilder: (_) => [
-            PopupMenuItem(
-              value: 'log_review',
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle_outline, size: 18, color: AppColors.of(context).memorizedStatus),
-                  const SizedBox(width: 8),
-                  Text('lbl_log_review'.tr),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'read',
-              child: Row(
-                children: [
-                  const Icon(Icons.play_arrow, size: 18),
-                  const SizedBox(width: 8),
-                  Text('lbl_read_this_ayah'.tr),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _statusColor(BuildContext context, MemorizationStatus status) {
-    final colors = AppColors.of(context);
-    switch (status) {
-      case MemorizationStatus.memorized:
-        return colors.memorizedStatus;
-      case MemorizationStatus.inProgress:
-        return colors.inProgressStatus;
-      case MemorizationStatus.needsReview:
-        return colors.needsReviewStatus;
-      case MemorizationStatus.notStarted:
-        return colors.notStartedStatus;
-    }
-  }
-
-  String _statusLabel(MemorizationStatus status) {
-    switch (status) {
-      case MemorizationStatus.memorized:
-        return 'lbl_memorized'.tr;
-      case MemorizationStatus.inProgress:
-        return 'lbl_in_progress'.tr;
-      case MemorizationStatus.needsReview:
-        return 'lbl_needs_review'.tr;
-      case MemorizationStatus.notStarted:
-        return 'lbl_not_started'.tr;
-    }
   }
 }

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
@@ -78,10 +81,13 @@ class Logger {
       error: error,
     );
 
-    // Report to Crashlytics in production mode
-    if (_logMode == LogMode.live && _crashlytics != null) {
+    // Report to Crashlytics in production mode (skip network noise)
+    final err = error ?? message;
+    if (_logMode == LogMode.live &&
+        _crashlytics != null &&
+        !_isNetworkError(err)) {
       _crashlytics!.recordError(
-        error ?? message,
+        err,
         stackTrace,
         reason: feature != null ? '[$feature] $message' : message.toString(),
         fatal: fatal,
@@ -131,6 +137,22 @@ class Logger {
     }
   }
 
+  static bool _isNetworkError(Object? error) {
+    if (error is SocketException) return true;
+    if (error is DioException) {
+      return error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.unknown;
+    }
+    if (error is String) {
+      final lower = error.toLowerCase();
+      return lower.contains('socketexception') ||
+          lower.contains('host lookup failed') ||
+          lower.contains('failed host lookup') ||
+          lower.contains('connection refused');
+    }
+    return false;
+  }
+
   static String _levelPrefix(LogLevel level) {
     switch (level) {
       case LogLevel.debug:
@@ -150,7 +172,9 @@ class Logger {
     StackTrace? stackTrace,
     String? reason,
   }) {
-    if (_logMode == LogMode.live && _crashlytics != null) {
+    if (_logMode == LogMode.live &&
+        _crashlytics != null &&
+        !_isNetworkError(error)) {
       _crashlytics!.recordError(error, stackTrace, reason: reason, fatal: false);
     }
     if (_logMode == LogMode.debug) {

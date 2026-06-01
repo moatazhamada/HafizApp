@@ -76,18 +76,17 @@ void main() {
 
   group('SaveSession', () {
     blocTest<RecitationSessionBloc, RecitationSessionState>(
-      'reloads sessions on success',
+      'updates state inline on success when already loaded',
+      seed: () => const RecitationSessionLoaded([]),
       build: () {
         when(() => mockRepo.addSession(any()))
             .thenAnswer((_) async => const Right(null));
-        when(() => mockRepo.getSessions())
-            .thenAnswer((_) async => Right([testSession]));
         return bloc;
       },
       act: (bloc) => bloc.add(SaveSession(testSession)),
       expect: () => [
-        isA<RecitationSessionLoading>(),
-        isA<RecitationSessionLoaded>(),
+        predicate<RecitationSessionState>(
+            (s) => s is RecitationSessionLoaded && s.sessions.length == 1),
       ],
     );
 
@@ -107,18 +106,16 @@ void main() {
 
   group('ClearAllSessions', () {
     blocTest<RecitationSessionBloc, RecitationSessionState>(
-      'reloads sessions on success',
+      'emits empty loaded state on success',
       build: () {
         when(() => mockRepo.clearAll())
             .thenAnswer((_) async => const Right(null));
-        when(() => mockRepo.getSessions())
-            .thenAnswer((_) async => const Right([]));
         return bloc;
       },
       act: (bloc) => bloc.add(ClearAllSessions()),
       expect: () => [
-        isA<RecitationSessionLoading>(),
-        isA<RecitationSessionLoaded>(),
+        predicate<RecitationSessionState>(
+            (s) => s is RecitationSessionLoaded && s.sessions.isEmpty),
       ],
     );
   });

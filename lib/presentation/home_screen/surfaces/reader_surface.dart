@@ -45,9 +45,11 @@ class _ReaderSurfaceState extends State<ReaderSurface> {
 
     final defaultView = PrefUtils().getDefaultQuranView();
     if (defaultView == 'mushaf') {
+      final typeStr = PrefUtils().getMushafType() ?? 'madani';
+      final initialPage = PrefUtils().getMushafLastPageForType(typeStr);
       NavigatorService.pushNamed(
         AppRoutes.mushafScreen,
-        arguments: {},
+        arguments: {'initialPage': initialPage},
       );
     } else {
       NavigatorService.pushNamed(

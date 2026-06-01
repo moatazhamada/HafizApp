@@ -93,12 +93,6 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final state = context.read<MusaliTeaserBloc>().state;
-    final currentSlideIndex = state is TeaserSlideUpdated
-        ? state.slideIndex
-        : 0;
-    final isLastSlide = currentSlideIndex == musaliTeaserSlides().length - 1;
-
     return Scaffold(
       backgroundColor: _isArabic
           ? AppColors.of(context).primaryDark
@@ -123,24 +117,35 @@ class _MusaliTeaserScreenState extends State<MusaliTeaserScreen>
           child: Stack(
             children: [
               DecorativeBackgroundElement(isArabic: _isArabic),
-              MainContent(
-                currentSlideIndex: currentSlideIndex,
-                fadeAnimation: _fadeAnimation,
-                slideAnimation: _slideAnimation,
-                isArabic: _isArabic,
-                isLastSlide: isLastSlide,
-                onDismiss: () {
-                  _finishTeaser(context);
-                },
-                onNext: () {
-                  if (isLastSlide) {
-                    _finishTeaser(context);
-                  } else {
-                    context.read<MusaliTeaserBloc>().add(NextSlidePressed());
-                  }
-                },
-                onSkip: () {
-                  _finishTeaser(context);
+              BlocBuilder<MusaliTeaserBloc, MusaliTeaserState>(
+                builder: (context, state) {
+                  final currentSlideIndex = state is TeaserSlideUpdated
+                      ? state.slideIndex
+                      : 0;
+                  final isLastSlide = currentSlideIndex ==
+                      musaliTeaserSlides().length - 1;
+                  return MainContent(
+                    currentSlideIndex: currentSlideIndex,
+                    fadeAnimation: _fadeAnimation,
+                    slideAnimation: _slideAnimation,
+                    isArabic: _isArabic,
+                    isLastSlide: isLastSlide,
+                    onDismiss: () {
+                      _finishTeaser(context);
+                    },
+                    onNext: () {
+                      if (isLastSlide) {
+                        _finishTeaser(context);
+                      } else {
+                        context.read<MusaliTeaserBloc>().add(
+                          NextSlidePressed(),
+                        );
+                      }
+                    },
+                    onSkip: () {
+                      _finishTeaser(context);
+                    },
+                  );
                 },
               ),
             ],
@@ -168,13 +173,10 @@ class DecorativeBackgroundElement extends StatelessWidget {
       left: isArabic ? 0 : -30,
       right: isArabic ? -30 : 0,
       top: isArabic ? -30 : -20,
-      child: Opacity(
-        opacity: 0.08,
-        child: Icon(
-          isArabic ? Icons.mosque_rounded : Icons.grass_rounded,
-          size: 200,
-          color: Theme.of(context).colorScheme.onPrimary,
-        ),
+      child: Icon(
+        isArabic ? Icons.mosque_rounded : Icons.grass_rounded,
+        size: 200,
+        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.08),
       ),
     );
   }

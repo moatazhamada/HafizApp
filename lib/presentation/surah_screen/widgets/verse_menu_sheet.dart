@@ -13,6 +13,7 @@ import 'package:hafiz_app/presentation/recitation_error/bloc/recitation_error_bl
 import 'package:hafiz_app/presentation/surah_screen/widgets/verse_image_card.dart';
 import 'package:hafiz_app/widgets/verse_share_sheet.dart';
 import 'package:share_plus/share_plus.dart' show Share, XFile;
+import 'package:hafiz_app/widgets/loading_indicator.dart';
 
 void showVerseMenu(
   BuildContext context, {
@@ -28,6 +29,8 @@ void showVerseMenu(
   BookmarkBloc? bookmarkBloc,
 }) {
   final bloc = bookmarkBloc ?? context.read<BookmarkBloc>();
+  final recitationErrorBloc = context.read<RecitationErrorBloc>();
+  final cloudSyncBloc = context.read<CloudSyncBloc>();
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -73,7 +76,7 @@ void showVerseMenu(
                     ),
                   );
                 }
-                _triggerBookmarkSync(context);
+                _triggerBookmarkSync(cloudSyncBloc);
               },
             ),
           ),
@@ -126,11 +129,11 @@ void showVerseMenu(
               onTap: () {
                 Navigator.pop(context);
                 if (isError) {
-                  context.read<RecitationErrorBloc>().add(
+                  recitationErrorBloc.add(
                     RemoveRecitationErrorEvent(surahId, verse.verseNumber),
                   );
                 } else {
-                  context.read<RecitationErrorBloc>().add(
+                  recitationErrorBloc.add(
                     AddRecitationErrorEvent(
                       RecitationErrorModel(
                         surahId: surahId,
@@ -266,11 +269,20 @@ Future<void> _shareVerseAsImage(Verse verse, String surahName) async {
   unawaited(showDialog(
     context: rootContext,
     barrierDismissible: false,
-    builder: (_) => const Center(child: CircularProgressIndicator()),
+    builder: (_) => const LoadingIndicator(),
   ));
 
   final key = GlobalKey();
-  final overlay = Overlay.of(rootContext);
+  OverlayState? overlay;
+  try {
+    overlay = Overlay.of(rootContext, rootOverlay: true);
+  } catch (_) {
+    overlay = null;
+  }
+  if (overlay == null) {
+    navigator.pop();
+    return;
+  }
   final entry = OverlayEntry(
     builder: (context) => Positioned(
       left: -9999,
@@ -312,9 +324,9 @@ Future<void> _shareVerseAsImage(Verse verse, String surahName) async {
   }
 }
 
-void _triggerBookmarkSync(BuildContext context) {
+void _triggerBookmarkSync(CloudSyncBloc cloudSyncBloc) {
   try {
-    context.read<CloudSyncBloc>().add(SyncWithQfEvent());
+    cloudSyncBloc.add(SyncWithQfEvent());
   } catch (e) {
     Logger.warning('Bookmark sync trigger failed: $e', feature: 'Bookmarks');
   }

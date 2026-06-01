@@ -5,9 +5,18 @@
   "targets": {
     "hafiz-app-3e264": {
       "hosting": {
-        "privacy-main": ["hafiz-app-3e264"],
-        "privacy-new": ["hafiz-app-privacy"],
-        "terms": ["hafiz-app-terms"]
+        "privacy-main": [
+          "hafiz-app-3e264"
+        ],
+        "privacy-new": [
+          "hafiz-app-privacy"
+        ],
+        "terms": [
+          "hafiz-app-terms"
+        ],
+        "support": [
+          "hafiz-app-support"
+        ]
       }
     }
   },

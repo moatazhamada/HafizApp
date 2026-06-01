@@ -22,6 +22,10 @@ class BismillahWidget extends StatelessWidget {
           '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 '
           '\u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650',
           textDirection: TextDirection.rtl,
+          textHeightBehavior: const TextHeightBehavior(
+            applyHeightToFirstAscent: true,
+            applyHeightToLastDescent: true,
+          ),
           style: TextStyle(
             fontFamily: 'NotoNaskhArabic',
             fontSize: 24,
