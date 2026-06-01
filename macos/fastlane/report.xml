@@ -5,27 +5,27 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: Switch to mac build_pkg lane" time="0.000179">
+      <testcase classname="fastlane.lanes" name="0: Switch to mac build_pkg lane" time="0.00015">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: flutter build macos --release --dart-define-from-file=/Users/mm/Main/Projects/Android/HafizApp/.dart_defines.production.json" time="28.901547">
+      <testcase classname="fastlane.lanes" name="1: flutter build macos --release --config-only --dart-define-from-file=/Users/mm/Main/Projects/Android/HafizApp/.dart_defines.production.json" time="5.033184">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: gym" time="111.069757">
+      <testcase classname="fastlane.lanes" name="2: gym" time="120.211476">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: app_store_connect_api_key" time="0.003594">
+      <testcase classname="fastlane.lanes" name="3: app_store_connect_api_key" time="0.00601">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: upload_to_testflight" time="254.97099">
+      <testcase classname="fastlane.lanes" name="4: upload_to_testflight" time="271.752748">
         
       </testcase>
     

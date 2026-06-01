@@ -126,3 +126,4 @@ android/.bundle/
 # ===========================================
 testing/test-report-*.md
 android/Gemfile.lock
+macos/fastlane/report.xml
